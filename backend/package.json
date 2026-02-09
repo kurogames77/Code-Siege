@@ -1,0 +1,25 @@
+{
+    "name": "code-siege-backend",
+    "version": "1.0.0",
+    "description": "Backend API for Code Siege gamified coding platform",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "dev": "nodemon index.js",
+        "start": "node index.js"
+    },
+    "dependencies": {
+        "@google/generative-ai": "^0.24.1",
+        "@supabase/supabase-js": "^2.39.0",
+        "axios": "^1.13.4",
+        "cors": "^2.8.5",
+        "dotenv": "^16.3.1",
+        "express": "^4.18.2"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.2"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}
