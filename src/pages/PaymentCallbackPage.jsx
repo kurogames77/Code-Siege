@@ -9,15 +9,23 @@ import { useToast } from '../contexts/ToastContext';
 const PaymentCallbackPage = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { user, refreshUser } = useUser();
+    const { user, refreshUser, loading } = useUser();
     const { success: showSuccess, error: showError } = useToast();
     const processedRef = React.useRef(false);
 
-    const [status, setStatus] = useState('processing'); // processing, success, failed
+    const [status, setStatus] = useState('processing'); // processing, success, failed, auth_required
     const [message, setMessage] = useState('Verifying payment...');
 
     useEffect(() => {
         const processPayment = async () => {
+            if (loading) return; // Wait for auth check
+
+            if (!user) {
+                setStatus('auth_required');
+                setMessage('Please log in to claim your purchase.');
+                return;
+            }
+
             if (processedRef.current) return;
             processedRef.current = true;
 
@@ -30,15 +38,12 @@ const PaymentCallbackPage = () => {
                 return;
             }
 
+
             const paymentData = JSON.parse(storedPayment);
 
             try {
-                // 1. Wait for User
-                if (!user || !user.id) {
-                    setMessage('Waiting for user data...');
-                    processedRef.current = false; // Allow retry once user loads
-                    return;
-                }
+                // 1. User check handled above
+
 
                 // 2. Capture or Verify Payment
                 if (paymentData.flow === 'intent') {
@@ -142,6 +147,28 @@ const PaymentCallbackPage = () => {
                             </button>
                             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                                 Don't worry, no gems were deducted.
+                            </p>
+                        </div>
+                    </>
+                )}
+
+                {status === 'auth_required' && (
+                    <>
+                        <Lock className="w-16 h-16 text-amber-500 mb-6" />
+                        <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter mb-2">Login Required</h2>
+                        <p className="text-slate-400 font-bold mb-8 text-center max-w-sm">
+                            Your session has expired. Please log in to your account to verify and claim your gems.
+                        </p>
+
+                        <div className="flex flex-col gap-3 w-full">
+                            <button
+                                onClick={() => navigate('/', { state: { openLogin: true, returnUrl: '/payment-callback' } })}
+                                className="w-full bg-amber-600 hover:bg-amber-500 text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-600/20 active:scale-95"
+                            >
+                                Back to Login
+                            </button>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                                Your payment is safe. Just log in to claim it.
                             </p>
                         </div>
                     </>

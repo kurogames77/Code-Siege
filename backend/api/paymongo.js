@@ -38,7 +38,8 @@ router.post('/create-link', async (req, res) => {
                         redirect: {
                             success: req.body.successUrl || 'http://localhost:5173/payment-callback?status=success',
                             failed: req.body.cancelUrl || 'http://localhost:5173/payment-callback?status=failed'
-                        }
+                        },
+                        checkout_methods: ['card', 'paymaya', 'gcash', 'grab_pay', 'dob']
                     }
                 }
             }

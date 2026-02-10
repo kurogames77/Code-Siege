@@ -86,6 +86,11 @@ const LandingPage = () => {
     // Redirect if already authenticated
     useEffect(() => {
         if (isAuthenticated && user) {
+            if (location.state?.returnUrl) {
+                navigate(location.state.returnUrl);
+                return;
+            }
+
             if (user.role === 'admin') {
                 navigate('/admin');
             } else if (user.role === 'instructor') {
@@ -94,7 +99,7 @@ const LandingPage = () => {
                 navigate('/play');
             }
         }
-    }, [isAuthenticated, user, navigate]);
+    }, [isAuthenticated, user, navigate, location.state]);
 
     const handleSubmit = async (event) => {
         event.preventDefault();

@@ -78,41 +78,27 @@ const TopUpModal = ({ isOpen, onClose }) => {
                 method: selectedMethod
             };
 
-            if (selectedMethod === 'maya') {
-                // Maya: Direct Flow (Fastest, redirects directly to Maya)
-                console.log(`[TRACE] Initiating Intent for Maya: ${amountInCentavos} centavos`);
-                const response = await paymongoAPI.createPaymentIntent(
-                    amountInCentavos,
-                    description,
-                    'maya',
-                    redirectUrls
-                );
+            // Unified Checkout Flow for all methods (GCash, Maya, etc.)
+            // This ensures we use the robust PayMongo Checkout page which we confirmed works.
+            console.log(`[TRACE] Initiating Checkout Session for ${selectedMethod}: ${amountInCentavos} centavos`);
 
-                if (response.success && response.checkout_url) {
-                    checkoutUrl = response.checkout_url;
-                    paymentMethodData.paymentIntentId = response.payment_intent_id;
-                    paymentMethodData.flow = 'intent';
-                } else {
-                    throw new Error('Invalid Maya Payment response');
-                }
+            // Map 'maya' to 'paymaya' for API consistency if needed, though backend handles it
+            const apiMethod = selectedMethod === 'maya' ? 'paymaya' : selectedMethod;
+
+            const response = await paymongoAPI.createCheckoutSession(
+                amountInCentavos,
+                description,
+                redirectUrls,
+                { name: user?.name, email: user?.email },
+                apiMethod
+            );
+
+            if (response.data && response.data.attributes && response.data.attributes.checkout_url) {
+                checkoutUrl = response.data.attributes.checkout_url;
+                paymentMethodData.sessionId = response.data.id;
+                paymentMethodData.flow = 'checkout';
             } else {
-                // GCash: Checkout Flow (Most reliable redirect behavior in sandbox)
-                console.log(`[TRACE] Initiating Checkout Session for GCash: ${amountInCentavos} centavos`);
-                const response = await paymongoAPI.createCheckoutSession(
-                    amountInCentavos,
-                    description,
-                    redirectUrls,
-                    { name: user?.name, email: user?.email },
-                    'gcash' // Filter to only show GCash
-                );
-
-                if (response.data && response.data.attributes && response.data.attributes.checkout_url) {
-                    checkoutUrl = response.data.attributes.checkout_url;
-                    paymentMethodData.sessionId = response.data.id;
-                    paymentMethodData.flow = 'checkout';
-                } else {
-                    throw new Error('Invalid GCash Checkout response');
-                }
+                throw new Error(`Invalid ${selectedMethod} Checkout response`);
             }
 
             // Store pending payment details
