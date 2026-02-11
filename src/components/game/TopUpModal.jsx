@@ -512,7 +512,22 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                                     </div>
 
                                                     <button
-                                                        onClick={handlePayMongoPayment}
+                                                        onClick={() => {
+                                                            playClick();
+                                                            // For Test Mode, redirect to our mock page
+                                                            const paymentMethodData = {
+                                                                amount: selectedPackage.numericPrice * 100,
+                                                                description: `${selectedPackage.gems} Gems Application Purchase`,
+                                                                gems: selectedPackage.gems,
+                                                                bonus: selectedPackage.bonus,
+                                                                prevBonus: selectedPackage.prevBonus,
+                                                                method: selectedMethod,
+                                                                flow: 'checkout',
+                                                                sessionId: 'test_session_' + Date.now()
+                                                            };
+                                                            localStorage.setItem('pending_payment', JSON.stringify(paymentMethodData));
+                                                            window.location.href = '/test-payment';
+                                                        }}
                                                         className={`w-full py-4 rounded-xl bg-${themeColor}-600 hover:bg-${themeColor}-500 text-white font-black uppercase tracking-widest shadow-lg shadow-${themeColor}-600/20 active:scale-95 transition-all flex items-center justify-center gap-2`}
                                                     >
                                                         Proceed to {selectedMethod === 'gcash' ? 'GCash' : 'Maya'} <span className="opacity-50">|</span> {selectedPackage.price}

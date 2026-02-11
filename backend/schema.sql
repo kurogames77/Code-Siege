@@ -1,5 +1,5 @@
 -- ============================================
--- CODE SIEGE DATABASE SCHEMA
+-- CODE SIEGE DATABASE SCHEMA (CONSOLIDATED)
 -- Run this SQL in Supabase SQL Editor
 -- ============================================
 
@@ -7,7 +7,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ============================================
--- USERS TABLE (extends auth.users)
+-- 1. USERS TABLE (extends auth.users)
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.users (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -26,7 +26,49 @@ CREATE TABLE IF NOT EXISTS public.users (
 );
 
 -- ============================================
--- USER PROGRESS TABLE
+-- 2. COURSES TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.courses (
+    id VARCHAR(50) PRIMARY KEY, -- e.g., 'py', 'js', 'cpp'
+    name VARCHAR(100) NOT NULL,
+    icon_type VARCHAR(50) DEFAULT 'code',
+    color VARCHAR(20) DEFAULT 'blue',
+    difficulty VARCHAR(20) DEFAULT 'Beginner',
+    mode VARCHAR(20) DEFAULT 'Standard',
+    instructor_id UUID REFERENCES public.users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- 3. COURSE LEVELS TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.course_levels (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    course_id VARCHAR(50) NOT NULL REFERENCES public.courses(id) ON DELETE CASCADE,
+    level_order INTEGER NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    initial_code TEXT,
+    expected_output TEXT,
+    solution TEXT,
+    hints JSONB DEFAULT '[]'::jsonb,
+    rewards JSONB DEFAULT '{"exp": 100, "coins": 50}'::jsonb,
+    
+    -- New columns from upgrades
+    course_mode TEXT DEFAULT 'Beginner',
+    difficulty_level TEXT DEFAULT 'Easy',
+    initial_blocks JSONB DEFAULT '[]'::jsonb,
+    correct_sequence JSONB DEFAULT '[]'::jsonb,
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    -- Composite Unique Constraint
+    CONSTRAINT course_levels_unique_category_order UNIQUE (course_id, course_mode, difficulty_level, level_order)
+);
+
+-- ============================================
+-- 4. USER PROGRESS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.user_progress (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -41,7 +83,7 @@ CREATE TABLE IF NOT EXISTS public.user_progress (
 );
 
 -- ============================================
--- ACHIEVEMENTS TABLE
+-- 5. ACHIEVEMENTS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.achievements (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -57,7 +99,7 @@ CREATE TABLE IF NOT EXISTS public.achievements (
 );
 
 -- ============================================
--- CERTIFICATES TABLE
+-- 6. CERTIFICATES TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.certificates (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -70,7 +112,7 @@ CREATE TABLE IF NOT EXISTS public.certificates (
 );
 
 -- ============================================
--- SHOP ITEMS TABLE
+-- 7. SHOP ITEMS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.shop_items (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -83,7 +125,7 @@ CREATE TABLE IF NOT EXISTS public.shop_items (
 );
 
 -- ============================================
--- USER PURCHASES TABLE
+-- 8. USER PURCHASES TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.user_purchases (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -94,7 +136,7 @@ CREATE TABLE IF NOT EXISTS public.user_purchases (
 );
 
 -- ============================================
--- BATTLES TABLE
+-- 9. BATTLES TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.battles (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -110,16 +152,32 @@ CREATE TABLE IF NOT EXISTS public.battles (
 );
 
 -- ============================================
--- INSTRUCTOR APPLICATIONS TABLE
+-- 10. INSTRUCTOR APPLICATIONS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.instructor_applications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    instructor_id VARCHAR(50),
-    department VARCHAR(50),
-    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    username TEXT NOT NULL,
+    password_hash TEXT NOT NULL, 
+    student_id TEXT,
+    course TEXT,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    reviewed_at TIMESTAMPTZ,
+    reviewed_by UUID REFERENCES public.users(id),
+    rejection_reason TEXT
+);
+
+-- ============================================
+-- 11. SYSTEM LOGS TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.system_logs (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    level TEXT NOT NULL CHECK (level IN ('INFO', 'WARN', 'ERROR')),
+    source TEXT NOT NULL,
+    message TEXT NOT NULL,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- ============================================
@@ -131,53 +189,87 @@ CREATE INDEX IF NOT EXISTS idx_achievements_user ON public.achievements(user_id)
 CREATE INDEX IF NOT EXISTS idx_certificates_user ON public.certificates(user_id);
 CREATE INDEX IF NOT EXISTS idx_battles_players ON public.battles(player1_id, player2_id);
 CREATE INDEX IF NOT EXISTS idx_users_xp ON public.users(xp DESC);
+CREATE INDEX IF NOT EXISTS idx_instructor_applications_status ON public.instructor_applications(status);
+CREATE INDEX IF NOT EXISTS idx_instructor_applications_email ON public.instructor_applications(email);
 
 -- ============================================
--- ROW LEVEL SECURITY (RLS)
+-- ROW LEVEL SECURITY (RLS) POLICIES
 -- ============================================
 
 -- Enable RLS on all tables
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.courses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.course_levels ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.achievements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.certificates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.shop_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_purchases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.battles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.instructor_applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.system_logs ENABLE ROW LEVEL SECURITY;
 
--- Users policies
+-- USERS
 CREATE POLICY "Users can view all profiles" ON public.users FOR SELECT USING (true);
 CREATE POLICY "Users can update own profile" ON public.users FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "Users can insert own profile" ON public.users FOR INSERT WITH CHECK (auth.uid() = id);
 
--- Progress policies
+-- COURSES
+CREATE POLICY "Anyone can read courses" ON public.courses FOR SELECT USING (true);
+CREATE POLICY "Instructors can manage courses" ON public.courses FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.users WHERE users.id = auth.uid() AND users.role IN ('instructor', 'admin'))
+);
+
+-- COURSE LEVELS
+CREATE POLICY "Anyone can read course levels" ON public.course_levels FOR SELECT USING (true);
+CREATE POLICY "Instructors can insert levels" ON public.course_levels FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM public.users WHERE users.id = auth.uid() AND users.role IN ('instructor', 'admin'))
+);
+CREATE POLICY "Instructors can update levels" ON public.course_levels FOR UPDATE USING (
+    EXISTS (SELECT 1 FROM public.users WHERE users.id = auth.uid() AND users.role IN ('instructor', 'admin'))
+);
+CREATE POLICY "Instructors can delete levels" ON public.course_levels FOR DELETE USING (
+    EXISTS (SELECT 1 FROM public.users WHERE users.id = auth.uid() AND users.role IN ('instructor', 'admin'))
+);
+
+-- INSTRUCTOR APPLICATIONS
+CREATE POLICY "Admins can view applications" ON public.instructor_applications FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.users WHERE users.id = auth.uid() AND users.role IN ('admin', 'instructor'))
+);
+CREATE POLICY "Anyone can apply" ON public.instructor_applications FOR INSERT WITH CHECK (true);
+CREATE POLICY "Admins can update applications" ON public.instructor_applications FOR UPDATE USING (
+    EXISTS (SELECT 1 FROM public.users WHERE users.id = auth.uid() AND users.role = 'admin')
+);
+
+-- SYSTEM LOGS
+CREATE POLICY "Admins can view all logs" ON public.system_logs FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.users WHERE users.id = auth.uid() AND users.role = 'admin')
+);
+CREATE POLICY "Users can insert logs" ON public.system_logs FOR INSERT WITH CHECK (true);
+
+-- PROGRESS, ACHIEVEMENTS, CERTIFICATES, PURCHASES, BATTLES (Standard User Policies)
 CREATE POLICY "Users can view own progress" ON public.user_progress FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own progress" ON public.user_progress FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own progress" ON public.user_progress FOR UPDATE USING (auth.uid() = user_id);
 
--- Achievements policies
 CREATE POLICY "Users can view own achievements" ON public.achievements FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can manage own achievements" ON public.achievements FOR ALL USING (auth.uid() = user_id);
 
--- Certificates policies
 CREATE POLICY "Users can view own certificates" ON public.certificates FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own certificates" ON public.certificates FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Anyone can verify certificates" ON public.certificates FOR SELECT USING (true);
 
--- Shop items policies (public read)
 CREATE POLICY "Anyone can view shop items" ON public.shop_items FOR SELECT USING (true);
 
--- Purchases policies
 CREATE POLICY "Users can view own purchases" ON public.user_purchases FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own purchases" ON public.user_purchases FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Battles policies
 CREATE POLICY "Users can view own battles" ON public.battles FOR SELECT USING (auth.uid() = player1_id OR auth.uid() = player2_id);
 CREATE POLICY "Users can create battles" ON public.battles FOR INSERT WITH CHECK (auth.uid() = player1_id);
 CREATE POLICY "Participants can update battles" ON public.battles FOR UPDATE USING (auth.uid() = player1_id OR auth.uid() = player2_id);
 
 -- ============================================
--- SEED SHOP ITEMS
+-- SEED DATA
 -- ============================================
 INSERT INTO public.shop_items (name, type, price, description) VALUES
     ('Christmas Holiday Bundle', 'bundle', 500, 'Festive theme with snow effects'),
@@ -189,11 +281,24 @@ INSERT INTO public.shop_items (name, type, price, description) VALUES
     ('Hero: Nyx', 'hero', 300, 'Shadow assassin hero')
 ON CONFLICT DO NOTHING;
 
+INSERT INTO public.courses (id, name, icon_type, color, difficulty, mode) VALUES
+    ('py', 'Python', 'server', 'blue', 'Beginner', 'Standard'),
+    ('cs', 'C#', 'code', 'purple', 'Intermediate', 'System'),
+    ('cpp', 'C++', 'cpu', 'red', 'Advanced', 'System'),
+    ('php', 'PHP', 'globe', 'indigo', 'Intermediate', 'Web'),
+    ('js', 'JavaScript', 'layout', 'yellow', 'Beginner', 'Web'),
+    ('mysql', 'MySQL', 'database', 'orange', 'Intermediate', 'Database')
+ON CONFLICT (id) DO UPDATE 
+SET 
+    name = EXCLUDED.name,
+    icon_type = EXCLUDED.icon_type,
+    color = EXCLUDED.color,
+    difficulty = EXCLUDED.difficulty,
+    mode = EXCLUDED.mode;
+
 -- ============================================
 -- HELPER FUNCTIONS
 -- ============================================
-
--- Function to add gems to a user
 CREATE OR REPLACE FUNCTION add_gems(user_id_param UUID, amount_param INTEGER)
 RETURNS void AS $$
 BEGIN
@@ -202,56 +307,3 @@ BEGIN
     WHERE id = user_id_param;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-C R E A T E   T A B L E   I F   N O T   E X I S T S   p u b l i c . s y s t e m _ l o g s   ( 
- 
-         i d   U U I D   D E F A U L T   u u i d _ g e n e r a t e _ v 4 ( )   P R I M A R Y   K E Y , 
- 
-         l e v e l   T E X T   N O T   N U L L   C H E C K   ( l e v e l   I N   ( ' I N F O ' ,   ' W A R N ' ,   ' E R R O R ' ) ) , 
- 
-         s o u r c e   T E X T   N O T   N U L L , 
- 
-         m e s s a g e   T E X T   N O T   N U L L , 
- 
-         m e t a d a t a   J S O N B   D E F A U L T   ' { } ' : : j s o n b , 
- 
-         c r e a t e d _ a t   T I M E S T A M P   W I T H   T I M E   Z O N E   D E F A U L T   t i m e z o n e ( ' u t c ' : : t e x t ,   n o w ( ) )   N O T   N U L L 
- 
- ) ; 
- 
- 
- 
- - -   E n a b l e   R L S 
- 
- A L T E R   T A B L E   p u b l i c . s y s t e m _ l o g s   E N A B L E   R O W   L E V E L   S E C U R I T Y ; 
- 
- 
- 
- - -   P o l i c y :   A d m i n s   c a n   r e a d   a l l   l o g s 
- 
- C R E A T E   P O L I C Y   " A d m i n s   c a n   v i e w   a l l   l o g s "   O N   p u b l i c . s y s t e m _ l o g s 
- 
-         F O R   S E L E C T   T O   a u t h e n t i c a t e d 
- 
-         U S I N G   ( E X I S T S   ( 
- 
-                 S E L E C T   1   F R O M   p u b l i c . u s e r s   
- 
-                 W H E R E   u s e r s . i d   =   a u t h . u i d ( )   A N D   u s e r s . r o l e   =   ' a d m i n ' 
- 
-         ) ) ; 
- 
- 
- 
- - -   P o l i c y :   B a c k e n d / S e r v e r   f u n c t i o n s   k e y   c a n   i n s e r t   ( s i m u l a t i n g   t h i s   f o r   n o w   b y   a l l o w i n g   a n y   a u t h e n t i c a t e d   u s e r   t o   l o g   a c t i o n s   f o r   d e m o   p u r p o s e s ,   o r   b e t t e r ,   k e e p   i t   r e s t r i c t i v e ) 
- 
- - -   F o r   t h i s   a p p ,   l e t ' s   a l l o w   a u t h e n t i c a t e d   u s e r s   t o   I N S E R T   l o g s   ( e . g .   c l i e n t   s i d e   e r r o r s )   b u t   o n l y   a d m i n s   c a n   V I E W . 
- 
- C R E A T E   P O L I C Y   " U s e r s   c a n   i n s e r t   l o g s "   O N   p u b l i c . s y s t e m _ l o g s 
- 
-         F O R   I N S E R T   T O   a u t h e n t i c a t e d 
- 
-         W I T H   C H E C K   ( t r u e ) ; 
- 
- 
- 
- 

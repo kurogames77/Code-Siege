@@ -1,17 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI, userAPI, progressAPI } from '../services/api';
-import rank1 from '../assets/rankbadges/rank1.png';
-import rank2 from '../assets/rankbadges/rank2.png';
-import rank3 from '../assets/rankbadges/rank3.png';
-import rank4 from '../assets/rankbadges/rank4.png';
-import rank5 from '../assets/rankbadges/rank5.png';
-import rank6 from '../assets/rankbadges/rank6.png';
-import rank7 from '../assets/rankbadges/rank7.png';
-import rank8 from '../assets/rankbadges/rank8.png';
-import rank9 from '../assets/rankbadges/rank9.png';
-import rank10 from '../assets/rankbadges/rank10.png';
-import rank11 from '../assets/rankbadges/rank11.png';
-import rank12 from '../assets/rankbadges/rank12.png';
+import { getRankFromExp, getNextRank, getRankProgress } from '../utils/rankSystem';
 import supabase from '../lib/supabase';
 
 const UserContext = createContext();
@@ -85,55 +74,40 @@ export const UserProvider = ({ children }) => {
     };
 
     // Format API user to match existing app structure
-    const formatUser = (profile) => ({
-        id: profile.id,
-        name: profile.username,
-        email: profile.email,
-        studentId: profile.student_id || '',
-        course: profile.course || '',
-        school: profile.school || '',
-        college: profile.college || '',
-        avatar: profile.avatar_url,
-        level: profile.level || 1,
-        exp: profile.xp || 0,
-        gems: profile.gems || 0,
-        role: profile.role || 'student',
-        selectedHero: profile.selected_hero || '3',
-        selectedTheme: profile.selected_theme || 'default',
-        rankName: getRankName(profile.level || 1),
-        rankIcon: getRankIcon(profile.level || 1),
-        stats: {
-            winnings: 0,
-            losses: 0,
-            winRate: "0%",
-            leaderboardRank: 0
-        },
-        towerProgress: {},
-        isBanned: profile.is_banned || false
-    });
+    const formatUser = (profile) => {
+        const exp = profile.xp || 0;
+        const currentRank = getRankFromExp(exp);
+        const nextRank = getNextRank(exp);
+        const progress = getRankProgress(exp);
 
-    const getRankName = (level) => {
-        if (level >= 50) return "SIEGE DEITY";
-        if (level >= 40) return "SIEGE MASTER";
-        if (level >= 30) return "SIEGE LORD";
-        if (level >= 20) return "SIEGE KNIGHT";
-        if (level >= 10) return "SIEGE WARRIOR";
-        return "SIEGE NOVICE";
-    };
-
-    const getRankIcon = (level) => {
-        if (level >= 55) return rank12;
-        if (level >= 50) return rank11;
-        if (level >= 45) return rank10;
-        if (level >= 40) return rank9;
-        if (level >= 35) return rank8;
-        if (level >= 30) return rank7;
-        if (level >= 25) return rank6;
-        if (level >= 20) return rank5;
-        if (level >= 15) return rank4;
-        if (level >= 10) return rank3;
-        if (level >= 5) return rank2;
-        return rank1;
+        return {
+            id: profile.id,
+            name: profile.username,
+            email: profile.email,
+            studentId: profile.student_id || '',
+            course: profile.course || '',
+            school: profile.school || '',
+            college: profile.college || '',
+            avatar: profile.avatar_url,
+            level: currentRank.id, // Level is now the Rank ID (1-12)
+            exp: exp,
+            gems: profile.gems || 0,
+            role: profile.role || 'student',
+            rankName: currentRank.name,
+            rankIcon: currentRank.icon,
+            nextRankExp: nextRank ? nextRank.minExp : null,
+            rankProgress: progress,
+            selectedHero: profile.selected_hero || '3',
+            selectedTheme: profile.selected_theme || 'default',
+            stats: {
+                winnings: 0,
+                losses: 0,
+                winRate: "0%",
+                leaderboardRank: 0
+            },
+            towerProgress: profile.tower_progress || {},
+            isBanned: profile.is_banned || false
+        };
     };
 
     // Register new user

@@ -5,54 +5,11 @@ import heroAsset from '../../assets/hero1.png';
 import leaderboardIcon from '../../assets/leaderboard.png';
 import useSound from '../../hooks/useSound';
 import { useUser } from '../../contexts/UserContext';
-import rank1 from '../../assets/rankbadges/rank1.png';
-import rank2 from '../../assets/rankbadges/rank2.png';
-import rank3 from '../../assets/rankbadges/rank3.png';
-import rank4 from '../../assets/rankbadges/rank4.png';
-import rank5 from '../../assets/rankbadges/rank5.png';
-import rank6 from '../../assets/rankbadges/rank6.png';
-import rank7 from '../../assets/rankbadges/rank7.png';
-import rank8 from '../../assets/rankbadges/rank8.png';
-import rank9 from '../../assets/rankbadges/rank9.png';
-import rank10 from '../../assets/rankbadges/rank10.png';
-import rank11 from '../../assets/rankbadges/rank11.png';
-import rank12 from '../../assets/rankbadges/rank12.png';
+import { getRankIcon, getRankName } from '../../utils/rankSystem';
 import RankLegendModal from './RankLegendModal';
 import { useTheme } from '../../contexts/ThemeContext'; // Import ThemeContext
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-// Helper to get rank icon based on level
-const getRankIcon = (level) => {
-    if (level >= 50) return rank12;
-    if (level >= 45) return rank11;
-    if (level >= 40) return rank10;
-    if (level >= 35) return rank9;
-    if (level >= 30) return rank8;
-    if (level >= 25) return rank7;
-    if (level >= 20) return rank6;
-    if (level >= 15) return rank5;
-    if (level >= 10) return rank4;
-    if (level >= 7) return rank3;
-    if (level >= 4) return rank2;
-    return rank1;
-};
-
-// Helper to get rank name based on level
-const getRankName = (level) => {
-    if (level >= 50) return "SIEGE DEITY";
-    if (level >= 45) return "APEX LEGEND";
-    if (level >= 40) return "GRANDMASTER HACKER";
-    if (level >= 35) return "ELITE COMPILER";
-    if (level >= 30) return "SYSTEM SENTINEL";
-    if (level >= 25) return "CODE WARRIOR";
-    if (level >= 20) return "SCRIPT MASTER";
-    if (level >= 15) return "DEBUG KNIGHT";
-    if (level >= 10) return "SYNTAX SOLDIER";
-    if (level >= 7) return "BINARY APPRENTICE";
-    if (level >= 4) return "CODE INITIATE";
-    return "SIEGE NOVICE";
-};
 
 const LeaderboardModal = ({ isOpen, onClose }) => {
     const { playClick, playCancel } = useSound();
@@ -95,16 +52,16 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
     const topPlayers = leaderboard.slice(0, 3).map(player => ({
         ...player,
         avatar: player.avatar || heroAsset,
-        rankIcon: getRankIcon(player.level),
-        rankName: getRankName(player.level)
+        rankIcon: getRankIcon(player.score), // Score is EXP
+        rankName: getRankName(player.score)
     }));
 
     // Get remaining players (4th onwards)
     const otherPlayers = leaderboard.slice(3).map(player => ({
         ...player,
         avatar: player.avatar || heroAsset,
-        rankIcon: getRankIcon(player.level),
-        rankName: getRankName(player.level),
+        rankIcon: getRankIcon(player.score),
+        rankName: getRankName(player.score),
         trend: 'up'
     }));
 
@@ -115,15 +72,15 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
         name: user?.username || 'You',
         score: userInLeaderboard.score,
         avatar: user?.avatar || heroAsset,
-        rankIcon: getRankIcon(user?.level || 1),
-        rankName: getRankName(user?.level || 1)
+        rankIcon: getRankIcon(userInLeaderboard.score),
+        rankName: getRankName(userInLeaderboard.score)
     } : {
         rank: '-',
         name: user?.username || 'You',
-        score: user?.xp || 0,
+        score: user?.exp || 0,
         avatar: user?.avatar || heroAsset,
-        rankIcon: getRankIcon(user?.level || 1),
-        rankName: getRankName(user?.level || 1)
+        rankIcon: getRankIcon(user?.exp || 0),
+        rankName: getRankName(user?.exp || 0)
     };
 
     const containerVariants = {

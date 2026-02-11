@@ -140,7 +140,7 @@ const PaymentCallbackPage = () => {
 
                         <div className="flex flex-col gap-3 w-full">
                             <button
-                                onClick={() => navigate('/play')}
+                                onClick={() => navigate('/play', { state: { openShop: true } })}
                                 className="w-full bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-lg shadow-cyan-600/20 active:scale-95"
                             >
                                 Back to Gem Store

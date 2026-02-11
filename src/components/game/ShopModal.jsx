@@ -109,8 +109,13 @@ const ShopModal = ({ isOpen, onClose }) => {
                                         <img src={shopIcon} alt="Shop" className="w-16 h-16 relative z-10 drop-shadow-2xl object-contain" />
                                     </div>
                                     <div>
-                                        <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">
-                                            BLACK<br /><span className={`text-${currentTheme.colors.primary}-500`}>MARKET</span>
+                                        <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none flex items-center">
+                                            BLACK <span className={`text-${currentTheme.colors.primary}-500 ml-2`}>MARKET</span>
+                                            <motion.span
+                                                animate={{ opacity: [1, 0, 1] }}
+                                                transition={{ duration: 0.8, repeat: Infinity }}
+                                                className={`ml-1 w-1.5 h-6 bg-${currentTheme.colors.primary}-500`}
+                                            />
                                         </h2>
                                     </div>
                                 </div>
@@ -151,20 +156,7 @@ const ShopModal = ({ isOpen, onClose }) => {
                                 ))}
                             </div>
 
-                            {/* Sidebar Decorative Status */}
-                            <div className="mt-auto px-10 py-12 opacity-30">
-                                <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 flex justify-between">
-                                    <span>Sync Status</span>
-                                    <span className={`text-${currentTheme.colors.primary}-500`}>Online</span>
-                                </div>
-                                <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
-                                    <motion.div
-                                        animate={{ x: ['-100%', '100%'] }}
-                                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                                        className={`w-1/2 h-full bg-${currentTheme.colors.primary}-500`}
-                                    />
-                                </div>
-                            </div>
+
                         </div>
 
                         {/* Main Content */}

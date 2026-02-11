@@ -88,6 +88,12 @@ router.get('/link/:id', async (req, res) => {
 router.post('/create-payment-intent', async (req, res) => {
     console.log("[TRACE] Endpoint Hit: /create-payment-intent");
     const secretKey = process.env.PAYMONGO_SECRET_KEY;
+
+    if (!secretKey) {
+        console.error("CRITICAL: PAYMONGO_SECRET_KEY is missing!");
+        return res.status(500).json({ error: 'Server misconfiguration: Missing API Key' });
+    }
+
     const authHeader = `Basic ${Buffer.from(secretKey + ':').toString('base64')}`;
 
     try {
@@ -96,6 +102,10 @@ router.post('/create-payment-intent', async (req, res) => {
 
         if (!amount || !description || !paymentMethod) {
             return res.status(400).json({ error: 'Amount, description, and paymentMethod are required' });
+        }
+
+        if (!redirectUrls || !redirectUrls.success) {
+            return res.status(400).json({ error: 'redirectUrls.success is required' });
         }
 
         const type = paymentMethod === 'maya' ? 'paymaya' : paymentMethod;
@@ -178,8 +188,13 @@ router.post('/create-checkout-session', async (req, res) => {
             return res.status(400).json({ error: 'Amount and description are required' });
         }
 
+        if (!process.env.PAYMONGO_SECRET_KEY) {
+            console.error("CRITICAL: PAYMONGO_SECRET_KEY is missing!");
+            return res.status(500).json({ error: 'Server misconfiguration: Missing API Key' });
+        }
+
         // Allow more methods to prevent "No payment methods available" error
-        const paymentMethodTypes = ['gcash', 'paymaya', 'card', 'grab_pay'];
+        const paymentMethodTypes = ['gcash', 'paymaya', 'card', 'grab_pay', 'dob', 'billease'];
 
         const options = {
             method: 'POST',
@@ -205,11 +220,7 @@ router.post('/create-checkout-session', async (req, res) => {
                             }
                         ],
                         payment_method_types: paymentMethodTypes,
-                        billing: {
-                            name: req.body.name || 'Code Siege Player',
-                            email: req.body.email || 'player@codesiege.com',
-                            phone: req.body.phone || '09000000000'
-                        },
+                        description: description,
                         success_url: successUrl,
                         cancel_url: cancelUrl
                     }

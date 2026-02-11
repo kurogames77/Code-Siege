@@ -34,63 +34,64 @@ class DifficultyAdjuster:
             # Default to Medium if unknown
             return 1
     
-    def adjust(self, irt_status, current_difficulty, metrics=None):
+    def adjust(self, irt_status, current_difficulty, metrics=None, history=None):
         """
-        Adjust difficulty based on IRT output and granular metrics.
+        Adjust difficulty based on IRT output, granular metrics, and recent history.
         
         Args:
             irt_status (str): Output from IRT ('NotStruggling', 'MediumStruggling', 'SuperStruggling')
             current_difficulty (str): Current difficulty ('Easy', 'Medium', 'Hard')
             metrics (dict, optional): { 'time': float, 'errors': int, 'hints': int }
+            history (dict, optional): { 'trend': 'stable'|'struggling'|'excelling', 'recentCount': int }
         """
         
         current_index = self._get_difficulty_index(current_difficulty)
         reason = ""
-        adjustment = 0
         new_index = current_index
-
-        # Parse metrics if available
+        
+        # Parse inputs
         time = metrics.get('time', 999) if metrics else 999
         errors = metrics.get('errors', 99) if metrics else 99
         hints = metrics.get('hints', 99) if metrics else 99
         
+        trend = history.get('trend', 'stable') if history else 'stable'
+        
+        # --- NEW LOGIC: Hybrid Approach (IRT + Trend) ---
+        
+        # 1. Check for Downgrade (Easier)
         if irt_status == "SuperStruggling":
-            # Student is severely struggling - always set to Easy
-            new_index = 0  # Easy
-            reason = "Student severely struggling - setting difficulty to Easy"
-            
-        elif irt_status == "MediumStruggling":
-            # Student is moderately struggling - decrease by 1 level
+            # Immediate rescue if failing hard
             new_index = max(current_index - 1, 0)
-            reason = "Student moderately struggling - decreasing difficulty by 1 level"
-            
+            reason = "Severe struggle detected - Decreasing difficulty immediately."
+        
+        elif irt_status == "MediumStruggling":
+            # Only downgrade if recent history confirms the struggle
+            if trend == 'struggling':
+                new_index = max(current_index - 1, 0)
+                reason = "Consistent struggle detected (Streak) - Decreasing difficulty."
+            else:
+                reason = "Struggle detected, but keeping difficulty for now (need more data)."
+                
+        # 2. Check for Upgrade (Harder)
         elif irt_status == "NotStruggling":
-            # Check for Excellent Performance (Jump to Hard)
-            # Time < 120s, Errors <= 2, Hints == 0
-            if time < 120 and errors <= 2 and hints == 0:
-                new_index = 2  # Hard
-                reason = "Excellent performance (Time < 2m, Low Errors) - Setting to HARD"
+            # Only upgrade if recent history confirms excellence
+            if trend == 'excelling':
+                new_index = min(current_index + 1, len(self.DIFFICULTY_LEVELS) - 1)
+                reason = "Consistent excellence detected (Streak) - Increasing difficulty."
             
-            # Check for Good Performance (Ensure at least Medium)
-            # Time < 210s, Errors <= 4, Hints <= 1
-            elif time < 210 and errors <= 4 and hints <= 1:
-                new_index = max(current_index + 1, 1) # At least Medium (1), or Hard (2) if already Medium
-                reason = "Good performance - Increasing difficulty"
+            # Exception: Perfect score on current level might warrant immediate boost if Easy
+            elif current_difficulty == 'Easy' and errors == 0 and hints == 0 and time < 60:
+                new_index = 1 # Medium
+                reason = "Perfect performance on Easy - Promoting to Medium."
             
             else:
-                # Standard increment
-                new_index = min(current_index + 1, len(self.DIFFICULTY_LEVELS) - 1)
-                reason = "Student performing well - increasing difficulty by 1 level"
-        
+                 reason = "Good performance, but maintaining level until consistency is proven."
+
         else:
-            # Unknown status - keep current difficulty
-            new_index = current_index
-            reason = "Unknown status - maintaining current difficulty"
+            reason = "Status unknown - Maintaining current difficulty."
 
         new_difficulty = self.DIFFICULTY_LEVELS[new_index]
         adjustment = new_index - current_index
-        
-        # Check if difficulty actually changed
         difficulty_changed = new_difficulty != current_difficulty
         
         result = {
@@ -98,6 +99,7 @@ class DifficultyAdjuster:
             "new_difficulty": new_difficulty,
             "difficulty_changed": difficulty_changed,
             "irt_status": irt_status,
+            "trend": trend,
             "adjustment": adjustment,
             "reason": reason,
             "timestamp": datetime.datetime.now().isoformat()
@@ -108,39 +110,31 @@ class DifficultyAdjuster:
     def get_recommended_difficulty(self, irt_status):
         """
         Get a recommended starting difficulty based on IRT status alone.
-        Useful for new students or when resetting.
-        
-        Args:
-            irt_status (str): Output from IRT algorithm
-        
-        Returns:
-            str: Recommended difficulty level
+        Usage: For placement tests.
         """
         if irt_status == "SuperStruggling":
             return "Easy"
         elif irt_status == "MediumStruggling":
-            return "Easy"  # Start easier to build confidence
+            return "Easy"
         else:
-            return "Medium"  # Default starting point
+            return "Medium"
 
-
-# Only run if called directly (e.g. from Node.js child_process)
+# Only run if called directly
 if __name__ == "__main__":
-    # Usage: python DDA_Algo.py <json_input>
-    # Input: { "irtStatus": "MediumStruggling", "currentDifficulty": "Hard" }
-    
     if len(sys.argv) > 1:
         try:
             input_data = json.loads(sys.argv[1])
             adjuster = DifficultyAdjuster()
-            result = adjuster.adjust(
-                irt_status=input_data.get('irtStatus', 'NotStruggling'),
-                current_difficulty=input_data.get('currentDifficulty', 'Medium')
-            )
+            
+            # Extract arguments safely
+            irt = input_data.get('irtStatus', 'NotStruggling')
+            curr = input_data.get('currentDifficulty', 'Medium')
+            mets = input_data.get('metrics', {})
+            hist = input_data.get('history', {})
+            
+            result = adjuster.adjust(irt, curr, mets, hist)
             print(json.dumps(result))
         except Exception as e:
             print(json.dumps({"error": str(e)}))
     else:
-        # Test mode if no args
-        print("DDA_Algo Ready. Pass JSON string as argument.")
-        print("Example: python DDA_Algo.py '{\"irtStatus\": \"SuperStruggling\", \"currentDifficulty\": \"Hard\"}'")
+        print("DDA_Algo Ready.")

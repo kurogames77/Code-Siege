@@ -147,7 +147,21 @@ const AchievementModal = ({ isOpen, onClose }) => {
                                     <img src={achievementIcon} alt="Icon" className="w-12 h-12 relative z-10 drop-shadow-lg" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-black text-white italic tracking-tighter leading-none">ACHIEVEMENTS<br /><span className={`text-${currentTheme.colors.primary}-400`}>AWARDS</span></h2>
+                                    <h2 className="text-xl font-black text-white italic tracking-tighter leading-none">
+                                        ACHIEVEMENTS
+                                        <br />
+                                        <span className={`text-${currentTheme.colors.primary}-400 flex items-center`}>
+                                            AWARDS
+                                            <motion.span
+                                                animate={{ opacity: [1, 0, 1] }}
+                                                transition={{ duration: 0.8, repeat: Infinity }}
+                                                className={`ml-1 w-1.5 h-5 bg-${currentTheme.colors.primary}-500`}
+                                            />
+                                        </span>
+                                    </h2>
+                                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em] mt-1 flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full bg-${currentTheme.colors.secondary}-500 animate-pulse`} /> UNLOCK BADGES
+                                    </p>
                                 </div>
                             </div>
 

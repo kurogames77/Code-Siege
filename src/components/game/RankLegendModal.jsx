@@ -2,39 +2,13 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Shield, Info } from 'lucide-react';
 import useSound from '../../hooks/useSound';
+import { useTheme } from '../../contexts/ThemeContext';
 import leaderboardIcon from '../../assets/leaderboard.png';
-
-// Import all rank badges
-import rank1 from '../../assets/rankbadges/rank1.png';
-import rank2 from '../../assets/rankbadges/rank2.png';
-import rank3 from '../../assets/rankbadges/rank3.png';
-import rank4 from '../../assets/rankbadges/rank4.png';
-import rank5 from '../../assets/rankbadges/rank5.png';
-import rank6 from '../../assets/rankbadges/rank6.png';
-import rank7 from '../../assets/rankbadges/rank7.png';
-import rank8 from '../../assets/rankbadges/rank8.png';
-import rank9 from '../../assets/rankbadges/rank9.png';
-import rank10 from '../../assets/rankbadges/rank10.png';
-import rank11 from '../../assets/rankbadges/rank11.png';
-import rank12 from '../../assets/rankbadges/rank12.png';
-
-const ranks = [
-    { level: '50+', name: 'SIEGE DEITY', icon: rank12, color: 'text-amber-400', border: 'border-amber-500/50', bg: 'bg-amber-500/10' },
-    { level: '45+', name: 'APEX LEGEND', icon: rank11, color: 'text-rose-400', border: 'border-rose-500/50', bg: 'bg-rose-500/10' },
-    { level: '40+', name: 'GRANDMASTER HACKER', icon: rank10, color: 'text-purple-400', border: 'border-purple-500/50', bg: 'bg-purple-500/10' },
-    { level: '35+', name: 'ELITE COMPILER', icon: rank9, color: 'text-cyan-400', border: 'border-cyan-500/50', bg: 'bg-cyan-500/10' },
-    { level: '30+', name: 'SYSTEM SENTINEL', icon: rank8, color: 'text-emerald-400', border: 'border-emerald-500/50', bg: 'bg-emerald-500/10' },
-    { level: '25+', name: 'CODE WARRIOR', icon: rank7, color: 'text-blue-400', border: 'border-blue-500/50', bg: 'bg-blue-500/10' },
-    { level: '20+', name: 'SCRIPT MASTER', icon: rank6, color: 'text-indigo-400', border: 'border-indigo-500/50', bg: 'bg-indigo-500/10' },
-    { level: '15+', name: 'DEBUG KNIGHT', icon: rank5, color: 'text-orange-400', border: 'border-orange-500/50', bg: 'bg-orange-500/10' },
-    { level: '10+', name: 'SYNTAX SOLDIER', icon: rank4, color: 'text-teal-400', border: 'border-teal-500/50', bg: 'bg-teal-500/10' },
-    { level: '7+', name: 'BINARY APPRENTICE', icon: rank3, color: 'text-lime-400', border: 'border-lime-500/50', bg: 'bg-lime-500/10' },
-    { level: '4+', name: 'CODE INITIATE', icon: rank2, color: 'text-slate-300', border: 'border-slate-500/50', bg: 'bg-slate-500/10' },
-    { level: '1+', name: 'SIEGE NOVICE', icon: rank1, color: 'text-slate-500', border: 'border-slate-700/50', bg: 'bg-slate-700/10' },
-];
+import { RANKS } from '../../utils/rankSystem';
 
 const RankLegendModal = ({ isOpen, onClose }) => {
     const { playCancel } = useSound();
+    const { currentTheme } = useTheme();
 
     return (
         <AnimatePresence>
@@ -50,7 +24,7 @@ const RankLegendModal = ({ isOpen, onClose }) => {
                         <motion.div
                             animate={{ top: ['-10%', '110%'] }}
                             transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                            className="absolute left-0 w-full h-[10%] bg-gradient-to-b from-transparent via-cyan-500/10 to-transparent pointer-events-none z-10"
+                            className={`absolute left-0 w-full h-[10%] bg-gradient-to-b from-transparent via-${currentTheme.colors.primary}-500/10 to-transparent pointer-events-none z-10`}
                         />
                     </div>
 
@@ -58,7 +32,7 @@ const RankLegendModal = ({ isOpen, onClose }) => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="w-full max-w-[90vw] h-[85vh] bg-[#02040a]/90 border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_0_80px_rgba(0,0,0,1)] flex flex-col relative z-20 backdrop-blur-2xl"
+                        className={`w-full max-w-[90vw] h-[85vh] ${currentTheme.colors.panel || 'bg-[#02040a]/90'} border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_0_80px_rgba(0,0,0,1)] flex flex-col relative z-20 backdrop-blur-2xl`}
                     >
                         {/* Scanline Texture Overlay */}
                         <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-[100]"
@@ -69,11 +43,16 @@ const RankLegendModal = ({ isOpen, onClose }) => {
                             <div className="flex items-center gap-6">
                                 <img src={leaderboardIcon} alt="" className="w-14 h-14 object-contain brightness-125" />
                                 <div className="space-y-1">
-                                    <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-none flex items-center">
-                                        RANK <span className="text-cyan-400 ml-2">HIERARCHY</span>
+                                    <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter leading-none flex items-center">
+                                        RANK <span className={`text-${currentTheme.colors.primary}-400 ml-2`}>HIERARCHY</span>
+                                        <motion.span
+                                            animate={{ opacity: [1, 0, 1] }}
+                                            transition={{ duration: 0.8, repeat: Infinity }}
+                                            className={`ml-2 w-2 h-8 bg-${currentTheme.colors.primary}-500`}
+                                        />
                                     </h2>
                                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.4em] flex items-center gap-2">
-                                        BADGE AND LEVEL
+                                        <div className={`w-2 h-2 rounded-full bg-${currentTheme.colors.secondary}-500 animate-pulse`} /> BADGE AND EXP
                                     </p>
                                 </div>
                             </div>
@@ -88,7 +67,7 @@ const RankLegendModal = ({ isOpen, onClose }) => {
                         {/* GRID CONTENT */}
                         <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                {ranks.map((rank, index) => (
+                                {[...RANKS].reverse().map((rank, index) => (
                                     <motion.div
                                         key={rank.name}
                                         initial={{ opacity: 0, y: 20 }}
@@ -104,7 +83,7 @@ const RankLegendModal = ({ isOpen, onClose }) => {
 
                                         <div className="text-center relative z-10">
                                             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                                                Level {rank.level}
+                                                {rank.range}
                                             </div>
                                             <h3 className={`text-lg font-black italic uppercase tracking-tighter ${rank.color}`}>
                                                 {rank.name}

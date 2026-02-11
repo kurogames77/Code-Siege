@@ -4,6 +4,7 @@ import { X, Swords, Users, Trophy } from 'lucide-react';
 import rankingIcon from '../../assets/ranking.png';
 import useSound from '../../hooks/useSound';
 import { useUser } from '../../contexts/UserContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 // 3D Tilt Card Component
 const TiltCard = ({ children, onClick, color, delay }) => {
@@ -86,6 +87,7 @@ const TiltCard = ({ children, onClick, color, delay }) => {
 const RankingModal = ({ isOpen, onClose, onEnterDuel, onJoinMultiplayer }) => {
     const { playClick, playCancel } = useSound();
     const { user } = useUser();
+    const { currentTheme } = useTheme();
 
     return (
         <AnimatePresence>
@@ -119,19 +121,24 @@ const RankingModal = ({ isOpen, onClose, onEnterDuel, onJoinMultiplayer }) => {
                         <div className="relative flex items-center justify-center mb-8 z-10">
                             <div className="flex flex-col items-center gap-4">
                                 <div className="relative group">
-                                    <div className="absolute inset-0 bg-indigo-500/40 blur-2xl rounded-full animate-pulse group-hover:bg-indigo-400/60 transition-all duration-500" />
-                                    <img src={rankingIcon} alt="Arena" className="w-16 h-16 object-contain relative z-10 drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] group-hover:scale-110 transition-transform duration-500" />
+                                    <div className={`absolute inset-0 bg-${currentTheme.colors.primary}-500/40 blur-2xl rounded-full animate-pulse group-hover:bg-${currentTheme.colors.primary}-400/60 transition-all duration-500`} />
+                                    <img src={rankingIcon} alt="Arena" className={`w-16 h-16 object-contain relative z-10 drop-shadow-[0_0_15px_rgba(var(--theme-primary-rgb),0.5)] group-hover:scale-110 transition-transform duration-500`} />
                                 </div>
                                 <div className="flex flex-col items-center text-center">
-                                    <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter leading-none mb-2">
-                                        ARENA <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 animate-gradient-x">SELECTION</span>
+                                    <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter leading-none mb-2 flex items-center">
+                                        ARENA <span className={`text-${currentTheme.colors.primary}-400 ml-2`}>SELECTION</span>
+                                        <motion.span
+                                            animate={{ opacity: [1, 0, 1] }}
+                                            transition={{ duration: 0.8, repeat: Infinity }}
+                                            className={`ml-2 w-2 h-8 bg-${currentTheme.colors.primary}-500`}
+                                        />
                                     </h2>
                                     <div className="flex items-center gap-3 opacity-80">
-                                        <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-indigo-500/50" />
-                                        <p className="text-xs text-indigo-400 font-bold uppercase tracking-[0.4em] flex items-center gap-2">
+                                        <div className={`h-[2px] w-12 bg-gradient-to-r from-transparent to-${currentTheme.colors.primary}-500/50`} />
+                                        <p className={`text-xs text-${currentTheme.colors.primary}-400 font-bold uppercase tracking-[0.4em] flex items-center gap-2`}>
                                             <Trophy className="w-3 h-3" /> Execute Combat Protocol
                                         </p>
-                                        <div className="h-[2px] w-12 bg-gradient-to-l from-transparent to-indigo-500/50" />
+                                        <div className={`h-[2px] w-12 bg-gradient-to-l from-transparent to-${currentTheme.colors.primary}-500/50`} />
                                     </div>
                                 </div>
                             </div>

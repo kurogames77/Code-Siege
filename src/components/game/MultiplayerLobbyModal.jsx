@@ -14,39 +14,11 @@ import lobbyMusic from '../../assets/sounds/lobbymusic.mp3';
 import useSound from '../../hooks/useSound';
 import { useUser } from '../../contexts/UserContext';
 
-// Rank Badges
-import rank1 from '../../assets/rankbadges/rank1.png';
-import rank2 from '../../assets/rankbadges/rank2.png';
-import rank3 from '../../assets/rankbadges/rank3.png';
-import rank4 from '../../assets/rankbadges/rank4.png';
-import rank5 from '../../assets/rankbadges/rank5.png';
-import rank6 from '../../assets/rankbadges/rank6.png';
-import rank7 from '../../assets/rankbadges/rank7.png';
-import rank8 from '../../assets/rankbadges/rank8.png';
-import rank9 from '../../assets/rankbadges/rank9.png';
-import rank10 from '../../assets/rankbadges/rank10.png';
-import rank11 from '../../assets/rankbadges/rank11.png';
-import rank12 from '../../assets/rankbadges/rank12.png';
-
-const RANKS = [
-    { id: 1, name: 'Novice Scripter', tier: 'Foundation', icon: rank1 },
-    { id: 2, name: 'Apprentice Debugger', tier: 'Foundation', icon: rank2 },
-    { id: 3, name: 'Syntax Soldier', tier: 'Foundation', icon: rank3 },
-    { id: 4, name: 'Tower Tactician', tier: 'Ascension', icon: rank4 },
-    { id: 5, name: 'Logic Guardian', tier: 'Ascension', icon: rank5 },
-    { id: 6, name: 'Algorithm Adept', tier: 'Ascension', icon: rank6 },
-    { id: 7, name: 'System Sentinel', tier: 'Ascension', icon: rank7 },
-    { id: 8, name: 'Elite Compiler', tier: 'Mastery', icon: rank8 },
-    { id: 9, name: 'Master Architect', tier: 'Mastery', icon: rank9 },
-    { id: 10, name: 'Grandmaster Hacker', tier: 'Mastery', icon: rank10 },
-    { id: 11, name: 'Apex Legend', tier: 'Pinnacle', icon: rank11 },
-    { id: 12, name: 'Siege Deity', tier: 'Pinnacle', icon: rank12 },
-];
+import { RANKS } from '../../utils/rankSystem';
 
 const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
     const navigate = useNavigate();
 
-    // Core User Data
     // Core User Data
     const { user } = useUser();
 

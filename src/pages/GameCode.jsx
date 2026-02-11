@@ -11,6 +11,7 @@ import DefeatModal from '../components/game/DefeatModal';
 import BattleScene from '../components/game/BattleScene';
 import { puzzleData, objectives } from '../data/puzzleData';
 import { useUser } from '../contexts/UserContext';
+import { useQuests } from '../contexts/QuestContext';
 import { coursesAPI, algorithmAPI, userAPI } from '../services/api';
 
 import gameCodeBg from '../assets/gamecodebg.jpg';
@@ -65,6 +66,7 @@ const GameCode = () => {
     const [dynamicPuzzle, setDynamicPuzzle] = useState(null);
     // Safe User Context
     const { user, loading, updateTowerProgress } = useUser();
+    const { updateQuestProgress } = useQuests();
 
     // Hero handling
     const heroInfoMap = {
@@ -197,6 +199,27 @@ const GameCode = () => {
             setBattleOutcome('win');
             setShowChallenge(false);
             setShowPostScene(true);
+
+            // --- QUEST UPDATES ---
+            const time = result.metrics?.time || 0;
+
+            updateQuestProgress('match_complete', 1);
+            updateQuestProgress('match_win', 1);
+            updateQuestProgress('solve_puzzle', 1);
+
+            // Speed Coder (under 60s)
+            if (time < 60) {
+                updateQuestProgress('speed_solve', 1);
+            }
+
+            // Polyglot (Language use)
+            // Assuming config.language is reliable
+            if (gameConfig.language) {
+                updateQuestProgress('submit_language', 1, { language: gameConfig.language });
+            }
+
+            // Damage Dealt (Simulated: 1000 per win for now)
+            updateQuestProgress('damage_dealt', 1000);
 
             // Trigger Adaptive Analysis (IRT + DDA)
             if (result.metrics && user?.id) {

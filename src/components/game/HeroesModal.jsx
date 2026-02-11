@@ -221,12 +221,17 @@ const HeroesModal = ({ isOpen, onClose, userLevel = 24 }) => {
                                 <div className="px-8 mb-8 relative z-10">
                                     <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter flex items-center gap-3">
                                         <img src={heroesIcon} alt="" className="w-10 h-10 object-contain" />
-                                        <span>
+                                        <span className="flex items-center">
                                             HERO<span className={`text-${currentTheme.colors.primary}-400`}>ES</span>
+                                            <motion.span
+                                                animate={{ opacity: [1, 0, 1] }}
+                                                transition={{ duration: 0.8, repeat: Infinity }}
+                                                className={`ml-1 w-1.5 h-6 bg-${currentTheme.colors.primary}-500`}
+                                            />
                                         </span>
                                     </h2>
-                                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
-                                        <div className={`w-2 h-2 rounded-full bg-${currentTheme.colors.secondary}-500`} /> CHARACTER SELECTION
+                                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em] mt-2 flex items-center gap-2 ml-14">
+                                        <div className={`w-2 h-2 rounded-full bg-${currentTheme.colors.secondary}-500 animate-pulse`} /> CHARACTER SELECTION
                                     </p>
                                 </div>
 

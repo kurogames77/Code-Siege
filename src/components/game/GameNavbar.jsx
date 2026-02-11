@@ -58,6 +58,9 @@ const GameNavbar = ({ onLobbyStateChange }) => {
             if (location.state?.openMultiplayerLobby || action === 'openMultiplayerLobby') {
                 setIsMultiplayerLobbyOpen(true);
             }
+            if (location.state?.openShop) {
+                setIsShopOpen(true);
+            }
 
             // Clean up query params if present
             if (action) {

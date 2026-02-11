@@ -182,7 +182,30 @@ router.post('/full-analysis', authenticateUser, async (req, res) => {
         console.log('[Full Analysis] Step 1 - IRT:', irtInput);
         const irtResult = await runPythonScript(IRT_ALGO_PATH, irtInput);
 
-        // Step 2: Run DDA Adjustment using IRT result
+        // --- NEW: Fetch Recent History for Streak Logic ---
+        // Get last 5 completed levels to determine trend
+        const { data: recentProgress } = await supabase
+            .from('user_progress')
+            .select('score, completed, floor')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+        let performanceTrend = 'stable'; // 'stable', 'struggling', 'excelling'
+
+        if (recentProgress && recentProgress.length >= 3) {
+            // Count recent "failures" (low score or incomplete) vs successes
+            // Assuming score < 50 is a struggle, score > 80 is excelling
+            const struggles = recentProgress.filter(p => p.score < 50).length;
+            const excellences = recentProgress.filter(p => p.score > 80).length;
+
+            if (struggles >= 3) performanceTrend = 'struggling';
+            else if (excellences >= 3) performanceTrend = 'excelling';
+        }
+
+        console.log(`[Full Analysis] Recent Trend (Last ${recentProgress?.length || 0}): ${performanceTrend}`);
+
+        // Step 2: Run DDA Adjustment using IRT result + Trend
         const ddaInput = {
             irtStatus: irtResult.status,
             currentDifficulty: currentDifficulty,
@@ -190,6 +213,10 @@ router.post('/full-analysis', authenticateUser, async (req, res) => {
                 time: parseFloat(time) || 0,
                 errors: parseInt(errors) || 0,
                 hints: parseInt(hints) || 0
+            },
+            history: {
+                trend: performanceTrend,
+                recentCount: recentProgress?.length || 0
             }
         };
 
@@ -197,12 +224,12 @@ router.post('/full-analysis', authenticateUser, async (req, res) => {
         const ddaResult = await runPythonScript(DDA_ALGO_PATH, ddaInput);
 
         // Combine results
-        // Combine results
         const combinedResult = {
             irt: irtResult,
             dda: ddaResult,
             summary: {
                 studentStatus: irtResult.status,
+                recentTrend: performanceTrend,
                 previousDifficulty: currentDifficulty,
                 newDifficulty: ddaResult.new_difficulty,
                 difficultyChanged: ddaResult.difficulty_changed
@@ -289,24 +316,70 @@ router.post('/matchmaking', authenticateUser, async (req, res) => {
         // Combine current user with other players for clustering
         const allPlayers = [currentUser, ...players];
 
+        // 2a. Fetch Battle Stats for all candidate players + current user
+        const allPlayerIds = allPlayers.map(p => p.id);
+
+        const { data: battles, error: battleError } = await supabase
+            .from('battles')
+            .select('winner_id, player1_id, player2_id, status')
+            .in('status', ['completed'])
+            .or(`player1_id.in.(${allPlayerIds.join(',')}),player2_id.in.(${allPlayerIds.join(',')})`);
+
+        // Helper to calculate stats
+        const getPlayerStats = (pid) => {
+            if (battleError || !battles) return { winRate: 0.5, total: 0 };
+
+            let wins = 0;
+            let total = 0;
+
+            battles.forEach(b => {
+                if (b.player1_id === pid || b.player2_id === pid) {
+                    total++;
+                    if (b.winner_id === pid) wins++;
+                }
+            });
+
+            return {
+                winRate: total > 0 ? wins / total : 0.5, // Default to 0.5 if no games
+                total
+            };
+        };
+
         // Convert to IRT-like format for KMeans
-        // We'll use: adjusted_theta (based on EXP), probability (normalized), success_rate, fail_rate
-        const playersForKmeans = allPlayers.map(p => ({
-            id: p.id,
-            username: p.username,
-            rank: p.rank || 'Unranked',
-            adjusted_theta: (p.exp || 0) / 1000, // Normalize EXP to a smaller scale
-            probability: 0.5, // Default, can be enhanced with real win_rate later
-            success_rate: 0.5,
-            fail_rate: 0.5
-        }));
+        // We'll use: adjusted_theta (based on EXP), probability (Real Win Rate), success_rate, fail_rate
+        const playersForKmeans = allPlayers.map(p => {
+            const stats = getPlayerStats(p.id);
+            // Normalize Rank/EXP. Assuming 50000 is high.
+            const normalizedExp = Math.min((p.exp || 0) / 50000, 1.0);
+
+            return {
+                id: p.id,
+                username: p.username,
+                rank: p.rank || 'Unranked',
+                adjusted_theta: normalizedExp,
+                probability: stats.winRate,
+                success_rate: stats.winRate, // Using Win Rate as proxy for success for now
+                fail_rate: 1.0 - stats.winRate
+            };
+        });
+
+        // Determine K
+        let kValue = k;
+
+        // RELAXED MATCHMAKING: If low population (< 6 players), force 1 cluster
+        if (playersForKmeans.length < 6) {
+            console.log('[Matchmaking] Low population detected ( < 6 players). Relaxing rules: Grouping all ranks together.');
+            kValue = 1;
+        } else {
+            kValue = Math.min(k, Math.floor(playersForKmeans.length / 2));
+        }
 
         const inputData = {
             players: playersForKmeans,
-            k: Math.min(k, Math.floor(playersForKmeans.length / 2)) // Ensure k is reasonable
+            k: kValue
         };
 
-        console.log('[Matchmaking] Running K-Means with', playersForKmeans.length, 'players');
+        console.log('[Matchmaking] Running K-Means with', playersForKmeans.length, 'players. K =', kValue);
 
         const result = await runPythonScript(KMEANS_ALGO_PATH, inputData);
 
