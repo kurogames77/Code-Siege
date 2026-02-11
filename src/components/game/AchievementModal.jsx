@@ -159,9 +159,9 @@ const AchievementModal = ({ isOpen, onClose }) => {
                                             />
                                         </span>
                                     </h2>
-                                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em] mt-1 flex items-center gap-2">
+                                    <div className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em] mt-1 flex items-center gap-2">
                                         <div className={`w-2 h-2 rounded-full bg-${currentTheme.colors.secondary}-500 animate-pulse`} /> UNLOCK BADGES
-                                    </p>
+                                    </div>
                                 </div>
                             </div>
 
@@ -254,7 +254,7 @@ const AchievementModal = ({ isOpen, onClose }) => {
                                             onClose();
                                             playClick();
                                         }}
-                                        className="p-2.5 bg-slate-800/50 hover:bg-rose-500 border border-white/10 hover:border-rose-500 text-slate-400 hover:text-white rounded-full transition-all duration-300 hover:rotate-90"
+                                        className="w-12 h-12 flex items-center justify-center bg-slate-800/50 hover:bg-rose-500 border border-white/10 hover:border-rose-500 text-slate-400 hover:text-white rounded-full transition-all duration-300 hover:rotate-180"
                                     >
                                         <X className="w-6 h-6" />
                                     </button>

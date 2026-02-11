@@ -298,7 +298,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                     </div>
                                     <div>
                                         <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter">
-                                            GEM <span className={`text-${themeColor}-400 transition-colors duration-500`}>STORE V2</span>
+                                            GEM <span className={`text-${themeColor}-400 transition-colors duration-500`}>STORE</span>
                                         </h2>
                                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-2">
                                             <ShieldCheck className={`w-4 h-4 text-${themeColor}-500 transition-colors duration-500`} /> Secure {selectedMethod === 'paypal' ? 'PayPal' : selectedMethod === 'maya' ? 'Maya' : 'GCash'} Transaction
@@ -308,7 +308,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
 
                                 <button
                                     onClick={handleClose}
-                                    className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors group"
+                                    className="w-12 h-12 flex items-center justify-center bg-white/5 hover:bg-rose-500 hover:border-rose-500 border border-white/5 rounded-full transition-all duration-300 hover:rotate-180 group"
                                 >
                                     <X className="w-6 h-6 text-slate-400 group-hover:text-white" />
                                 </button>

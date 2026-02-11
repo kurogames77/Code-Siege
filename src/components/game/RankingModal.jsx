@@ -144,9 +144,9 @@ const RankingModal = ({ isOpen, onClose, onEnterDuel, onJoinMultiplayer }) => {
                             </div>
                             <button
                                 onClick={() => { playCancel(); onClose(); }}
-                                className="absolute right-0 top-0 p-2.5 bg-slate-800/50 hover:bg-rose-500 border border-white/10 hover:border-rose-500 text-slate-400 hover:text-white rounded-full transition-all duration-300 hover:rotate-90"
+                                className="absolute right-0 top-0 w-12 h-12 flex items-center justify-center bg-slate-800/50 hover:bg-rose-500 border border-white/10 hover:border-rose-500 text-slate-400 hover:text-white rounded-full transition-all duration-300 hover:rotate-180"
                             >
-                                <X className="w-8 h-8" />
+                                <X className="w-6 h-6" />
                             </button>
                         </div>
 

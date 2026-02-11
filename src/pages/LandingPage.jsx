@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Shield, GraduationCap, User, Mail, Lock, BookOpen, ChevronLeft, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Shield, GraduationCap, User, Mail, Lock, BookOpen, ChevronLeft, Loader2, AlertCircle, Eye, EyeOff, Trophy, Swords, Users, Castle } from 'lucide-react';
+import { useRef } from 'react';
 import '../styles/landing-page.css';
 import nameImage from '../assets/name.png';
 import gameIcon from '../assets/icongame.png';
@@ -32,6 +33,27 @@ const LandingPage = () => {
         setSignupSuccess(false);
         resetForm();
     };
+
+    useEffect(() => {
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal').forEach(el => {
+            observer.observe(el);
+        });
+
+        return () => observer.disconnect();
+    }, []);
 
     const openLogin = (role = 'student') => {
         setModal({ type: 'login', role });
@@ -224,9 +246,52 @@ const LandingPage = () => {
                         </button>
                     </div>
                 </div>
-
-
             </section>
+
+            {/* Features Section (About) */}
+            < section id="about" className="landing-features" >
+                <div className="features-content">
+                    <div className="features-header reveal">
+                        <span className="hero-eyebrow">GAME FEATURES</span>
+                        <h2 className="features-title">UNLEASH YOUR <span className="accent">POTENTIAL</span></h2>
+                        <p className="features-subtitle">Master the art of coding through immersive gameplay, strategic battles, and a global ranking system.</p>
+                    </div>
+
+                    <div className="features-grid">
+                        <div className="feature-card reveal" style={{ '--index': 1 }}>
+                            <div className="feature-icon-wrapper">
+                                <Castle className="feature-icon" />
+                            </div>
+                            <h3>Immersive Campaign</h3>
+                            <p>Conquer 6 unique towers, from the novice fields of Eldoria to the abstract realms of Aeterd. Master algorithms to ascend.</p>
+                        </div>
+
+                        <div className="feature-card reveal" style={{ '--index': 2 }}>
+                            <div className="feature-icon-wrapper">
+                                <Users className="feature-icon" />
+                            </div>
+                            <h3>Diverse Heroes</h3>
+                            <p>Command a roster of warrior, mage, and rogue coders. Unlock powerful heroes like Valerius and Nyx, each with unique traits.</p>
+                        </div>
+
+                        <div className="feature-card reveal" style={{ '--index': 3 }}>
+                            <div className="feature-icon-wrapper">
+                                <Swords className="feature-icon" />
+                            </div>
+                            <h3>Global Warfare</h3>
+                            <p>Test your code in real-time. Dominate high-stakes 1v1 Duels or compete in massive Multiplayer battles for glory.</p>
+                        </div>
+
+                        <div className="feature-card reveal" style={{ '--index': 4 }}>
+                            <div className="feature-icon-wrapper">
+                                <Trophy className="feature-icon" />
+                            </div>
+                            <h3>Rank Hierarchy</h3>
+                            <p>Climb the ladder from a humble Siege Novice to the godlike status of Siege Deity. Your code determines your rank.</p>
+                        </div>
+                    </div>
+                </div>
+            </section >
 
             {modal?.type === 'signup' && (
                 <div className="landing-modal" role="dialog" aria-modal="true" aria-labelledby="signup-title">
@@ -393,119 +458,121 @@ const LandingPage = () => {
                 </div>
             )}
 
-            {modal?.type === 'login' && (
-                <div className="landing-modal" role="dialog" aria-modal="true" aria-labelledby="login-title">
-                    <div className="landing-modal__panel landing-modal__panel--login">
-                        <button className="landing-modal__back" type="button" onClick={closeModal}>
-                            <ChevronLeft className="landing-modal__back-icon" />
-                            Back
-                        </button>
-                        <div className="landing-modal__header" id="login-title">
-                            <div className="landing-modal__heading">
-                                <h2>Welcome Back, Knight</h2>
-                            </div>
-                        </div>
-
-                        <div className="landing-modal__roles landing-modal__roles--compact" role="radiogroup" aria-label="Select role">
-                            <button
-                                type="button"
-                                className={`landing-modal__role ${modal.role === 'student' ? 'is-active' : ''}`}
-                                onClick={() => updateRole('student')}
-                            >
-                                <GraduationCap />
-                                Student
+            {
+                modal?.type === 'login' && (
+                    <div className="landing-modal" role="dialog" aria-modal="true" aria-labelledby="login-title">
+                        <div className="landing-modal__panel landing-modal__panel--login">
+                            <button className="landing-modal__back" type="button" onClick={closeModal}>
+                                <ChevronLeft className="landing-modal__back-icon" />
+                                Back
                             </button>
-                            <button
-                                type="button"
-                                className={`landing-modal__role ${modal.role === 'teacher' ? 'is-active' : ''}`}
-                                onClick={() => updateRole('teacher')}
-                            >
-                                <User />
-                                Instructor
-                            </button>
-                        </div>
-
-                        {error && (
-                            <div className="landing-modal__error">
-                                <AlertCircle size={16} />
-                                {error}
+                            <div className="landing-modal__header" id="login-title">
+                                <div className="landing-modal__heading">
+                                    <h2>Welcome Back, Knight</h2>
+                                </div>
                             </div>
-                        )}
 
-                        <form className="landing-modal__form" onSubmit={handleSubmit}>
-                            {modal.role === 'student' ? (
-                                <label className="landing-modal__field">
-                                    <span className="landing-modal__label">Student ID</span>
-                                    <div className="landing-modal__input">
-                                        <User />
-                                        <input
-                                            type="text"
-                                            required
-                                            placeholder="Enter your Student ID"
-                                            value={studentId}
-                                            onChange={(e) => setStudentId(e.target.value)}
-                                        />
-                                    </div>
-                                </label>
-                            ) : (
-                                <label className="landing-modal__field">
-                                    <span className="landing-modal__label">Instructor ID</span>
-                                    <div className="landing-modal__input">
-                                        <User />
-                                        <input
-                                            type="text"
-                                            required
-                                            placeholder="Enter your Instructor ID"
-                                            value={instructorId}
-                                            onChange={(e) => setInstructorId(e.target.value)}
-                                        />
-                                    </div>
-                                </label>
+                            <div className="landing-modal__roles landing-modal__roles--compact" role="radiogroup" aria-label="Select role">
+                                <button
+                                    type="button"
+                                    className={`landing-modal__role ${modal.role === 'student' ? 'is-active' : ''}`}
+                                    onClick={() => updateRole('student')}
+                                >
+                                    <GraduationCap />
+                                    Student
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`landing-modal__role ${modal.role === 'teacher' ? 'is-active' : ''}`}
+                                    onClick={() => updateRole('teacher')}
+                                >
+                                    <User />
+                                    Instructor
+                                </button>
+                            </div>
+
+                            {error && (
+                                <div className="landing-modal__error">
+                                    <AlertCircle size={16} />
+                                    {error}
+                                </div>
                             )}
 
-                            <label className="landing-modal__field">
-                                <span className="landing-modal__label">Password</span>
-                                <div className="landing-modal__input">
-                                    <Lock />
-                                    <input
-                                        type={showPassword ? 'text' : 'password'}
-                                        required
-                                        placeholder="Enter your password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="p-1 hover:text-white text-slate-400 transition-colors"
-                                    >
-                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                    </button>
-                                </div>
-                            </label>
-
-                            <button className="landing-modal__submit" type="submit" disabled={loading}>
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="animate-spin" size={18} />
-                                        Logging in...
-                                    </>
+                            <form className="landing-modal__form" onSubmit={handleSubmit}>
+                                {modal.role === 'student' ? (
+                                    <label className="landing-modal__field">
+                                        <span className="landing-modal__label">Student ID</span>
+                                        <div className="landing-modal__input">
+                                            <User />
+                                            <input
+                                                type="text"
+                                                required
+                                                placeholder="Enter your Student ID"
+                                                value={studentId}
+                                                onChange={(e) => setStudentId(e.target.value)}
+                                            />
+                                        </div>
+                                    </label>
                                 ) : (
-                                    'Login'
+                                    <label className="landing-modal__field">
+                                        <span className="landing-modal__label">Instructor ID</span>
+                                        <div className="landing-modal__input">
+                                            <User />
+                                            <input
+                                                type="text"
+                                                required
+                                                placeholder="Enter your Instructor ID"
+                                                value={instructorId}
+                                                onChange={(e) => setInstructorId(e.target.value)}
+                                            />
+                                        </div>
+                                    </label>
                                 )}
-                            </button>
-                        </form>
 
-                        <div className="landing-modal__footnote">
-                            <span>Need a new account?</span>
-                            <button type="button" onClick={() => openSignup(modal.role)}>
-                                Sign Up
-                            </button>
+                                <label className="landing-modal__field">
+                                    <span className="landing-modal__label">Password</span>
+                                    <div className="landing-modal__input">
+                                        <Lock />
+                                        <input
+                                            type={showPassword ? 'text' : 'password'}
+                                            required
+                                            placeholder="Enter your password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="p-1 hover:text-white text-slate-400 transition-colors"
+                                        >
+                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    </div>
+                                </label>
+
+                                <button className="landing-modal__submit" type="submit" disabled={loading}>
+                                    {loading ? (
+                                        <>
+                                            <Loader2 className="animate-spin" size={18} />
+                                            Logging in...
+                                        </>
+                                    ) : (
+                                        'Login'
+                                    )}
+                                </button>
+                            </form>
+
+                            <div className="landing-modal__footnote">
+                                <span>Need a new account?</span>
+                                <button type="button" onClick={() => openSignup(modal.role)}>
+                                    Sign Up
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

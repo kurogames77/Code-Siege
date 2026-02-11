@@ -274,7 +274,7 @@ const HeroesModal = ({ isOpen, onClose, userLevel = 24 }) => {
 
                                     <button
                                         onClick={() => { playCancel(); onClose(); }}
-                                        className="p-2 bg-slate-800/50 hover:bg-rose-500 border border-white/10 hover:border-rose-500 text-slate-400 hover:text-white rounded-full transition-all duration-500 hover:rotate-180"
+                                        className="w-12 h-12 flex items-center justify-center bg-slate-800/50 hover:bg-rose-500 border border-white/10 hover:border-rose-500 text-slate-400 hover:text-white rounded-full transition-all duration-300 hover:rotate-180"
                                     >
                                         <X className="w-6 h-6" />
                                     </button>

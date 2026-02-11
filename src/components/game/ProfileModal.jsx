@@ -553,9 +553,9 @@ const ProfileModal = ({ isOpen, onClose }) => {
                             {/* Close Button */}
                             <button
                                 onClick={onClose}
-                                className="absolute top-8 right-8 p-2.5 bg-slate-800/50 hover:bg-rose-500 border border-white/10 hover:border-rose-500 text-slate-400 hover:text-white rounded-full transition-all duration-300 hover:rotate-90 z-50"
+                                className="absolute top-8 right-8 w-12 h-12 flex items-center justify-center bg-slate-800/50 hover:bg-rose-500 border border-white/10 hover:border-rose-500 text-slate-400 hover:text-white rounded-full transition-all duration-300 hover:rotate-180 z-50"
                             >
-                                <X className="w-8 h-8" />
+                                <X className="w-6 h-6" />
                             </button>
 
                             {/* Content Renders */}
