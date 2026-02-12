@@ -268,8 +268,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                         {/* HEADER */}
                         <div className="h-20 flex items-center justify-between px-8 border-b border-white/10 bg-black/40 backdrop-blur-md relative">
                             {/* Left: Back Button */}
-                            <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-lg transition-colors z-20 relative">
-                                <X className="w-6 h-6 text-slate-400" />
+                            <button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-full border border-slate-600 hover:border-red-500 hover:bg-red-500/20 transition-all duration-300 group z-20 relative">
+                                <X className="w-5 h-5 text-slate-400 group-hover:text-red-400 transition-transform duration-300 group-hover:rotate-90" />
                             </button>
 
                             {/* Center: Title info & Timer */}

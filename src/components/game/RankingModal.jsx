@@ -136,7 +136,7 @@ const RankingModal = ({ isOpen, onClose, onEnterDuel, onJoinMultiplayer }) => {
                                     <div className="flex items-center gap-3 opacity-80">
                                         <div className={`h-[2px] w-12 bg-gradient-to-r from-transparent to-${currentTheme.colors.primary}-500/50`} />
                                         <p className={`text-xs text-${currentTheme.colors.primary}-400 font-bold uppercase tracking-[0.4em] flex items-center gap-2`}>
-                                            <Trophy className="w-3 h-3" /> Execute Combat Protocol
+                                            <Trophy className="w-3 h-3" /> 1v1 Duel or Multiplayer
                                         </p>
                                         <div className={`h-[2px] w-12 bg-gradient-to-l from-transparent to-${currentTheme.colors.primary}-500/50`} />
                                     </div>
@@ -159,10 +159,10 @@ const RankingModal = ({ isOpen, onClose, onEnterDuel, onJoinMultiplayer }) => {
                                 delay={0.1}
                             >
                                 {{
-                                    icon: <Swords className="w-10 h-10" />,
+                                    icon: <Swords className="w-14 h-14" />,
                                     title: "1v1 Duel",
                                     description: "Execute high-speed logic battles against a single opponent. Winner takes all in this high-stakes debugging match.",
-                                    buttonText: "Initialize Duel"
+                                    buttonText: "Join 1v1"
                                 }}
                             </TiltCard>
 
@@ -172,10 +172,10 @@ const RankingModal = ({ isOpen, onClose, onEnterDuel, onJoinMultiplayer }) => {
                                 delay={0.2}
                             >
                                 {{
-                                    icon: <Users className="w-10 h-10" />,
+                                    icon: <Users className="w-14 h-14" />,
                                     title: "Multiplayer",
                                     description: "Join the global mainframe and compete with multiple coders simultaneously in a battle for leaderboard dominance.",
-                                    buttonText: "Join Mainframe"
+                                    buttonText: "Join Multiplayer"
                                 }}
                             </TiltCard>
 

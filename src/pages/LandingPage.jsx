@@ -5,6 +5,10 @@ import { useRef } from 'react';
 import '../styles/landing-page.css';
 import nameImage from '../assets/name.png';
 import gameIcon from '../assets/icongame.png';
+import towerIcon from '../assets/tower11.png';
+import heroesIcon from '../assets/heroes.png';
+import battleIcon from '../assets/doorbattle.png';
+import rankingIcon from '../assets/ranking.png';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
 
@@ -260,7 +264,7 @@ const LandingPage = () => {
                     <div className="features-grid">
                         <div className="feature-card reveal" style={{ '--index': 1 }}>
                             <div className="feature-icon-wrapper">
-                                <Castle className="feature-icon" />
+                                <img src={towerIcon} alt="Campaign" className="feature-icon-img" />
                             </div>
                             <h3>Immersive Campaign</h3>
                             <p>Conquer 6 unique towers, from the novice fields of Eldoria to the abstract realms of Aeterd. Master algorithms to ascend.</p>
@@ -268,7 +272,7 @@ const LandingPage = () => {
 
                         <div className="feature-card reveal" style={{ '--index': 2 }}>
                             <div className="feature-icon-wrapper">
-                                <Users className="feature-icon" />
+                                <img src={heroesIcon} alt="Heroes" className="feature-icon-img" />
                             </div>
                             <h3>Diverse Heroes</h3>
                             <p>Command a roster of warrior, mage, and rogue coders. Unlock powerful heroes like Valerius and Nyx, each with unique traits.</p>
@@ -276,7 +280,7 @@ const LandingPage = () => {
 
                         <div className="feature-card reveal" style={{ '--index': 3 }}>
                             <div className="feature-icon-wrapper">
-                                <Swords className="feature-icon" />
+                                <img src={battleIcon} alt="Warfare" className="feature-icon-img" />
                             </div>
                             <h3>Global Warfare</h3>
                             <p>Test your code in real-time. Dominate high-stakes 1v1 Duels or compete in massive Multiplayer battles for glory.</p>
@@ -284,7 +288,7 @@ const LandingPage = () => {
 
                         <div className="feature-card reveal" style={{ '--index': 4 }}>
                             <div className="feature-icon-wrapper">
-                                <Trophy className="feature-icon" />
+                                <img src={rankingIcon} alt="Ranking" className="feature-icon-img" />
                             </div>
                             <h3>Rank Hierarchy</h3>
                             <p>Climb the ladder from a humble Siege Novice to the godlike status of Siege Deity. Your code determines your rank.</p>

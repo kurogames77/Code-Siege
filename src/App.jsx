@@ -19,7 +19,7 @@ import InstructorPage from './pages/InstructorPage';
 import AdminPage from './pages/AdminPage';
 import ConfirmationPage from './pages/ConfirmationPage';
 import PaymentCallbackPage from './pages/PaymentCallbackPage';
-import TestPaymentPage from './pages/TestPaymentPage';
+
 import './index.css';
 
 import { MusicProvider } from './contexts/MusicContext';
@@ -41,6 +41,13 @@ const queryClient = new QueryClient({
 });
 
 import { QuestProvider } from './contexts/QuestContext';
+import useInactivityTimeout from './hooks/useInactivityTimeout';
+
+// Wrapper component to activate inactivity timeout globally
+const InactivityGuard = ({ children }) => {
+  useInactivityTimeout();
+  return children;
+};
 
 function App() {
   return (
@@ -54,29 +61,31 @@ function App() {
                   <GlobalAudioControl />
                   <MainMusicPlayer />
                   <ThemeOverlay />
-                  <Routes>
-                    <Route path="/" element={<LandingPage />} />
-                    <Route path="/play" element={<PlayPage />} />
-                    <Route path="/tower/:id" element={<TowerView />} />
-                    <Route path="/tower-tydorin" element={<TowerTydorinView />} />
-                    <Route path="/gamecode-tydorin/:floor/:towerId" element={<GameCodeTydorin />} />
-                    <Route path="/tower-shadow" element={<TowerShadowView />} />
-                    <Route path="/gamecode-shadow/:floor/:towerId" element={<GameCodeShadow />} />
-                    <Route path="/gamecode/:floor/:towerId" element={<GameCode />} />
-                    <Route path="/arena-battle/:battleId" element={<ArenaBattle />} />
-                    <Route path="/grand-arena/:battleId" element={<GrandArena />} />
-                    <Route path="/instructor" element={<InstructorPage />} />
-                    <Route path="/ConfirmationPage" element={<ConfirmationPage />} />
-                    <Route path="/admin" element={<AdminPage />} />
-                    <Route path="/tower-prytody" element={<TowerPrytodyView />} />
-                    <Route path="/gamecode-prytody/:floor/:towerId" element={<GameCodePrytody />} />
-                    <Route path="/tower-abyss" element={<TowerAbyssView />} />
-                    <Route path="/gamecode-abyss/:floor/:towerId" element={<GameCodeAbyss />} />
-                    <Route path="/tower-aeterd" element={<TowerAeterdView />} />
-                    <Route path="/gamecode-aeterd/:floor/:towerId" element={<GameCodeAeterd />} />
-                    <Route path="/test-payment" element={<TestPaymentPage />} />
-                    <Route path="/payment-callback" element={<PaymentCallbackPage />} />
-                  </Routes>
+                  <InactivityGuard>
+                    <Routes>
+                      <Route path="/" element={<LandingPage />} />
+                      <Route path="/play" element={<PlayPage />} />
+                      <Route path="/tower/:id" element={<TowerView />} />
+                      <Route path="/tower-tydorin" element={<TowerTydorinView />} />
+                      <Route path="/gamecode-tydorin/:floor/:towerId" element={<GameCodeTydorin />} />
+                      <Route path="/tower-shadow" element={<TowerShadowView />} />
+                      <Route path="/gamecode-shadow/:floor/:towerId" element={<GameCodeShadow />} />
+                      <Route path="/gamecode/:floor/:towerId" element={<GameCode />} />
+                      <Route path="/arena-battle/:battleId" element={<ArenaBattle />} />
+                      <Route path="/grand-arena/:battleId" element={<GrandArena />} />
+                      <Route path="/instructor" element={<InstructorPage />} />
+                      <Route path="/ConfirmationPage" element={<ConfirmationPage />} />
+                      <Route path="/admin" element={<AdminPage />} />
+                      <Route path="/tower-prytody" element={<TowerPrytodyView />} />
+                      <Route path="/gamecode-prytody/:floor/:towerId" element={<GameCodePrytody />} />
+                      <Route path="/tower-abyss" element={<TowerAbyssView />} />
+                      <Route path="/gamecode-abyss/:floor/:towerId" element={<GameCodeAbyss />} />
+                      <Route path="/tower-aeterd" element={<TowerAeterdView />} />
+                      <Route path="/gamecode-aeterd/:floor/:towerId" element={<GameCodeAeterd />} />
+
+                      <Route path="/payment-callback" element={<PaymentCallbackPage />} />
+                    </Routes>
+                  </InactivityGuard>
                 </QuestProvider>
               </ThemeProvider>
             </UserProvider>

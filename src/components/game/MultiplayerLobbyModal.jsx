@@ -371,8 +371,8 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                         <div className="h-16 flex items-center justify-between px-8 relative z-20">
                             {/* Left: Back & Title */}
                             <div className="flex items-center gap-4">
-                                <button onClick={handleBackClick} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-                                    <X className="w-6 h-6 text-slate-400" />
+                                <button onClick={handleBackClick} className="w-9 h-9 flex items-center justify-center rounded-full border border-slate-600 hover:border-red-500 hover:bg-red-500/20 transition-all duration-300 group">
+                                    <X className="w-5 h-5 text-slate-400 group-hover:text-red-400 transition-transform duration-300 group-hover:rotate-90" />
                                 </button>
                                 <h1 className="text-2xl font-bold text-slate-200 tracking-wide">LOBBY MODE</h1>
                             </div>
