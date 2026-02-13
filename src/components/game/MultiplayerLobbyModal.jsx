@@ -463,12 +463,13 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                                 </div>
 
                                                                 <h3 className={`text-sm font-black italic uppercase tracking-tighter mb-1 truncate w-full text-center drop-shadow-[0_4px_12px_rgba(0,0,0,1)] ${isGrey ? 'text-slate-400' : 'text-white scale-110'}`}>{player.name}</h3>
+                                                                <span className={`text-[10px] font-black uppercase tracking-[0.3em] shadow-black drop-shadow-sm ${isGrey ? 'text-slate-500' : 'text-cyan-400'}`}>{displayRankName}</span>
                                                             </div>
 
                                                             {/* Rank Info - Bottom */}
                                                             <div className="relative z-30 flex flex-col items-center pb-8 mt-auto pointer-events-none w-full">
                                                                 <img src={displayRankIcon} className={`w-12 h-12 object-contain mb-1 drop-shadow-lg ${isGrey ? 'grayscale opacity-50' : ''}`} alt="Rank" />
-                                                                <span className={`text-[10px] font-black uppercase tracking-[0.3em] shadow-black drop-shadow-sm ${isGrey ? 'text-slate-500' : 'text-cyan-400'}`}>{displayRankName}</span>
+
                                                             </div>
 
 
