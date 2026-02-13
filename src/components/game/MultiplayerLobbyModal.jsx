@@ -608,22 +608,22 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                             </div>
 
                             {/* RIGHT SIDEBAR: FRIENDS LIST */}
-                            <div className="w-80 bg-gradient-to-l from-slate-900/80 to-transparent p-6 flex flex-col pt-12">
+                            <div className="w-56 bg-gradient-to-l from-slate-900/80 to-transparent p-4 flex flex-col pt-8 overflow-hidden">
                                 {/* Navigation Tabs */}
-                                <div className="flex items-center justify-center gap-8 mb-8 text-slate-500">
+                                <div className="flex items-center justify-center gap-8 mb-4 text-slate-500">
                                     <div className="flex flex-col items-center gap-1 text-cyan-400">
-                                        <Users className="w-6 h-6" />
+                                        <Users className="w-5 h-5" />
                                         <div className="w-1 h-1 rounded-full bg-cyan-400" />
                                     </div>
                                 </div>
 
                                 {/* Friends Section */}
-                                <div className="flex items-center justify-between text-slate-400 text-xs font-bold uppercase tracking-wider mb-4 px-2">
+                                <div className="flex items-center justify-between text-slate-400 text-xs font-bold uppercase tracking-wider mb-3 px-2">
                                     <span>Friends</span>
                                     <ChevronDown className="w-4 h-4" />
                                 </div>
 
-                                <div className="space-y-2 mb-6">
+                                <div className="flex-1 overflow-y-auto space-y-2 mb-4 custom-scrollbar">
                                     {friends.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center py-6 text-center">
                                             <User className="w-8 h-8 text-slate-700 mb-2" />
@@ -665,11 +665,11 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                 </div>
 
                                 {/* Offline Section */}
-                                <div className="flex items-center justify-between text-slate-400 text-xs font-bold uppercase tracking-wider mb-4 px-2 border-t border-white/5 pt-4">
+                                <div className="flex items-center justify-between text-slate-400 text-xs font-bold uppercase tracking-wider mb-3 px-2 border-t border-white/5 pt-3">
                                     <span>Offline</span>
                                 </div>
 
-                                <div className="space-y-2 opacity-60">
+                                <div className="space-y-2 opacity-60 overflow-y-auto custom-scrollbar">
                                     {offlineFriends.map(friend => {
                                         const rank = getRank(friend.rankId);
                                         return (

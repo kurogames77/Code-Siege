@@ -400,11 +400,11 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
 
                                                 {/* User Info - Overlayed by Hero but text kept readable */}
                                                 <div className="mt-auto relative z-20 flex flex-col items-center mb-8 pointer-events-none">
-                                                    <div className={`w-16 h-16 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md overflow-hidden mb-3 transition-all duration-500 ${isUserReady || matchState === 'idle' ? 'border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)] scale-110' : 'border-slate-500'}`}>
+                                                    <div className={`w-20 h-20 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md overflow-hidden mb-3 transition-all duration-500 ${isUserReady || matchState === 'idle' ? 'border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)] scale-110' : 'border-slate-500'}`}>
                                                         <img src={user.avatar} className="w-full h-full object-cover" alt="Avatar" />
                                                     </div>
-                                                    <h2 className="text-xl font-black text-white italic uppercase tracking-tighter drop-shadow-[0_4px_12px_rgba(0,0,0,1)]">{user.name}</h2>
-                                                    <div className={`text-[10px] font-black uppercase tracking-[0.4em] mt-1 drop-shadow-lg ${isUserReady || matchState === 'idle' ? 'text-cyan-400' : 'text-slate-500'}`}>
+                                                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter drop-shadow-[0_4px_12px_rgba(0,0,0,1)]">{user.name}</h2>
+                                                    <div className={`text-xs font-black uppercase tracking-[0.3em] mt-1.5 drop-shadow-lg flex items-center gap-1.5 ${isUserReady || matchState === 'idle' ? 'text-cyan-400' : 'text-slate-500'}`}>
                                                         {user.rankName}
                                                     </div>
                                                 </div>
@@ -660,9 +660,9 @@ const AddFriendModal = ({ isOpen, onClose, mode }) => {
                     </div>
                     <button
                         onClick={() => { playClick(); onClose(); }}
-                        className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white"
+                        className="p-2 hover:bg-red-500/20 rounded-full transition-all duration-300 text-slate-400 hover:text-red-400 group"
                     >
-                        <X className="w-5 h-5" />
+                        <X className="w-5 h-5 transition-transform duration-300 group-hover:rotate-90" />
                     </button>
                 </div>
 
