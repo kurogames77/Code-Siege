@@ -377,18 +377,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
 
                                             <div className="absolute inset-0 flex flex-col">
                                                 {/* User Info - Top */}
-                                                <div className="relative z-20 flex flex-col items-center pt-8 pointer-events-none">
-                                                    <div className={`w-28 h-28 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md relative mb-3 transition-all duration-500 ${isUserReady || matchState === 'idle' ? 'border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)] scale-110' : 'border-slate-500'}`}>
-                                                        <img src={user.avatar} className="w-full h-full object-cover rounded-lg" alt="Avatar" />
-                                                        <div className="absolute -bottom-2.5 -right-2.5 bg-slate-900 rounded-full p-0.5 border border-slate-700">
-                                                            <img src={user.rankIcon} className="w-8 h-8 rounded-full object-contain" alt="Rank" />
-                                                        </div>
-                                                    </div>
-                                                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter drop-shadow-[0_4px_12px_rgba(0,0,0,1)]">{user.name}</h2>
-                                                    <div className={`text-xs font-black uppercase tracking-[0.3em] mt-1.5 drop-shadow-lg flex items-center gap-1.5 ${isUserReady || matchState === 'idle' ? 'text-cyan-400' : 'text-slate-500'}`}>
-                                                        {user.rankName}
-                                                    </div>
-                                                </div>
+
 
                                                 {/* Hero Image - Full Body */}
                                                 <div className="absolute inset-x-0 bottom-0 h-2/3 z-10 pointer-events-none flex items-end justify-center overflow-hidden">
@@ -412,7 +401,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                     <div className={`w-24 h-24 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md relative mb-3 transition-all duration-500 ${isUserReady || matchState === 'idle' ? 'border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)] scale-110' : 'border-slate-500'}`}>
                                                         <img src={user.avatar} className="w-full h-full object-cover rounded-lg" alt="Avatar" />
                                                         <div className="absolute -bottom-2.5 -right-2.5 p-0.5">
-                                                            <img src={user.rankIcon} className="w-8 h-8 rounded-full object-contain" alt="Rank" />
+                                                            <img src={user.rankIcon} className="w-12 h-12 rounded-full object-contain" alt="Rank" />
                                                         </div>
                                                     </div>
                                                     <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter drop-shadow-[0_4px_12px_rgba(0,0,0,1)]">{user.name}</h2>
@@ -459,7 +448,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
 
 
 
-                                                    <div className="absolute inset-0 flex flex-col pt-8">
+                                                    <div className="absolute inset-0 flex flex-col">
                                                         {/* Hero - Full Body */}
                                                         <div className="absolute inset-0 z-10 pointer-events-none flex items-end justify-center overflow-hidden">
                                                             <motion.img
@@ -480,7 +469,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                             <div className={`w-24 h-24 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md relative mb-3 transition-all duration-500 ${isOpponentReady ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.6)] scale-110' : 'border-slate-500'}`}>
                                                                 <img src={opponent.avatar} className="w-full h-full object-cover rounded-lg" alt="Avatar" />
                                                                 <div className="absolute -bottom-2.5 -right-2.5 p-0.5">
-                                                                    <img src={opponent.rankIcon} className="w-8 h-8 rounded-full object-contain" alt="Rank" />
+                                                                    <img src={opponent.rankIcon} className="w-12 h-12 rounded-full object-contain" alt="Rank" />
                                                                 </div>
                                                             </div>
                                                             <h2 className="text-xl font-black text-white italic uppercase tracking-tighter drop-shadow-[0_4px_12px_rgba(0,0,0,1)] scale-110">{opponent.name}</h2>
