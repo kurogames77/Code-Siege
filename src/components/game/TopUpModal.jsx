@@ -506,33 +506,18 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                                     />
                                                 </div>
                                             ) : (
-                                                /* SIMULATED GCASH/MAYA FORM */
-                                                /* REAL PAYMONGO CHECKOUT */
                                                 <div className="space-y-6">
                                                     <div className="bg-white/5 p-4 rounded-xl border border-white/10 mb-4">
-                                                        <p className="text-xs text-slate-400 mb-2 font-bold uppercase tracking-widest">Test Mode Active</p>
+                                                        <p className="text-xs text-slate-400 mb-2 font-bold uppercase tracking-widest">Secure Payment</p>
                                                         <p className="text-[10px] text-slate-500">
-                                                            You will be redirected to a secure <strong>PayMongo Sandbox Page</strong>.
-                                                            <br />No real money will be deducted.
+                                                            You will be redirected to a secure <strong>PayMongo Checkout Page</strong>.
+                                                            <br />Complete your payment there to receive your gems.
                                                         </p>
                                                     </div>
 
                                                     <button
                                                         onClick={() => {
-                                                            playClick();
-                                                            // For Test Mode, redirect to our mock page
-                                                            const paymentMethodData = {
-                                                                amount: selectedPackage.numericPrice * 100,
-                                                                description: `${selectedPackage.gems} Gems Application Purchase`,
-                                                                gems: selectedPackage.gems,
-                                                                bonus: selectedPackage.bonus,
-                                                                prevBonus: selectedPackage.prevBonus,
-                                                                method: selectedMethod,
-                                                                flow: 'checkout',
-                                                                sessionId: 'test_session_' + Date.now()
-                                                            };
-                                                            localStorage.setItem('pending_payment', JSON.stringify(paymentMethodData));
-                                                            window.location.href = '/payment-callback';
+                                                            handlePayMongoPayment();
                                                         }}
                                                         className={`w-full py-4 rounded-xl bg-${themeColor}-600 hover:bg-${themeColor}-500 text-white font-black uppercase tracking-widest shadow-lg shadow-${themeColor}-600/20 active:scale-95 transition-all flex items-center justify-center gap-2`}
                                                     >
@@ -597,7 +582,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                     </div>
                 )}
             </AnimatePresence>
-        </PayPalWrapper>
+        </PayPalWrapper >
     );
 };
 
