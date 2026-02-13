@@ -430,7 +430,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                             <div key={i} className="relative group">
                                                 {/* Banner Shape */}
                                                 <div
-                                                    className={`w-48 h-[500px] relative flex flex-col transition-all duration-300 ${player
+                                                    className={`w-48 h-[600px] relative flex flex-col transition-all duration-300 ${player
                                                         ? (isGrey ? 'bg-slate-800 border-t-4 border-slate-600 grayscale' : 'bg-gradient-to-b from-cyan-900/80 to-blue-900/80 border-t-4 border-cyan-400')
                                                         : 'bg-slate-800/40 border-t-4 border-slate-600/40'
                                                         }`}
@@ -439,7 +439,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                     {player ? (
                                                         <div className={`flex flex-col items-center pt-8 px-4 h-full relative z-10 ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
                                                             {/* Hero Image - Full Body */}
-                                                            <div className="absolute inset-0 z-0 pointer-events-none flex items-end justify-center overflow-hidden">
+                                                            <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center overflow-hidden">
                                                                 <motion.img
                                                                     initial={{ scale: 1.0, y: 50 }}
                                                                     animate={{
@@ -447,7 +447,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                                         y: isGrey ? 20 : 0
                                                                     }}
                                                                     src={player.heroImage || player.avatar}
-                                                                    className={`w-full h-full object-cover object-top transition-all duration-700 ${isGrey ? 'brightness-50 grayscale' : 'drop-shadow-[0_20px_50px_rgba(34,211,238,0.4)] brightness-110'}`}
+                                                                    className={`w-full h-full object-contain transition-all duration-700 ${isGrey ? 'brightness-50 grayscale' : 'drop-shadow-[0_20px_50px_rgba(34,211,238,0.4)] brightness-110'}`}
                                                                     alt="Hero"
                                                                 />
                                                                 <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent" />
