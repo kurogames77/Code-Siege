@@ -380,12 +380,12 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
 
 
                                                 {/* Hero Image - Full Body */}
-                                                <div className="absolute inset-x-0 bottom-0 h-2/3 z-10 pointer-events-none flex items-end justify-center overflow-hidden">
+                                                <div className="absolute inset-x-0 bottom-0 h-4/5 z-10 pointer-events-none flex items-end justify-center overflow-hidden">
                                                     <motion.img
                                                         initial={{ scale: 1.0, y: 50 }}
                                                         animate={{
-                                                            scale: (isUserReady || matchState === 'idle') ? 1.05 : 0.9,
-                                                            y: (isUserReady || matchState === 'idle') ? 20 : -30
+                                                            scale: (isUserReady || matchState === 'idle') ? 1.0 : 0.9,
+                                                            y: (isUserReady || matchState === 'idle') ? 10 : 40
                                                         }}
                                                         src={currentHeroImage}
                                                         className={`w-full h-full object-contain transition-all duration-700 ${isUserReady || matchState === 'idle' ? 'drop-shadow-[0_20px_50px_rgba(34,211,238,0.5)] brightness-110' : 'brightness-50 grayscale'}`}
@@ -397,7 +397,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                 </div>
 
                                                 {/* User Info - Top */}
-                                                <div className="relative z-20 flex flex-col items-center pt-6 pointer-events-none">
+                                                <div className="relative z-20 flex flex-col items-center pt-4 pointer-events-none">
                                                     <div className={`w-24 h-24 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md relative mb-3 transition-all duration-500 ${isUserReady || matchState === 'idle' ? 'border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)] scale-110' : 'border-slate-500'}`}>
                                                         <img src={user.avatar} className="w-full h-full object-cover rounded-lg" alt="Avatar" />
                                                         <div className="absolute -bottom-2.5 -right-2.5 p-0.5">
@@ -450,12 +450,12 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
 
                                                     <div className="absolute inset-0 flex flex-col">
                                                         {/* Hero - Full Body */}
-                                                        <div className="absolute inset-0 z-10 pointer-events-none flex items-end justify-center overflow-hidden">
+                                                        <div className="absolute inset-0 z-10 pointer-events-none flex items-end justify-center overflow-hidden h-4/5 bottom-0 top-auto">
                                                             <motion.img
                                                                 initial={{ scale: 1.0, y: 50 }}
                                                                 animate={{
-                                                                    scale: isOpponentReady ? 1.05 : 0.9,
-                                                                    y: isOpponentReady ? 20 : -30
+                                                                    scale: isOpponentReady ? 1.0 : 0.9,
+                                                                    y: isOpponentReady ? 10 : 40
                                                                 }}
                                                                 src={opponent.heroImage || hero2Static}
                                                                 className={`w-full h-full object-contain transition-all duration-700 ${isOpponentReady ? 'drop-shadow-[0_20px_50px_rgba(244,63,94,0.5)] brightness-110' : 'brightness-50 grayscale'}`}
@@ -465,7 +465,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                         </div>
 
                                                         {/* Info - Top */}
-                                                        <div className="relative z-20 flex flex-col items-center pt-6 pointer-events-none">
+                                                        <div className="relative z-20 flex flex-col items-center pt-4 pointer-events-none">
                                                             <div className={`w-24 h-24 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md relative mb-3 transition-all duration-500 ${isOpponentReady ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.6)] scale-110' : 'border-slate-500'}`}>
                                                                 <img src={opponent.avatar} className="w-full h-full object-cover rounded-lg" alt="Avatar" />
                                                                 <div className="absolute -bottom-2.5 -right-2.5 p-0.5">
