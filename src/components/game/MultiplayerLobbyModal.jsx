@@ -459,7 +459,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                                 {/* Avatar Frame */}
                                                                 <div className={`w-24 h-24 rounded-xl border-2 p-0.5 relative mb-3 transition-all duration-500 ${isGrey ? 'border-slate-500 grayscale' : 'border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.5)] scale-110'}`}>
                                                                     <img src={player.avatar} className="w-full h-full object-cover rounded-lg" alt="" />
-                                                                    <div className="absolute -bottom-2.5 -right-2.5 bg-slate-900 rounded-full p-0.5 border border-slate-700">
+                                                                    <div className="absolute -bottom-2.5 -right-2.5 bg-slate-900 rounded-full p-0.5">
                                                                         <img src={displayRankIcon} className="w-6 h-6 rounded-full object-contain" alt="Rank" />
                                                                     </div>
                                                                 </div>
