@@ -468,18 +468,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                                 <span className={`text-[10px] font-black uppercase tracking-[0.3em] shadow-black drop-shadow-sm ${isGrey ? 'text-slate-500' : 'text-cyan-400'}`}>{displayRankName}</span>
                                                             </div>
 
-                                                            {/* Action Spells (Kept but integrated) */}
-                                                            <div className="absolute bottom-10 flex gap-1 z-30">
-                                                                <div className={`w-7 h-7 rounded-full border flex items-center justify-center ${isGrey ? 'bg-slate-700 border-slate-600' : 'bg-emerald-500/20 border-emerald-500 shadow-lg'}`}>
-                                                                    <Zap className={`w-3.5 h-3.5 ${isGrey ? 'text-slate-500' : 'text-emerald-400'}`} />
-                                                                </div>
-                                                                <div className={`w-7 h-7 rounded-full border flex items-center justify-center ${isGrey ? 'bg-slate-700 border-slate-600' : 'bg-purple-500/20 border-purple-500 shadow-lg'}`}>
-                                                                    <Shield className={`w-3.5 h-3.5 ${isGrey ? 'text-slate-500' : 'text-purple-400'}`} />
-                                                                </div>
-                                                                <div className={`w-7 h-7 rounded-full border flex items-center justify-center ${isGrey ? 'bg-slate-700 border-slate-600' : 'bg-rose-500/20 border-rose-500 shadow-lg'}`}>
-                                                                    <Swords className={`w-3.5 h-3.5 ${isGrey ? 'text-slate-500' : 'text-rose-400'}`} />
-                                                                </div>
-                                                            </div>
+
                                                         </div>
                                                     ) : (
                                                         <div className="flex-1 flex flex-col items-center justify-center relative opacity-30">
