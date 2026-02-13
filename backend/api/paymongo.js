@@ -193,8 +193,16 @@ router.post('/create-checkout-session', async (req, res) => {
             return res.status(500).json({ error: 'Server misconfiguration: Missing API Key' });
         }
 
-        // Allow more methods to prevent "No payment methods available" error
-        const paymentMethodTypes = ['gcash', 'paymaya', 'card', 'grab_pay', 'dob', 'billease'];
+        // Filter to selected method if provided, otherwise show all
+        let paymentMethodTypes;
+        if (method === 'gcash') {
+            paymentMethodTypes = ['gcash'];
+        } else if (method === 'paymaya' || method === 'maya') {
+            paymentMethodTypes = ['paymaya'];
+        } else {
+            // Fallback: show all methods
+            paymentMethodTypes = ['gcash', 'paymaya', 'card', 'grab_pay', 'dob', 'billease'];
+        }
 
         const options = {
             method: 'POST',
