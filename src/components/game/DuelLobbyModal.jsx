@@ -375,33 +375,45 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                             {/* Glows only if Ready */}
                                             {(isUserReady || matchState === 'idle') && <div className="absolute top-0 left-0 w-full h-1/2 bg-cyan-500/20 blur-[100px]" />}
 
-                                            {/* Rank Icon */}
-                                            <div className="absolute top-6 right-6 z-20 w-16 h-16 pointer-events-none drop-shadow-lg">
-                                                <img src={user.rankIcon} className="w-full h-full object-contain" alt="Rank" />
-                                            </div>
+                                            <div className="absolute inset-0 flex flex-col">
+                                                {/* User Info - Top */}
+                                                <div className="relative z-20 flex flex-col items-center pt-8 pointer-events-none">
+                                                    <div className={`w-28 h-28 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md relative mb-3 transition-all duration-500 ${isUserReady || matchState === 'idle' ? 'border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)] scale-110' : 'border-slate-500'}`}>
+                                                        <img src={user.avatar} className="w-full h-full object-cover rounded-lg" alt="Avatar" />
+                                                        <div className="absolute -bottom-2.5 -right-2.5 bg-slate-900 rounded-full p-0.5 border border-slate-700">
+                                                            <img src={user.rankIcon} className="w-8 h-8 rounded-full object-contain" alt="Rank" />
+                                                        </div>
+                                                    </div>
+                                                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter drop-shadow-[0_4px_12px_rgba(0,0,0,1)]">{user.name}</h2>
+                                                    <div className={`text-xs font-black uppercase tracking-[0.3em] mt-1.5 drop-shadow-lg flex items-center gap-1.5 ${isUserReady || matchState === 'idle' ? 'text-cyan-400' : 'text-slate-500'}`}>
+                                                        {user.rankName}
+                                                    </div>
+                                                </div>
 
-                                            <div className="absolute inset-0 flex flex-col pt-8">
-                                                {/* Hero Image - Cropped to Upper Body and Floating */}
-                                                <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center overflow-hidden">
+                                                {/* Hero Image - Full Body */}
+                                                <div className="absolute inset-x-0 bottom-0 h-2/3 z-10 pointer-events-none flex items-end justify-center overflow-hidden">
                                                     <motion.img
                                                         initial={{ scale: 1.0, y: 50 }}
                                                         animate={{
-                                                            scale: (isUserReady || matchState === 'idle') ? 1.1 : 0.9,
-                                                            y: (isUserReady || matchState === 'idle') ? -20 : 0
+                                                            scale: (isUserReady || matchState === 'idle') ? 1.05 : 0.9,
+                                                            y: (isUserReady || matchState === 'idle') ? 70 : 20
                                                         }}
                                                         src={currentHeroImage}
-                                                        className={`w-full h-full object-cover object-top transition-all duration-700 ${isUserReady || matchState === 'idle' ? 'drop-shadow-[0_20px_50px_rgba(34,211,238,0.5)] brightness-110' : 'brightness-50 grayscale'}`}
+                                                        className={`w-full h-full object-contain transition-all duration-700 ${isUserReady || matchState === 'idle' ? 'drop-shadow-[0_20px_50px_rgba(34,211,238,0.5)] brightness-110' : 'brightness-50 grayscale'}`}
                                                         alt="Hero"
                                                     />
 
                                                     {/* Vignette to blend edges */}
-                                                    <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent" />
+                                                    <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent" />
                                                 </div>
 
-                                                {/* User Info - Overlayed by Hero but text kept readable */}
-                                                <div className="mt-auto relative z-20 flex flex-col items-center mb-8 pointer-events-none">
-                                                    <div className={`w-20 h-20 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md overflow-hidden mb-3 transition-all duration-500 ${isUserReady || matchState === 'idle' ? 'border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)] scale-110' : 'border-slate-500'}`}>
-                                                        <img src={user.avatar} className="w-full h-full object-cover" alt="Avatar" />
+                                                {/* User Info - Top */}
+                                                <div className="relative z-20 flex flex-col items-center pt-20 pointer-events-none">
+                                                    <div className={`w-24 h-24 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md relative mb-3 transition-all duration-500 ${isUserReady || matchState === 'idle' ? 'border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)] scale-110' : 'border-slate-500'}`}>
+                                                        <img src={user.avatar} className="w-full h-full object-cover rounded-lg" alt="Avatar" />
+                                                        <div className="absolute -bottom-2.5 -right-2.5 bg-slate-900 rounded-full p-0.5 border border-slate-700">
+                                                            <img src={user.rankIcon} className="w-6 h-6 rounded-full object-contain" alt="Rank" />
+                                                        </div>
                                                     </div>
                                                     <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter drop-shadow-[0_4px_12px_rgba(0,0,0,1)]">{user.name}</h2>
                                                     <div className={`text-xs font-black uppercase tracking-[0.3em] mt-1.5 drop-shadow-lg flex items-center gap-1.5 ${isUserReady || matchState === 'idle' ? 'text-cyan-400' : 'text-slate-500'}`}>
@@ -445,31 +457,31 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                 <>
                                                     {isOpponentReady && <div className="absolute top-0 right-0 w-full h-1/2 bg-rose-500/20 blur-[100px]" />}
 
-                                                    {/* Rank Icon */}
-                                                    <div className="absolute top-6 right-6 z-20 w-16 h-16 pointer-events-none drop-shadow-lg">
-                                                        <img src={opponent.rankIcon} className="w-full h-full object-contain" alt="Rank" />
-                                                    </div>
+
 
                                                     <div className="absolute inset-0 flex flex-col pt-8">
-                                                        {/* Hero - Upper Body Crop */}
-                                                        <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center overflow-hidden">
+                                                        {/* Hero - Full Body */}
+                                                        <div className="absolute inset-0 z-10 pointer-events-none flex items-end justify-center overflow-hidden">
                                                             <motion.img
                                                                 initial={{ scale: 1.0, y: 50 }}
                                                                 animate={{
-                                                                    scale: isOpponentReady ? 1.1 : 0.9,
-                                                                    y: isOpponentReady ? -20 : 0
+                                                                    scale: isOpponentReady ? 1.05 : 0.9,
+                                                                    y: isOpponentReady ? 70 : 20
                                                                 }}
                                                                 src={opponent.heroImage || hero2Static}
-                                                                className={`w-full h-full object-cover object-top transition-all duration-700 ${isOpponentReady ? 'drop-shadow-[0_20px_50px_rgba(244,63,94,0.5)] brightness-110' : 'brightness-50 grayscale'}`}
+                                                                className={`w-full h-full object-contain transition-all duration-700 ${isOpponentReady ? 'drop-shadow-[0_20px_50px_rgba(244,63,94,0.5)] brightness-110' : 'brightness-50 grayscale'}`}
                                                                 alt="Hero"
                                                             />
-                                                            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent" />
+                                                            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent" />
                                                         </div>
 
-                                                        {/* Info */}
-                                                        <div className="mt-auto relative z-20 flex flex-col items-center mb-8 pointer-events-none">
-                                                            <div className={`w-16 h-16 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md overflow-hidden mb-3 transition-all duration-500 ${isOpponentReady ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.6)] scale-110' : 'border-slate-500'}`}>
-                                                                <img src={opponent.avatar} className="w-full h-full object-cover" alt="Avatar" />
+                                                        {/* Info - Top */}
+                                                        <div className="relative z-20 flex flex-col items-center pt-20 pointer-events-none">
+                                                            <div className={`w-24 h-24 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md relative mb-3 transition-all duration-500 ${isOpponentReady ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.6)] scale-110' : 'border-slate-500'}`}>
+                                                                <img src={opponent.avatar} className="w-full h-full object-cover rounded-lg" alt="Avatar" />
+                                                                <div className="absolute -bottom-2.5 -right-2.5 bg-slate-900 rounded-full p-0.5 border border-slate-700">
+                                                                    <img src={opponent.rankIcon} className="w-6 h-6 rounded-full object-contain" alt="Rank" />
+                                                                </div>
                                                             </div>
                                                             <h2 className="text-xl font-black text-white italic uppercase tracking-tighter drop-shadow-[0_4px_12px_rgba(0,0,0,1)] scale-110">{opponent.name}</h2>
                                                             <div className={`text-[10px] font-black uppercase tracking-[0.4em] mt-1 drop-shadow-lg ${isOpponentReady ? 'text-rose-400' : 'text-slate-500'}`}>
