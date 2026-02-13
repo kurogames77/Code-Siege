@@ -444,7 +444,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                                     initial={{ scale: 1.0, y: 50 }}
                                                                     animate={{
                                                                         scale: isGrey ? 0.9 : 1.05,
-                                                                        y: isGrey ? 20 : 0
+                                                                        y: isGrey ? 20 : 30
                                                                     }}
                                                                     src={player.heroImage || player.avatar}
                                                                     className={`w-full h-full object-contain transition-all duration-700 ${isGrey ? 'brightness-50 grayscale' : 'drop-shadow-[0_20px_50px_rgba(34,211,238,0.4)] brightness-110'}`}
