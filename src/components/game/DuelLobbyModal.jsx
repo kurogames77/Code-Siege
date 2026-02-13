@@ -408,7 +408,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                 </div>
 
                                                 {/* User Info - Top */}
-                                                <div className="relative z-20 flex flex-col items-center pt-[72px] pointer-events-none">
+                                                <div className="relative z-20 flex flex-col items-center pt-14 pointer-events-none">
                                                     <div className={`w-24 h-24 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md relative mb-3 transition-all duration-500 ${isUserReady || matchState === 'idle' ? 'border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)] scale-110' : 'border-slate-500'}`}>
                                                         <img src={user.avatar} className="w-full h-full object-cover rounded-lg" alt="Avatar" />
                                                         <div className="absolute -bottom-2.5 -right-2.5 bg-slate-900 rounded-full p-0.5 border border-slate-700">
