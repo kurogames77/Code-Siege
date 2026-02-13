@@ -13,6 +13,12 @@ import { useToast } from '../../contexts/ToastContext';
 // PayPal Client ID from env
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
 
+// Conditional wrapper — only loads PayPal SDK when client ID is available
+const PayPalWrapper = ({ children }) => {
+    if (!PAYPAL_CLIENT_ID) return <>{children}</>;
+    return <PayPalScriptProvider options={{ "client-id": PAYPAL_CLIENT_ID, currency: "PHP" }}>{children}</PayPalScriptProvider>;
+};
+
 const TopUpModal = ({ isOpen, onClose }) => {
     const { playClick, playCancel, playSuccess, playError } = useSound();
     const { user, refreshUser } = useUser();
@@ -276,7 +282,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
     const themeColor = getThemeColor(selectedMethod);
 
     return (
-        <PayPalScriptProvider options={{ "client-id": PAYPAL_CLIENT_ID, currency: "PHP" }}>
+        <PayPalWrapper>
             <AnimatePresence>
                 {isOpen && (
                     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md font-galsb">
@@ -591,7 +597,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                     </div>
                 )}
             </AnimatePresence>
-        </PayPalScriptProvider >
+        </PayPalWrapper>
     );
 };
 
