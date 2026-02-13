@@ -455,7 +455,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
 
 
                                                             {/* User Info Overlay */}
-                                                            <div className="relative z-30 flex flex-col items-center pt-14 pointer-events-none w-full">
+                                                            <div className="relative z-30 flex flex-col items-center pt-[60px] pointer-events-none w-full">
                                                                 {/* Avatar Frame */}
                                                                 <div className={`w-24 h-24 rounded-xl border-2 p-0.5 relative mb-3 transition-all duration-500 ${isGrey ? 'border-slate-500 grayscale' : 'border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.5)] scale-110'}`}>
                                                                     <img src={player.avatar} className="w-full h-full object-cover rounded-lg" alt="" />
