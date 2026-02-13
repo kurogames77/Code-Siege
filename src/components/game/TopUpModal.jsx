@@ -532,7 +532,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                                                 sessionId: 'test_session_' + Date.now()
                                                             };
                                                             localStorage.setItem('pending_payment', JSON.stringify(paymentMethodData));
-                                                            window.location.href = '/test-payment';
+                                                            window.location.href = '/payment-callback';
                                                         }}
                                                         className={`w-full py-4 rounded-xl bg-${themeColor}-600 hover:bg-${themeColor}-500 text-white font-black uppercase tracking-widest shadow-lg shadow-${themeColor}-600/20 active:scale-95 transition-all flex items-center justify-center gap-2`}
                                                     >
