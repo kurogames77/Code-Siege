@@ -439,12 +439,12 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                     {player ? (
                                                         <div className={`flex flex-col items-center pt-8 px-4 h-full relative z-10 ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
                                                             {/* Hero Image - Full Body */}
-                                                            <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center overflow-hidden">
+                                                            <div className="absolute inset-0 z-0 pointer-events-none flex items-end justify-center overflow-hidden">
                                                                 <motion.img
                                                                     initial={{ scale: 1.0, y: 50 }}
                                                                     animate={{
                                                                         scale: isGrey ? 0.9 : 1.05,
-                                                                        y: isGrey ? 20 : 30
+                                                                        y: isGrey ? 20 : 70
                                                                     }}
                                                                     src={player.heroImage || player.avatar}
                                                                     className={`w-full h-full object-contain transition-all duration-700 ${isGrey ? 'brightness-50 grayscale' : 'drop-shadow-[0_20px_50px_rgba(34,211,238,0.4)] brightness-110'}`}
