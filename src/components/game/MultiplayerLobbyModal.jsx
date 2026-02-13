@@ -447,16 +447,12 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                                         y: isGrey ? 20 : 0
                                                                     }}
                                                                     src={player.heroImage || player.avatar}
-                                                                    className={`w-full h-[90%] object-contain object-bottom transition-all duration-700 ${isGrey ? 'brightness-50 grayscale' : 'drop-shadow-[0_20px_50px_rgba(34,211,238,0.4)] brightness-110'}`}
+                                                                    className={`w-full h-full object-cover object-top transition-all duration-700 ${isGrey ? 'brightness-50 grayscale' : 'drop-shadow-[0_20px_50px_rgba(34,211,238,0.4)] brightness-110'}`}
                                                                     alt="Hero"
                                                                 />
                                                                 <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent" />
                                                             </div>
 
-                                                            {/* Rank Icon - Upper Right */}
-                                                            <div className={`absolute top-4 right-4 z-40 w-14 h-14 drop-shadow-2xl transition-all duration-500 ${isGrey ? 'opacity-40 grayscale' : 'scale-110'}`}>
-                                                                <img src={displayRankIcon} className="w-full h-full object-contain" alt={displayRankName} />
-                                                            </div>
 
                                                             {/* User Info Overlay */}
                                                             <div className="mt-auto relative z-30 flex flex-col items-center mb-16 pointer-events-none w-full">
