@@ -291,7 +291,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                             initial="hidden"
                             animate="visible"
                             exit="exit"
-                            className="w-full max-w-4xl bg-[#0a0f1a] border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl relative min-h-[600px] flex flex-col"
+                            className="w-full max-w-4xl max-h-[85vh] bg-[#0a0f1a] border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl relative flex flex-col"
                         >
                             {/* Header Background */}
                             <div className={`absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-${themeColor}-900/40 to-cyan-900/40 pointer-events-none transition-colors duration-500`} />
@@ -343,7 +343,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                     </div>
 
                                     {/* Content Grid */}
-                                    <div className="px-8 pb-8 pt-6 h-[50vh] overflow-y-auto custom-scrollbar">
+                                    <div className="px-8 pb-8 pt-6 flex-1 overflow-y-auto custom-scrollbar">
                                         <motion.div
                                             initial="hidden"
                                             animate="visible"
@@ -368,7 +368,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                                         <img
                                                             src={gemIcon}
                                                             alt="Gems"
-                                                            className={`object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition-transform group-hover:scale-110 group-hover:-rotate-3 ${pkg.isFullWidth ? 'w-24 h-24' : 'w-24 h-24'
+                                                            className={`object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition-transform group-hover:scale-110 group-hover:-rotate-3 ${pkg.isFullWidth ? 'w-16 h-16' : 'w-16 h-16'
                                                                 }`}
                                                         />
                                                     </div>
