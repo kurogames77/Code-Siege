@@ -8,7 +8,7 @@ import { Info, Trophy, LayoutGrid } from 'lucide-react';
 import useSound from '../hooks/useSound';
 
 import towerPageBg from '../assets/towerpagebg.jpg';
-import towerFloorBg from '../assets/towerview6.png'; // Aeterd background
+import towerFloorBg from '../assets/TowerView6.png'; // Aeterd background
 import buttonDot from '../assets/buttondot.png';
 
 import arrow from '../assets/arrow.png';
