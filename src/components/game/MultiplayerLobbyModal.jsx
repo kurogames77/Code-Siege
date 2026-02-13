@@ -608,9 +608,9 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                             </div>
 
                             {/* RIGHT SIDEBAR: FRIENDS LIST */}
-                            <div className="w-56 bg-gradient-to-l from-slate-900/80 to-transparent p-4 flex flex-col pt-8 overflow-hidden">
+                            <div className="w-48 bg-gradient-to-l from-slate-900/80 to-transparent p-3 overflow-y-auto pt-6">
                                 {/* Navigation Tabs */}
-                                <div className="flex items-center justify-center gap-8 mb-4 text-slate-500">
+                                <div className="flex items-center justify-center mb-3 text-slate-500">
                                     <div className="flex flex-col items-center gap-1 text-cyan-400">
                                         <Users className="w-5 h-5" />
                                         <div className="w-1 h-1 rounded-full bg-cyan-400" />
@@ -618,45 +618,34 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                 </div>
 
                                 {/* Friends Section */}
-                                <div className="flex items-center justify-between text-slate-400 text-xs font-bold uppercase tracking-wider mb-3 px-2">
+                                <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-2 px-1">
                                     <span>Friends</span>
-                                    <ChevronDown className="w-4 h-4" />
+                                    <ChevronDown className="w-3 h-3" />
                                 </div>
 
-                                <div className="flex-1 overflow-y-auto space-y-2 mb-4 custom-scrollbar">
+                                <div className="space-y-2 mb-3">
                                     {friends.length === 0 ? (
-                                        <div className="flex flex-col items-center justify-center py-6 text-center">
-                                            <User className="w-8 h-8 text-slate-700 mb-2" />
-                                            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">No friends online</p>
+                                        <div className="flex flex-col items-center justify-center py-4 text-center">
+                                            <User className="w-6 h-6 text-slate-700 mb-1" />
+                                            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">No friends online</p>
                                         </div>
                                     ) : (
                                         friends.map(friend => {
                                             const rank = getRank(friend.rankId);
                                             return (
-                                                <div key={friend.id} className="p-2 rounded-lg hover:bg-white/5 flex items-center gap-3 group transition-colors cursor-pointer">
-                                                    <div className="relative">
-                                                        <img src={friend.avatar} className="w-10 h-10 rounded border border-white/20" alt="" />
-                                                        <img src={friend.logo} className="w-3 h-3 rounded-full absolute -top-1 -right-1 border border-black bg-white object-contain" alt="" />
+                                                <div key={friend.id} className="p-1.5 rounded-lg hover:bg-white/5 flex items-center gap-2 group transition-colors cursor-pointer">
+                                                    <div className="relative shrink-0">
+                                                        <img src={friend.avatar} className="w-8 h-8 rounded border border-white/20" alt="" />
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-sm font-bold text-slate-200 truncate">{friend.name}</span>
-                                                            <span className={`text-[10px] px-1 border rounded ${friend.gender === 'female' ? 'bg-pink-500/20 border-pink-500/50 text-pink-400' : 'bg-blue-500/20 border-blue-500/50 text-blue-400'}`}>
-                                                                {friend.gender === 'female' ? '♀' : '♂'}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                                                            <span className="text-amber-500 flex items-center gap-1">
-                                                                <img src={rank.icon} className="w-3 h-3 object-contain" alt="rank" />
-                                                                {rank.name}
-                                                            </span>
-                                                        </div>
+                                                        <span className="text-xs font-bold text-slate-200 truncate block">{friend.name}</span>
+                                                        <span className="text-[9px] text-amber-500">{rank.name}</span>
                                                     </div>
                                                     <button
                                                         onClick={() => handleInvite(friend)}
-                                                        className="w-8 h-8 rounded bg-emerald-600 flex items-center justify-center text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-600/20"
+                                                        className="w-6 h-6 rounded bg-emerald-600 flex items-center justify-center text-white hover:bg-emerald-500 transition-colors shrink-0"
                                                     >
-                                                        <UserPlus className="w-4 h-4" />
+                                                        <UserPlus className="w-3 h-3" />
                                                     </button>
                                                 </div>
                                             );
@@ -665,33 +654,21 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                 </div>
 
                                 {/* Offline Section */}
-                                <div className="flex items-center justify-between text-slate-400 text-xs font-bold uppercase tracking-wider mb-3 px-2 border-t border-white/5 pt-3">
+                                <div className="flex items-center text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-2 px-1 border-t border-white/5 pt-2">
                                     <span>Offline</span>
                                 </div>
 
-                                <div className="space-y-2 opacity-60 overflow-y-auto custom-scrollbar">
+                                <div className="space-y-2 opacity-60">
                                     {offlineFriends.map(friend => {
                                         const rank = getRank(friend.rankId);
                                         return (
-                                            <div key={friend.id} className="p-2 rounded-lg flex items-center gap-3">
-                                                <div className="relative grayscale">
-                                                    <img src={friend.avatar} className="w-10 h-10 rounded border border-white/10" alt="" />
-                                                    <img src={friend.logo} className="w-3 h-3 rounded-full absolute -top-1 -right-1 border border-black bg-white object-contain" alt="" />
+                                            <div key={friend.id} className="p-1.5 rounded-lg flex items-center gap-2">
+                                                <div className="relative grayscale shrink-0">
+                                                    <img src={friend.avatar} className="w-8 h-8 rounded border border-white/10" alt="" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm font-bold text-slate-400 truncate">{friend.name}</span>
-                                                        <span className={`text-[10px] px-1 border rounded ${friend.gender === 'female' ? 'bg-pink-500/10 border-pink-500/30 text-pink-400/50' : 'bg-blue-500/10 border-blue-500/30 text-blue-400/50'}`}>
-                                                            {friend.gender === 'female' ? '♀' : '♂'}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 text-[10px] text-slate-600">
-                                                        <span className="flex items-center gap-1">
-                                                            <img src={rank.icon} className="w-3 h-3 object-contain" alt="rank" />
-                                                            {rank.name}
-                                                        </span>
-                                                        <span className="text-slate-500">Offline</span>
-                                                    </div>
+                                                    <span className="text-xs font-bold text-slate-400 truncate block">{friend.name}</span>
+                                                    <span className="text-[9px] text-slate-600">{rank.name}</span>
                                                 </div>
                                             </div>
                                         );
