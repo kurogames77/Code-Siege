@@ -438,19 +438,19 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                 >
                                                     {player ? (
                                                         <div className={`flex flex-col items-center pt-8 px-4 h-full relative z-10 ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
-                                                            {/* Hero Image - Upper Body Crop & Overlay */}
-                                                            <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center overflow-hidden">
+                                                            {/* Hero Image - Full Body */}
+                                                            <div className="absolute inset-0 z-0 pointer-events-none flex items-end justify-center overflow-hidden">
                                                                 <motion.img
                                                                     initial={{ scale: 1.0, y: 50 }}
                                                                     animate={{
-                                                                        scale: isGrey ? 0.9 : 1.1,
-                                                                        y: isGrey ? 20 : -20
+                                                                        scale: isGrey ? 0.9 : 1.05,
+                                                                        y: isGrey ? 20 : 0
                                                                     }}
                                                                     src={player.heroImage || player.avatar}
-                                                                    className={`w-full h-full object-cover object-top transition-all duration-700 ${isGrey ? 'brightness-50 grayscale' : 'drop-shadow-[0_20px_50px_rgba(34,211,238,0.4)] brightness-110'}`}
+                                                                    className={`w-full h-[90%] object-contain object-bottom transition-all duration-700 ${isGrey ? 'brightness-50 grayscale' : 'drop-shadow-[0_20px_50px_rgba(34,211,238,0.4)] brightness-110'}`}
                                                                     alt="Hero"
                                                                 />
-                                                                <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent" />
+                                                                <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent" />
                                                             </div>
 
                                                             {/* Rank Icon - Upper Right */}
@@ -460,11 +460,11 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
 
                                                             {/* User Info Overlay */}
                                                             <div className="mt-auto relative z-30 flex flex-col items-center mb-16 pointer-events-none w-full">
-                                                                {/* Avatar Frame - Now inside info area, before name */}
-                                                                <div className={`w-16 h-16 rounded-xl border-2 p-0.5 relative mb-3 transition-all duration-500 ${isGrey ? 'border-slate-500 grayscale' : 'border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.5)] scale-110'}`}>
+                                                                {/* Avatar Frame */}
+                                                                <div className={`w-20 h-20 rounded-xl border-2 p-0.5 relative mb-3 transition-all duration-500 ${isGrey ? 'border-slate-500 grayscale' : 'border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.5)] scale-110'}`}>
                                                                     <img src={player.avatar} className="w-full h-full object-cover rounded-lg" alt="" />
-                                                                    <div className="absolute -bottom-1.5 -right-1.5 bg-slate-900 rounded-full p-0.5 border border-slate-700">
-                                                                        <img src={player.logo} className="w-3 h-3 rounded-full object-contain" alt="Logo" />
+                                                                    <div className="absolute -bottom-2 -right-2 bg-slate-900 rounded-full p-0.5 border border-slate-700">
+                                                                        <img src={displayRankIcon} className="w-4 h-4 rounded-full object-contain" alt="Rank" />
                                                                     </div>
                                                                 </div>
 
