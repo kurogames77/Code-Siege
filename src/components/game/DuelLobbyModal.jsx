@@ -385,7 +385,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                         initial={{ scale: 1.0, y: 50 }}
                                                         animate={{
                                                             scale: (isUserReady || matchState === 'idle') ? 1.05 : 0.9,
-                                                            y: (isUserReady || matchState === 'idle') ? 70 : 20
+                                                            y: (isUserReady || matchState === 'idle') ? 20 : -30
                                                         }}
                                                         src={currentHeroImage}
                                                         className={`w-full h-full object-contain transition-all duration-700 ${isUserReady || matchState === 'idle' ? 'drop-shadow-[0_20px_50px_rgba(34,211,238,0.5)] brightness-110' : 'brightness-50 grayscale'}`}
@@ -455,7 +455,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                                 initial={{ scale: 1.0, y: 50 }}
                                                                 animate={{
                                                                     scale: isOpponentReady ? 1.05 : 0.9,
-                                                                    y: isOpponentReady ? 70 : 20
+                                                                    y: isOpponentReady ? 20 : -30
                                                                 }}
                                                                 src={opponent.heroImage || hero2Static}
                                                                 className={`w-full h-full object-contain transition-all duration-700 ${isOpponentReady ? 'drop-shadow-[0_20px_50px_rgba(244,63,94,0.5)] brightness-110' : 'brightness-50 grayscale'}`}
