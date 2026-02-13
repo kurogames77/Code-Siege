@@ -143,15 +143,15 @@ const TowerView = () => {
 
             {/* Floating HUD */}
             <div className="fixed top-0 left-0 right-0 h-48 z-40 pointer-events-none">
-                <div className="absolute top-28 left-8 pointer-events-auto">
+                <div className="absolute top-26 left-8 pointer-events-auto">
                     <button
                         onClick={() => {
                             playClick();
                             navigate('/play');
                         }}
-                        className="glass-panel px-4 py-1.5 flex items-center gap-2 text-[15px] font-galsb text-white hover:text-primary transition-all hover:scale-105 border-white/30"
+                        className="glass-panel px-3 py-1.5 flex items-center gap-2 text-xs font-galsb text-white hover:text-primary transition-all hover:scale-105 border-white/30"
                     >
-                        <LayoutGrid className="w-9 h-9" />
+                        <LayoutGrid className="w-5 h-5" />
                         BACK TO MAP
                     </button>
                 </div>

@@ -57,7 +57,7 @@ const AdminDashboard = ({ theme = 'dark' }) => {
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div>
-                    <h2 className={`text-3xl font-black uppercase italic tracking-tighter mb-2 transition-colors duration-500 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>System<span className="text-cyan-500">Status</span></h2>
+                    <h2 className={`text-xl font-black uppercase italic tracking-tighter mb-2 transition-colors duration-500 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>System<span className="text-cyan-500">Status</span></h2>
                     <div className="flex items-center gap-2 text-xs font-bold text-cyan-500/50 uppercase tracking-widest text-[10px]">
                         <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse shadow-[0_0_8px_rgba(6,182,212,0.5)]"></span>
                         Live Monitoring Activity
@@ -81,7 +81,7 @@ const AdminDashboard = ({ theme = 'dark' }) => {
                                 </div>
                                 <span className={`text-[10px] font-black uppercase tracking-widest py-1 px-3 rounded border transition-colors duration-500 ${theme === 'dark' ? 'border-white/5 text-cyan-400 bg-black/50' : 'border-slate-100 text-cyan-600 bg-slate-50'}`}>{stat.status}</span>
                             </div>
-                            <h3 className={`text-4xl font-black italic tracking-tighter mb-1 transition-colors duration-500 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{stat.value}</h3>
+                            <h3 className={`text-2xl font-black italic tracking-tighter mb-1 transition-colors duration-500 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{stat.value}</h3>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{stat.label}</p>
 
                             {/* Decorative line */}

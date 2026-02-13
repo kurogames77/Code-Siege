@@ -382,7 +382,7 @@ const PuzzleCourses = ({ theme }) => {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className={`text-4xl font-black italic uppercase tracking-tighter mb-2 transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Puzzle Courses</h2>
+                    <h2 className={`text-2xl font-black italic uppercase tracking-tighter mb-2 transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Puzzle Courses</h2>
                     <p className={`text-xs font-black uppercase tracking-[0.3em] flex items-center gap-2 ${theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600'}`}>
                         <span className="w-8 h-0.5 bg-current rounded-full" />
                         Manage Languages and Challenge Parameters

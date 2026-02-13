@@ -297,7 +297,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                         <Gem className={`w-8 h-8 text-${themeColor}-400 transition-colors duration-500`} />
                                     </div>
                                     <div>
-                                        <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter">
+                                        <h2 className="text-xl font-black text-white uppercase italic tracking-tighter">
                                             GEM <span className={`text-${themeColor}-400 transition-colors duration-500`}>STORE</span>
                                         </h2>
                                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-2">
@@ -368,7 +368,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                                     </div>
 
                                                     <div className={`${pkg.isFullWidth ? 'lg:text-left lg:order-2 lg:flex-1 lg:pl-8' : ''}`}>
-                                                        <h3 className="text-3xl font-black text-white italic tracking-tighter mb-1">
+                                                        <h3 className="text-xl font-black text-white italic tracking-tighter mb-1">
                                                             {pkg.gems} <span className="text-sm not-italic font-bold text-slate-300">GEM</span>
                                                         </h3>
 
@@ -418,9 +418,9 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                         {/* Order Summary Left */}
                                         <div className="flex-1 bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col items-center text-center relative overflow-hidden">
                                             <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-${themeColor}-500 to-transparent`} />
-                                            <img src={gemIcon} alt="Gems" className="w-32 h-32 object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)] mb-6 animate-pulse" />
+                                            <img src={gemIcon} alt="Gems" className="w-20 h-20 object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)] mb-6 animate-pulse" />
 
-                                            <h3 className="text-4xl font-black text-white italic tracking-tighter mb-2">
+                                            <h3 className="text-2xl font-black text-white italic tracking-tighter mb-2">
                                                 {selectedPackage.gems + (selectedPackage.bonus || 0)} <span className="text-lg not-italic text-slate-400">GEMS</span>
                                             </h3>
                                             <div className="bg-black/40 rounded-xl px-6 py-2 border border-white/10 mb-6">
@@ -453,7 +453,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                                 <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to Packages
                                             </button>
 
-                                            <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-6 flex items-center gap-3 sticky top-0 bg-[#0a0f1a] z-10 py-2">
+                                            <h3 className="text-lg font-black text-white italic uppercase tracking-tighter mb-6 flex items-center gap-3 sticky top-0 bg-[#0a0f1a] z-10 py-2">
                                                 {selectedMethod === 'paypal' ? 'Pay with PayPal' : `Login to ${paymentMethods.find(p => p.id === selectedMethod)?.label}`}
                                             </h3>
 
@@ -544,9 +544,9 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                 <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
                                     <div className="relative mb-8">
                                         <div className={`absolute inset-0 bg-${themeColor}-500/20 blur-2xl rounded-full animate-pulse`} />
-                                        <Loader2 className={`w-20 h-20 text-${themeColor}-500 animate-spin relative z-10`} />
+                                        <Loader2 className={`w-14 h-14 text-${themeColor}-500 animate-spin relative z-10`} />
                                     </div>
-                                    <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter mb-2">
+                                    <h3 className="text-lg font-black text-white uppercase italic tracking-tighter mb-2">
                                         Processing Payment...
                                     </h3>
                                     <p className="text-sm text-slate-400 font-bold">Verifying transaction with {paymentMethods.find(p => p.id === selectedMethod)?.label}...</p>
@@ -559,11 +559,11 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                     <motion.div
                                         initial={{ scale: 0 }}
                                         animate={{ scale: 1 }}
-                                        className={`w-24 h-24 bg-${themeColor}-500 rounded-full flex items-center justify-center shadow-2xl shadow-${themeColor}-500/50 mb-8`}
+                                        className={`w-16 h-16 bg-${themeColor}-500 rounded-full flex items-center justify-center shadow-2xl shadow-${themeColor}-500/50 mb-8`}
                                     >
                                         <CheckCircle2 className="w-12 h-12 text-white" />
                                     </motion.div>
-                                    <h3 className="text-4xl font-black text-white uppercase italic tracking-tighter mb-4">
+                                    <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter mb-4">
                                         Payment Approved!
                                     </h3>
                                     <div className="bg-white/5 border border-white/10 rounded-2xl px-8 py-4 flex flex-col items-center">

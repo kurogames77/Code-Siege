@@ -35,7 +35,7 @@ const VictoryModal = ({ isOpen, rewards, onNextLevel, isLastLevel = false }) => 
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.6 }}
                                 >
-                                    <h2 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-[#FFF5D1] to-[#FFD700] mb-2 uppercase drop-shadow-[0_2px_10px_rgba(255,215,0,0.3)] font-galsb tracking-wide">
+                                    <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-[#FFF5D1] to-[#FFD700] mb-2 uppercase drop-shadow-[0_2px_10px_rgba(255,215,0,0.3)] font-galsb tracking-wide">
                                         {isLastLevel ? "Campaign Complete!" : "Victory!"}
                                     </h2>
                                     <p className="text-slate-400 font-bold tracking-[0.3em] uppercase text-xs mb-10">
@@ -58,7 +58,7 @@ const VictoryModal = ({ isOpen, rewards, onNextLevel, isLastLevel = false }) => 
 
                                             <div className="flex items-center justify-center gap-4 scale-110">
                                                 <div className="relative">
-                                                    <img src={expIcon} alt="EXP" className="w-14 h-14 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]" />
+                                                    <img src={expIcon} alt="EXP" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]" />
                                                     <motion.div
                                                         animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
                                                         transition={{ duration: 2, repeat: Infinity }}
@@ -66,7 +66,7 @@ const VictoryModal = ({ isOpen, rewards, onNextLevel, isLastLevel = false }) => 
                                                     />
                                                 </div>
                                                 <div className="flex flex-col items-start">
-                                                    <span className="text-3xl font-black text-white leading-none">+{rewards?.exp || 100}</span>
+                                                    <span className="text-2xl font-black text-white leading-none">+{rewards?.exp || 100}</span>
                                                     <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">Experience</span>
                                                 </div>
                                             </div>
@@ -83,11 +83,11 @@ const VictoryModal = ({ isOpen, rewards, onNextLevel, isLastLevel = false }) => 
                                 >
                                     <Button
                                         onClick={onNextLevel}
-                                        className="w-full bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-black py-4 rounded-xl flex items-center justify-center gap-3 font-black text-lg shadow-[0_0_30px_rgba(245,158,11,0.4)] group overflow-hidden relative"
+                                        className="w-full bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-black py-3 rounded-xl flex items-center justify-center gap-3 font-black text-sm shadow-[0_0_30px_rgba(245,158,11,0.4)] group overflow-hidden relative"
                                     >
                                         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                                         <span className="relative z-10">{isLastLevel ? "FINISH & RETURN TO MAP" : "CONTINUE TO NEXT LEVEL"}</span>
-                                        <ArrowRight className="w-6 h-6 relative z-10 group-hover:translate-x-1 transition-transform" />
+                                        <ArrowRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
                                     </Button>
                                 </motion.div>
 

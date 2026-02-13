@@ -164,12 +164,12 @@ const GameCodeShadow = () => {
             {/* Back to Tower Button */}
             {!showPostScene && (
                 <div className="fixed top-0 left-0 right-0 h-48 z-40 pointer-events-none">
-                    <div className="absolute top-28 left-8 pointer-events-auto">
+                    <div className="absolute top-26 left-8 pointer-events-auto">
                         <button
                             onClick={() => navigate(`/tower-shadow`)}
-                            className="glass-panel px-4 py-1.5 flex items-center gap-2 text-[15px] font-black text-white hover:text-primary transition-all hover:scale-105 border-white/30"
+                            className="glass-panel px-3 py-1.5 flex items-center gap-2 text-xs font-black text-white hover:text-primary transition-all hover:scale-105 border-white/30"
                         >
-                            <ArrowLeft className="w-9 h-9" />
+                            <ArrowLeft className="w-5 h-5" />
                             BACK TO SHADOW KEEP
                         </button>
                     </div>

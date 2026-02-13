@@ -73,8 +73,8 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
     };
 
     const blockColors = getTypeColor(type);
-    const width = 180;
-    const height = 60;
+    const width = 140;
+    const height = 48;
     const tabRadius = 10;
     const tabDepth = 12;
 

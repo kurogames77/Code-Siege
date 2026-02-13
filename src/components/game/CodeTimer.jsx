@@ -34,7 +34,7 @@ const CodeTimer = ({ initialTime = 600, onExpire, onWarning }) => {
 
     return (
         <div className={`
-            flex items-center gap-2 px-4 py-2 rounded-lg text-xl font-bold border tracking-wider transition-all duration-300 relative overflow-hidden group
+            flex items-center gap-2 px-3 py-1.5 rounded-lg text-base font-bold border tracking-wider transition-all duration-300 relative overflow-hidden group
             ${isCritical
                 ? 'bg-red-500/20 text-red-500 border-red-500/50 animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.4)]'
                 : isWarning

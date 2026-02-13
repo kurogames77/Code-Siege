@@ -24,14 +24,14 @@ const DefeatModal = ({ isOpen, onRetry, losses }) => {
                             <div className="p-10 flex flex-col items-center text-center">
                                 <div className="mb-6 relative">
                                     <div className="absolute inset-0 bg-red-500/20 blur-xl rounded-full animate-pulse" />
-                                    <AlertCircle className="w-20 h-20 text-red-500 relative z-10" />
+                                    <AlertCircle className="w-14 h-14 text-red-500 relative z-10" />
                                 </div>
 
                                 <motion.h2
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.2 }}
-                                    className="text-4xl font-black text-white uppercase tracking-wider mb-2"
+                                    className="text-2xl font-black text-white uppercase tracking-wider mb-2"
                                 >
                                     Mission Failed
                                 </motion.h2>
@@ -40,7 +40,7 @@ const DefeatModal = ({ isOpen, onRetry, losses }) => {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.3 }}
-                                    className="text-red-400 font-mono text-lg mb-8 uppercase tracking-widest"
+                                    className="text-red-400 font-mono text-sm mb-6 uppercase tracking-widest"
                                 >
                                     You run out of time
                                 </motion.p>
@@ -53,7 +53,7 @@ const DefeatModal = ({ isOpen, onRetry, losses }) => {
                                             <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1">Penalty Assessment</span>
                                             <div className="flex items-center justify-center gap-3">
                                                 {/* reusing expIcon if available or simple text */}
-                                                <span className="text-3xl font-black text-red-500 font-mono tracking-tighter">-{losses?.exp || 0}</span>
+                                                <span className="text-2xl font-black text-red-500 font-mono tracking-tighter">-{losses?.exp || 0}</span>
                                                 <span className="text-xs font-bold text-red-400 uppercase tracking-wider">EXP</span>
                                             </div>
                                         </div>

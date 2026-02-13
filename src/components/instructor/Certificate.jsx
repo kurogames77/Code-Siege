@@ -104,7 +104,7 @@ const Certificate = ({ theme }) => {
             {/* Header Area */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className={`text-3xl font-black uppercase italic tracking-wider font-galsb transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                    <h2 className={`text-xl font-black uppercase italic tracking-wider font-galsb transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                         Certificate Management
                     </h2>
                     <p className={`text-xs font-bold uppercase tracking-[0.2em] mt-1 transition-colors ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>

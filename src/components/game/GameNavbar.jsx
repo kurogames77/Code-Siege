@@ -101,7 +101,7 @@ const GameNavbar = ({ onLobbyStateChange }) => {
     return (
         <>
             {/* Top Stat Bar */}
-            <nav className="fixed top-0 left-0 w-full h-32 flex items-center justify-between px-10 z-50 pointer-events-none">
+            <nav className="fixed top-0 left-0 w-full h-24 flex items-center justify-between px-8 z-50 pointer-events-none">
                 {/* Background Gradient & Blur */}
                 <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
 
@@ -115,19 +115,19 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                         }}
                         className="flex items-center gap-4 group cursor-pointer"
                     >
-                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-purple-600/20 border-2 border-cyan-400/30 flex items-center justify-center backdrop-blur-sm shadow-[0_0_20px_rgba(34,211,238,0.2)] group-hover:shadow-[0_0_30px_rgba(34,211,238,0.4)] transition-all overflow-hidden relative">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-purple-600/20 border-2 border-cyan-400/30 flex items-center justify-center backdrop-blur-sm shadow-[0_0_20px_rgba(34,211,238,0.2)] group-hover:shadow-[0_0_30px_rgba(34,211,238,0.4)] transition-all overflow-hidden relative">
                             {/* Global Avatar or Default */}
                             {user.avatar ? (
                                 <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
                             ) : (
-                                <div className="w-14 h-14 rounded-xl bg-slate-800/80 flex items-center justify-center border border-white/10">
+                                <div className="w-10 h-10 rounded-xl bg-slate-800/80 flex items-center justify-center border border-white/10">
                                     <span className="text-xl font-black text-cyan-400 select-none">JD</span>
                                 </div>
                             )}
                         </div>
                         <div className="flex flex-col">
                             {/* Replaced 'J. Doe' with Rank Name from Context */}
-                            <span className="text-lg text-white font-galsb font-bold tracking-wider uppercase leading-none mb-1">
+                            <span className="text-sm text-white font-galsb font-bold tracking-wider uppercase leading-none mb-1">
                                 {user.name}
                             </span>
                             {/* Replaced 'Level 24' with Rank Name and Icon below it */}
@@ -136,7 +136,7 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                                 <span className="text-xs text-cyan-400 font-galsb font-bold uppercase tracking-tight">
                                     {user.rankName}
                                 </span>
-                                <div className="w-8 h-8 flex items-center justify-center -ml-1">
+                                <div className="w-6 h-6 flex items-center justify-center -ml-1">
                                     <img src={user.rankIcon} alt="Rank" className="w-full h-full object-contain filter drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
                                 </div>
                             </div>
@@ -149,7 +149,7 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                     <img
                         src={nameLogo}
                         alt="Code Siege"
-                        className="w-75 h-auto object-contain drop-shadow-[0_0_15px_rgba(0,0,0,0.5)]"
+                        className="w-56 h-auto object-contain drop-shadow-[0_0_15px_rgba(0,0,0,0.5)]"
                     />
                 </div>
 
@@ -158,18 +158,18 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                     {/* Stats */}
                     <div className="flex items-center gap-8">
                         <div className="flex items-center gap-3 group nav-item-zoom">
-                            <img src={gemIcon} alt="Gems" className="w-16 h-16 object-contain filter drop-shadow-[0_0_12px_rgba(34,211,238,0.5)]" />
+                            <img src={gemIcon} alt="Gems" className="w-12 h-12 object-contain filter drop-shadow-[0_0_12px_rgba(34,211,238,0.5)]" />
                             <div className="flex flex-col">
                                 <span className="text-[10px] text-cyan-400 font-galsb uppercase leading-tight">Gems</span>
-                                <span className="text-xl font-galsb text-white leading-tight tabular-nums">{user.gems?.toLocaleString() || 0}</span>
+                                <span className="text-lg font-galsb text-white leading-tight tabular-nums">{user.gems?.toLocaleString() || 0}</span>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-3 group nav-item-zoom">
-                            <img src={expIcon} alt="EXP" className="w-16 h-16 object-contain filter drop-shadow-[0_0_12px_rgba(251,191,36,0.5)]" />
+                            <img src={expIcon} alt="EXP" className="w-12 h-12 object-contain filter drop-shadow-[0_0_12px_rgba(251,191,36,0.5)]" />
                             <div className="flex flex-col">
                                 <span className="text-[10px] text-amber-400 font-galsb uppercase leading-tight">EXP</span>
-                                <span className="text-xl font-galsb text-white leading-tight tabular-nums">{user.exp?.toLocaleString() || (user.level * 2000).toLocaleString()}</span>
+                                <span className="text-lg font-galsb text-white leading-tight tabular-nums">{user.exp?.toLocaleString() || (user.level * 2000).toLocaleString()}</span>
                             </div>
                         </div>
                     </div>
@@ -185,14 +185,14 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                         <img
                             src={logoutIcon}
                             alt="Logout"
-                            className="w-24 h-24 object-contain drop-shadow-[0_0_20px_rgba(239,68,68,0.3)] group-hover:drop-shadow-[0_0_30px_rgba(239,68,68,0.6)]"
+                            className="w-18 h-18 object-contain drop-shadow-[0_0_20px_rgba(239,68,68,0.3)] group-hover:drop-shadow-[0_0_30px_rgba(239,68,68,0.6)]"
                         />
                     </button>
                 </div>
             </nav>
 
             {/* Left Side: Achievements, Daily Rewards, Leaderboard (Vertical) */}
-            <div className="fixed left-10 top-1/2 -translate-y-1/2 flex flex-col items-center gap-0.5 z-50 pointer-events-auto">
+            <div className="fixed left-8 top-1/2 -translate-y-1/2 flex flex-col items-center gap-0.5 z-50 pointer-events-auto">
                 {leftSideItems.map((item, idx) => (
                     <div
                         key={idx}
@@ -211,7 +211,7 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                         <img
                             src={item.icon}
                             alt={item.label}
-                            className="w-24 h-24 object-contain drop-shadow-[0_0_12px_rgba(255,255,255,0.2)] group-hover:drop-shadow-[0_0_24px_rgba(34,211,238,0.8)] transition-all"
+                            className="w-18 h-18 object-contain drop-shadow-[0_0_12px_rgba(255,255,255,0.2)] group-hover:drop-shadow-[0_0_24px_rgba(34,211,238,0.8)] transition-all"
                         />
                         <span className="text-xs text-slate-300 font-galsb font-bold uppercase tracking-widest transition-opacity">
                             {item.label}
@@ -221,7 +221,7 @@ const GameNavbar = ({ onLobbyStateChange }) => {
             </div>
 
             {/* Bottom Right Side: Heroes, Shop, Ranking (Horizontal) */}
-            <div className="fixed right-10 bottom-10 flex flex-row items-end gap-2 z-50 pointer-events-auto">
+            <div className="fixed right-8 bottom-8 flex flex-row items-end gap-2 z-50 pointer-events-auto">
                 {bottomRightItems.map((item, idx) => (
                     <div
                         key={idx}
@@ -240,7 +240,7 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                         <img
                             src={item.icon}
                             alt={item.label}
-                            className="w-24 h-24 object-contain drop-shadow-[0_0_12px_rgba(255,255,255,0.2)] group-hover:drop-shadow-[0_0_24px_rgba(34,211,238,0.8)] transition-all"
+                            className="w-18 h-18 object-contain drop-shadow-[0_0_12px_rgba(255,255,255,0.2)] group-hover:drop-shadow-[0_0_24px_rgba(34,211,238,0.8)] transition-all"
                         />
                         <span className="text-xs text-slate-300 font-galsb font-bold uppercase tracking-widest transition-opacity">
                             {item.label}

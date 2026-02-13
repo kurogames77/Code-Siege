@@ -20,7 +20,7 @@ const FloorNode = ({ floor, isActive, isCompleted, isLocked, onEnter }) => {
             >
                 <div className="flex items-center justify-between gap-6">
                     <div className="flex items-center gap-4">
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black italic border-2 border-dashed ${isActive
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-black italic border-2 border-dashed ${isActive
                             ? 'bg-primary text-white border-white/20'
                             : isCompleted
                                 ? 'bg-accent/10 text-accent border-accent/20'
@@ -41,7 +41,7 @@ const FloorNode = ({ floor, isActive, isCompleted, isLocked, onEnter }) => {
 
                     <div className="flex items-center">
                         {isCompleted ? (
-                            <CheckCircle2 className="w-8 h-8 text-accent drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]" />
+                            <CheckCircle2 className="w-6 h-6 text-accent drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]" />
                         ) : isLocked ? (
                             <Lock className="w-6 h-6 text-slate-700" />
                         ) : (

@@ -214,7 +214,7 @@ const AchievementModal = ({ isOpen, onClose }) => {
                             {/* Top Bar */}
                             <div className="h-24 px-10 border-b border-white/5 flex items-center justify-between bg-[#0F172A]/30 backdrop-blur-sm shrink-0">
                                 <div>
-                                    <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter">
+                                    <h1 className="text-xl font-black text-white italic uppercase tracking-tighter">
                                         {categories.find(c => c.id === selectedCategory)?.label}
                                     </h1>
                                     <p className="text-xs text-slate-400 font-medium mt-1">Track your mastery and claim rewards.</p>
@@ -321,7 +321,7 @@ const AchievementModal = ({ isOpen, onClose }) => {
 
                                                         {/* Image */}
                                                         <div className="flex-1 w-full flex items-center justify-center relative">
-                                                            <div className={`w-32 h-32 transition-transform duration-500 group-hover:scale-110 ${isLocked ? 'grayscale opacity-50' : 'drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]'}`}>
+                                                            <div className={`w-24 h-24 transition-transform duration-500 group-hover:scale-110 ${isLocked ? 'grayscale opacity-50' : 'drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]'}`}>
                                                                 <img src={achievement.image} alt={achievement.title} className="w-full h-full object-contain" />
                                                             </div>
                                                             {isLocked && <Lock className="absolute w-8 h-8 text-slate-500/50" />}

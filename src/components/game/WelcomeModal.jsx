@@ -33,17 +33,17 @@ const WelcomeModal = ({ isOpen, onClose }) => {
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             transition={{ type: "spring", delay: 0.2 }}
-                            className="w-24 h-24 bg-cyan-950/50 rounded-full flex items-center justify-center mb-6 border-2 border-cyan-400/30 relative group"
+                            className="w-16 h-16 bg-cyan-950/50 rounded-full flex items-center justify-center mb-6 border-2 border-cyan-400/30 relative group"
                         >
                             <div className="absolute inset-0 bg-cyan-400/20 blur-xl rounded-full animate-pulse" />
-                            <Shield className="w-12 h-12 text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]" />
+                            <Shield className="w-8 h-8 text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]" />
                         </motion.div>
 
                         <motion.h2
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.3 }}
-                            className="text-4xl md:text-5xl font-black text-white mb-4 uppercase tracking-tighter"
+                            className="text-2xl md:text-3xl font-black text-white mb-4 uppercase tracking-tighter"
                         >
                             Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Code Siege</span>
                         </motion.h2>
@@ -52,7 +52,7 @@ const WelcomeModal = ({ isOpen, onClose }) => {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.4 }}
-                            className="text-slate-300 text-lg mb-8 leading-relaxed max-w-lg"
+                            className="text-slate-300 text-sm mb-8 leading-relaxed max-w-lg"
                         >
                             The realm is under siege. Only a master of code can unlock the ancient towers and save us.
                             <br /><br />
@@ -86,7 +86,7 @@ const WelcomeModal = ({ isOpen, onClose }) => {
                                 playClick();
                                 onClose();
                             }}
-                            className="group relative px-8 py-4 bg-cyan-500 hover:bg-cyan-400 text-white font-black text-xl uppercase tracking-widest rounded-lg overflow-hidden transition-all hover:scale-105 hover:shadow-[0_0_40px_rgba(34,211,238,0.4)]"
+                            className="group relative px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-white font-black text-sm uppercase tracking-widest rounded-lg overflow-hidden transition-all hover:scale-105 hover:shadow-[0_0_40px_rgba(34,211,238,0.4)]"
                         >
                             <span className="relative z-10 flex items-center gap-3">
                                 Start Journey <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

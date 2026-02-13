@@ -30,7 +30,7 @@ const TowerNode = ({ tower, position, onPlay, isDragging }) => {
                         playClick();
                         onPlay(tower.id);
                     }}
-                    className={`w-24 h-24 nav-item-zoom z-20 animate-bounce cursor-pointer relative ${infoAbove ? 'mt-8 -mb-16' : '-mb-8'}`}
+                    className={`w-18 h-18 nav-item-zoom z-20 animate-bounce cursor-pointer relative ${infoAbove ? 'mt-8 -mb-12' : '-mb-6'}`}
                 >
                     <div className="absolute inset-0 bg-white/20 blur-xl rounded-full animate-pulse" />
                     <img src={playIcon} alt="Play" className="w-full h-full object-contain filter drop-shadow-[0_0_20px_rgba(34,211,238,0.8)] relative z-10" />
@@ -59,7 +59,7 @@ const TowerNode = ({ tower, position, onPlay, isDragging }) => {
                     <img
                         src={image}
                         alt={name}
-                        className="w-48 h-auto drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]"
+                        className="w-36 h-auto drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]"
                     />
                 </div>
 

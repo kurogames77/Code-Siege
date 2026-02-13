@@ -29,9 +29,17 @@
 }
 
 @layer base {
+  html {
+    font-size: 13px;
+  }
+
   body {
     @apply bg-slate-950 text-slate-50 font-inter antialiased;
     margin: 0;
+    min-height: 100vh;
+  }
+
+  #root {
     min-height: 100vh;
   }
 }

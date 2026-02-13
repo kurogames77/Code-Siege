@@ -25,7 +25,7 @@ const ArenaBattles = ({ theme }) => {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className={`text-3xl font-black uppercase italic tracking-wider font-galsb transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Arena Battles</h2>
+                    <h2 className={`text-xl font-black uppercase italic tracking-wider font-galsb transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Arena Battles</h2>
                     <p className={`text-xs font-bold uppercase tracking-[0.2em] mt-1 transition-colors ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>Real-time combat logs & matchmaking oversight</p>
                 </div>
                 <div className={`p-3 border rounded-2xl transition-all duration-500 ${theme === 'dark' ? 'bg-slate-900 border-white/5' : 'bg-white border-slate-200 shadow-sm'

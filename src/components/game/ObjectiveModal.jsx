@@ -16,10 +16,10 @@ const ObjectiveModal = ({ isOpen, onClose, objectives = [] }) => {
                     >
                         {/* Header */}
                         <div className="flex flex-col items-center mb-8 text-center">
-                            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4 border border-primary/50 text-primary animate-pulse">
-                                <BookOpen className="w-8 h-8" />
+                            <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4 border border-primary/50 text-primary animate-pulse">
+                                <BookOpen className="w-6 h-6" />
                             </div>
-                            <h2 className="text-3xl font-black text-white italic tracking-wider font-galsb uppercase">
+                            <h2 className="text-xl font-black text-white italic tracking-wider font-galsb uppercase">
                                 LEVEL OBJECTIVE
                             </h2>
                             <div className="h-1 w-24 bg-gradient-to-r from-transparent via-primary to-transparent rounded-full mt-4" />
@@ -35,8 +35,8 @@ const ObjectiveModal = ({ isOpen, onClose, objectives = [] }) => {
                                     transition={{ delay: index * 0.1 + 0.3 }}
                                     className="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10"
                                 >
-                                    <CheckCircle className="w-6 h-6 text-green-400 shrink-0" />
-                                    <span className="text-lg text-slate-200 font-medium">{obj}</span>
+                                    <CheckCircle className="w-5 h-5 text-green-400 shrink-0" />
+                                    <span className="text-sm text-slate-200 font-medium">{obj}</span>
                                 </motion.div>
                             ))}
                         </div>
@@ -45,7 +45,7 @@ const ObjectiveModal = ({ isOpen, onClose, objectives = [] }) => {
                         <div className="flex justify-center">
                             <Button
                                 onClick={onClose}
-                                className="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-primary-dark hover:to-indigo-800 py-4 text-xl tracking-widest"
+                                className="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-primary-dark hover:to-indigo-800 py-3 text-sm tracking-widest"
                             >
                                 START LEARNING
                             </Button>

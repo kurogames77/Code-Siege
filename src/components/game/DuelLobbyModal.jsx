@@ -403,7 +403,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                     <div className={`w-16 h-16 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md overflow-hidden mb-3 transition-all duration-500 ${isUserReady || matchState === 'idle' ? 'border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)] scale-110' : 'border-slate-500'}`}>
                                                         <img src={user.avatar} className="w-full h-full object-cover" alt="Avatar" />
                                                     </div>
-                                                    <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter drop-shadow-[0_4px_12px_rgba(0,0,0,1)]">{user.name}</h2>
+                                                    <h2 className="text-xl font-black text-white italic uppercase tracking-tighter drop-shadow-[0_4px_12px_rgba(0,0,0,1)]">{user.name}</h2>
                                                     <div className={`text-[10px] font-black uppercase tracking-[0.4em] mt-1 drop-shadow-lg ${isUserReady || matchState === 'idle' ? 'text-cyan-400' : 'text-slate-500'}`}>
                                                         {user.rankName}
                                                     </div>
@@ -425,8 +425,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                     {/* VS BADGE */}
                                     <div className="relative z-20 flex flex-col items-center justify-center shrink-0">
                                         <div className="absolute inset-0 bg-white/20 blur-[60px] rounded-full animate-pulse" />
-                                        <Swords className="w-24 h-24 text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] relative z-10" />
-                                        <h1 className="text-6xl font-black italic text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 tracking-tighter mt-[-10px] relative z-10 drop-shadow-lg">VS</h1>
+                                        <Swords className="w-16 h-16 text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] relative z-10" />
+                                        <h1 className="text-4xl font-black italic text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 tracking-tighter mt-[-10px] relative z-10 drop-shadow-lg">VS</h1>
                                     </div>
 
                                     {/* RIGHT PLAYER (OPPONENT) */}
@@ -471,7 +471,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                             <div className={`w-16 h-16 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md overflow-hidden mb-3 transition-all duration-500 ${isOpponentReady ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.6)] scale-110' : 'border-slate-500'}`}>
                                                                 <img src={opponent.avatar} className="w-full h-full object-cover" alt="Avatar" />
                                                             </div>
-                                                            <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter drop-shadow-[0_4px_12px_rgba(0,0,0,1)] scale-110">{opponent.name}</h2>
+                                                            <h2 className="text-xl font-black text-white italic uppercase tracking-tighter drop-shadow-[0_4px_12px_rgba(0,0,0,1)] scale-110">{opponent.name}</h2>
                                                             <div className={`text-[10px] font-black uppercase tracking-[0.4em] mt-1 drop-shadow-lg ${isOpponentReady ? 'text-rose-400' : 'text-slate-500'}`}>
                                                                 {opponent.rankName}
                                                             </div>

@@ -75,7 +75,7 @@ const InstructorApplications = ({ theme = 'dark' }) => {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className={`text-3xl font-black italic tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                    <h1 className={`text-xl font-black italic tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                         Instructor Applications
                     </h1>
                     <p className={`text-sm font-medium mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -91,8 +91,8 @@ const InstructorApplications = ({ theme = 'dark' }) => {
                                 key={status}
                                 onClick={() => setFilter(status)}
                                 className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${filter === status
-                                        ? (theme === 'dark' ? 'bg-cyan-500 text-white' : 'bg-cyan-600 text-white')
-                                        : (theme === 'dark' ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900')
+                                    ? (theme === 'dark' ? 'bg-cyan-500 text-white' : 'bg-cyan-600 text-white')
+                                    : (theme === 'dark' ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900')
                                     }`}
                             >
                                 {status}
@@ -103,8 +103,8 @@ const InstructorApplications = ({ theme = 'dark' }) => {
                     <button
                         onClick={fetchApplications}
                         className={`p-2.5 rounded-xl border transition-all ${theme === 'dark'
-                                ? 'bg-slate-900/50 border-white/10 text-slate-400 hover:text-cyan-400 hover:border-cyan-500/50'
-                                : 'bg-white border-slate-200 text-slate-500 hover:text-cyan-600 hover:border-cyan-300'
+                            ? 'bg-slate-900/50 border-white/10 text-slate-400 hover:text-cyan-400 hover:border-cyan-500/50'
+                            : 'bg-white border-slate-200 text-slate-500 hover:text-cyan-600 hover:border-cyan-300'
                             }`}
                     >
                         <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
@@ -154,8 +154,8 @@ const InstructorApplications = ({ theme = 'dark' }) => {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, x: -20 }}
                                 className={`p-6 rounded-2xl border transition-all ${theme === 'dark'
-                                        ? 'bg-slate-900/50 border-white/10 hover:border-cyan-500/30'
-                                        : 'bg-white border-slate-200 hover:border-cyan-300 shadow-sm'
+                                    ? 'bg-slate-900/50 border-white/10 hover:border-cyan-500/30'
+                                    : 'bg-white border-slate-200 hover:border-cyan-300 shadow-sm'
                                     }`}
                             >
                                 <div className="flex items-start justify-between">
@@ -208,8 +208,8 @@ const InstructorApplications = ({ theme = 'dark' }) => {
                                                 onClick={() => setRejectModal({ open: true, id: app.id })}
                                                 disabled={actionLoading === app.id}
                                                 className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-50 ${theme === 'dark'
-                                                        ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
-                                                        : 'bg-red-50 text-red-600 hover:bg-red-100'
+                                                    ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                                                    : 'bg-red-50 text-red-600 hover:bg-red-100'
                                                     }`}
                                             >
                                                 <X className="w-4 h-4" />
@@ -221,8 +221,8 @@ const InstructorApplications = ({ theme = 'dark' }) => {
                                     {/* Status Badge for non-pending */}
                                     {filter !== 'pending' && (
                                         <span className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase ${app.status === 'approved'
-                                                ? 'bg-emerald-500/10 text-emerald-400'
-                                                : 'bg-red-500/10 text-red-400'
+                                            ? 'bg-emerald-500/10 text-emerald-400'
+                                            : 'bg-red-500/10 text-red-400'
                                             }`}>
                                             {app.status}
                                         </span>
@@ -261,8 +261,8 @@ const InstructorApplications = ({ theme = 'dark' }) => {
                                 onChange={(e) => setRejectReason(e.target.value)}
                                 placeholder="Reason for rejection..."
                                 className={`w-full p-3 rounded-xl border text-sm resize-none h-24 ${theme === 'dark'
-                                        ? 'bg-slate-900 border-white/10 text-white placeholder:text-slate-500'
-                                        : 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400'
+                                    ? 'bg-slate-900 border-white/10 text-white placeholder:text-slate-500'
+                                    : 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400'
                                     }`}
                             />
                             <div className="flex gap-3 mt-4">

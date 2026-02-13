@@ -118,8 +118,8 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
 
             // GENERALIZED SNAPPING LOGIC
             const SNAP_THRESHOLD = 30;
-            const BLOCK_WIDTH = 180;
-            const BLOCK_HEIGHT = 60;
+            const BLOCK_WIDTH = 140;
+            const BLOCK_HEIGHT = 48;
 
             for (const other of newBlocks) {
                 if (other.id === active.id) continue;
@@ -229,8 +229,8 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
         const isConnected = (b1, b2) => {
             const dx = b2.position.x - b1.position.x;
             const dy = b2.position.y - b1.position.y;
-            const BLOCK_WIDTH = 180;
-            const BLOCK_HEIGHT = 60;
+            const BLOCK_WIDTH = 140;
+            const BLOCK_HEIGHT = 48;
 
             // Horizontal connection
             const isHoriz = Math.abs(dx - BLOCK_WIDTH) < 10 && Math.abs(dy) < 10;
@@ -498,9 +498,9 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                             <div className="absolute inset-0 z-[60] bg-black/90 flex flex-col items-center justify-center p-8 text-center backdrop-blur-sm">
                                 <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="bg-red-950/40 border border-red-500 p-12 max-w-lg relative overflow-hidden">
                                     <div className="absolute inset-0 bg-red-500/10 animate-pulse" />
-                                    <h2 className="text-5xl font-black text-red-500 mb-4 uppercase tracking-[0.2em] font-mono glitch-text">SYSTEM FAILURE</h2>
-                                    <p className="text-xl text-red-300 mb-8 font-mono">RUNTIME_ERROR: TIMEOUT_EXCEPTION</p>
-                                    <Button onClick={onClose} className="bg-red-600 hover:bg-red-700 w-full py-4 text-xl tracking-widest uppercase border border-red-400/50">Abort Sequence</Button>
+                                    <h2 className="text-3xl font-black text-red-500 mb-4 uppercase tracking-[0.2em] font-mono glitch-text">SYSTEM FAILURE</h2>
+                                    <p className="text-sm text-red-300 mb-8 font-mono">RUNTIME_ERROR: TIMEOUT_EXCEPTION</p>
+                                    <Button onClick={onClose} className="bg-red-600 hover:bg-red-700 w-full py-3 text-sm tracking-widest uppercase border border-red-400/50">Abort Sequence</Button>
                                 </motion.div>
                             </div>
                         )}
@@ -555,7 +555,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                             </div>
 
                             <div className="flex items-center gap-6">
-                                <button onClick={onClose} className="text-cyan-700 hover:text-cyan-400 p-2 hover:bg-cyan-900/20 rounded-full transition-all duration-500 hover:rotate-180"><X className="w-8 h-8" /></button>
+                                <button onClick={onClose} className="text-cyan-700 hover:text-cyan-400 p-2 hover:bg-cyan-900/20 rounded-full transition-all duration-500 hover:rotate-180"><X className="w-6 h-6" /></button>
                             </div>
                         </div>
 
@@ -578,7 +578,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                         <h2 className="text-cyan-500 uppercase tracking-widest text-xs font-bold mb-1 flex items-center gap-2">
                                             <span className="w-2 h-2 bg-cyan-500" /> Objective
                                         </h2>
-                                        <p className="text-cyan-100 text-lg font-medium leading-relaxed font-mono">{puzzle?.description}</p>
+                                        <p className="text-cyan-100 text-sm font-medium leading-relaxed font-mono">{puzzle?.description}</p>
                                     </div>
                                 </div>
 
@@ -616,11 +616,11 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                         <div className="flex items-center gap-4">
                                             <div className="relative">
                                                 <div className="absolute inset-0 bg-yellow-500/20 blur-md rounded-full" />
-                                                <img src={expIcon} className="w-12 h-12 object-contain relative z-10" alt="EXP" />
+                                                <img src={expIcon} className="w-9 h-9 object-contain relative z-10" alt="EXP" />
                                             </div>
                                             <div>
                                                 <div className="text-cyan-500 text-[10px] uppercase tracking-widest font-bold">EXP REWARD</div>
-                                                <div className="text-white font-mono text-xl font-bold">+ {currentReward} EXP</div>
+                                                <div className="text-white font-mono text-base font-bold">+ {currentReward} EXP</div>
                                             </div>
                                         </div>
                                     </div>
@@ -630,7 +630,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                         <h3 className="text-cyan-600 uppercase tracking-widest text-[10px] font-bold flex items-center gap-2">
                                             <Trophy className="w-3 h-3" /> Target Output
                                         </h3>
-                                        <div className="font-mono text-emerald-400 text-lg font-bold bg-black/60 p-4 border border-emerald-500/20 shadow-[inset_0_0_20px_rgba(16,185,129,0.1)] relative overflow-hidden">
+                                        <div className="font-mono text-emerald-400 text-sm font-bold bg-black/60 p-3 border border-emerald-500/20 shadow-[inset_0_0_20px_rgba(16,185,129,0.1)] relative overflow-hidden">
                                             <div className="relative z-10">{puzzle?.expectedOutput}</div>
                                             {/* Scanline */}
                                             <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500/20 animate-scan-fast pointer-events-none" />
@@ -671,7 +671,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                     <Button
                                         onClick={handleSubmit}
                                         disabled={isSuccess}
-                                        className={`w-full py-5 text-lg font-black tracking-widest uppercase flex items-center justify-center gap-3 relative overflow-hidden group transition-all duration-300
+                                        className={`w-full py-3 text-sm font-black tracking-widest uppercase flex items-center justify-center gap-3 relative overflow-hidden group transition-all duration-300
                                             ${isSuccess
                                                 ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/50'
                                                 : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_30px_rgba(8,145,178,0.4)]'
