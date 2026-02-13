@@ -506,8 +506,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
 
                             {/* RIGHT SIDEBAR: INVITE & FRIENDS */}
                             <div className="w-80 bg-black/60 border-l border-white/5 flex flex-col p-6 backdrop-blur-md" onClick={(e) => e.stopPropagation()}>
-                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-6 flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
+                                <div className="mb-6">
+                                    <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-3 mb-2">
                                         <span>Invite Friends</span>
                                         <button
                                             onClick={() => { playClick(); setModalMode('friend'); setShowAddFriendModal(true); }}
@@ -515,9 +515,9 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                         >
                                             <UserPlus className="w-4 h-4 text-slate-400 group-hover/add:text-cyan-400" />
                                         </button>
-                                    </div>
-                                    <span className="text-[10px] px-2 py-1 bg-white/10 rounded">{onlineUsers.length} Online</span>
-                                </h3>
+                                    </h3>
+                                    <span className="text-[10px] px-2 py-1 bg-white/10 rounded text-slate-500 font-bold">{onlineUsers.length} Online</span>
+                                </div>
 
                                 <div className="flex-1 overflow-y-auto space-y-2 -mx-2 px-2 custom-scrollbar">
                                     {onlineUsers.length === 0 ? (
