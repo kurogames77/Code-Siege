@@ -412,7 +412,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                     <div className={`w-24 h-24 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md relative mb-3 transition-all duration-500 ${isUserReady || matchState === 'idle' ? 'border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)] scale-110' : 'border-slate-500'}`}>
                                                         <img src={user.avatar} className="w-full h-full object-cover rounded-lg" alt="Avatar" />
                                                         <div className="absolute -bottom-2.5 -right-2.5 p-0.5">
-                                                            <img src={user.rankIcon} className="w-6 h-6 rounded-full object-contain" alt="Rank" />
+                                                            <img src={user.rankIcon} className="w-8 h-8 rounded-full object-contain" alt="Rank" />
                                                         </div>
                                                     </div>
                                                     <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter drop-shadow-[0_4px_12px_rgba(0,0,0,1)]">{user.name}</h2>
@@ -480,7 +480,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                             <div className={`w-24 h-24 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md relative mb-3 transition-all duration-500 ${isOpponentReady ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.6)] scale-110' : 'border-slate-500'}`}>
                                                                 <img src={opponent.avatar} className="w-full h-full object-cover rounded-lg" alt="Avatar" />
                                                                 <div className="absolute -bottom-2.5 -right-2.5 p-0.5">
-                                                                    <img src={opponent.rankIcon} className="w-6 h-6 rounded-full object-contain" alt="Rank" />
+                                                                    <img src={opponent.rankIcon} className="w-8 h-8 rounded-full object-contain" alt="Rank" />
                                                                 </div>
                                                             </div>
                                                             <h2 className="text-xl font-black text-white italic uppercase tracking-tighter drop-shadow-[0_4px_12px_rgba(0,0,0,1)] scale-110">{opponent.name}</h2>
