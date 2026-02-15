@@ -94,7 +94,7 @@ router.post('/register', async (req, res) => {
                 data: {
                     username
                 },
-                emailRedirectTo: 'http://localhost:5173/ConfirmationPage'
+                emailRedirectTo: `${process.env.CLIENT_URL}/ConfirmationPage`
             }
         });
 

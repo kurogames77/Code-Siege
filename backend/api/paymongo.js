@@ -36,8 +36,8 @@ router.post('/create-link', async (req, res) => {
                         description: description,
                         remarks: remarks || 'Code Siege Gem Purchase',
                         redirect: {
-                            success: req.body.successUrl || 'http://localhost:5173/payment-callback?status=success',
-                            failed: req.body.cancelUrl || 'http://localhost:5173/payment-callback?status=failed'
+                            success: req.body.successUrl || `${process.env.CLIENT_URL}/payment-callback?status=success`,
+                            failed: req.body.cancelUrl || `${process.env.CLIENT_URL}/payment-callback?status=failed`
                         },
                         checkout_methods: ['card', 'paymaya', 'gcash', 'grab_pay', 'dob']
                     }

@@ -143,7 +143,7 @@ router.post('/applications/:id/approve', requireAdmin, async (req, res) => {
 
         // Send invite email so user can confirm
         const { error: inviteError } = await supabaseService.auth.admin.inviteUserByEmail(application.email, {
-            redirectTo: 'http://localhost:5173/ConfirmationPage'
+            redirectTo: `${process.env.CLIENT_URL}/ConfirmationPage`
         });
 
         if (inviteError) {
