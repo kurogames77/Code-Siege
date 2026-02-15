@@ -380,7 +380,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
 
 
                                                 {/* Hero Image - Full Body */}
-                                                <div className="absolute inset-x-0 bottom-0 h-4/5 z-10 pointer-events-none flex items-end justify-center overflow-hidden">
+                                                <div className="absolute inset-x-0 bottom-0 h-[70%] z-10 pointer-events-none flex items-end justify-center overflow-hidden">
                                                     <motion.img
                                                         initial={{ scale: 1.0, y: 50 }}
                                                         animate={{
@@ -410,7 +410,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className={`absolute bottom-0 inset-x-0 h-2 shadow-[0_0_20px_rgba(34,211,238,0.8)] ${isUserReady || matchState === 'idle' ? 'bg-cyan-500' : 'bg-slate-700'}`} />
+
 
                                             {/* Not Ready Overlay Text */}
                                             {matchState !== 'idle' && !isUserReady && (
@@ -450,7 +450,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
 
                                                     <div className="absolute inset-0 flex flex-col">
                                                         {/* Hero - Full Body */}
-                                                        <div className="absolute inset-0 z-10 pointer-events-none flex items-end justify-center overflow-hidden h-4/5 bottom-0 top-auto">
+                                                        <div className="absolute inset-0 z-10 pointer-events-none flex items-end justify-center overflow-hidden h-[70%] bottom-0 top-auto">
                                                             <motion.img
                                                                 initial={{ scale: 1.0, y: 50 }}
                                                                 animate={{
