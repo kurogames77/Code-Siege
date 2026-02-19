@@ -111,39 +111,71 @@ router.post('/register', async (req, res) => {
 
         // Create user profile in users table
         // IMPORTANT: Use supabaseService (service role) to bypass RLS.
-        // Use UPSERT because a Supabase trigger on auth.users auto-creates a
-        // profile row (with email prefix as username, NULL student_id, default gems)
-        // immediately after signUp(). We need to overwrite that row with correct data.
-        const { data: profile, error: profileError } = await supabaseService
+        // A Supabase trigger on auth.users auto-creates a profile row
+        // (with email prefix as username, NULL student_id, default gems)
+        // immediately after signUp(). We try INSERT first, and if it fails
+        // (duplicate key), we UPDATE the trigger-created row with correct data.
+        let profile = null;
+        let profileError = null;
+
+        const profileData = {
+            id: authData.user.id,
+            username,
+            email,
+            student_id: student_id || null,
+            course: course || null,
+            role: 'user',
+            level: 1,
+            xp: 0,
+            gems: 0,
+            selected_hero: '3',
+            selected_theme: 'default'
+        };
+
+        // Try INSERT first
+        const insertResult = await supabaseService
             .from('users')
-            .upsert({
-                id: authData.user.id,
-                username,
-                email,
-                student_id: student_id || null,
-                course: course || null,
-                role: 'user',
-                level: 1,
-                xp: 0,
-                gems: 0,
-                selected_hero: '3',
-                selected_theme: 'default'
-            }, { onConflict: 'id' })
+            .insert(profileData)
             .select()
             .single();
 
-        if (profileError) {
-            console.error('Profile creation error:', profileError);
-            if (profileError.code === '23505') {
-                if (profileError.message.includes('student_id')) {
-                    logger.warn('AUTH_SERVICE', `Registration failed: Duplicate Student ID ${student_id}`);
-                    return res.status(400).json({ error: 'Student ID is already registered' });
+        if (insertResult.error) {
+            if (insertResult.error.code === '23505') {
+                // Row already exists (created by Supabase trigger) — UPDATE it
+                console.log('[Auth] Profile row already exists (trigger), updating with correct data...');
+                const updateResult = await supabaseService
+                    .from('users')
+                    .update({
+                        username,
+                        student_id: student_id || null,
+                        course: course || null,
+                        role: 'user',
+                        level: 1,
+                        xp: 0,
+                        gems: 0,
+                        selected_hero: '3',
+                        selected_theme: 'default'
+                    })
+                    .eq('id', authData.user.id)
+                    .select()
+                    .single();
+
+                profile = updateResult.data;
+                profileError = updateResult.error;
+
+                if (profileError) {
+                    console.error('Profile UPDATE error:', profileError);
                 }
-                if (profileError.message.includes('username')) {
-                    logger.warn('AUTH_SERVICE', `Registration failed: Duplicate Username ${username}`);
-                    return res.status(400).json({ error: 'Username is taken' });
-                }
+            } else {
+                // Some other error
+                profileError = insertResult.error;
+                console.error('Profile INSERT error:', profileError);
             }
+        } else {
+            profile = insertResult.data;
+        }
+
+        if (profileError) {
             logger.error('AUTH_SERVICE', `Profile creation failed for ${email}`, { error: profileError });
             return res.status(201).json({
                 message: 'Registration successful (with profile warning)',
