@@ -16,14 +16,14 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: 'Email, password, and username are required' });
         }
 
+        // Ensure service role client is available for profile creation
+        if (!supabaseService) {
+            console.error('SUPABASE_SERVICE_ROLE_KEY is missing. Cannot create user profiles.');
+            return res.status(500).json({ error: 'Server configuration error: Contact administrator' });
+        }
+
         // INSTRUCTOR REGISTRATION: Store as pending application (no auth user yet)
         if (role === 'teacher') {
-            // Check if service role is available
-            if (!supabaseService) {
-                console.error('SUPABASE_SERVICE_ROLE_KEY is missing. Cannot process instructor application.');
-                return res.status(500).json({ error: 'Server configuration error: Contact administrator' });
-            }
-
             // Check if email already exists in applications or users
             // Use supabaseService to bypass RLS
             const { data: existingApp } = await supabaseService
@@ -110,21 +110,25 @@ router.post('/register', async (req, res) => {
         }
 
         // Create user profile in users table
-        const { data: profile, error: profileError } = await supabase
+        // IMPORTANT: Use supabaseService (service role) to bypass RLS.
+        // Use UPSERT because a Supabase trigger on auth.users auto-creates a
+        // profile row (with email prefix as username, NULL student_id, default gems)
+        // immediately after signUp(). We need to overwrite that row with correct data.
+        const { data: profile, error: profileError } = await supabaseService
             .from('users')
-            .insert({
+            .upsert({
                 id: authData.user.id,
                 username,
                 email,
                 student_id: student_id || null,
                 course: course || null,
-                role: 'user', // Students get 'user' role
+                role: 'user',
                 level: 1,
                 xp: 0,
                 gems: 0,
                 selected_hero: '3',
                 selected_theme: 'default'
-            })
+            }, { onConflict: 'id' })
             .select()
             .single();
 
@@ -150,7 +154,7 @@ router.post('/register', async (req, res) => {
             });
         }
 
-        logger.info('AUTH_SERVICE', `New student registered: ${username}`);
+        logger.info('AUTH_SERVICE', `New student registered: ${username} (${email}), student_id: ${student_id}`);
 
         res.status(201).json({
             message: 'Registration successful',
