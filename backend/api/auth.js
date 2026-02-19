@@ -191,8 +191,8 @@ router.post('/login', async (req, res) => {
 
         // If student_id provided (used for both Student and Instructor login), look up the email
         if (student_id && !email) {
-            console.log(`[Auth] Looking up email for ID: ${student_id}`);
-            const { data: userProfile, error: lookupError } = await supabase
+            // Use supabaseService to bypass RLS (user isn't authenticated yet)
+            const { data: userProfile, error: lookupError } = await supabaseService
                 .from('users')
                 .select('email')
                 .eq('student_id', student_id)
