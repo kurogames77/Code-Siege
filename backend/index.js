@@ -40,7 +40,7 @@ app.use('/api/paymongo', paymongoRoutes);
 
 // Health check
 app.get('/', (req, res) => {
-    res.json({ status: 'ok', message: 'Code Siege Backend API' });
+    res.json({ status: 'ok', message: 'Code Siege Backend API v2' });
 });
 
 // Error handling middleware
