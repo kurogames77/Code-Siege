@@ -9,6 +9,8 @@ const router = express.Router();
  * Register a new user (students immediately, instructors go to pending)
  */
 router.post('/register', async (req, res) => {
+    console.log('[Auth] POST /register request received');
+    res.setHeader('X-Backend-Version', '2.2');
     try {
         const { email, password, username, student_id, course, role } = req.body;
 
@@ -189,7 +191,7 @@ router.post('/register', async (req, res) => {
         logger.info('AUTH_SERVICE', `New student registered: ${username} (${email}), student_id: ${student_id}`);
 
         res.status(201).json({
-            message: 'Registration successful',
+            message: 'Registration successful v2.2',
             user: authData.user,
             profile,
             session: authData.session
@@ -208,6 +210,8 @@ router.post('/register', async (req, res) => {
  * Login user (supports email or student_id)
  */
 router.post('/login', async (req, res) => {
+    console.log('[Auth] POST /login request received');
+    res.setHeader('X-Backend-Version', '2.2');
     try {
         const { email, password, student_id } = req.body;
 
