@@ -17,11 +17,27 @@ import rankDiamond from '../../assets/rankbadges/rank12.png';
 
 const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
     const navigate = useNavigate();
-    const [selectedLanguage, setSelectedLanguage] = useState('JavaScript');
+    const [courses, setCourses] = useState([]);
+    const [selectedLanguage, setSelectedLanguage] = useState('');
     const [selectedMode, setSelectedMode] = useState('Puzzle Blocks');
     const [selectedWager, setSelectedWager] = useState('100');
     const { playClick, playSuccess, playCancel, playSelect, playCountdownVoice } = useSound();
     const { user } = useUser();
+
+    // Fetch courses from Supabase
+    useEffect(() => {
+        const fetchCourses = async () => {
+            const { data, error } = await supabase
+                .from('courses')
+                .select('id, name')
+                .order('name', { ascending: true });
+            if (data && data.length > 0) {
+                setCourses(data);
+                if (!selectedLanguage) setSelectedLanguage(data[0].name);
+            }
+        };
+        fetchCourses();
+    }, []);
 
     // MATCH & READY STATE
     const [matchState, setMatchState] = useState('idle'); // 'idle', 'lobby', 'starting'
@@ -325,10 +341,9 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                 onChange={(e) => { playSelect(); setSelectedLanguage(e.target.value); }}
                                                 className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-cyan-500 focus:outline-none transition-colors"
                                             >
-                                                <option>Python</option>
-                                                <option>JavaScript</option>
-                                                <option>C++</option>
-                                                <option>Java</option>
+                                                {courses.map((c) => (
+                                                    <option key={c.id} value={c.name}>{c.name}</option>
+                                                ))}
                                             </select>
                                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />
                                         </div>
@@ -648,15 +663,74 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
 
 const AddFriendModal = ({ isOpen, onClose, mode }) => {
     const { playClick, playSuccess } = useSound();
+    const { user } = useUser();
     const [searchQuery, setSearchQuery] = useState('');
+    const [foundUser, setFoundUser] = useState(null);
+    const [searching, setSearching] = useState(false);
+    const [searchError, setSearchError] = useState('');
 
-    // No accounts to show for new users
-    const existingAccounts = [];
+    const handleSearch = async () => {
+        const query = searchQuery.trim();
+        if (!query) return;
 
-    const handleAdd = (id) => {
+        setSearching(true);
+        setSearchError('');
+        setFoundUser(null);
+
+        try {
+            const { data, error } = await supabase
+                .from('users')
+                .select('id, username, student_id, avatar_url, course, xp')
+                .eq('student_id', query)
+                .single();
+
+            if (error || !data) {
+                setSearchError('No player found with that ID');
+                return;
+            }
+
+            if (data.id === user?.id) {
+                setSearchError("That's your own ID!");
+                return;
+            }
+
+            playSuccess();
+            setFoundUser(data);
+        } catch (err) {
+            setSearchError('Search failed. Try again.');
+        } finally {
+            setSearching(false);
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') handleSearch();
+    };
+
+    const handleAdd = () => {
+        if (!foundUser) return;
         playSuccess();
-        // Logic to add friend would go here
+        // TODO: Add friend/invite logic here
         onClose();
+    };
+
+    // Reset state when modal opens/closes
+    useEffect(() => {
+        if (!isOpen) {
+            setSearchQuery('');
+            setFoundUser(null);
+            setSearchError('');
+        }
+    }, [isOpen]);
+
+    // Determine rank from XP
+    const getRankName = (xp) => {
+        if (xp >= 5000) return 'Diamond';
+        if (xp >= 3000) return 'Platinum';
+        if (xp >= 1500) return 'Gold';
+        if (xp >= 500) return 'Silver';
+        if (xp >= 100) return 'Bronze';
+        return 'Novice';
     };
 
     return (
@@ -675,7 +749,7 @@ const AddFriendModal = ({ isOpen, onClose, mode }) => {
                         </div>
                         <div>
                             <h3 className="text-white font-black text-lg italic tracking-wider">{mode === 'friend' ? 'ADD FRIEND' : 'ADD OPPONENT'}</h3>
-                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Connect with players</p>
+                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Search by Student ID</p>
                         </div>
                     </div>
                     <button
@@ -687,46 +761,102 @@ const AddFriendModal = ({ isOpen, onClose, mode }) => {
                 </div>
 
                 {/* Content */}
-                <div className="p-6 space-y-6">
-                    {/* Search */}
-                    <div className="relative group">
-                        <div className="absolute inset-0 bg-cyan-500/10 blur-xl rounded-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-cyan-400 transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Search username or ID..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm pl-11 pr-4 py-3 rounded-xl focus:border-cyan-500 focus:outline-none transition-all placeholder:text-slate-600 relative z-10"
-                        />
+                <div className="p-6 space-y-5">
+                    {/* Search Input */}
+                    <div className="relative group flex gap-2">
+                        <div className="relative flex-1">
+                            <div className="absolute inset-0 bg-cyan-500/10 blur-xl rounded-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-cyan-400 transition-colors z-20" />
+                            <input
+                                type="text"
+                                placeholder="Enter Student ID (e.g. 22-A-01003)"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm pl-11 pr-4 py-3 rounded-xl focus:border-cyan-500 focus:outline-none transition-all placeholder:text-slate-600 relative z-10"
+                            />
+                        </div>
+                        <button
+                            onClick={handleSearch}
+                            disabled={searching || !searchQuery.trim()}
+                            className="px-4 py-3 bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all relative z-10 shrink-0"
+                        >
+                            {searching ? (
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                'Search'
+                            )}
+                        </button>
                     </div>
 
-                    {/* List */}
-                    <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar -mr-2 pr-2">
-                        {existingAccounts.map((account) => (
-                            <div key={account.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-all group">
-                                <div className="w-10 h-10 rounded-lg bg-slate-800 overflow-hidden border border-white/10">
-                                    <img src={account.avatar} alt="" className="w-full h-full object-cover" />
+                    {/* Search Error */}
+                    {searchError && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl"
+                        >
+                            <User className="w-4 h-4 text-red-400 shrink-0" />
+                            <p className="text-red-400 text-xs font-bold">{searchError}</p>
+                        </motion.div>
+                    )}
+
+                    {/* Found User Profile Card */}
+                    {foundUser && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-gradient-to-br from-cyan-950/40 to-slate-900/60 border border-cyan-500/20 rounded-2xl p-5 relative overflow-hidden"
+                        >
+                            {/* Glow */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 blur-[60px] pointer-events-none" />
+
+                            <div className="flex items-center gap-4 relative z-10">
+                                {/* Avatar */}
+                                <div className="w-16 h-16 rounded-xl border-2 border-cyan-500/40 bg-slate-800 overflow-hidden shadow-[0_0_20px_rgba(34,211,238,0.2)] shrink-0">
+                                    <img
+                                        src={foundUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${foundUser.username}`}
+                                        alt="Avatar"
+                                        className="w-full h-full object-cover"
+                                    />
                                 </div>
-                                <div className="flex-1">
-                                    <h4 className="text-sm font-bold text-slate-200 group-hover:text-white">{account.name}</h4>
-                                    <p className="text-[10px] uppercase font-bold text-slate-500">{account.rank}</p>
+
+                                {/* Info */}
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-white font-black text-lg uppercase tracking-wider truncate">{foundUser.username}</h4>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">{getRankName(foundUser.xp || 0)}</span>
+                                        <span className="w-1 h-1 bg-slate-600 rounded-full" />
+                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{foundUser.course || 'N/A'}</span>
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 font-mono mt-1">ID: {foundUser.student_id}</p>
                                 </div>
-                                <button
-                                    onClick={() => handleAdd(account.id)}
-                                    className="p-2 bg-cyan-500/10 hover:bg-cyan-500 text-cyan-400 hover:text-black rounded-lg transition-all font-bold"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                </button>
                             </div>
-                        ))}
-                    </div>
+
+                            {/* Add Button */}
+                            <button
+                                onClick={handleAdd}
+                                className="w-full mt-4 py-3 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white font-black text-sm uppercase tracking-[0.2em] rounded-xl transition-all shadow-[0_0_20px_rgba(34,211,238,0.3)] hover:shadow-[0_0_30px_rgba(34,211,238,0.5)] relative z-10 flex items-center justify-center gap-2"
+                            >
+                                <Plus className="w-4 h-4" />
+                                {mode === 'friend' ? 'Add Friend' : 'Invite to Duel'}
+                            </button>
+                        </motion.div>
+                    )}
+
+                    {/* Empty State */}
+                    {!foundUser && !searchError && !searching && (
+                        <div className="flex flex-col items-center justify-center py-8 text-center opacity-40">
+                            <Search className="w-8 h-8 text-slate-600 mb-3" />
+                            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Enter a Student ID to find a player</p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer */}
                 <div className="p-4 bg-black/40 border-t border-white/5 text-center">
                     <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                        Or share your ID: <span className="text-slate-300 select-all">8472-9921</span>
+                        Or share your ID: <span className="text-cyan-400 select-all font-mono">{user?.student_id || '—'}</span>
                     </p>
                 </div>
             </motion.div>
