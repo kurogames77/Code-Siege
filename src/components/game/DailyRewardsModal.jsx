@@ -395,13 +395,13 @@ const DailyRewardView = ({ theme, onClaimReward, userId, timeLeft }) => {
     }, [userId]);
 
     const dailyRewards = [
-        { day: 1, reward: 100, icon: expIcon },
-        { day: 2, reward: 200, icon: expIcon },
-        { day: 3, reward: 400, icon: expIcon },
-        { day: 4, reward: 600, icon: expIcon },
-        { day: 5, reward: 800, icon: expIcon },
-        { day: 6, reward: 1000, icon: expIcon },
-        { day: 7, reward: 1000, icon: expIcon, isBig: true },
+        { day: 1, reward: 10, icon: expIcon },
+        { day: 2, reward: 20, icon: expIcon },
+        { day: 3, reward: 30, icon: expIcon },
+        { day: 4, reward: 40, icon: expIcon },
+        { day: 5, reward: 50, icon: expIcon },
+        { day: 6, reward: 60, icon: expIcon },
+        { day: 7, reward: 100, icon: expIcon, isBig: true },
     ];
 
     const isClaimableToday = () => {
