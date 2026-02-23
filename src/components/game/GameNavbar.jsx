@@ -10,6 +10,7 @@ import leaderboardIcon from '../../assets/leaderboard.png';
 import gemIcon from '../../assets/gem.png';
 import expIcon from '../../assets/exp.png';
 import logoutIcon from '../../assets/logoutbutton.png';
+import notificationIcon from '../../assets/Notification.png';
 import icongame from '../../assets/icongame.png';
 import nameLogo from '../../assets/name.png';
 import RankingModal from './RankingModal';
@@ -22,9 +23,11 @@ import DuelLobbyModal from './DuelLobbyModal';
 import MultiplayerLobbyModal from './MultiplayerLobbyModal';
 import ProfileModal from './ProfileModal';
 import LogoutModal from './LogoutModal';
+import NotificationModal from './NotificationModal';
 import useSound from '../../hooks/useSound';
 import { useMusic } from '../../contexts/MusicContext';
 import { useUser } from '../../contexts/UserContext'; // New Context
+import supabase from '../../lib/supabase';
 
 const GameNavbar = ({ onLobbyStateChange }) => {
     const navigate = useNavigate();
@@ -42,8 +45,37 @@ const GameNavbar = ({ onLobbyStateChange }) => {
     const [isMultiplayerLobbyOpen, setIsMultiplayerLobbyOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isLogoutOpen, setIsLogoutOpen] = useState(false);
+    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+    const [notificationCount, setNotificationCount] = useState(0);
     const { playClick, playCancel } = useSound();
 
+
+    // Fetch notification count
+    useEffect(() => {
+        if (!user?.id) return;
+        const fetchCount = async () => {
+            const { count } = await supabase
+                .from('notifications')
+                .select('*', { count: 'exact', head: true })
+                .eq('receiver_id', user.id)
+                .eq('is_read', false);
+            setNotificationCount(count || 0);
+        };
+        fetchCount();
+
+        // Listen for real-time changes
+        const channel = supabase
+            .channel('notif_count')
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'notifications',
+                filter: `receiver_id=eq.${user.id}`
+            }, () => fetchCount())
+            .subscribe();
+
+        return () => supabase.removeChannel(channel);
+    }, [user?.id]);
 
     // Auto-open lobbies when navigating from arena battle
     useEffect(() => {
@@ -173,6 +205,27 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Notification */}
+                    <button
+                        onClick={() => {
+                            playClick();
+                            setIsNotificationOpen(true);
+                        }}
+                        className="nav-item-zoom group relative flex items-center justify-center transition-all"
+                    >
+                        <img
+                            src={notificationIcon}
+                            alt="Notifications"
+                            className="w-14 h-14 object-contain drop-shadow-[0_0_15px_rgba(34,211,238,0.3)] group-hover:drop-shadow-[0_0_25px_rgba(34,211,238,0.6)]"
+                        />
+                        {/* Badge - shows when there are pending notifications */}
+                        {notificationCount > 0 && (
+                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full border-2 border-slate-900 flex items-center justify-center animate-pulse">
+                                <span className="text-[10px] font-black text-white">{notificationCount}</span>
+                            </div>
+                        )}
+                    </button>
 
                     {/* Logout - Enlarged */}
                     <button
@@ -316,6 +369,22 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                 onConfirm={async () => {
                     await logout();
                     navigate('/', { state: { loggedOut: true } });
+                }}
+            />
+
+            <NotificationModal
+                isOpen={isNotificationOpen}
+                onClose={() => {
+                    setIsNotificationOpen(false);
+                    // Refresh count when closing
+                    if (user?.id) {
+                        supabase
+                            .from('notifications')
+                            .select('*', { count: 'exact', head: true })
+                            .eq('receiver_id', user.id)
+                            .eq('is_read', false)
+                            .then(({ count }) => setNotificationCount(count || 0));
+                    }
                 }}
             />
         </>

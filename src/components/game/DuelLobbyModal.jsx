@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { X, ChevronDown, Swords, Volume2, VolumeX, Plus, User, UserPlus, Search } from 'lucide-react';
+import { X, ChevronDown, Swords, Volume2, VolumeX, Plus, User, UserPlus, Search, Check } from 'lucide-react';
 import heroAsset from '../../assets/hero1.png';
 import hero1aStatic from '../../assets/hero1a.png';
 import hero2Static from '../../assets/hero2.png';
@@ -707,11 +707,68 @@ const AddFriendModal = ({ isOpen, onClose, mode }) => {
         if (e.key === 'Enter') handleSearch();
     };
 
-    const handleAdd = () => {
-        if (!foundUser) return;
-        playSuccess();
-        // TODO: Add friend/invite logic here
-        onClose();
+    const [addStatus, setAddStatus] = useState(''); // '', 'sending', 'sent', 'error', 'already_sent'
+
+    const handleAdd = async () => {
+        if (!foundUser || !user?.id) return;
+        setAddStatus('sending');
+
+        try {
+            // Check if a friend_request notification already exists between these users
+            const { data: existing } = await supabase
+                .from('notifications')
+                .select('id, action_status')
+                .eq('type', 'friend_request')
+                .or(`and(sender_id.eq.${user.id},receiver_id.eq.${foundUser.id}),and(sender_id.eq.${foundUser.id},receiver_id.eq.${user.id})`)
+                .limit(1);
+
+            if (existing && existing.length > 0) {
+                const req = existing[0];
+                if (req.action_status === 'accepted') {
+                    setAddStatus('already_friends');
+                } else if (req.action_status === 'pending') {
+                    setAddStatus('already_sent');
+                } else {
+                    // Declined — allow re-send by updating
+                    await supabase
+                        .from('notifications')
+                        .update({
+                            action_status: 'pending',
+                            is_read: false,
+                            created_at: new Date().toISOString(),
+                            sender_id: user.id,
+                            receiver_id: foundUser.id,
+                            title: user.name || user.username || 'Someone',
+                            message: `wants to be your friend`
+                        })
+                        .eq('id', req.id);
+                    playSuccess();
+                    setAddStatus('sent');
+                }
+                return;
+            }
+
+            // Create new friend request notification
+            const { error } = await supabase
+                .from('notifications')
+                .insert({
+                    type: 'friend_request',
+                    sender_id: user.id,
+                    receiver_id: foundUser.id,
+                    title: user.name || user.username || 'Someone',
+                    message: `wants to be your friend`,
+                    action_status: 'pending',
+                    is_read: false
+                });
+
+            if (error) throw error;
+
+            playSuccess();
+            setAddStatus('sent');
+        } catch (err) {
+            console.error('Failed to send friend request:', err);
+            setAddStatus('error');
+        }
     };
 
     // Reset state when modal opens/closes
@@ -720,6 +777,7 @@ const AddFriendModal = ({ isOpen, onClose, mode }) => {
             setSearchQuery('');
             setFoundUser(null);
             setSearchError('');
+            setAddStatus('');
         }
     }, [isOpen]);
 
@@ -836,10 +894,26 @@ const AddFriendModal = ({ isOpen, onClose, mode }) => {
                             {/* Add Button */}
                             <button
                                 onClick={handleAdd}
-                                className="w-full mt-4 py-3 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white font-black text-sm uppercase tracking-[0.2em] rounded-xl transition-all shadow-[0_0_20px_rgba(34,211,238,0.3)] hover:shadow-[0_0_30px_rgba(34,211,238,0.5)] relative z-10 flex items-center justify-center gap-2"
+                                disabled={addStatus === 'sending' || addStatus === 'sent' || addStatus === 'already_friends' || addStatus === 'already_sent'}
+                                className={`w-full mt-4 py-3 font-black text-sm uppercase tracking-[0.2em] rounded-xl transition-all relative z-10 flex items-center justify-center gap-2 ${addStatus === 'sent' ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]' :
+                                    addStatus === 'already_sent' || addStatus === 'already_friends' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                                        addStatus === 'error' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                                            'bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-[0_0_20px_rgba(34,211,238,0.3)] hover:shadow-[0_0_30px_rgba(34,211,238,0.5)]'
+                                    }`}
                             >
-                                <Plus className="w-4 h-4" />
-                                {mode === 'friend' ? 'Add Friend' : 'Invite to Duel'}
+                                {addStatus === 'sending' ? (
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : addStatus === 'sent' ? (
+                                    <><Check className="w-4 h-4" /> Request Sent!</>
+                                ) : addStatus === 'already_sent' ? (
+                                    'Request Already Pending'
+                                ) : addStatus === 'already_friends' ? (
+                                    'Already Friends'
+                                ) : addStatus === 'error' ? (
+                                    'Failed — Try Again'
+                                ) : (
+                                    <><Plus className="w-4 h-4" /> {mode === 'friend' ? 'Add Friend' : 'Invite to Duel'}</>
+                                )}
                             </button>
                         </motion.div>
                     )}
