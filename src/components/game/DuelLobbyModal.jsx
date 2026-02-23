@@ -856,7 +856,7 @@ const AddFriendModal = ({ isOpen, onClose, mode }) => {
                 {/* Footer */}
                 <div className="p-4 bg-black/40 border-t border-white/5 text-center">
                     <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                        Or share your ID: <span className="text-cyan-400 select-all font-mono">{user?.student_id || '—'}</span>
+                        Or share your ID: <span className="text-cyan-400 select-all font-mono">{user?.studentId || '—'}</span>
                     </p>
                 </div>
             </motion.div>
