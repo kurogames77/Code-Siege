@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import supabase, { supabaseService } from './lib/supabase.js';
 import cors from 'cors';
 import authRoutes from './api/auth.js';
 import userRoutes from './api/users.js';
@@ -40,7 +41,11 @@ app.use('/api/paymongo', paymongoRoutes);
 
 // Health check
 app.get('/', (req, res) => {
-    res.json({ status: 'ok', message: 'Code Siege Backend API v3' });
+    res.json({
+        status: 'ok',
+        message: 'Code Siege Backend API v3.1',
+        serviceRole: supabaseService ? 'available' : 'MISSING - SUPABASE_SERVICE_ROLE_KEY not set'
+    });
 });
 
 // Error handling middleware
