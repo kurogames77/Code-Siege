@@ -115,15 +115,13 @@ router.post('/register', async (req, res) => {
         // IMPORTANT: Use supabaseService (service role) to bypass RLS.
         // A Supabase trigger on auth.users auto-creates a profile row
         // (with email prefix as username, NULL student_id, default gems)
-        // immediately after signUp(). We try INSERT first, and if it fails
-        // (duplicate key), we UPDATE the trigger-created row with correct data.
+        // immediately after signUp(). We WAIT for the trigger row to exist,
+        // then UPDATE it with the correct data.
         let profile = null;
         let profileError = null;
 
-        const profileData = {
-            id: authData.user.id,
+        const correctProfileData = {
             username,
-            email,
             student_id: student_id || null,
             course: course || null,
             role: 'user',
@@ -134,47 +132,55 @@ router.post('/register', async (req, res) => {
             selected_theme: 'default'
         };
 
-        // Try INSERT first
-        const insertResult = await supabaseService
-            .from('users')
-            .insert(profileData)
-            .select()
-            .single();
+        // Wait for trigger to create the row, then UPDATE it
+        // Retry up to 5 times with increasing delay
+        const maxRetries = 5;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            // Wait for trigger to complete (increasing delay each retry)
+            const delay = attempt === 1 ? 500 : attempt * 1000;
+            console.log(`[Auth] Waiting ${delay}ms for trigger (attempt ${attempt}/${maxRetries})...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
 
-        if (insertResult.error) {
-            if (insertResult.error.code === '23505') {
-                // Row already exists (created by Supabase trigger) — UPDATE it
-                console.log('[Auth] Profile row already exists (trigger), updating with correct data...');
-                const updateResult = await supabaseService
+            const { data: updatedProfile, error: updateError } = await supabaseService
+                .from('users')
+                .update(correctProfileData)
+                .eq('id', authData.user.id)
+                .select()
+                .single();
+
+            if (updatedProfile && !updateError) {
+                profile = updatedProfile;
+                console.log(`[Auth] Profile updated successfully on attempt ${attempt}:`, {
+                    username: profile.username,
+                    student_id: profile.student_id,
+                    course: profile.course
+                });
+                break;
+            }
+
+            console.log(`[Auth] UPDATE attempt ${attempt} failed:`, updateError?.message || 'No row returned');
+
+            // On last attempt, try INSERT as absolute fallback
+            if (attempt === maxRetries) {
+                console.log('[Auth] All UPDATE attempts failed. Trying INSERT as fallback...');
+                const { data: insertedProfile, error: insertError } = await supabaseService
                     .from('users')
-                    .update({
-                        username,
-                        student_id: student_id || null,
-                        course: course || null,
-                        role: 'user',
-                        level: 1,
-                        xp: 0,
-                        gems: 0,
-                        selected_hero: '3',
-                        selected_theme: 'default'
+                    .insert({
+                        id: authData.user.id,
+                        email,
+                        ...correctProfileData
                     })
-                    .eq('id', authData.user.id)
                     .select()
                     .single();
 
-                profile = updateResult.data;
-                profileError = updateResult.error;
-
-                if (profileError) {
-                    console.error('Profile UPDATE error:', profileError);
+                if (insertedProfile && !insertError) {
+                    profile = insertedProfile;
+                    console.log('[Auth] Profile created via INSERT fallback');
+                } else {
+                    profileError = insertError || new Error('Profile creation failed after all retries');
+                    console.error('[Auth] INSERT fallback also failed:', profileError);
                 }
-            } else {
-                // Some other error
-                profileError = insertResult.error;
-                console.error('Profile INSERT error:', profileError);
             }
-        } else {
-            profile = insertResult.data;
         }
 
         if (profileError) {
