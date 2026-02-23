@@ -18,6 +18,7 @@ import rankDiamond from '../../assets/rankbadges/rank12.png';
 const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
     const navigate = useNavigate();
     const [selectedLanguage, setSelectedLanguage] = useState('JavaScript');
+    const [selectedMode, setSelectedMode] = useState('Puzzle Blocks');
     const [selectedWager, setSelectedWager] = useState('100');
     const { playClick, playSuccess, playCancel, playSelect, playCountdownVoice } = useSound();
     const { user } = useUser();
@@ -150,6 +151,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                 state: {
                     opponent: opponent.name,
                     language: selectedLanguage,
+                    mode: selectedMode,
                     wager: selectedWager
                 }
             });
@@ -327,6 +329,23 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                 <option>JavaScript</option>
                                                 <option>C++</option>
                                                 <option>Java</option>
+                                            </select>
+                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mode</label>
+                                        <div className="relative group">
+                                            <div className="absolute inset-0 bg-violet-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <select
+                                                value={selectedMode}
+                                                onChange={(e) => { playSelect(); setSelectedMode(e.target.value); }}
+                                                className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-violet-500 focus:outline-none transition-colors"
+                                            >
+                                                <option>Puzzle Blocks</option>
+                                                <option>Blocks</option>
+                                                <option>Hardcode</option>
                                             </select>
                                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />
                                         </div>
@@ -524,7 +543,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                     {onlineUsers.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center py-10 text-center">
                                             <User className="w-10 h-10 text-slate-700 mb-3" />
-                                            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">No one else in lobby</p>
+                                            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">No one else is online</p>
                                             <p className="text-slate-600 text-[10px] mt-1">Waiting for other players to connect...</p>
                                         </div>
                                     ) : (
