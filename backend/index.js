@@ -48,6 +48,40 @@ app.get('/', (req, res) => {
     });
 });
 
+// TEMPORARY: Debug lookup endpoint (remove after fixing)
+app.get('/debug-lookup/:studentId', async (req, res) => {
+    try {
+        const sid = req.params.studentId;
+        // Test with service role client
+        const { data: svcResult, error: svcError } = await supabaseService
+            .from('users')
+            .select('email, username, student_id')
+            .eq('student_id', sid)
+            .single();
+
+        // Test with anon client
+        const supabaseAnon = (await import('./lib/supabase.js')).default;
+        const { data: anonResult, error: anonError } = await supabaseAnon
+            .from('users')
+            .select('email, username, student_id')
+            .eq('student_id', sid)
+            .single();
+
+        res.json({
+            serviceRole: {
+                data: svcResult,
+                error: svcError ? { message: svcError.message, code: svcError.code, details: svcError.details } : null
+            },
+            anonClient: {
+                data: anonResult,
+                error: anonError ? { message: anonError.message, code: anonError.code, details: anonError.details } : null
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message, stack: err.stack });
+    }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
