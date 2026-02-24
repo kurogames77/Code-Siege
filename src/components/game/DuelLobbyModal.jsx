@@ -23,7 +23,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
     const [selectedMode, setSelectedMode] = useState('Puzzle Blocks');
     const [selectedWager, setSelectedWager] = useState('100');
     const { playClick, playSuccess, playCancel, playSelect, playCountdownVoice } = useSound();
-    const { user } = useUser();
+    const { user, onlineUserIds } = useUser();
 
     // Fetch courses from Supabase
     useEffect(() => {
