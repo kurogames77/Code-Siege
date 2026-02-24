@@ -82,16 +82,19 @@ const NotificationModal = ({ isOpen, onClose }) => {
 
         fetchNotifications();
 
-        // Subscribe to real-time changes
+        // Subscribe to real-time changes (no server-side filter for RLS compatibility)
         const channel = supabase
             .channel('notifications_changes')
             .on('postgres_changes', {
                 event: '*',
                 schema: 'public',
-                table: 'notifications',
-                filter: `receiver_id=eq.${user.id}`
-            }, () => {
-                fetchNotifications();
+                table: 'notifications'
+            }, (payload) => {
+                // Client-side filter: only react to changes for this user
+                const row = payload.new || payload.old;
+                if (row?.receiver_id === user.id) {
+                    fetchNotifications();
+                }
             })
             .subscribe();
 
@@ -289,8 +292,8 @@ const NotificationModal = ({ isOpen, onClose }) => {
                                                 initial={{ opacity: 0, x: 20 }}
                                                 animate={{ opacity: 1, x: 0 }}
                                                 className={`group relative rounded-xl p-4 transition-all ${notif.is_read
-                                                        ? 'bg-slate-800/20 border border-white/3'
-                                                        : `bg-slate-800/40 hover:bg-slate-800/60 border border-${config.color}-500/15 hover:border-${config.color}-500/30`
+                                                    ? 'bg-slate-800/20 border border-white/3'
+                                                    : `bg-slate-800/40 hover:bg-slate-800/60 border border-${config.color}-500/15 hover:border-${config.color}-500/30`
                                                     }`}
                                             >
                                                 {/* Unread indicator */}
@@ -359,8 +362,8 @@ const NotificationModal = ({ isOpen, onClose }) => {
                                                 {/* Actioned status */}
                                                 {isActioned && (
                                                     <div className={`mt-2 py-1.5 px-3 rounded-lg text-center text-xs font-bold uppercase tracking-wider ${notif.action_status === 'accepted'
-                                                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                                            : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                                        : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                                                         }`}>
                                                         {notif.action_status === 'accepted' ? '✓ Accepted' : '✗ Declined'}
                                                     </div>

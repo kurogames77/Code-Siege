@@ -63,15 +63,20 @@ const GameNavbar = ({ onLobbyStateChange }) => {
         };
         fetchCount();
 
-        // Listen for real-time changes
+        // Listen for real-time changes (no server-side filter for RLS compatibility)
         const channel = supabase
             .channel('notif_count')
             .on('postgres_changes', {
                 event: '*',
                 schema: 'public',
-                table: 'notifications',
-                filter: `receiver_id=eq.${user.id}`
-            }, () => fetchCount())
+                table: 'notifications'
+            }, (payload) => {
+                // Client-side filter: only react to changes for this user
+                const row = payload.new || payload.old;
+                if (row?.receiver_id === user.id) {
+                    fetchCount();
+                }
+            })
             .subscribe();
 
         return () => supabase.removeChannel(channel);
