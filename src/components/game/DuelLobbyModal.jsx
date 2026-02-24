@@ -82,7 +82,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                 .from('notifications')
                 .select('sender_id, receiver_id')
                 .eq('type', 'friend_request')
-                .eq('action_status', 'accepted');
+                .eq('action_status', 'accepted')
+                .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
 
             if (error || !notifs) return;
 
@@ -162,20 +163,22 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
             .on('broadcast', { event: 'duel-invite' }, ({ payload }) => {
                 if (payload.targetId === user.id) {
                     console.log('Received duel invite from:', payload.senderName);
-                    // For now, auto-accept or show a prompt. 
-                    // Let's auto-accept for demo purposes if we are idle
-                    if (matchState === 'idle') {
-                        playSuccess();
-                        setOpponent({
-                            id: payload.senderId,
-                            name: payload.senderName,
-                            avatar: payload.senderAvatar,
-                            rankName: payload.senderRankName,
-                            rankIcon: payload.senderRankIcon
-                        });
-                        setMatchState('lobby');
-                        setTimer(60);
-                    }
+                    // No longer auto-accepting. NotificationModal handles the UI.
+                }
+            })
+            .on('broadcast', { event: 'duel-accept' }, ({ payload }) => {
+                // If we are the sender and the recipient accepted
+                if (payload.targetId === user.id && matchState === 'idle') {
+                    playSuccess();
+                    setOpponent({
+                        id: payload.senderId,
+                        name: payload.senderName,
+                        avatar: payload.senderAvatar,
+                        rankName: payload.senderRankName,
+                        rankIcon: payload.senderRankIcon
+                    });
+                    setMatchState('lobby');
+                    setTimer(60);
                 }
             })
             .on('broadcast', { event: 'player-ready' }, ({ payload }) => {
@@ -237,30 +240,44 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
 
     // --- LOGIC ---
 
-    const handleInvite = (friend) => {
+    const handleInvite = async (friend) => {
+        if (invitedFriendId === friend.id) return;
         playClick();
+        setInvitedFriendId(friend.id);
 
-        // Broadcast the invite
-        if (lobbyChannelRef.current) {
-            lobbyChannelRef.current.send({
-                type: 'broadcast',
-                event: 'duel-invite',
-                payload: {
-                    targetId: friend.id,
-                    senderId: user.id,
-                    senderName: user.name,
-                    senderAvatar: user.avatar,
-                    senderRankName: user.rankName,
-                    senderRankIcon: user.rankIcon
-                }
-            });
+        try {
+            // 1. Send persistent notification
+            await supabase
+                .from('notifications')
+                .insert({
+                    type: 'duel_invite',
+                    sender_id: user.id,
+                    receiver_id: friend.id,
+                    title: user.name || user.username || 'Someone',
+                    message: 'invited you to a duel',
+                    action_status: 'pending',
+                    is_read: false
+                });
+
+            // 2. Broadcast the invite for real-time
+            if (lobbyChannelRef.current) {
+                lobbyChannelRef.current.send({
+                    type: 'broadcast',
+                    event: 'duel-invite',
+                    payload: {
+                        targetId: friend.id,
+                        senderId: user.id,
+                        senderName: user.name,
+                        senderAvatar: user.avatar,
+                        senderRankName: user.rankName,
+                        senderRankIcon: user.rankIcon
+                    }
+                });
+            }
+        } catch (err) {
+            console.error('Failed to send duel invite:', err);
+            setInvitedFriendId(null);
         }
-
-        setOpponent(friend);
-        setMatchState('lobby');
-        setTimer(60);
-        setIsUserReady(false);
-        setIsOpponentReady(false);
     };
 
     const handleReadyClick = () => {
@@ -652,8 +669,14 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                     </div>
                                                 </div>
                                                 {friend.status === 'online' && (
-                                                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400 group-hover:bg-rose-500 group-hover:text-white transition-colors">
-                                                        <Plus className="w-4 h-4" />
+                                                    <div className={`w-24 h-8 rounded-full flex items-center justify-center transition-all ${invitedFriendId === friend.id
+                                                        ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30'
+                                                        : 'bg-white/5 border border-white/5 text-slate-400 group-hover:bg-rose-500 group-hover:text-white'}`}>
+                                                        {invitedFriendId === friend.id ? (
+                                                            <span className="text-[10px] font-black uppercase tracking-tighter">Waiting...</span>
+                                                        ) : (
+                                                            <Plus className="w-4 h-4" />
+                                                        )}
                                                     </div>
                                                 )}
                                             </button>
@@ -662,71 +685,71 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                 </div>
                             </div>
                         </div>
-                </div>
 
                         {/* BOTTOM BAR */}
-            <div className="h-24 bg-black/80 border-t border-white/10 flex items-center justify-between px-8 backdrop-blur-xl relative z-20">
-                <div className="flex items-center gap-4 relative">
-                </div>
+                        <div className="h-24 bg-black/80 border-t border-white/10 flex items-center justify-between px-8 backdrop-blur-xl relative z-20">
+                            <div className="flex items-center gap-4 relative">
+                                {/* Potential controls here */}
+                            </div>
 
-                {/* READY / START BUTTON */}
-                <button
-                    onClick={handleReadyClick}
-                    disabled={isUserReady || !opponent || matchState === 'starting'}
-                    className={`h-14 px-16 rounded-full border-2 flex items-center justify-center gap-2 transition-all ${isUserReady
-                        ? 'bg-emerald-600 border-emerald-400 text-white cursor-default'
-                        : opponent
-                            ? 'bg-gradient-to-b from-amber-400 to-orange-500 border-amber-300 text-amber-950 font-black hover:scale-105 shadow-[0_0_30px_rgba(245,158,11,0.6)] cursor-pointer'
-                            : 'bg-slate-800 border-slate-600 text-slate-500 cursor-not-allowed'
-                        }`}
-                >
-                    <Swords className={`w-6 h-6 ${isUserReady || matchState === 'starting' ? '' : 'animate-pulse'}`} />
-                    <span className="font-black uppercase tracking-widest text-lg">
-                        {matchState === 'starting' ? 'STARTING...' : isUserReady ? 'READY!' : opponent ? 'CLICK TO READY' : 'WAITING FOR PLAYER'}
-                    </span>
-                </button>
-            </div>
-        </motion.div>
-
-                    {/* GAME START COUNTDOWN MODAL */ }
-    <AnimatePresence>
-        {matchState === 'starting' && (
-            <div className="absolute inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-md">
-                <motion.div
-                    key="countdown"
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 1.5 }}
-                    className="flex flex-col items-center"
-                >
-                    <p className="text-emerald-400 font-bold tracking-[0.2em] uppercase mb-4 text-xl">Game Starting In</p>
-                    <motion.div
-                        key="countdown-display"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="text-[120px] font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 leading-none drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]"
-                    >
-                        {startCountdown}
+                            {/* READY / START BUTTON */}
+                            <button
+                                onClick={handleReadyClick}
+                                disabled={isUserReady || !opponent || matchState === 'starting'}
+                                className={`h-14 px-16 rounded-full border-2 flex items-center justify-center gap-2 transition-all ${isUserReady
+                                    ? 'bg-emerald-600 border-emerald-400 text-white cursor-default'
+                                    : opponent
+                                        ? 'bg-gradient-to-b from-amber-400 to-orange-500 border-amber-300 text-amber-950 font-black hover:scale-105 shadow-[0_0_30px_rgba(245,158,11,0.6)] cursor-pointer'
+                                        : 'bg-slate-800 border-slate-600 text-slate-500 cursor-not-allowed'
+                                    }`}
+                            >
+                                <Swords className={`w-6 h-6 ${isUserReady || matchState === 'starting' ? '' : 'animate-pulse'}`} />
+                                <span className="font-black uppercase tracking-widest text-lg">
+                                    {matchState === 'starting' ? 'STARTING...' : isUserReady ? 'READY!' : opponent ? 'CLICK TO READY' : 'WAITING FOR PLAYER'}
+                                </span>
+                            </button>
+                        </div>
                     </motion.div>
-                </motion.div>
-            </div>
-        )}
-    </AnimatePresence>
 
-    {/* Lobby Music */ }
-    <audio
-        ref={audioRef}
-        src={lobbyMusic}
-        loop
-        volume={0.8}
-        preload="auto"
-    />
-    {
-        showAddFriendModal && (
-            <AddFriendModal isOpen={showAddFriendModal} onClose={() => setShowAddFriendModal(false)} mode={modalMode} />
-        )
-    }
+                    {/* GAME START COUNTDOWN MODAL */}
+                    <AnimatePresence>
+                        {matchState === 'starting' && (
+                            <div className="absolute inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-md">
+                                <motion.div
+                                    key="countdown"
+                                    initial={{ opacity: 0, scale: 0.5 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 1.5 }}
+                                    className="flex flex-col items-center"
+                                >
+                                    <p className="text-emerald-400 font-bold tracking-[0.2em] uppercase mb-4 text-xl">Game Starting In</p>
+                                    <motion.div
+                                        key="countdown-display"
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -20 }}
+                                        className="text-[120px] font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 leading-none drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]"
+                                    >
+                                        {startCountdown}
+                                    </motion.div>
+                                </motion.div>
+                            </div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Lobby Music */}
+                    <audio
+                        ref={audioRef}
+                        src={lobbyMusic}
+                        loop
+                        volume={0.8}
+                        preload="auto"
+                    />
+                    {
+                        showAddFriendModal && (
+                            <AddFriendModal isOpen={showAddFriendModal} onClose={() => setShowAddFriendModal(false)} mode={modalMode} />
+                        )
+                    }
                 </div >
             )}
         </AnimatePresence >
@@ -820,15 +843,15 @@ const AddFriendModal = ({ isOpen, onClose, mode }) => {
                 return;
             }
 
-            // Create new friend request notification
+            // Create new notification
             const { error } = await supabase
                 .from('notifications')
                 .insert({
-                    type: 'friend_request',
+                    type: mode === 'friend' ? 'friend_request' : 'duel_invite',
                     sender_id: user.id,
                     receiver_id: foundUser.id,
                     title: user.name || user.username || 'Someone',
-                    message: `wants to be your friend`,
+                    message: mode === 'friend' ? 'wants to be your friend' : 'invited you to a duel',
                     action_status: 'pending',
                     is_read: false
                 });
