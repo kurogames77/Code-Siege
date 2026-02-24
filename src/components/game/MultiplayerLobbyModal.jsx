@@ -14,13 +14,14 @@ import lobbyMusic from '../../assets/sounds/lobbymusic.mp3';
 import useSound from '../../hooks/useSound';
 import { useUser } from '../../contexts/UserContext';
 
-import { RANKS } from '../../utils/rankSystem';
+import { getRankFromExp as getRankData } from '../../utils/rankSystem';
+import supabase from '../../lib/supabase';
 
 const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
     const navigate = useNavigate();
 
     // Core User Data
-    const { user } = useUser();
+    const { user, onlineUserIds } = useUser();
 
     // Get selected hero
     const selectedHeroImage = localStorage.getItem('selectedHeroImage') || 'hero1a.png';
@@ -76,6 +77,8 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
     });
     const audioRef = React.useRef(null);
     const { playClick, playSuccess, playCancel, playSelect, playCountdownVoice } = useSound();
+    const [allFriends, setAllFriends] = useState([]);
+    const [invitedFriendId, setInvitedFriendId] = useState(null);
 
     // --- TIMERS & STATE MANAGEMENT ---
 
@@ -157,6 +160,68 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
     useEffect(() => {
         localStorage.setItem('lobbyMusic_muted', isMuted);
     }, [isMuted]);
+
+    // --- FETCH FRIENDS ---
+    useEffect(() => {
+        if (!isOpen || !user) return;
+
+        const fetchFriends = async () => {
+            console.log('[MultiplayerLobby] Fetching friends for user:', user.id);
+            const { data: notifs, error } = await supabase
+                .from('notifications')
+                .select('sender_id, receiver_id')
+                .eq('type', 'friend_request')
+                .eq('action_status', 'accepted')
+                .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+
+            if (error) {
+                console.error('[MultiplayerLobby] Error fetching friends:', error.message);
+                return;
+            }
+
+            if (!notifs || notifs.length === 0) {
+                setAllFriends([]);
+                return;
+            }
+
+            const friendIds = notifs.map(n =>
+                n.sender_id === user.id ? n.receiver_id : n.sender_id
+            ).filter(id => id !== user.id);
+
+            const uniqueIds = [...new Set(friendIds)];
+            if (uniqueIds.length === 0) {
+                setAllFriends([]);
+                return;
+            }
+
+            const { data: profiles, error: profileError } = await supabase
+                .from('users')
+                .select('id, username, avatar_url, xp')
+                .in('id', uniqueIds);
+
+            if (profileError) {
+                console.error('[MultiplayerLobby] Error fetching profiles:', profileError.message);
+                return;
+            }
+
+            if (profiles) {
+                const friendsList = profiles.map(p => {
+                    const rank = getRankData(p.xp || 0);
+                    return {
+                        id: p.id,
+                        name: p.username || 'Unknown',
+                        avatar: p.avatar_url,
+                        rankName: rank.name,
+                        rankIcon: rank.icon,
+                        xp: p.xp || 0
+                    };
+                });
+                setAllFriends(friendsList);
+            }
+        };
+
+        fetchFriends();
+    }, [isOpen, user]);
 
 
     // --- MATCHMAKING SIMULATION ---
@@ -327,6 +392,36 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
         setTimer(5); // 5s countdown
     };
 
+    const handleInvite = async (friend) => {
+        if (invitedFriendId === friend.id) return;
+        playClick();
+        setInvitedFriendId(friend.id);
+
+        try {
+            await supabase
+                .from('notifications')
+                .insert({
+                    type: 'duel_invite',
+                    sender_id: user.id,
+                    receiver_id: friend.id,
+                    title: user.name || user.username || 'Someone',
+                    message: 'invited you to a multiplayer match',
+                    action_status: 'pending',
+                    is_read: false
+                });
+
+            // Note: Since multi-lobby is currently simulated, we don't have a 
+            // shared realtime channel here yet like in DuelLobbyModal.
+            // But the notification will let the friend see the invite.
+            playSuccess();
+        } catch (err) {
+            console.error('Failed to send multi invite:', err);
+            setInviteError('Failed to send invitation');
+            setTimeout(() => setInviteError(null), 3000);
+            setInvitedFriendId(null);
+        }
+    };
+
     const handleBackClick = () => {
         playCancel();
         if (matchState !== 'idle') {
@@ -338,13 +433,13 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
 
     // --- RENDER HELPERS ---
 
-    const friends = [
-        // No friends yet for new accounts
-    ];
+    const friends = allFriends
+        .filter(f => onlineUserIds.has(f.id))
+        .map(f => ({ ...f, status: 'online' }));
 
-    const offlineFriends = [
-        // No offline friends for new accounts
-    ];
+    const offlineFriends = allFriends
+        .filter(f => !onlineUserIds.has(f.id))
+        .map(f => ({ ...f, status: 'offline' }));
 
     const getRank = (id) => RANKS.find(r => r.id === id) || RANKS[0];
     const slots = [0, 1, 2, 3, 4];
@@ -628,13 +723,18 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <span className="text-xs font-bold text-slate-200 truncate block">{friend.name}</span>
-                                                        <span className="text-[9px] text-amber-500">{rank.name}</span>
+                                                        <div className="flex items-center gap-1">
+                                                            <img src={friend.rankIcon} className="w-3 h-3 object-contain" alt="" />
+                                                            <span className="text-[9px] text-amber-500">{friend.rankName}</span>
+                                                        </div>
                                                     </div>
                                                     <button
                                                         onClick={() => handleInvite(friend)}
-                                                        className="w-6 h-6 rounded bg-emerald-600 flex items-center justify-center text-white hover:bg-emerald-500 transition-colors shrink-0"
+                                                        disabled={invitedFriendId === friend.id}
+                                                        className={`w-6 h-6 rounded flex items-center justify-center text-white transition-colors shrink-0 ${invitedFriendId === friend.id ? 'bg-amber-600' : 'bg-emerald-600 hover:bg-emerald-500'
+                                                            }`}
                                                     >
-                                                        <UserPlus className="w-3 h-3" />
+                                                        {invitedFriendId === friend.id ? <div className="w-2 h-2 border border-white/30 border-t-white rounded-full animate-spin" /> : <UserPlus className="w-3 h-3" />}
                                                     </button>
                                                 </div>
                                             );
@@ -657,7 +757,10 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <span className="text-xs font-bold text-slate-400 truncate block">{friend.name}</span>
-                                                    <span className="text-[9px] text-slate-600">{rank.name}</span>
+                                                    <div className="flex items-center gap-1">
+                                                        <img src={friend.rankIcon} className="w-3 h-3 object-contain opacity-50" alt="" />
+                                                        <span className="text-[9px] text-slate-600">{friend.rankName}</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
