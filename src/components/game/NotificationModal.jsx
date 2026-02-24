@@ -106,11 +106,29 @@ const NotificationModal = ({ isOpen, onClose }) => {
     const handleAccept = async (notifId) => {
         playSuccess();
         try {
+            // Find the notification to get sender info
+            const notif = notifications.find(n => n.id === notifId);
+
             await supabase
                 .from('notifications')
                 .update({ action_status: 'accepted', is_read: true })
                 .eq('id', notifId);
             setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, action_status: 'accepted', is_read: true } : n));
+
+            // Send a notification back to the original sender
+            if (notif?.sender_id) {
+                await supabase
+                    .from('notifications')
+                    .insert({
+                        type: 'system',
+                        sender_id: user.id,
+                        receiver_id: notif.sender_id,
+                        title: `${user.name || 'Someone'} accepted your friend request!`,
+                        message: 'You are now friends.',
+                        action_status: null,
+                        is_read: false
+                    });
+            }
         } catch (err) {
             console.error('Failed to accept:', err);
         }
@@ -119,11 +137,29 @@ const NotificationModal = ({ isOpen, onClose }) => {
     const handleDecline = async (notifId) => {
         playCancel();
         try {
+            // Find the notification to get sender info
+            const notif = notifications.find(n => n.id === notifId);
+
             await supabase
                 .from('notifications')
                 .update({ action_status: 'declined', is_read: true })
                 .eq('id', notifId);
             setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, action_status: 'declined', is_read: true } : n));
+
+            // Send a notification back to the original sender
+            if (notif?.sender_id) {
+                await supabase
+                    .from('notifications')
+                    .insert({
+                        type: 'system',
+                        sender_id: user.id,
+                        receiver_id: notif.sender_id,
+                        title: `${user.name || 'Someone'} declined your friend request.`,
+                        message: null,
+                        action_status: null,
+                        is_read: false
+                    });
+            }
         } catch (err) {
             console.error('Failed to decline:', err);
         }
