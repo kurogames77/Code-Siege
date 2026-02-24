@@ -5,6 +5,34 @@ import useSound from '../../hooks/useSound';
 import { useUser } from '../../contexts/UserContext';
 import supabase from '../../lib/supabase';
 
+// Import Rank Badges
+import rank1 from '../../assets/rankbadges/rank1.png';
+import rank2 from '../../assets/rankbadges/rank2.png';
+import rank3 from '../../assets/rankbadges/rank3.png';
+import rank4 from '../../assets/rankbadges/rank4.png';
+import rank5 from '../../assets/rankbadges/rank5.png';
+import rank6 from '../../assets/rankbadges/rank6.png';
+import rank7 from '../../assets/rankbadges/rank7.png';
+import rank8 from '../../assets/rankbadges/rank8.png';
+import rank9 from '../../assets/rankbadges/rank9.png';
+import rank10 from '../../assets/rankbadges/rank10.png';
+import rank11 from '../../assets/rankbadges/rank11.png';
+import rank12 from '../../assets/rankbadges/rank12.png';
+
+// Map rank names to badge images
+const RANK_BADGES = {
+    'Siege Novice': rank1,
+    'Siege Apprentice': rank2,
+    'Iron': rank3,
+    'Bronze': rank4,
+    'Silver': rank5,
+    'Gold': rank6,
+    'Platinum': rank7,
+    'Diamond': rank8,
+    'Master': rank9,
+    'Grandmaster': rank10,
+};
+
 // Notification type configs
 const TYPE_CONFIG = {
     friend_request: {
@@ -374,9 +402,16 @@ const NotificationModal = ({ isOpen, onClose }) => {
                                                         )}
                                                         {/* Sender rank info for friend requests */}
                                                         {sender && notif.type === 'friend_request' && (
-                                                            <p className={`text-[10px] ${getRankColor(getRankFromExp(sender.xp))} font-bold uppercase mt-1`}>
-                                                                {getRankFromExp(sender.xp)} • {sender.course || '—'}
-                                                            </p>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <img
+                                                                    src={RANK_BADGES[getRankFromExp(sender.xp)] || rank1}
+                                                                    alt={getRankFromExp(sender.xp)}
+                                                                    className="w-5 h-5 object-contain"
+                                                                />
+                                                                <span className={`text-[10px] ${getRankColor(getRankFromExp(sender.xp))} font-bold uppercase`}>
+                                                                    {getRankFromExp(sender.xp)} • {sender.course || '—'}
+                                                                </span>
+                                                            </div>
                                                         )}
                                                     </div>
                                                 </div>
