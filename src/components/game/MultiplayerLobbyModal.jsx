@@ -166,7 +166,9 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
         if (!isOpen || !user) return;
 
         const fetchFriends = async () => {
-            console.log('[MultiplayerLobby] Fetching friends for user:', user.id);
+            console.log('[MultiplayerLobby] fetchFriends called. User:', user?.id, user?.name);
+            if (!user?.id) return;
+
             const { data: notifs, error } = await supabase
                 .from('notifications')
                 .select('sender_id, receiver_id')
@@ -179,6 +181,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                 return;
             }
 
+            console.log(`[MultiplayerLobby] Query result - notifs:`, notifs?.length);
             if (!notifs || notifs.length === 0) {
                 setAllFriends([]);
                 return;
@@ -205,6 +208,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
             }
 
             if (profiles) {
+                console.log('[MultiplayerLobby] Successfully fetched profiles:', profiles.length);
                 const friendsList = profiles.map(p => {
                     const rank = getRankData(p.xp || 0);
                     return {
@@ -216,6 +220,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                         xp: p.xp || 0
                     };
                 });
+                console.log('[MultiplayerLobby] Formatted friends list:', friendsList.length);
                 setAllFriends(friendsList);
             }
         };
@@ -343,25 +348,6 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
         }
     };
 
-    const handleInvite = (friend) => {
-        if (friend.rankId === currentUser.rankId) {
-            // Allow invite (simulation)
-            // In a real app we'd send an invite. Here maybe add them to lobby?
-            // "you can invite... same rank... if not show message"
-            setInviteError(null);
-            // Simulate adding friend to lobby
-            if (!players.find(p => p.id === friend.id) && matchState === 'idle') {
-                setPlayers(prev => [...prev, {
-                    ...friend,
-                    isReady: true, // Auto ready if manually invited? or not? Assuming ready for lobby.
-                    ms: '40ms'
-                }]);
-            }
-        } else {
-            setInviteError(`Only players of rank "${getRank(currentUser.rankId).name}" can be invited.`);
-            setTimeout(() => setInviteError(null), 3000);
-        }
-    };
 
     const handleReadyCheckComplete = () => {
         // "if 1min is done... search again... only if opponent is one remaining"
@@ -441,7 +427,6 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
         .filter(f => !onlineUserIds.has(f.id))
         .map(f => ({ ...f, status: 'offline' }));
 
-    const getRank = (id) => RANKS.find(r => r.id === id) || RANKS[0];
     const slots = [0, 1, 2, 3, 4];
 
     return (
@@ -715,7 +700,6 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                         </div>
                                     ) : (
                                         friends.map(friend => {
-                                            const rank = getRank(friend.rankId);
                                             return (
                                                 <div key={friend.id} className="p-1.5 rounded-lg hover:bg-white/5 flex items-center gap-2 group transition-colors cursor-pointer">
                                                     <div className="relative shrink-0">
@@ -749,7 +733,6 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
 
                                 <div className="space-y-2 opacity-60">
                                     {offlineFriends.map(friend => {
-                                        const rank = getRank(friend.rankId);
                                         return (
                                             <div key={friend.id} className="p-1.5 rounded-lg flex items-center gap-2">
                                                 <div className="relative grayscale shrink-0">
