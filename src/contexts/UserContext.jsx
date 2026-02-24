@@ -18,13 +18,18 @@ export const UserProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+    const [onlineUserIds, setOnlineUserIds] = useState(new Set());
+
     useEffect(() => {
         checkAuth();
 
         // Dynamic Realtime Listener for the current user's profile
-        let channel;
+        let profileChannel;
+        let globalPresenceChannel;
+
         if (user?.id) {
-            channel = supabase
+            // Profile updates
+            profileChannel = supabase
                 .channel(`user-profile-${user.id}`)
                 .on(
                     'postgres_changes',
@@ -35,10 +40,44 @@ export const UserProvider = ({ children }) => {
                     }
                 )
                 .subscribe();
+
+            // Global Presence - tracks all online users across the app
+            globalPresenceChannel = supabase.channel('global-presence', {
+                config: {
+                    presence: {
+                        key: user.id,
+                    },
+                },
+            });
+
+            globalPresenceChannel
+                .on('presence', { event: 'sync' }, () => {
+                    const state = globalPresenceChannel.presenceState();
+                    const onlineIds = new Set(Object.keys(state));
+                    setOnlineUserIds(onlineIds);
+                })
+                .on('presence', { event: 'join', key: '*', currentPresences: [], newPresences: [] }, () => {
+                    const state = globalPresenceChannel.presenceState();
+                    setOnlineUserIds(new Set(Object.keys(state)));
+                })
+                .on('presence', { event: 'leave', key: '*', leftPresences: [], currentPresences: [] }, () => {
+                    const state = globalPresenceChannel.presenceState();
+                    setOnlineUserIds(new Set(Object.keys(state)));
+                })
+                .subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await globalPresenceChannel.track({
+                            id: user.id,
+                            name: user.name,
+                            online_at: new Date().toISOString(),
+                        });
+                    }
+                });
         }
 
         return () => {
-            if (channel) supabase.removeChannel(channel);
+            if (profileChannel) supabase.removeChannel(profileChannel);
+            if (globalPresenceChannel) supabase.removeChannel(globalPresenceChannel);
         };
     }, [user?.id]);
 
@@ -266,6 +305,7 @@ export const UserProvider = ({ children }) => {
         setUser,
         loading,
         isAuthenticated,
+        onlineUserIds,
         register,
         login,
         logout,

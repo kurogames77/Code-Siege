@@ -72,7 +72,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
 
     const [friends, setFriends] = useState([]);
 
-    // Fetch accepted friends from notifications table
+    // --- FETCH FRIENDS ---
     useEffect(() => {
         if (!isOpen || !user) return;
 
@@ -111,7 +111,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                         rankName: rank.name,
                         rankIcon: rank.icon,
                         course: p.course,
-                        status: 'offline'
+                        status: onlineUserIds.has(p.id) ? 'online' : 'offline'
                     };
                 });
                 setFriends(friendsList);
@@ -119,7 +119,17 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
         };
 
         fetchFriends();
-    }, [isOpen, user]);
+    }, [isOpen, user, onlineUserIds]);
+
+    // Update friends' status when onlineUserIds changes
+    useEffect(() => {
+        if (friends.length > 0) {
+            setFriends(prev => prev.map(f => ({
+                ...f,
+                status: onlineUserIds.has(f.id) ? 'online' : 'offline'
+            })));
+        }
+    }, [onlineUserIds]);
 
     // --- REALTIME PRESENCE & BROADCAST ---
     const lobbyChannelRef = React.useRef(null);
@@ -148,13 +158,6 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                         status: 'online'
                     }));
                 setOnlineUsers(users);
-
-                // Update friends' online status based on presence
-                const onlineIds = new Set(users.map(u => u.id));
-                setFriends(prev => prev.map(f => ({
-                    ...f,
-                    status: onlineIds.has(f.id) ? 'online' : 'offline'
-                })));
             })
             .on('broadcast', { event: 'duel-invite' }, ({ payload }) => {
                 if (payload.targetId === user.id) {
