@@ -694,13 +694,13 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                     </div>
                                                 </div>
                                                 {friend.status === 'online' && (
-                                                    <div className={`w-24 h-8 rounded-full flex items-center justify-center transition-all ${invitedFriendId === friend.id
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-lg ${invitedFriendId === friend.id
                                                         ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30'
-                                                        : 'bg-white/5 border border-white/5 text-slate-400 group-hover:bg-rose-500 group-hover:text-white'}`}>
+                                                        : 'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-900/20 hover:scale-110 active:scale-95'}`}>
                                                         {invitedFriendId === friend.id ? (
-                                                            <span className="text-[10px] font-black uppercase tracking-tighter">Waiting...</span>
+                                                            <div className="w-5 h-5 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
                                                         ) : (
-                                                            <Plus className="w-4 h-4" />
+                                                            <Plus className="w-5 h-5" />
                                                         )}
                                                     </div>
                                                 )}
