@@ -242,7 +242,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
                         <div className="relative px-6 py-5 border-b border-white/5 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl flex items-center justify-center">
-                                    <img src={notificationIcon} alt="Notifications" className="w-8 h-8 object-contain" />
+                                    <img src={notificationIcon} alt="Notifications" className="w-10 h-10 object-contain" />
                                 </div>
                                 <div>
                                     <h3 className="text-white font-black text-sm uppercase tracking-[0.2em]">Notifications</h3>
