@@ -587,11 +587,9 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                 <>
                                                     {isOpponentReady && <div className="absolute top-0 right-0 w-full h-1/2 bg-rose-500/20 blur-[100px]" />}
 
-
-
                                                     <div className="absolute inset-0 flex flex-col">
                                                         {/* Hero - Full Body */}
-                                                        <div className="absolute inset-0 z-10 pointer-events-none flex items-end justify-center overflow-hidden h-[70%] bottom-0 top-auto">
+                                                        <div className="absolute inset-x-0 bottom-0 h-[70%] z-10 pointer-events-none flex items-end justify-center overflow-hidden">
                                                             <motion.img
                                                                 initial={{ scale: 1.0, y: 50 }}
                                                                 animate={{
@@ -606,11 +604,11 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                         </div>
 
                                                         {/* Info - Top */}
-                                                        <div className="relative z-20 flex flex-col items-center pt-4 pointer-events-none">
+                                                        <div className="relative z-20 flex flex-col items-center pt-4 pointer-events-none w-full">
                                                             <div className={`w-24 h-24 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md relative mb-3 transition-all duration-500 ${isOpponentReady ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.6)] scale-110' : 'border-slate-500'}`}>
                                                                 <img src={opponent.avatar} className="w-full h-full object-cover rounded-lg" alt="Avatar" />
-                                                                <div className="absolute -bottom-2.5 -right-2.5 p-0.5">
-                                                                    <img src={opponent.rankIcon} className="w-12 h-12 rounded-full object-contain" alt="Rank" />
+                                                                <div className="absolute -bottom-3 -right-3">
+                                                                    <img src={opponent.rankIcon} className="w-16 h-16 object-contain drop-shadow-xl" alt="Rank" />
                                                                 </div>
                                                             </div>
                                                             <h2 className="text-xl font-black text-white italic uppercase tracking-tighter drop-shadow-[0_4px_12px_rgba(0,0,0,1)] scale-110">{opponent.name}</h2>
@@ -619,11 +617,12 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                             </div>
                                                         </div>
                                                     </div>
+
                                                     <div className={`absolute bottom-0 inset-x-0 h-2 shadow-[0_0_20px_rgba(244,63,94,0.8)] ${isOpponentReady ? 'bg-rose-500' : 'bg-slate-700'}`} />
 
                                                     {/* Not Ready Overlay Text */}
                                                     {!isOpponentReady && (
-                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-30">
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-30 font-galsb tracking-widest text-white/50">
                                                             <div className="px-4 py-2 bg-black/60 rounded-lg border border-white/10 text-slate-400 font-bold tracking-widest uppercase text-xs backdrop-blur-sm animate-pulse">
                                                                 Not Ready
                                                             </div>
@@ -700,10 +699,10 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                 </div>
                                                 {friend.status === 'online' && (
                                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-lg ${successInviteIds.has(friend.id)
-                                                            ? 'bg-blue-600/50 cursor-default'
-                                                            : invitedFriendId === friend.id
-                                                                ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30'
-                                                                : 'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-900/20 hover:scale-110 active:scale-95'
+                                                        ? 'bg-blue-600/50 cursor-default'
+                                                        : invitedFriendId === friend.id
+                                                            ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30'
+                                                            : 'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-900/20 hover:scale-110 active:scale-95'
                                                         }`}>
                                                         {successInviteIds.has(friend.id) ? (
                                                             <Check className="w-5 h-5 text-blue-200" />
@@ -744,10 +743,10 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                 </span>
                             </button>
                         </div>
-                    </motion.div>
+                    </motion.div >
 
                     {/* GAME START COUNTDOWN MODAL */}
-                    <AnimatePresence>
+                    < AnimatePresence >
                         {matchState === 'starting' && (
                             <div className="absolute inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-md">
                                 <motion.div
@@ -770,10 +769,10 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                 </motion.div>
                             </div>
                         )}
-                    </AnimatePresence>
+                    </AnimatePresence >
 
                     {/* Lobby Music */}
-                    <audio
+                    < audio
                         ref={audioRef}
                         src={lobbyMusic}
                         loop

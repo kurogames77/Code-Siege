@@ -551,7 +551,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
 
                                                             {/* Rank Info - Bottom */}
                                                             <div className="relative z-30 flex flex-col items-center pb-8 mt-auto pointer-events-none w-full">
-                                                                <img src={displayRankIcon} className={`w-12 h-12 object-contain mb-1 drop-shadow-lg ${isGrey ? 'grayscale opacity-50' : ''}`} alt="Rank" />
+                                                                <img src={displayRankIcon} className={`w-16 h-16 object-contain mb-1 drop-shadow-2xl transition-all ${isGrey ? 'grayscale opacity-50' : 'scale-110 shadow-cyan-500/20'}`} alt="Rank" />
 
                                                             </div>
 
@@ -716,7 +716,9 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                     <div className="flex-1 min-w-0">
                                                         <span className="text-sm font-black text-slate-200 truncate block tracking-tight group-hover:text-white transition-colors">{friend.name}</span>
                                                         <div className="flex items-center gap-2">
-                                                            <img src={friend.rankIcon} className="w-8 h-8 object-contain drop-shadow-sm" alt="" />
+                                                            <div className="relative w-8 h-8">
+                                                                <img src={friend.rankIcon} className="w-full h-full object-contain drop-shadow-sm" alt="" />
+                                                            </div>
                                                             <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">{friend.rankName}</span>
                                                         </div>
                                                     </div>
@@ -727,10 +729,10 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                         }}
                                                         disabled={invitedFriendId === friend.id || successInviteIds.has(friend.id)}
                                                         className={`w-9 h-9 rounded-lg flex items-center justify-center text-white transition-all shrink-0 shadow-lg ${successInviteIds.has(friend.id)
-                                                                ? 'bg-blue-600/50 cursor-default'
-                                                                : invitedFriendId === friend.id
-                                                                    ? 'bg-amber-600/50 cursor-not-allowed'
-                                                                    : 'bg-emerald-600 hover:bg-emerald-500 hover:scale-110 active:scale-95 shadow-emerald-900/20'
+                                                            ? 'bg-blue-600/50 cursor-default'
+                                                            : invitedFriendId === friend.id
+                                                                ? 'bg-amber-600/50 cursor-not-allowed'
+                                                                : 'bg-emerald-600 hover:bg-emerald-500 hover:scale-110 active:scale-95 shadow-emerald-900/20'
                                                             }`}
                                                     >
                                                         {successInviteIds.has(friend.id) ? (

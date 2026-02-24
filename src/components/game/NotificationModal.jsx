@@ -366,7 +366,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
                                                             </div>
                                                         )}
                                                         {/* Rank Badge below avatar */}
-                                                        {sender && notif.type === 'friend_request' && (
+                                                        {sender && (notif.type === 'friend_request' || notif.type === 'duel_invite') && (
                                                             <img
                                                                 src={getRankData(sender.xp || 0).icon}
                                                                 alt={getRankData(sender.xp || 0).name}
@@ -384,8 +384,8 @@ const NotificationModal = ({ isOpen, onClose }) => {
                                                         {notif.message && (
                                                             <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{notif.message}</p>
                                                         )}
-                                                        {/* Rank name + Course for friend requests */}
-                                                        {sender && notif.type === 'friend_request' && (() => {
+                                                        {/* Rank name + Course for friend requests or duel invites */}
+                                                        {sender && (notif.type === 'friend_request' || notif.type === 'duel_invite') && (() => {
                                                             const rank = getRankData(sender.xp || 0);
                                                             return (
                                                                 <p className={`text-[10px] ${rank.color} font-bold uppercase mt-1`}>
