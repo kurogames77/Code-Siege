@@ -327,7 +327,13 @@ const NotificationModal = ({ isOpen, onClose }) => {
                                                 key={notif.id}
                                                 initial={{ opacity: 0, x: 20 }}
                                                 animate={{ opacity: 1, x: 0 }}
-                                                className={`group relative rounded-xl p-4 transition-all ${notif.is_read
+                                                onClick={() => {
+                                                    // Auto-mark as read when clicking unread non-action notifications
+                                                    if (!notif.is_read && !isPending) {
+                                                        handleDismiss(notif.id);
+                                                    }
+                                                }}
+                                                className={`group relative rounded-xl p-4 transition-all cursor-pointer ${notif.is_read
                                                     ? 'bg-slate-800/20 border border-white/3'
                                                     : `bg-slate-800/40 hover:bg-slate-800/60 border border-${config.color}-500/15 hover:border-${config.color}-500/30`
                                                     }`}
