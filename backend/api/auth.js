@@ -12,7 +12,11 @@ router.post('/register', async (req, res) => {
     console.log('[Auth] POST /register request received');
     res.setHeader('X-Backend-Version', '2.2');
     try {
-        const { email, password, username, student_id, course, role } = req.body;
+        let { email, password, username, student_id, course, role } = req.body;
+
+        // Trim inputs
+        if (email) email = email.trim();
+        if (student_id) student_id = student_id.trim();
 
         if (!email || !password || !username) {
             return res.status(400).json({ error: 'Email, password, and username are required' });
@@ -219,7 +223,11 @@ router.post('/login', async (req, res) => {
     console.log('[Auth] POST /login request received');
     res.setHeader('X-Backend-Version', '2.2');
     try {
-        const { email, password, student_id } = req.body;
+        let { email, password, student_id } = req.body;
+
+        // Trim inputs
+        if (email) email = email.trim();
+        if (student_id) student_id = student_id.trim();
 
         if (!password) {
             return res.status(400).json({ error: 'Password is required' });

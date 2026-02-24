@@ -145,8 +145,8 @@ const LandingPage = () => {
                     throw new Error('Password must be at least 6 characters');
                 }
 
-                const response = await register(email, password, fullName, {
-                    student_id: modal?.role === 'student' ? studentId : instructorId,
+                const response = await register(email.trim(), password, fullName, {
+                    student_id: (modal?.role === 'student' ? studentId : instructorId).trim(),
                     course: course,
                     role: modal?.role
                 });
@@ -173,7 +173,7 @@ const LandingPage = () => {
                         throw new Error('Please enter your password');
                     }
 
-                    await login(studentId, password, true); // true = use student_id
+                    await login(studentId.trim(), password, true); // true = use student_id
                     toast.popup('Welcome back!');
                     closeModal();
                     // Navigation handled by useEffect
@@ -186,7 +186,7 @@ const LandingPage = () => {
                         throw new Error('Please enter your password');
                     }
 
-                    await login(instructorId, password, true); // true = use id lookup
+                    await login(instructorId.trim(), password, true); // true = use id lookup
                     toast.popup('Welcome back!');
                     closeModal();
                     // Navigation handled by useEffect
