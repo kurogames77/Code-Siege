@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, UserPlus, Check, XIcon, Bell, ShoppingBag, Trophy, Swords, Clock, Trash2 } from 'lucide-react';
 import useSound from '../../hooks/useSound';
@@ -33,6 +34,12 @@ const TYPE_CONFIG = {
         label: 'Duel Invite',
         hasActions: true,
     },
+    multiplayer_invite: {
+        icon: Users,
+        color: 'cyan',
+        label: 'Multiplayer Invite',
+        hasActions: true,
+    },
     system: {
         icon: Bell,
         color: 'slate',
@@ -42,6 +49,8 @@ const TYPE_CONFIG = {
 };
 
 const NotificationModal = ({ isOpen, onClose }) => {
+    const navigate = useNavigate();
+    const location = useLocation();
     const { playClick, playSuccess, playCancel } = useSound();
     const { user } = useUser();
     const [notifications, setNotifications] = useState([]);
@@ -143,7 +152,26 @@ const NotificationModal = ({ isOpen, onClose }) => {
 
                     // Update local state to close modal and potentially navigate
                     // But NotificationModal is global, so it doesn't navigate by itself usually.
-                    // However, we can use window.location or a callback if provided.
+                    // Redirection logic
+                    onClose();
+                    if (location.pathname !== '/play') {
+                        navigate('/play', {
+                            state: {
+                                [notif.type === 'duel_invite' ? 'openDuelLobby' : 'openMultiplayerLobby']: true
+                            }
+                        });
+                    } else {
+                        // We are already on play page. 
+                        // The GameNavbar handles opening the lobby based on state/params, 
+                        // but since we are already here, we might need to trigger it manually via window event or similar
+                        // OR we just navigate again with state, which PlayPage/GameNavbar should catch.
+                        navigate('/play', {
+                            state: {
+                                [notif.type === 'duel_invite' ? 'openDuelLobby' : 'openMultiplayerLobby']: true
+                            },
+                            replace: true
+                        });
+                    }
                 }
 
                 await supabase
@@ -366,7 +394,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
                                                             </div>
                                                         )}
                                                         {/* Rank Badge below avatar */}
-                                                        {sender && (notif.type === 'friend_request' || notif.type === 'duel_invite') && (
+                                                        {sender && (notif.type === 'friend_request' || notif.type === 'duel_invite' || notif.type === 'multiplayer_invite') && (
                                                             <img
                                                                 src={getRankData(sender.xp || 0).icon}
                                                                 alt={getRankData(sender.xp || 0).name}
@@ -385,7 +413,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
                                                             <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{notif.message}</p>
                                                         )}
                                                         {/* Rank name + Course for friend requests or duel invites */}
-                                                        {sender && (notif.type === 'friend_request' || notif.type === 'duel_invite') && (() => {
+                                                        {sender && (notif.type === 'friend_request' || notif.type === 'duel_invite' || notif.type === 'multiplayer_invite') && (() => {
                                                             const rank = getRankData(sender.xp || 0);
                                                             return (
                                                                 <p className={`text-[10px] ${rank.color} font-bold uppercase mt-1`}>

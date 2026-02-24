@@ -24,10 +24,12 @@ import MultiplayerLobbyModal from './MultiplayerLobbyModal';
 import ProfileModal from './ProfileModal';
 import LogoutModal from './LogoutModal';
 import NotificationModal from './NotificationModal';
+import InvitationPopup from './InvitationPopup';
 import useSound from '../../hooks/useSound';
 import { useMusic } from '../../contexts/MusicContext';
 import { useUser } from '../../contexts/UserContext'; // New Context
 import supabase from '../../lib/supabase';
+import { getRankFromExp as getRankData } from '../../utils/rankSystem';
 
 const GameNavbar = ({ onLobbyStateChange }) => {
     const navigate = useNavigate();
@@ -47,7 +49,8 @@ const GameNavbar = ({ onLobbyStateChange }) => {
     const [isLogoutOpen, setIsLogoutOpen] = useState(false);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [notificationCount, setNotificationCount] = useState(0);
-    const { playClick, playCancel } = useSound();
+    const [activeInvitation, setActiveInvitation] = useState(null);
+    const { playClick, playCancel, playSuccess } = useSound();
 
 
     // Fetch notification count
@@ -81,6 +84,96 @@ const GameNavbar = ({ onLobbyStateChange }) => {
 
         return () => supabase.removeChannel(channel);
     }, [user?.id]);
+
+    // Real-time listener for NEW invitations (Popups)
+    useEffect(() => {
+        if (!user?.id) return;
+
+        const channel = supabase
+            .channel('realtime_invites')
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'notifications'
+            }, async (payload) => {
+                const newNotif = payload.new;
+                // Only react to invitations for THIS user
+                if (newNotif?.receiver_id === user.id &&
+                    (newNotif.type === 'duel_invite' || newNotif.type === 'multiplayer_invite')) {
+
+                    // Fetch sender details (name, avatar, xp)
+                    const { data: sender } = await supabase
+                        .from('users')
+                        .select('username, avatar_url, course, xp')
+                        .eq('id', newNotif.sender_id)
+                        .single();
+
+                    if (sender) {
+                        const rank = getRankData(sender.xp || 0);
+                        setActiveInvitation({
+                            id: newNotif.id,
+                            type: newNotif.type,
+                            sender: sender,
+                            rankName: rank.name,
+                            rankIcon: rank.icon,
+                            rankColor: rank.color
+                        });
+                    }
+                }
+            })
+            .subscribe();
+
+        return () => supabase.removeChannel(channel);
+    }, [user?.id]);
+
+    const handleAcceptInvite = async () => {
+        if (!activeInvitation) return;
+        playSuccess();
+
+        try {
+            // Update status
+            await supabase
+                .from('notifications')
+                .update({ action_status: 'accepted', is_read: true })
+                .eq('id', activeInvitation.id);
+
+            const isDuel = activeInvitation.type === 'duel_invite';
+
+            // Redirect logic
+            if (location.pathname !== '/play') {
+                navigate('/play', {
+                    state: {
+                        [isDuel ? 'openDuelLobby' : 'openMultiplayerLobby']: true
+                    }
+                });
+            } else {
+                // If already on play page, just open the modal
+                if (isDuel) setIsDuelLobbyOpen(true);
+                else setIsMultiplayerLobbyOpen(true);
+            }
+
+            setActiveInvitation(null);
+        } catch (error) {
+            console.error('Failed to accept invite:', error);
+            toast.error('Failed to join lobby');
+        }
+    };
+
+    const handleDeclineInvite = async () => {
+        if (!activeInvitation) return;
+        playCancel();
+
+        try {
+            await supabase
+                .from('notifications')
+                .update({ action_status: 'declined', is_read: true })
+                .eq('id', activeInvitation.id);
+
+            setActiveInvitation(null);
+        } catch (error) {
+            console.error('Failed to decline invite:', error);
+        }
+    };
 
     // Auto-open lobbies when navigating from arena battle
     useEffect(() => {
@@ -392,6 +485,17 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                     }
                 }}
             />
+
+            <AnimatePresence>
+                {activeInvitation && (
+                    <InvitationPopup
+                        invitation={activeInvitation}
+                        onAccept={handleAcceptInvite}
+                        onDecline={handleDeclineInvite}
+                        onExpiry={() => setActiveInvitation(null)}
+                    />
+                )}
+            </AnimatePresence>
         </>
     );
 };

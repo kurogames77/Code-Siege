@@ -388,7 +388,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
             await supabase
                 .from('notifications')
                 .insert({
-                    type: 'duel_invite',
+                    type: 'multiplayer_invite',
                     sender_id: user.id,
                     receiver_id: friend.id,
                     title: user.name || user.username || 'Someone',
