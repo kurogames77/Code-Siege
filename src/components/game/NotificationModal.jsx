@@ -4,47 +4,7 @@ import { X, UserPlus, Check, XIcon, Bell, ShoppingBag, Trophy, Swords, Clock, Tr
 import useSound from '../../hooks/useSound';
 import { useUser } from '../../contexts/UserContext';
 import supabase from '../../lib/supabase';
-
-// Import Rank Badges
-import rank1 from '../../assets/rankbadges/rank1.png';
-import rank2 from '../../assets/rankbadges/rank2.png';
-import rank3 from '../../assets/rankbadges/rank3.png';
-import rank4 from '../../assets/rankbadges/rank4.png';
-import rank5 from '../../assets/rankbadges/rank5.png';
-import rank6 from '../../assets/rankbadges/rank6.png';
-import rank7 from '../../assets/rankbadges/rank7.png';
-import rank8 from '../../assets/rankbadges/rank8.png';
-import rank9 from '../../assets/rankbadges/rank9.png';
-import rank10 from '../../assets/rankbadges/rank10.png';
-import rank11 from '../../assets/rankbadges/rank11.png';
-import rank12 from '../../assets/rankbadges/rank12.png';
-
-// Map rank names to badge images and display names
-const RANK_BADGES = {
-    'Siege Novice': rank1,
-    'Siege Apprentice': rank2,
-    'Iron': rank3,
-    'Bronze': rank4,
-    'Silver': rank5,
-    'Gold': rank6,
-    'Platinum': rank7,
-    'Diamond': rank8,
-    'Master': rank9,
-    'Grandmaster': rank10,
-};
-
-const RANK_DISPLAY_NAMES = {
-    'Siege Novice': 'Siege Novice',
-    'Siege Apprentice': 'Siege Apprentice',
-    'Iron': 'Iron',
-    'Bronze': 'Bronze',
-    'Silver': 'Silver',
-    'Gold': 'Gold',
-    'Platinum': 'Platinum',
-    'Diamond': 'Diamond',
-    'Master': 'Master',
-    'Grandmaster': 'Grandmaster',
-};
+import { getRankFromExp as getRankData } from '../../utils/rankSystem';
 
 // Notification type configs
 const TYPE_CONFIG = {
@@ -244,36 +204,6 @@ const NotificationModal = ({ isOpen, onClose }) => {
         return `${days}d ago`;
     };
 
-    const getRankFromExp = (xp) => {
-        const exp = xp || 0;
-        if (exp >= 50000) return 'Grandmaster';
-        if (exp >= 30000) return 'Master';
-        if (exp >= 20000) return 'Diamond';
-        if (exp >= 12000) return 'Platinum';
-        if (exp >= 7000) return 'Gold';
-        if (exp >= 3500) return 'Silver';
-        if (exp >= 1500) return 'Bronze';
-        if (exp >= 600) return 'Iron';
-        if (exp >= 200) return 'Siege Apprentice';
-        return 'Siege Novice';
-    };
-
-    const getRankColor = (rank) => {
-        const colors = {
-            'Grandmaster': 'text-red-400',
-            'Master': 'text-purple-400',
-            'Diamond': 'text-cyan-300',
-            'Platinum': 'text-blue-300',
-            'Gold': 'text-yellow-400',
-            'Silver': 'text-slate-300',
-            'Bronze': 'text-amber-600',
-            'Iron': 'text-slate-400',
-            'Siege Apprentice': 'text-green-400',
-            'Siege Novice': 'text-slate-500',
-        };
-        return colors[rank] || 'text-slate-400';
-    };
-
     const unreadCount = notifications.filter(n => !n.is_read).length;
 
     if (!isOpen) return null;
@@ -408,8 +338,8 @@ const NotificationModal = ({ isOpen, onClose }) => {
                                                         {/* Rank Badge below avatar */}
                                                         {sender && notif.type === 'friend_request' && (
                                                             <img
-                                                                src={RANK_BADGES[getRankFromExp(sender.xp)] || rank1}
-                                                                alt={getRankFromExp(sender.xp)}
+                                                                src={getRankData(sender.xp || 0).icon}
+                                                                alt={getRankData(sender.xp || 0).name}
                                                                 className="w-8 h-8 object-contain"
                                                             />
                                                         )}
@@ -425,11 +355,14 @@ const NotificationModal = ({ isOpen, onClose }) => {
                                                             <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{notif.message}</p>
                                                         )}
                                                         {/* Rank name + Course for friend requests */}
-                                                        {sender && notif.type === 'friend_request' && (
-                                                            <p className={`text-[10px] ${getRankColor(getRankFromExp(sender.xp))} font-bold uppercase mt-1`}>
-                                                                {RANK_DISPLAY_NAMES[getRankFromExp(sender.xp)] || getRankFromExp(sender.xp)} • {sender.course || '—'}
-                                                            </p>
-                                                        )}
+                                                        {sender && notif.type === 'friend_request' && (() => {
+                                                            const rank = getRankData(sender.xp || 0);
+                                                            return (
+                                                                <p className={`text-[10px] ${rank.color} font-bold uppercase mt-1`}>
+                                                                    {rank.name} • {sender.course || '—'}
+                                                                </p>
+                                                            );
+                                                        })()}
                                                     </div>
                                                 </div>
 
