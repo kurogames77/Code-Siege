@@ -127,7 +127,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
                         receiver_id: notif.sender_id,
                         title: `${user.name || 'Someone'} accepted your friend request!`,
                         message: 'You are now friends.',
-                        action_status: null,
+                        action_status: 'viewed',
                         is_read: false
                     });
             }
@@ -158,7 +158,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
                         receiver_id: notif.sender_id,
                         title: `${user.name || 'Someone'} declined your friend request.`,
                         message: null,
-                        action_status: null,
+                        action_status: 'viewed',
                         is_read: false
                     });
             }
