@@ -19,7 +19,7 @@ import rank10 from '../../assets/rankbadges/rank10.png';
 import rank11 from '../../assets/rankbadges/rank11.png';
 import rank12 from '../../assets/rankbadges/rank12.png';
 
-// Map rank names to badge images
+// Map rank names to badge images and display names
 const RANK_BADGES = {
     'Siege Novice': rank1,
     'Siege Apprentice': rank2,
@@ -31,6 +31,19 @@ const RANK_BADGES = {
     'Diamond': rank8,
     'Master': rank9,
     'Grandmaster': rank10,
+};
+
+const RANK_DISPLAY_NAMES = {
+    'Siege Novice': 'Siege Novice',
+    'Siege Apprentice': 'Siege Apprentice',
+    'Iron': 'Iron',
+    'Bronze': 'Bronze',
+    'Silver': 'Silver',
+    'Gold': 'Gold',
+    'Platinum': 'Platinum',
+    'Diamond': 'Diamond',
+    'Master': 'Master',
+    'Grandmaster': 'Grandmaster',
 };
 
 // Notification type configs
@@ -380,16 +393,27 @@ const NotificationModal = ({ isOpen, onClose }) => {
                                                 </div>
 
                                                 <div className="flex items-start gap-3 mb-2">
-                                                    {/* Avatar or Icon */}
-                                                    {sender?.avatar_url ? (
-                                                        <div className={`w-11 h-11 rounded-xl bg-gradient-to-br from-${config.color}-500/20 to-purple-500/20 border border-${config.color}-400/20 overflow-hidden flex-shrink-0`}>
-                                                            <img src={sender.avatar_url} alt="" className="w-full h-full object-cover" />
-                                                        </div>
-                                                    ) : (
-                                                        <div className={`w-11 h-11 rounded-xl bg-${config.color}-500/10 border border-${config.color}-500/20 flex items-center justify-center flex-shrink-0`}>
-                                                            <IconComponent className={`w-5 h-5 text-${config.color}-400`} />
-                                                        </div>
-                                                    )}
+                                                    {/* Avatar + Badge column */}
+                                                    <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+                                                        {/* Avatar or Icon */}
+                                                        {sender?.avatar_url ? (
+                                                            <div className={`w-11 h-11 rounded-xl bg-gradient-to-br from-${config.color}-500/20 to-purple-500/20 border border-${config.color}-400/20 overflow-hidden`}>
+                                                                <img src={sender.avatar_url} alt="" className="w-full h-full object-cover" />
+                                                            </div>
+                                                        ) : (
+                                                            <div className={`w-11 h-11 rounded-xl bg-${config.color}-500/10 border border-${config.color}-500/20 flex items-center justify-center`}>
+                                                                <IconComponent className={`w-5 h-5 text-${config.color}-400`} />
+                                                            </div>
+                                                        )}
+                                                        {/* Rank Badge below avatar */}
+                                                        {sender && notif.type === 'friend_request' && (
+                                                            <img
+                                                                src={RANK_BADGES[getRankFromExp(sender.xp)] || rank1}
+                                                                alt={getRankFromExp(sender.xp)}
+                                                                className="w-8 h-8 object-contain"
+                                                            />
+                                                        )}
+                                                    </div>
 
                                                     {/* Content */}
                                                     <div className="flex-1 min-w-0 pr-6">
@@ -400,18 +424,11 @@ const NotificationModal = ({ isOpen, onClose }) => {
                                                         {notif.message && (
                                                             <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{notif.message}</p>
                                                         )}
-                                                        {/* Sender rank info for friend requests */}
+                                                        {/* Rank name + Course for friend requests */}
                                                         {sender && notif.type === 'friend_request' && (
-                                                            <div className="flex items-center gap-2 mt-1">
-                                                                <img
-                                                                    src={RANK_BADGES[getRankFromExp(sender.xp)] || rank1}
-                                                                    alt={getRankFromExp(sender.xp)}
-                                                                    className="w-5 h-5 object-contain"
-                                                                />
-                                                                <span className={`text-[10px] ${getRankColor(getRankFromExp(sender.xp))} font-bold uppercase`}>
-                                                                    {getRankFromExp(sender.xp)} • {sender.course || '—'}
-                                                                </span>
-                                                            </div>
+                                                            <p className={`text-[10px] ${getRankColor(getRankFromExp(sender.xp))} font-bold uppercase mt-1`}>
+                                                                {RANK_DISPLAY_NAMES[getRankFromExp(sender.xp)] || getRankFromExp(sender.xp)} • {sender.course || '—'}
+                                                            </p>
                                                         )}
                                                     </div>
                                                 </div>
