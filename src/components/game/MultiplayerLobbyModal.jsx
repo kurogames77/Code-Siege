@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { X, ChevronDown, Users, Zap, Shield, Swords, UserPlus, Globe, Award, Medal, Volume2, VolumeX, User } from 'lucide-react';
+import { X, ChevronDown, Users, Zap, Shield, Swords, UserPlus, Globe, Award, Medal, Volume2, VolumeX, User, Check } from 'lucide-react';
 import heroAsset from '../../assets/hero1.png';
 import hero1aStatic from '../../assets/hero1a.png';
 import hero2Static from '../../assets/hero2.png';
@@ -79,6 +79,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
     const { playClick, playSuccess, playCancel, playSelect, playCountdownVoice } = useSound();
     const [allFriends, setAllFriends] = useState([]);
     const [invitedFriendId, setInvitedFriendId] = useState(null);
+    const [successInviteIds, setSuccessInviteIds] = useState(new Set());
 
     // --- TIMERS & STATE MANAGEMENT ---
 
@@ -399,6 +400,8 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
             // Note: Since multi-lobby is currently simulated, we don't have a 
             // shared realtime channel here yet like in DuelLobbyModal.
             // But the notification will let the friend see the invite.
+            setSuccessInviteIds(prev => new Set([...prev, friend.id]));
+            setInvitedFriendId(null);
             playSuccess();
         } catch (err) {
             console.error('Failed to send multi invite:', err);
@@ -722,13 +725,21 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                             e.stopPropagation();
                                                             handleInvite(friend);
                                                         }}
-                                                        disabled={invitedFriendId === friend.id}
-                                                        className={`w-9 h-9 rounded-lg flex items-center justify-center text-white transition-all shrink-0 shadow-lg ${invitedFriendId === friend.id
-                                                            ? 'bg-amber-600/50 cursor-not-allowed'
-                                                            : 'bg-emerald-600 hover:bg-emerald-500 hover:scale-110 active:scale-95 shadow-emerald-900/20'
+                                                        disabled={invitedFriendId === friend.id || successInviteIds.has(friend.id)}
+                                                        className={`w-9 h-9 rounded-lg flex items-center justify-center text-white transition-all shrink-0 shadow-lg ${successInviteIds.has(friend.id)
+                                                                ? 'bg-blue-600/50 cursor-default'
+                                                                : invitedFriendId === friend.id
+                                                                    ? 'bg-amber-600/50 cursor-not-allowed'
+                                                                    : 'bg-emerald-600 hover:bg-emerald-500 hover:scale-110 active:scale-95 shadow-emerald-900/20'
                                                             }`}
                                                     >
-                                                        {invitedFriendId === friend.id ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                                                        {successInviteIds.has(friend.id) ? (
+                                                            <Check className="w-5 h-5 text-blue-200" />
+                                                        ) : invitedFriendId === friend.id ? (
+                                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                        ) : (
+                                                            <UserPlus className="w-4 h-4" />
+                                                        )}
                                                     </button>
                                                 </div>
                                             );

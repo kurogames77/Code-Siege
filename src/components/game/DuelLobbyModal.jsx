@@ -48,6 +48,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
     const [timer, setTimer] = useState(0); // Lobby countdown
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [invitedFriendId, setInvitedFriendId] = useState(null);
+    const [successInviteIds, setSuccessInviteIds] = useState(new Set());
 
     // MODALS
     const [showAddFriendModal, setShowAddFriendModal] = useState(false);
@@ -299,8 +300,12 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                     }
                 });
             }
+
+            setSuccessInviteIds(prev => new Set([...prev, friend.id]));
+            setInvitedFriendId(null);
+            playSuccess();
         } catch (err) {
-            console.error('Failed to send duel invite:', err);
+            console.error('Failed to send multi invite:', err);
             setInvitedFriendId(null);
         }
     };
@@ -694,10 +699,15 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                     </div>
                                                 </div>
                                                 {friend.status === 'online' && (
-                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-lg ${invitedFriendId === friend.id
-                                                        ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30'
-                                                        : 'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-900/20 hover:scale-110 active:scale-95'}`}>
-                                                        {invitedFriendId === friend.id ? (
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-lg ${successInviteIds.has(friend.id)
+                                                            ? 'bg-blue-600/50 cursor-default'
+                                                            : invitedFriendId === friend.id
+                                                                ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30'
+                                                                : 'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-900/20 hover:scale-110 active:scale-95'
+                                                        }`}>
+                                                        {successInviteIds.has(friend.id) ? (
+                                                            <Check className="w-5 h-5 text-blue-200" />
+                                                        ) : invitedFriendId === friend.id ? (
                                                             <div className="w-5 h-5 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
                                                         ) : (
                                                             <Plus className="w-5 h-5" />
