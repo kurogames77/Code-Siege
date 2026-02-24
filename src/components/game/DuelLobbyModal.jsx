@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { X, ChevronDown, Swords, Volume2, VolumeX, Plus, User, UserPlus, Search, Check } from 'lucide-react';
@@ -14,6 +14,7 @@ import supabase from '../../lib/supabase';
 import rankGold from '../../assets/rankbadges/rank6.png';
 import rankSilver from '../../assets/rankbadges/rank3.png';
 import rankDiamond from '../../assets/rankbadges/rank12.png';
+import { getRankFromExp as getRankData } from '../../utils/rankSystem';
 
 const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
     const navigate = useNavigate();
@@ -69,7 +70,56 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
     });
     const audioRef = React.useRef(null);
 
-    const [friends] = useState([]);
+    const [friends, setFriends] = useState([]);
+
+    // Fetch accepted friends from notifications table
+    useEffect(() => {
+        if (!isOpen || !user) return;
+
+        const fetchFriends = async () => {
+            // Get accepted friend requests where current user is sender or receiver
+            const { data: notifs, error } = await supabase
+                .from('notifications')
+                .select('sender_id, receiver_id')
+                .eq('type', 'friend_request')
+                .eq('action_status', 'accepted');
+
+            if (error || !notifs) return;
+
+            // Collect friend user IDs
+            const friendIds = notifs.map(n =>
+                n.sender_id === user.id ? n.receiver_id : n.sender_id
+            ).filter(id => id !== user.id);
+
+            // Deduplicate
+            const uniqueIds = [...new Set(friendIds)];
+            if (uniqueIds.length === 0) { setFriends([]); return; }
+
+            // Fetch friend profiles
+            const { data: profiles } = await supabase
+                .from('users')
+                .select('id, name, avatar_url, exp, course')
+                .in('id', uniqueIds);
+
+            if (profiles) {
+                const friendsList = profiles.map(p => {
+                    const rank = getRankData(p.exp || 0);
+                    return {
+                        id: p.id,
+                        name: p.name || 'Unknown',
+                        avatar: p.avatar_url,
+                        rankName: rank.name,
+                        rankIcon: rank.icon,
+                        course: p.course,
+                        status: 'offline'
+                    };
+                });
+                setFriends(friendsList);
+            }
+        };
+
+        fetchFriends();
+    }, [isOpen, user]);
 
     // --- REALTIME PRESENCE & BROADCAST ---
     const lobbyChannelRef = React.useRef(null);
@@ -92,12 +142,19 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                 const state = channel.presenceState();
                 const users = Object.values(state)
                     .flat()
-                    .filter(u => u.id !== user.id) // Filter out self
+                    .filter(u => u.id !== user.id)
                     .map(u => ({
                         ...u,
                         status: 'online'
                     }));
                 setOnlineUsers(users);
+
+                // Update friends' online status based on presence
+                const onlineIds = new Set(users.map(u => u.id));
+                setFriends(prev => prev.map(f => ({
+                    ...f,
+                    status: onlineIds.has(f.id) ? 'online' : 'offline'
+                })));
             })
             .on('broadcast', { event: 'duel-invite' }, ({ payload }) => {
                 if (payload.targetId === user.id) {
@@ -551,31 +608,38 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                             <UserPlus className="w-4 h-4 text-slate-400 group-hover/add:text-cyan-400" />
                                         </button>
                                     </h3>
-                                    <span className="text-[10px] px-2 py-1 bg-white/10 rounded text-slate-500 font-bold">{onlineUsers.length} Online</span>
+                                    <span className="text-[10px] px-2 py-1 bg-white/10 rounded text-slate-500 font-bold">{friends.filter(f => f.status === 'online').length} Online</span>
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto space-y-2 -mx-2 px-2 custom-scrollbar">
-                                    {onlineUsers.length === 0 ? (
+                                    {friends.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center py-10 text-center">
                                             <User className="w-10 h-10 text-slate-700 mb-3" />
-                                            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">No one else is online</p>
-                                            <p className="text-slate-600 text-[10px] mt-1">Waiting for other players to connect...</p>
+                                            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">No friends yet</p>
+                                            <p className="text-slate-600 text-[10px] mt-1">Add friends to invite them to duels</p>
                                         </div>
                                     ) : (
-                                        onlineUsers.map((friend) => (
+                                        friends.map((friend) => (
                                             <button
                                                 key={friend.id}
                                                 onClick={() => handleInvite(friend)}
-                                                disabled={!!opponent}
-                                                className="w-full p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-3 group text-left"
+                                                disabled={!!opponent || friend.status !== 'online'}
+                                                className={`w-full p-3 rounded-xl border transition-all flex items-center gap-3 group text-left ${friend.status === 'online'
+                                                    ? 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20'
+                                                    : 'bg-white/[0.02] border-white/[0.03] opacity-50 cursor-not-allowed'
+                                                    }`}
                                             >
                                                 <div className="relative">
                                                     <div className="w-10 h-10 rounded-lg bg-slate-800 overflow-hidden border border-white/10">
-                                                        <img src={friend.avatar} alt="" className="w-full h-full object-cover" />
+                                                        {friend.avatar ? (
+                                                            <img src={friend.avatar} alt="" className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-slate-600">
+                                                                <User className="w-5 h-5" />
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                    <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-[#1a120b] ${friend.status === 'online' ? 'bg-emerald-500' :
-                                                        friend.status === 'idle' ? 'bg-amber-500' : 'bg-slate-500'
-                                                        }`} />
+                                                    <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-[#1a120b] ${friend.status === 'online' ? 'bg-emerald-500' : 'bg-slate-500'}`} />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <h4 className="text-xs font-bold text-slate-200 group-hover:text-white truncate">{friend.name}</h4>
@@ -584,80 +648,85 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                         <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wide truncate">{friend.rankName}</p>
                                                     </div>
                                                 </div>
-                                                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400 group-hover:bg-rose-500 group-hover:text-white transition-colors">
-                                                    <Plus className="w-4 h-4" />
-                                                </div>
+                                                {friend.status === 'online' && (
+                                                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400 group-hover:bg-rose-500 group-hover:text-white transition-colors">
+                                                        <Plus className="w-4 h-4" />
+                                                    </div>
+                                                )}
                                             </button>
                                         ))
                                     )}
                                 </div>
                             </div>
                         </div>
+                </div>
 
                         {/* BOTTOM BAR */}
-                        <div className="h-24 bg-black/80 border-t border-white/10 flex items-center justify-between px-8 backdrop-blur-xl relative z-20">
-                            <div className="flex items-center gap-4 relative">
-                            </div>
-
-                            {/* READY / START BUTTON */}
-                            <button
-                                onClick={handleReadyClick}
-                                disabled={isUserReady || !opponent || matchState === 'starting'}
-                                className={`h-14 px-16 rounded-full border-2 flex items-center justify-center gap-2 transition-all ${isUserReady
-                                    ? 'bg-emerald-600 border-emerald-400 text-white cursor-default'
-                                    : opponent
-                                        ? 'bg-gradient-to-b from-amber-400 to-orange-500 border-amber-300 text-amber-950 font-black hover:scale-105 shadow-[0_0_30px_rgba(245,158,11,0.6)] cursor-pointer'
-                                        : 'bg-slate-800 border-slate-600 text-slate-500 cursor-not-allowed'
-                                    }`}
-                            >
-                                <Swords className={`w-6 h-6 ${isUserReady || matchState === 'starting' ? '' : 'animate-pulse'}`} />
-                                <span className="font-black uppercase tracking-widest text-lg">
-                                    {matchState === 'starting' ? 'STARTING...' : isUserReady ? 'READY!' : opponent ? 'CLICK TO READY' : 'WAITING FOR PLAYER'}
-                                </span>
-                            </button>
-                        </div>
-                    </motion.div>
-
-                    {/* GAME START COUNTDOWN MODAL */}
-                    <AnimatePresence>
-                        {matchState === 'starting' && (
-                            <div className="absolute inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-md">
-                                <motion.div
-                                    key="countdown"
-                                    initial={{ opacity: 0, scale: 0.5 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 1.5 }}
-                                    className="flex flex-col items-center"
-                                >
-                                    <p className="text-emerald-400 font-bold tracking-[0.2em] uppercase mb-4 text-xl">Game Starting In</p>
-                                    <motion.div
-                                        key="countdown-display"
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -20 }}
-                                        className="text-[120px] font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 leading-none drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]"
-                                    >
-                                        {startCountdown}
-                                    </motion.div>
-                                </motion.div>
-                            </div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* Lobby Music */}
-                    <audio
-                        ref={audioRef}
-                        src={lobbyMusic}
-                        loop
-                        volume={0.8}
-                        preload="auto"
-                    />
-                    {showAddFriendModal && (
-                        <AddFriendModal isOpen={showAddFriendModal} onClose={() => setShowAddFriendModal(false)} mode={modalMode} />
-                    )}
+            <div className="h-24 bg-black/80 border-t border-white/10 flex items-center justify-between px-8 backdrop-blur-xl relative z-20">
+                <div className="flex items-center gap-4 relative">
                 </div>
+
+                {/* READY / START BUTTON */}
+                <button
+                    onClick={handleReadyClick}
+                    disabled={isUserReady || !opponent || matchState === 'starting'}
+                    className={`h-14 px-16 rounded-full border-2 flex items-center justify-center gap-2 transition-all ${isUserReady
+                        ? 'bg-emerald-600 border-emerald-400 text-white cursor-default'
+                        : opponent
+                            ? 'bg-gradient-to-b from-amber-400 to-orange-500 border-amber-300 text-amber-950 font-black hover:scale-105 shadow-[0_0_30px_rgba(245,158,11,0.6)] cursor-pointer'
+                            : 'bg-slate-800 border-slate-600 text-slate-500 cursor-not-allowed'
+                        }`}
+                >
+                    <Swords className={`w-6 h-6 ${isUserReady || matchState === 'starting' ? '' : 'animate-pulse'}`} />
+                    <span className="font-black uppercase tracking-widest text-lg">
+                        {matchState === 'starting' ? 'STARTING...' : isUserReady ? 'READY!' : opponent ? 'CLICK TO READY' : 'WAITING FOR PLAYER'}
+                    </span>
+                </button>
+            </div>
+        </motion.div>
+
+                    {/* GAME START COUNTDOWN MODAL */ }
+    <AnimatePresence>
+        {matchState === 'starting' && (
+            <div className="absolute inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-md">
+                <motion.div
+                    key="countdown"
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.5 }}
+                    className="flex flex-col items-center"
+                >
+                    <p className="text-emerald-400 font-bold tracking-[0.2em] uppercase mb-4 text-xl">Game Starting In</p>
+                    <motion.div
+                        key="countdown-display"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="text-[120px] font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 leading-none drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]"
+                    >
+                        {startCountdown}
+                    </motion.div>
+                </motion.div>
+            </div>
+        )}
+    </AnimatePresence>
+
+    {/* Lobby Music */ }
+    <audio
+        ref={audioRef}
+        src={lobbyMusic}
+        loop
+        volume={0.8}
+        preload="auto"
+    />
+    {
+        showAddFriendModal && (
+            <AddFriendModal isOpen={showAddFriendModal} onClose={() => setShowAddFriendModal(false)} mode={modalMode} />
+        )
+    }
+                </div >
             )}
-        </AnimatePresence>
+        </AnimatePresence >
     );
 };
 
