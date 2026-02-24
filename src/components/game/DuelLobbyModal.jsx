@@ -47,6 +47,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
     const [isOpponentReady, setIsOpponentReady] = useState(false);
     const [timer, setTimer] = useState(0); // Lobby countdown
     const [onlineUsers, setOnlineUsers] = useState([]);
+    const [invitedFriendId, setInvitedFriendId] = useState(null);
 
     // MODALS
     const [showAddFriendModal, setShowAddFriendModal] = useState(false);
