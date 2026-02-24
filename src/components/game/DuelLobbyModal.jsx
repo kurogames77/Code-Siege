@@ -77,6 +77,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
         if (!isOpen || !user) return;
 
         const fetchFriends = async () => {
+            console.log('[DuelLobby] Fetching friends for user:', user.id);
             // Get accepted friend requests where current user is sender or receiver
             const { data: notifs, error } = await supabase
                 .from('notifications')
@@ -85,7 +86,18 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                 .eq('action_status', 'accepted')
                 .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
 
-            if (error || !notifs) return;
+            if (error) {
+                console.error('[DuelLobby] Error fetching friend notifications:', error.message);
+                return;
+            }
+
+            if (!notifs || notifs.length === 0) {
+                console.log('[DuelLobby] No friend notifications found.');
+                setFriends([]);
+                return;
+            }
+
+            console.log('[DuelLobby] Found raw friend notifications:', notifs.length);
 
             // Collect friend user IDs
             const friendIds = notifs.map(n =>
@@ -94,24 +106,36 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
 
             // Deduplicate
             const uniqueIds = [...new Set(friendIds)];
-            if (uniqueIds.length === 0) { setFriends([]); return; }
+            if (uniqueIds.length === 0) {
+                console.log('[DuelLobby] No unique friend IDs after filtering.');
+                setFriends([]);
+                return;
+            }
+
+            console.log('[DuelLobby] Fetching profiles for unique friend IDs:', uniqueIds);
 
             // Fetch friend profiles
-            const { data: profiles } = await supabase
+            const { data: profiles, error: profileError } = await supabase
                 .from('users')
-                .select('id, name, avatar_url, exp, course')
+                .select('id, username, avatar_url, xp')
                 .in('id', uniqueIds);
 
+            if (profileError) {
+                console.error('[DuelLobby] Error fetching friend profiles:', profileError.message);
+                return;
+            }
+
             if (profiles) {
+                console.log('[DuelLobby] Successfully fetched profiles:', profiles.length);
                 const friendsList = profiles.map(p => {
-                    const rank = getRankData(p.exp || 0);
+                    const rank = getRankData(p.xp || 0);
                     return {
                         id: p.id,
-                        name: p.name || 'Unknown',
+                        name: p.username || 'Unknown',
                         avatar: p.avatar_url,
                         rankName: rank.name,
                         rankIcon: rank.icon,
-                        course: p.course,
+                        course: 'N/A',
                         status: onlineUserIds.has(p.id) ? 'online' : 'offline'
                     };
                 });

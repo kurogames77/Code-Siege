@@ -1,0 +1,40 @@
+﻿{
+  "step": "FRIENDSHIP DIAGNOSTIC",
+  "usersFound": [
+    {
+      "id": "869c1a1d-5d2e-4da2-acce-56cb4f6c4ba7",
+      "username": "Arlou Lactuan"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "d9c7ce6f-e078-4fcc-8892-45dbaeed0ff3",
+      "type": "friend_request",
+      "title": "Arlou Lactuan",
+      "message": "wants to be your friend",
+      "sender_id": "869c1a1d-5d2e-4da2-acce-56cb4f6c4ba7",
+      "receiver_id": "961f0704-1af7-43e9-a212-7fd357839c6a",
+      "action_status": "accepted",
+      "is_read": true,
+      "created_at": "2026-02-24T04:42:24.036924+00:00"
+    },
+    {
+      "id": "1048b557-c9ce-438f-bfa7-565aac86a51c",
+      "type": "system",
+      "title": "Morbid accepted your friend request!",
+      "message": "You are now friends.",
+      "sender_id": "961f0704-1af7-43e9-a212-7fd357839c6a",
+      "receiver_id": "869c1a1d-5d2e-4da2-acce-56cb4f6c4ba7",
+      "action_status": null,
+      "is_read": true,
+      "created_at": "2026-02-24T04:42:32.134702+00:00"
+    }
+  ],
+  "acceptedCount": 1,
+  "friendProfiles": [
+    {
+      "id": "961f0704-1af7-43e9-a212-7fd357839c6a",
+      "username": "Morbid"
+    }
+  ]
+}
