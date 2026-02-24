@@ -712,9 +712,9 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <span className="text-sm font-black text-slate-200 truncate block tracking-tight group-hover:text-white transition-colors">{friend.name}</span>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <img src={friend.rankIcon} className="w-4 h-4 object-contain" alt="" />
-                                                            <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wide">{friend.rankName}</span>
+                                                        <div className="flex items-center gap-2">
+                                                            <img src={friend.rankIcon} className="w-8 h-8 object-contain drop-shadow-sm" alt="" />
+                                                            <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">{friend.rankName}</span>
                                                         </div>
                                                     </div>
                                                     <button
@@ -750,9 +750,9 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <span className="text-sm font-bold text-slate-400 truncate block">{friend.name}</span>
-                                                    <div className="flex items-center gap-1.5">
-                                                        <img src={friend.rankIcon} className="w-4 h-4 object-contain opacity-50" alt="" />
-                                                        <span className="text-[10px] text-slate-600 font-bold uppercase tracking-wide">{friend.rankName}</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <img src={friend.rankIcon} className="w-8 h-8 object-contain opacity-50" alt="" />
+                                                        <span className="text-[10px] text-slate-600 font-black uppercase tracking-widest">{friend.rankName}</span>
                                                     </div>
                                                 </div>
                                             </div>

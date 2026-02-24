@@ -688,9 +688,9 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <h4 className="text-xs font-bold text-slate-200 group-hover:text-white truncate">{friend.name}</h4>
-                                                    <div className="flex items-center gap-2 mt-0.5">
-                                                        <img src={friend.rankIcon} className="w-3 h-3 object-contain" alt="Rank" />
-                                                        <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wide truncate">{friend.rankName}</p>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <img src={friend.rankIcon} className="w-8 h-8 object-contain drop-shadow-sm" alt="Rank" />
+                                                        <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest truncate">{friend.rankName}</p>
                                                     </div>
                                                 </div>
                                                 {friend.status === 'online' && (
