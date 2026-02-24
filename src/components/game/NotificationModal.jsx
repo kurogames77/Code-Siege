@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, UserPlus, Check, XIcon, Bell, ShoppingBag, Trophy, Swords, Clock, Trash2 } from 'lucide-react';
+import { X, UserPlus, Users, Check, XIcon, Bell, ShoppingBag, Trophy, Swords, Clock, Trash2 } from 'lucide-react';
 import useSound from '../../hooks/useSound';
 import { useUser } from '../../contexts/UserContext';
 import supabase from '../../lib/supabase';
