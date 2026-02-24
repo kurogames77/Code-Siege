@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '../../contexts/ToastContext';
 import heroesIcon from '../../assets/heroes.png';
