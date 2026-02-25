@@ -115,6 +115,7 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                         setActiveInvitation({
                             id: newNotif.id,
                             type: newNotif.type,
+                            senderId: newNotif.sender_id,
                             sender: sender,
                             rankName: rank.name,
                             rankIcon: rank.icon,
@@ -141,25 +142,49 @@ const GameNavbar = ({ onLobbyStateChange }) => {
 
             const isDuel = activeInvitation.type === 'duel_invite';
 
-            // Build opponent data from the invitation sender
-            if (isDuel && activeInvitation.sender) {
-                const senderRank = getRankData(activeInvitation.sender.xp || 0);
-                // Fetch full sender profile for id
-                const { data: senderProfile } = await supabase
-                    .from('users')
-                    .select('id, username, avatar_url, xp')
-                    .eq('username', activeInvitation.sender.username)
-                    .single();
+            if (isDuel && activeInvitation.senderId) {
+                // Send duel-accept broadcast back to the challenger
+                const lobbyChannel = supabase.channel('duel-lobby');
+                await lobbyChannel.subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await lobbyChannel.send({
+                            type: 'broadcast',
+                            event: 'duel-accept',
+                            payload: {
+                                targetId: activeInvitation.senderId,
+                                senderId: user.id,
+                                senderName: user.name,
+                                senderAvatar: user.avatar,
+                                senderRankName: user.rankName,
+                                senderRankIcon: user.rankIcon
+                            }
+                        });
+                        supabase.removeChannel(lobbyChannel);
+                    }
+                });
 
-                if (senderProfile) {
-                    setDuelOpponent({
-                        id: senderProfile.id,
-                        name: senderProfile.username,
-                        avatar: senderProfile.avatar_url,
-                        rankName: senderRank.name,
-                        rankIcon: senderRank.icon
+                // Build opponent data from the sender
+                const senderRank = getRankData(activeInvitation.sender?.xp || 0);
+                setDuelOpponent({
+                    id: activeInvitation.senderId,
+                    name: activeInvitation.sender?.username || 'Opponent',
+                    avatar: activeInvitation.sender?.avatar_url,
+                    rankName: senderRank.name,
+                    rankIcon: senderRank.icon
+                });
+
+                // Send a system notification back to the challenger
+                await supabase
+                    .from('notifications')
+                    .insert({
+                        type: 'system',
+                        sender_id: user.id,
+                        receiver_id: activeInvitation.senderId,
+                        title: `${user.name || 'Someone'} accepted your duel invite!`,
+                        message: 'They are in the lobby.',
+                        action_status: 'viewed',
+                        is_read: false
                     });
-                }
             }
 
             // Redirect logic
