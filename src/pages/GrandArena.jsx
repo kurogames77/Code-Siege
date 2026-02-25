@@ -48,7 +48,7 @@ const GrandArena = () => {
             setPlayers(prev => {
                 if (prev.length > 0) return prev;
                 return [
-                    { id: 1, name: user?.name || 'OPERATIVE', progress: 0, isWin: false, avatar: user?.avatar || heroAsset },
+                    { id: user?.id || 1, name: user?.name || 'OPERATIVE', progress: 0, isWin: false, avatar: user?.avatar || heroAsset },
                     { id: 101, name: 'CyberKnight_99', progress: 0, isWin: false, avatar: heroAsset },
                     { id: 102, name: 'LogicQueen', progress: 0, isWin: false, avatar: heroAsset },
                     { id: 103, name: 'CodeSlinger', progress: 0, isWin: false, avatar: heroAsset },
@@ -120,12 +120,12 @@ const GrandArena = () => {
 
         const interval = setInterval(() => {
             setPlayers(currentPlayers => {
-                // If the player (id: 1) has already won, stop all simulation
-                if (currentPlayers.find(p => p.id === 1 && p.progress >= 100)) return currentPlayers;
+                // If the player has already won, stop all simulation
+                if (currentPlayers.find(p => p.id === user?.id && p.progress >= 100)) return currentPlayers;
 
                 let someoneWon = false;
                 const newPlayers = currentPlayers.map(p => {
-                    if (p.id === 1 || p.progress >= 100) return p;
+                    if (p.id === user?.id || p.progress >= 100) return p;
 
                     const increment = Math.random() * 2.5;
                     const newProgress = Math.min(100, p.progress + increment);
@@ -182,7 +182,7 @@ const GrandArena = () => {
 
         if (code.includes('x = 5') || true) { // Mocking success
             setIsSuccess(true);
-            setPlayers(prev => prev.map(p => p.id === 1 ? { ...p, progress: 100 } : p));
+            setPlayers(prev => prev.map(p => p.id === user?.id ? { ...p, progress: 100 } : p));
             setResult({ type: 'success', message: "SYSTEM STABILIZED - RIFT SECURED!" });
 
             // TRIGGER VICTORY FLOW
@@ -301,7 +301,7 @@ const GrandArena = () => {
                         {/* Competitor Grid */}
                         <div className="flex-1 flex items-center justify-center gap-6 px-4">
                             {players.map((player) => {
-                                const isSelf = player.id === 1;
+                                const isSelf = player.id === user?.id;
                                 return (
                                     <div key={player.id} className="flex items-center gap-2">
                                         <div className={`w-8 h-8 border ${isSelf ? 'border-cyan-500/50' : 'border-slate-700/50'} bg-black/50 p-0.5 relative`}>

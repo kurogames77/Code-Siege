@@ -34,7 +34,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
     const currentHeroImage = heroMap[selectedHeroImage] || hero1aStatic;
 
     const currentUser = {
-        id: 1,
+        id: user.id,
         name: user.name,
         level: user.level || 42,
         status: 'ready',
@@ -127,7 +127,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
     // Auto-Transition: Game Start
     useEffect(() => {
         if (matchState === 'starting' && timer === 0) {
-            const opponentData = players.filter(p => p.id !== 1);
+            const opponentData = players.filter(p => p.id !== user.id);
             navigate('/grand-arena/multiplayer', {
                 state: {
                     opponents: opponentData,
@@ -299,7 +299,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
             const interval = setInterval(() => {
                 setPlayers(prev => {
                     return prev.map(p => {
-                        if (p.id === 1) return p; // Don't auto-ready current user
+                        if (p.id === user.id) return p; // Don't auto-ready current user
                         if (p.isReady) return p;
 
                         // Random chance to ready up
@@ -345,7 +345,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
     const handleReadyClick = () => {
         playSuccess();
         if (matchState === 'ready_check') {
-            setPlayers(prev => prev.map(p => p.id === 1 ? { ...p, isReady: true } : p));
+            setPlayers(prev => prev.map(p => p.id === user.id ? { ...p, isReady: true } : p));
         }
     };
 
@@ -396,7 +396,6 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                     action_status: 'pending',
                     is_read: false
                 });
-
             // Note: Since multi-lobby is currently simulated, we don't have a 
             // shared realtime channel here yet like in DuelLobbyModal.
             // But the notification will let the friend see the invite.
@@ -423,11 +422,11 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
     // --- RENDER HELPERS ---
 
     const friends = allFriends
-        .filter(f => onlineUserIds.has(f.id))
+        .filter(f => onlineUserIds.has(String(f.id)))
         .map(f => ({ ...f, status: 'online' }));
 
     const offlineFriends = allFriends
-        .filter(f => !onlineUserIds.has(f.id))
+        .filter(f => !onlineUserIds.has(String(f.id)))
         .map(f => ({ ...f, status: 'offline' }));
 
     const slots = [0, 1, 2, 3, 4];
@@ -650,14 +649,14 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                     {matchState === 'ready_check' ? (
                                         <button
                                             onClick={handleReadyClick}
-                                            disabled={players.find(p => p.id === currentUser.id)?.isReady}
-                                            className={`h-14 px-16 rounded-full border-2 flex items-center justify-center gap-2 transition-all ${players.find(p => p.id === currentUser.id)?.isReady
+                                            disabled={players.find(p => p.id === user.id)?.isReady}
+                                            className={`h-14 px-16 rounded-full border-2 flex items-center justify-center gap-2 transition-all ${players.find(p => p.id === user.id)?.isReady
                                                 ? 'bg-emerald-600 border-emerald-400 text-white cursor-default'
                                                 : 'bg-gradient-to-b from-amber-400 to-orange-500 border-amber-300 text-ammber-950 font-black hover:scale-105 shadow-[0_0_30px_rgba(245,158,11,0.6)]'
                                                 }`}
                                         >
                                             <span className="font-black uppercase tracking-widest text-lg">
-                                                {players.find(p => p.id === currentUser.id)?.isReady ? 'READY!' : 'CLICK TO READY'}
+                                                {players.find(p => p.id === user.id)?.isReady ? 'READY!' : 'CLICK TO READY'}
                                             </span>
                                         </button>
                                     ) : (

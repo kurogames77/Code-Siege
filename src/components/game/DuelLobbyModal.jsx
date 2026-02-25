@@ -138,7 +138,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                         rankName: rank.name,
                         rankIcon: rank.icon,
                         course: 'N/A',
-                        status: onlineUserIds.has(p.id) ? 'online' : 'offline'
+                        status: onlineUserIds.has(String(p.id)) ? 'online' : 'offline'
                     };
                 });
                 setFriends(friendsList);
@@ -153,7 +153,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
         if (friends.length > 0) {
             setFriends(prev => prev.map(f => ({
                 ...f,
-                status: onlineUserIds.has(f.id) ? 'online' : 'offline'
+                status: onlineUserIds.has(String(f.id)) ? 'online' : 'offline'
             })));
         }
     }, [onlineUserIds]);

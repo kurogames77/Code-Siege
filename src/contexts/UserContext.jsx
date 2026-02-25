@@ -45,7 +45,7 @@ export const UserProvider = ({ children }) => {
             globalPresenceChannel = supabase.channel('global-presence', {
                 config: {
                     presence: {
-                        key: user.id,
+                        key: String(user.id),
                     },
                 },
             });
@@ -53,16 +53,16 @@ export const UserProvider = ({ children }) => {
             globalPresenceChannel
                 .on('presence', { event: 'sync' }, () => {
                     const state = globalPresenceChannel.presenceState();
-                    const onlineIds = new Set(Object.keys(state));
+                    const onlineIds = new Set(Object.keys(state).map(id => String(id)));
                     setOnlineUserIds(onlineIds);
                 })
                 .on('presence', { event: 'join', key: '*', currentPresences: [], newPresences: [] }, () => {
                     const state = globalPresenceChannel.presenceState();
-                    setOnlineUserIds(new Set(Object.keys(state)));
+                    setOnlineUserIds(new Set(Object.keys(state).map(id => String(id))));
                 })
                 .on('presence', { event: 'leave', key: '*', leftPresences: [], currentPresences: [] }, () => {
                     const state = globalPresenceChannel.presenceState();
-                    setOnlineUserIds(new Set(Object.keys(state)));
+                    setOnlineUserIds(new Set(Object.keys(state).map(id => String(id))));
                 })
                 .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
