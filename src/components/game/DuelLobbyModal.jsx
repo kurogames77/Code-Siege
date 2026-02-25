@@ -647,7 +647,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
 
                             {/* RIGHT SIDEBAR: INVITE & FRIENDS */}
                             <div className="w-80 bg-black/60 border-l border-white/5 flex flex-col p-6 backdrop-blur-md" onClick={(e) => e.stopPropagation()}>
-                                <div className="mb-6">
+                                <div className="mb-4">
                                     <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-3 mb-2">
                                         <span>Invite Friends</span>
                                         <button
@@ -657,47 +657,40 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                             <UserPlus className="w-4 h-4 text-slate-400 group-hover/add:text-cyan-400" />
                                         </button>
                                     </h3>
-                                    <span className="text-[10px] px-2 py-1 bg-white/10 rounded text-slate-500 font-bold">{friends.filter(f => f.status === 'online').length} Online</span>
+                                    <span className="text-[10px] px-2 py-1 bg-white/10 rounded text-slate-500 font-bold">{friends.filter(f => f.status === 'online').length + onlineUsers.filter(u => !friends.some(f => f.id === u.id)).length} Online</span>
                                 </div>
 
-                                <div className="flex-1 overflow-y-auto space-y-2 -mx-2 px-2 custom-scrollbar">
-                                    {friends.length === 0 ? (
-                                        <div className="flex flex-col items-center justify-center py-10 text-center">
-                                            <User className="w-10 h-10 text-slate-700 mb-3" />
-                                            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">No friends yet</p>
-                                            <p className="text-slate-600 text-[10px] mt-1">Add friends to invite them to duels</p>
-                                        </div>
-                                    ) : (
-                                        friends.map((friend) => (
-                                            <button
-                                                key={friend.id}
-                                                onClick={() => handleInvite(friend)}
-                                                disabled={!!opponent || friend.status !== 'online'}
-                                                className={`w-full p-3 rounded-xl border transition-all flex items-center gap-3 group text-left ${friend.status === 'online'
-                                                    ? 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20'
-                                                    : 'bg-white/[0.02] border-white/[0.03] opacity-50 cursor-not-allowed'
-                                                    }`}
-                                            >
-                                                <div className="relative">
-                                                    <div className="w-10 h-10 rounded-lg bg-slate-800 overflow-hidden border border-white/10">
-                                                        {friend.avatar ? (
-                                                            <img src={friend.avatar} alt="" className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center text-slate-600">
-                                                                <User className="w-5 h-5" />
-                                                            </div>
-                                                        )}
+                                <div className="flex-1 overflow-y-auto space-y-1 -mx-2 px-2 custom-scrollbar">
+                                    {/* ONLINE FRIENDS */}
+                                    {friends.filter(f => f.status === 'online').length > 0 && (
+                                        <>
+                                            <p className="text-[10px] font-bold text-emerald-500/70 uppercase tracking-widest px-1 pt-1 pb-1">Friends</p>
+                                            {friends.filter(f => f.status === 'online').map((friend) => (
+                                                <button
+                                                    key={friend.id}
+                                                    onClick={() => handleInvite(friend)}
+                                                    disabled={!!opponent}
+                                                    className="w-full p-3 rounded-xl border transition-all flex items-center gap-3 group text-left bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20"
+                                                >
+                                                    <div className="relative">
+                                                        <div className="w-10 h-10 rounded-lg bg-slate-800 overflow-hidden border border-white/10">
+                                                            {friend.avatar ? (
+                                                                <img src={friend.avatar} alt="" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center text-slate-600">
+                                                                    <User className="w-5 h-5" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-[#1a120b] bg-emerald-500" />
                                                     </div>
-                                                    <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-[#1a120b] ${friend.status === 'online' ? 'bg-emerald-500' : 'bg-slate-500'}`} />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 className="text-xs font-bold text-slate-200 group-hover:text-white truncate">{friend.name}</h4>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        <img src={friend.rankIcon} className="w-8 h-8 object-contain drop-shadow-sm" alt="Rank" />
-                                                        <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest truncate">{friend.rankName}</p>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="text-xs font-bold text-slate-200 group-hover:text-white truncate">{friend.name}</h4>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <img src={friend.rankIcon} className="w-8 h-8 object-contain drop-shadow-sm" alt="Rank" />
+                                                            <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest truncate">{friend.rankName}</p>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                {friend.status === 'online' && (
                                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-lg ${successInviteIds.has(friend.id)
                                                         ? 'bg-blue-600/50 cursor-default'
                                                         : invitedFriendId === friend.id
@@ -712,9 +705,102 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                             <Plus className="w-5 h-5" />
                                                         )}
                                                     </div>
-                                                )}
-                                            </button>
-                                        ))
+                                                </button>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {/* LOBBY PLAYERS (non-friends currently in the duel lobby) */}
+                                    {onlineUsers.filter(u => !friends.some(f => f.id === u.id)).length > 0 && (
+                                        <>
+                                            <div className="border-t border-white/5 mt-2 pt-2" />
+                                            <p className="text-[10px] font-bold text-cyan-500/70 uppercase tracking-widest px-1 pb-1">In Lobby</p>
+                                            {onlineUsers.filter(u => !friends.some(f => f.id === u.id)).map((lobbyPlayer) => (
+                                                <button
+                                                    key={lobbyPlayer.id}
+                                                    onClick={() => handleInvite({ id: lobbyPlayer.id, name: lobbyPlayer.name, avatar: lobbyPlayer.avatar, rankName: lobbyPlayer.rankName, rankIcon: lobbyPlayer.rankIcon, status: 'online' })}
+                                                    disabled={!!opponent}
+                                                    className="w-full p-3 rounded-xl border transition-all flex items-center gap-3 group text-left bg-cyan-500/5 border-cyan-500/10 hover:bg-cyan-500/10 hover:border-cyan-500/20"
+                                                >
+                                                    <div className="relative">
+                                                        <div className="w-10 h-10 rounded-lg bg-slate-800 overflow-hidden border border-white/10">
+                                                            {lobbyPlayer.avatar ? (
+                                                                <img src={lobbyPlayer.avatar} alt="" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center text-slate-600">
+                                                                    <User className="w-5 h-5" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-[#1a120b] bg-emerald-500 animate-pulse" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="text-xs font-bold text-slate-200 group-hover:text-white truncate">{lobbyPlayer.name}</h4>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            {lobbyPlayer.rankIcon && <img src={lobbyPlayer.rankIcon} className="w-8 h-8 object-contain drop-shadow-sm" alt="Rank" />}
+                                                            <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest truncate">{lobbyPlayer.rankName || 'In Lobby'}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-lg ${successInviteIds.has(lobbyPlayer.id)
+                                                        ? 'bg-blue-600/50 cursor-default'
+                                                        : invitedFriendId === lobbyPlayer.id
+                                                            ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30'
+                                                            : 'bg-cyan-500 hover:bg-cyan-400 text-white shadow-cyan-900/20 hover:scale-110 active:scale-95'
+                                                        }`}>
+                                                        {successInviteIds.has(lobbyPlayer.id) ? (
+                                                            <Check className="w-5 h-5 text-blue-200" />
+                                                        ) : invitedFriendId === lobbyPlayer.id ? (
+                                                            <div className="w-5 h-5 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+                                                        ) : (
+                                                            <Swords className="w-5 h-5" />
+                                                        )}
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {/* OFFLINE FRIENDS */}
+                                    {friends.filter(f => f.status === 'offline').length > 0 && (
+                                        <>
+                                            <div className="border-t border-white/5 mt-2 pt-2" />
+                                            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-1 pb-1">Offline</p>
+                                            {friends.filter(f => f.status === 'offline').map((friend) => (
+                                                <div
+                                                    key={friend.id}
+                                                    className="w-full p-3 rounded-xl flex items-center gap-3 opacity-40"
+                                                >
+                                                    <div className="relative">
+                                                        <div className="w-10 h-10 rounded-lg bg-slate-800 overflow-hidden border border-white/10 grayscale">
+                                                            {friend.avatar ? (
+                                                                <img src={friend.avatar} alt="" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center text-slate-600">
+                                                                    <User className="w-5 h-5" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-[#1a120b] bg-slate-500" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="text-xs font-bold text-slate-400 truncate">{friend.name}</h4>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <img src={friend.rankIcon} className="w-8 h-8 object-contain opacity-50" alt="Rank" />
+                                                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest truncate">{friend.rankName}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {/* Empty state if nobody online and no friends */}
+                                    {friends.length === 0 && onlineUsers.length === 0 && (
+                                        <div className="flex flex-col items-center justify-center py-10 text-center">
+                                            <User className="w-10 h-10 text-slate-700 mb-3" />
+                                            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">No friends yet</p>
+                                            <p className="text-slate-600 text-[10px] mt-1">Add friends to invite them to duels</p>
+                                        </div>
                                     )}
                                 </div>
                             </div>
