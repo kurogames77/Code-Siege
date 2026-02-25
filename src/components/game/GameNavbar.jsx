@@ -172,19 +172,6 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                     rankName: senderRank.name,
                     rankIcon: senderRank.icon
                 });
-
-                // Send a system notification back to the challenger
-                await supabase
-                    .from('notifications')
-                    .insert({
-                        type: 'system',
-                        sender_id: user.id,
-                        receiver_id: activeInvitation.senderId,
-                        title: `${user.name || 'Someone'} accepted your duel invite!`,
-                        message: 'They are in the lobby.',
-                        action_status: 'viewed',
-                        is_read: false
-                    });
             }
 
             // Redirect logic

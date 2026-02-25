@@ -117,7 +117,6 @@ const NotificationModal = ({ isOpen, onClose }) => {
     const handleAccept = async (notifId) => {
         playSuccess();
         try {
-            // Find the notification to get sender info
             const notif = notifications.find(n => n.id === notifId);
 
             await supabase
@@ -126,70 +125,16 @@ const NotificationModal = ({ isOpen, onClose }) => {
                 .eq('id', notifId);
             setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, action_status: 'accepted', is_read: true } : n));
 
-            // Send a notification back to the original sender
-            if (notif?.sender_id) {
-                // If it was a duel invite, also send a broadcast to the sender
-                if (notif.type === 'duel_invite') {
-                    const lobbyChannel = supabase.channel('duel-lobby');
-                    await lobbyChannel.subscribe(async (status) => {
-                        if (status === 'SUBSCRIBED') {
-                            await lobbyChannel.send({
-                                type: 'broadcast',
-                                event: 'duel-accept',
-                                payload: {
-                                    targetId: notif.sender_id,
-                                    senderId: user.id,
-                                    senderName: user.name,
-                                    senderAvatar: user.avatar,
-                                    senderRankName: user.rankName,
-                                    senderRankIcon: user.rankIcon
-                                }
-                            });
-                            // No need to keep the channel open
-                            supabase.removeChannel(lobbyChannel);
-                        }
-                    });
-
-                    // Update local state to close modal and potentially navigate
-                    // Build opponent data from the notification sender
-                    const senderRank = getRankData(sender?.xp || 0);
-                    const opponentData = sender ? {
-                        id: sender.id,
-                        name: sender.username || notif.title,
-                        avatar: sender.avatar_url,
-                        rankName: senderRank.name,
-                        rankIcon: senderRank.icon
-                    } : null;
-
-                    onClose();
-                    if (location.pathname !== '/play') {
-                        navigate('/play', {
-                            state: {
-                                openDuelLobby: true,
-                                duelOpponent: opponentData
-                            }
-                        });
-                    } else {
-                        navigate('/play', {
-                            state: {
-                                openDuelLobby: true,
-                                duelOpponent: opponentData
-                            },
-                            replace: true
-                        });
-                    }
-                }
-
+            // Send a notification back to the original sender (friend requests only)
+            if (notif?.sender_id && notif.type === 'friend_request') {
                 await supabase
                     .from('notifications')
                     .insert({
                         type: 'system',
                         sender_id: user.id,
                         receiver_id: notif.sender_id,
-                        title: notif.type === 'friend_request'
-                            ? `${user.name || 'Someone'} accepted your friend request!`
-                            : `${user.name || 'Someone'} accepted your duel invite!`,
-                        message: notif.type === 'friend_request' ? 'You are now friends.' : 'They are in the lobby.',
+                        title: `${user.name || 'Someone'} accepted your friend request!`,
+                        message: 'You are now friends.',
                         action_status: 'viewed',
                         is_read: false
                     });
@@ -350,7 +295,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
                                 </div>
                             ) : (
                                 <div className="p-3 space-y-2">
-                                    {notifications.map((notif) => {
+                                    {notifications.filter(n => n.type !== 'duel_invite').map((notif) => {
                                         const config = TYPE_CONFIG[notif.type] || TYPE_CONFIG.system;
                                         const IconComponent = config.icon;
                                         const sender = notif.sender;
