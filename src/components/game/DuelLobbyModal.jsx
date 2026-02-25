@@ -239,6 +239,13 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                     setIsOpponentReady(payload.isReady);
                 }
             })
+            .on('broadcast', { event: 'game-start' }, ({ payload }) => {
+                if (payload.targetId === user.id && matchState !== 'starting') {
+                    console.log('[DuelLobby] Received game-start broadcast, starting countdown');
+                    setMatchState('starting');
+                    setStartCountdown(5);
+                }
+            })
             .subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
                     await channel.track({
@@ -355,20 +362,20 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         }
     };
 
-    // Simulate Opponent Readying Up
-    useEffect(() => {
-        if (matchState === 'lobby' && opponent && !isOpponentReady) {
-            const randomDelay = Math.random() * 3000 + 2000; // 2-5s delay
-            const timeout = setTimeout(() => {
-                setIsOpponentReady(true);
-            }, randomDelay);
-            return () => clearTimeout(timeout);
-        }
-    }, [matchState, opponent, isOpponentReady]);
-
     // Auto-Start when BOTH are ready
     useEffect(() => {
         if (matchState === 'lobby' && isUserReady && isOpponentReady) {
+            // Broadcast game-start to the opponent so both start the countdown together
+            if (lobbyChannelRef.current) {
+                lobbyChannelRef.current.send({
+                    type: 'broadcast',
+                    event: 'game-start',
+                    payload: {
+                        targetId: opponent?.id,
+                        startedBy: user.id
+                    }
+                });
+            }
             setMatchState('starting');
             setStartCountdown(5);
         }
