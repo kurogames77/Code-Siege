@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     selected_hero VARCHAR(20) DEFAULT '3',
     selected_theme VARCHAR(50) DEFAULT 'default',
     is_banned BOOLEAN DEFAULT FALSE,
+    active_session_id UUID,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

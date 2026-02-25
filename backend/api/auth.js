@@ -1,4 +1,5 @@
 import express from 'express';
+import crypto from 'crypto';
 import supabase, { supabaseService } from '../lib/supabase.js';
 import logger from '../utils/logger.js';
 
@@ -278,6 +279,15 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: error.message || 'Login failed' });
         }
 
+        // Generate a new session ID for 1-session-per-student enforcement
+        const active_session_id = crypto.randomUUID();
+
+        // Update the user's active_session_id in DB (bypass RLS)
+        await supabaseService
+            .from('users')
+            .update({ active_session_id })
+            .eq('id', data.user.id);
+
         // Get user profile
         const { data: profile } = await supabase
             .from('users')
@@ -285,7 +295,7 @@ router.post('/login', async (req, res) => {
             .eq('id', data.user.id)
             .single();
 
-        logger.info('AUTH_SERVICE', `User logged in: ${profile?.username || loginEmail} (${profile?.role || 'user'})`);
+        logger.info('AUTH_SERVICE', `User logged in: ${profile?.username || loginEmail} (${profile?.role || 'user'}), Session: ${active_session_id}`);
 
         res.json({
             message: 'Login successful',
