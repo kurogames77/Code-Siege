@@ -26,8 +26,18 @@ export const UserProvider = ({ children }) => {
         // Dynamic Realtime Listener for the current user's profile
         let profileChannel;
         let globalPresenceChannel;
+        let heartbeatInterval;
 
         if (user?.id) {
+            // Start heartbeat ping
+            heartbeatInterval = setInterval(async () => {
+                try {
+                    await authAPI.heartbeat();
+                } catch (err) {
+                    console.error('Heartbeat failed:', err);
+                }
+            }, 30000); // Send heartbeat every 30 seconds
+
             // Profile updates
             profileChannel = supabase
                 .channel(`user-profile-${user.id}`)
@@ -36,18 +46,6 @@ export const UserProvider = ({ children }) => {
                     { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${user.id}` },
                     (payload) => {
                         console.log('[Realtime] Profile updated:', payload.new);
-
-                        // Check for session invalidation
-                        if (payload.new.active_session_id) {
-                            const currentSessionId = localStorage.getItem('active_session_id');
-                            if (currentSessionId && currentSessionId !== payload.new.active_session_id) {
-                                console.warn('[Auth] Session invalidated by a new login.');
-                                alert('You have been logged out because your account was logged into from another device.');
-                                logout();
-                                return;
-                            }
-                        }
-
                         setUser(prev => ({ ...prev, ...formatUser(payload.new) }));
                     }
                 )
@@ -90,6 +88,7 @@ export const UserProvider = ({ children }) => {
         return () => {
             if (profileChannel) supabase.removeChannel(profileChannel);
             if (globalPresenceChannel) supabase.removeChannel(globalPresenceChannel);
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
         };
     }, [user?.id]);
 
@@ -108,10 +107,6 @@ export const UserProvider = ({ children }) => {
                             access_token: token,
                             refresh_token: '' // Custom backend doesn't provide refresh token yet
                         });
-                    }
-
-                    if (profile.active_session_id) {
-                        localStorage.setItem('active_session_id', profile.active_session_id);
                     }
                 }
             }
@@ -161,8 +156,7 @@ export const UserProvider = ({ children }) => {
                 leaderboardRank: 0
             },
             towerProgress: profile.tower_progress || {},
-            isBanned: profile.is_banned || false,
-            activeSessionId: profile.active_session_id || null
+            isBanned: profile.is_banned || false
         };
     };
 
@@ -192,10 +186,6 @@ export const UserProvider = ({ children }) => {
                     refresh_token: response.session.refresh_token || ''
                 }).catch(err => console.error('Session sync failed:', err));
             }
-
-            if (response.profile.active_session_id) {
-                localStorage.setItem('active_session_id', response.profile.active_session_id);
-            }
         }
         return response;
     };
@@ -212,7 +202,6 @@ export const UserProvider = ({ children }) => {
             setUser(null);
             setIsAuthenticated(false);
             localStorage.removeItem('auth_token');
-            localStorage.removeItem('active_session_id');
         }
     };
 

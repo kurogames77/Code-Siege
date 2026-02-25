@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     selected_theme VARCHAR(50) DEFAULT 'default',
     is_banned BOOLEAN DEFAULT FALSE,
     active_session_id UUID,
+    last_active_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

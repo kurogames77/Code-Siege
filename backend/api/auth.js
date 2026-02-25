@@ -240,24 +240,37 @@ router.post('/login', async (req, res) => {
 
         let loginEmail = email;
 
-        // If student_id provided (used for both Student and Instructor login), look up the email
+        // Look up the user's profile to check their last_active_at status and resolve their email
+        let query = supabaseService.from('users').select('email, last_active_at');
         if (student_id && !email) {
-            // Use supabaseService to bypass RLS (user isn't authenticated yet)
-            const { data: userProfile, error: lookupError } = await supabaseService
-                .from('users')
-                .select('email')
-                .eq('student_id', student_id)
-                .single();
+            query = query.eq('student_id', student_id);
+        } else {
+            query = query.eq('email', email);
+        }
 
-            if (lookupError || !userProfile) {
+        const { data: userProfile, error: lookupError } = await query.single();
+
+        if (lookupError || !userProfile) {
+            // If they provided a student_id and we can't find it, that's a definite failure.
+            if (student_id && !email) {
                 console.log(`[Auth] ID lookup failed:`, lookupError);
-                // Don't log ID missing as it might be brute force noise, or do log as WARN
                 logger.warn('AUTH_SERVICE', `Login failed: ID not found ${student_id}`);
                 return res.status(401).json({ error: 'ID not found' });
             }
-
+        } else {
             loginEmail = userProfile.email;
-            console.log(`[Auth] Found email for ID: ${loginEmail}`);
+
+            // STRICT SESSION ENFORCEMENT
+            if (userProfile.last_active_at) {
+                const lastActive = new Date(userProfile.last_active_at).getTime();
+                const now = new Date().getTime();
+                const diffSeconds = (now - lastActive) / 1000;
+
+                if (diffSeconds < 60) {
+                    logger.warn('AUTH_SERVICE', `Login blocked: Strict session enforcement for ${loginEmail}`);
+                    return res.status(401).json({ error: 'This account is currently logged in on another device. Please log out there first, or wait 1 minute.' });
+                }
+            }
         }
 
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -282,10 +295,13 @@ router.post('/login', async (req, res) => {
         // Generate a new session ID for 1-session-per-student enforcement
         const active_session_id = crypto.randomUUID();
 
-        // Update the user's active_session_id in DB (bypass RLS)
+        // Update the user's active_session_id and initialize last_active_at in DB (bypass RLS)
         await supabaseService
             .from('users')
-            .update({ active_session_id })
+            .update({
+                active_session_id,
+                last_active_at: new Date().toISOString()
+            })
             .eq('id', data.user.id);
 
         // Get user profile
@@ -323,6 +339,8 @@ router.post('/logout', async (req, res) => {
             const token = authHeader.split(' ')[1];
             const { data: { user } } = await supabase.auth.getUser(token);
             if (user) {
+                // Clear heartbeat on logout
+                await supabaseService.from('users').update({ last_active_at: null }).eq('id', user.id);
                 // Try to get profile
                 const { data: profile } = await supabase.from('users').select('username, email').eq('id', user.id).single();
                 identity = profile?.username || user.email || identity;
@@ -374,6 +392,37 @@ router.get('/me', async (req, res) => {
     } catch (error) {
         console.error('Get me error:', error);
         res.status(500).json({ error: 'Failed to get user' });
+    }
+});
+
+/**
+ * POST /api/auth/heartbeat
+ * Keep session alive by updating last_active_at timestamp
+ */
+router.post('/heartbeat', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'No token provided' });
+        }
+
+        const token = authHeader.split(' ')[1];
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+
+        if (error || !user) {
+            return res.status(401).json({ error: 'Invalid token' });
+        }
+
+        // Update heartbeat using service role to bypass restrictive RLS policies for simple pings
+        await supabaseService
+            .from('users')
+            .update({ last_active_at: new Date().toISOString() })
+            .eq('id', user.id);
+
+        res.status(200).json({ status: 'alive' });
+    } catch (error) {
+        console.error('Heartbeat error:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 

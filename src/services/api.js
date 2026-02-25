@@ -92,6 +92,10 @@ export const authAPI = {
         return apiRequest('/auth/me');
     },
 
+    heartbeat: async () => {
+        return apiRequest('/auth/heartbeat', { method: 'POST' });
+    },
+
     isAuthenticated: () => !!getToken(),
 };
 
