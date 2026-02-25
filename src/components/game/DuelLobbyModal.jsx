@@ -16,7 +16,7 @@ import rankSilver from '../../assets/rankbadges/rank3.png';
 import rankDiamond from '../../assets/rankbadges/rank12.png';
 import { getRankFromExp as getRankData } from '../../utils/rankSystem';
 
-const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
+const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     const navigate = useNavigate();
     const [courses, setCourses] = useState([]);
     const [selectedLanguage, setSelectedLanguage] = useState('');
@@ -53,6 +53,16 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
     // MODALS
     const [showAddFriendModal, setShowAddFriendModal] = useState(false);
     const [modalMode, setModalMode] = useState('opponent'); // 'friend' | 'opponent'
+
+    // Set initial opponent from prop (when accepting a duel invite)
+    useEffect(() => {
+        if (isOpen && initialOpponent && !opponent) {
+            console.log('[DuelLobby] Setting initial opponent from invite:', initialOpponent.name);
+            setOpponent(initialOpponent);
+            setMatchState('lobby');
+            setTimer(60);
+        }
+    }, [isOpen, initialOpponent]);
 
     // Get selected hero
     const selectedHeroImage = localStorage.getItem('selectedHeroImage') || 'hero1a.png';

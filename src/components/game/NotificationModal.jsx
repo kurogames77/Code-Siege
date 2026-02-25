@@ -151,23 +151,29 @@ const NotificationModal = ({ isOpen, onClose }) => {
                     });
 
                     // Update local state to close modal and potentially navigate
-                    // But NotificationModal is global, so it doesn't navigate by itself usually.
-                    // Redirection logic
+                    // Build opponent data from the notification sender
+                    const senderRank = getRankData(sender?.xp || 0);
+                    const opponentData = sender ? {
+                        id: sender.id,
+                        name: sender.username || notif.title,
+                        avatar: sender.avatar_url,
+                        rankName: senderRank.name,
+                        rankIcon: senderRank.icon
+                    } : null;
+
                     onClose();
                     if (location.pathname !== '/play') {
                         navigate('/play', {
                             state: {
-                                [notif.type === 'duel_invite' ? 'openDuelLobby' : 'openMultiplayerLobby']: true
+                                openDuelLobby: true,
+                                duelOpponent: opponentData
                             }
                         });
                     } else {
-                        // We are already on play page. 
-                        // The GameNavbar handles opening the lobby based on state/params, 
-                        // but since we are already here, we might need to trigger it manually via window event or similar
-                        // OR we just navigate again with state, which PlayPage/GameNavbar should catch.
                         navigate('/play', {
                             state: {
-                                [notif.type === 'duel_invite' ? 'openDuelLobby' : 'openMultiplayerLobby']: true
+                                openDuelLobby: true,
+                                duelOpponent: opponentData
                             },
                             replace: true
                         });

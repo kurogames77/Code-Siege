@@ -51,6 +51,7 @@ const GameNavbar = ({ onLobbyStateChange }) => {
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [notificationCount, setNotificationCount] = useState(0);
     const [activeInvitation, setActiveInvitation] = useState(null);
+    const [duelOpponent, setDuelOpponent] = useState(null);
     const { playClick, playCancel, playSuccess } = useSound();
 
 
@@ -140,6 +141,27 @@ const GameNavbar = ({ onLobbyStateChange }) => {
 
             const isDuel = activeInvitation.type === 'duel_invite';
 
+            // Build opponent data from the invitation sender
+            if (isDuel && activeInvitation.sender) {
+                const senderRank = getRankData(activeInvitation.sender.xp || 0);
+                // Fetch full sender profile for id
+                const { data: senderProfile } = await supabase
+                    .from('users')
+                    .select('id, username, avatar_url, xp')
+                    .eq('username', activeInvitation.sender.username)
+                    .single();
+
+                if (senderProfile) {
+                    setDuelOpponent({
+                        id: senderProfile.id,
+                        name: senderProfile.username,
+                        avatar: senderProfile.avatar_url,
+                        rankName: senderRank.name,
+                        rankIcon: senderRank.icon
+                    });
+                }
+            }
+
             // Redirect logic
             if (location.pathname !== '/play') {
                 navigate('/play', {
@@ -184,6 +206,10 @@ const GameNavbar = ({ onLobbyStateChange }) => {
             const action = params.get('action');
 
             if (location.state?.openDuelLobby || action === 'openDuelLobby') {
+                // Check if opponent data was passed via navigation state
+                if (location.state?.duelOpponent) {
+                    setDuelOpponent(location.state.duelOpponent);
+                }
                 setIsDuelLobbyOpen(true);
             }
             if (location.state?.openMultiplayerLobby || action === 'openMultiplayerLobby') {
@@ -441,11 +467,13 @@ const GameNavbar = ({ onLobbyStateChange }) => {
 
             <DuelLobbyModal
                 isOpen={isDuelLobbyOpen}
-                onClose={() => setIsDuelLobbyOpen(false)}
+                onClose={() => { setIsDuelLobbyOpen(false); setDuelOpponent(null); }}
                 onBack={() => {
                     setIsDuelLobbyOpen(false);
+                    setDuelOpponent(null);
                     setIsRankingOpen(true);
                 }}
+                initialOpponent={duelOpponent}
             />
 
             <MultiplayerLobbyModal
