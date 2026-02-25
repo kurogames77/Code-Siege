@@ -268,7 +268,7 @@ router.post('/login', async (req, res) => {
 
                 if (diffSeconds < 60) {
                     logger.warn('AUTH_SERVICE', `Login blocked: Strict session enforcement for ${loginEmail}`);
-                    return res.status(401).json({ error: 'This account is currently logged in on another device. Please log out there first, or wait 1 minute.' });
+                    return res.status(401).json({ error: 'This account is currently logged in on another device. Please log out there first.' });
                 }
             }
         }
