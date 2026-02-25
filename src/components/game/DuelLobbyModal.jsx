@@ -73,80 +73,97 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack }) => {
     const audioRef = React.useRef(null);
 
     const [friends, setFriends] = useState([]);
+    const [friendRefreshTrigger, setFriendRefreshTrigger] = useState(0);
 
     // --- FETCH FRIENDS ---
+    const fetchFriends = React.useCallback(async () => {
+        if (!user) return;
+        console.log('[DuelLobby] Fetching friends for user:', user.id);
+        const { data: notifs, error } = await supabase
+            .from('notifications')
+            .select('sender_id, receiver_id')
+            .eq('type', 'friend_request')
+            .eq('action_status', 'accepted')
+            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+
+        if (error) {
+            console.error('[DuelLobby] Error fetching friend notifications:', error.message);
+            return;
+        }
+
+        if (!notifs || notifs.length === 0) {
+            setFriends([]);
+            return;
+        }
+
+        const friendIds = notifs.map(n =>
+            n.sender_id === user.id ? n.receiver_id : n.sender_id
+        ).filter(id => id !== user.id);
+
+        const uniqueIds = [...new Set(friendIds)];
+        if (uniqueIds.length === 0) {
+            setFriends([]);
+            return;
+        }
+
+        const { data: profiles, error: profileError } = await supabase
+            .from('users')
+            .select('id, username, avatar_url, xp')
+            .in('id', uniqueIds);
+
+        if (profileError) {
+            console.error('[DuelLobby] Error fetching friend profiles:', profileError.message);
+            return;
+        }
+
+        if (profiles) {
+            const friendsList = profiles.map(p => {
+                const rank = getRankData(p.xp || 0);
+                return {
+                    id: p.id,
+                    name: p.username || 'Unknown',
+                    avatar: p.avatar_url,
+                    rankName: rank.name,
+                    rankIcon: rank.icon,
+                    course: 'N/A',
+                    status: onlineUserIds.has(String(p.id)) ? 'online' : 'offline'
+                };
+            });
+            setFriends(friendsList);
+        }
+    }, [user, onlineUserIds]);
+
+    // Fetch friends on open and when the refresh trigger changes
+    useEffect(() => {
+        if (!isOpen || !user) return;
+        fetchFriends();
+    }, [isOpen, user, friendRefreshTrigger, fetchFriends]);
+
+    // Real-time listener for friend request acceptances
     useEffect(() => {
         if (!isOpen || !user) return;
 
-        const fetchFriends = async () => {
-            console.log('[DuelLobby] Fetching friends for user:', user.id);
-            // Get accepted friend requests where current user is sender or receiver
-            const { data: notifs, error } = await supabase
-                .from('notifications')
-                .select('sender_id, receiver_id')
-                .eq('type', 'friend_request')
-                .eq('action_status', 'accepted')
-                .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+        const notifChannel = supabase
+            .channel('duel-friend-updates')
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'notifications' },
+                (payload) => {
+                    // Re-fetch friends when a friend_request gets accepted
+                    if (payload.new.type === 'friend_request' && payload.new.action_status === 'accepted') {
+                        if (payload.new.sender_id === user.id || payload.new.receiver_id === user.id) {
+                            console.log('[DuelLobby] Friend request accepted in real-time, refreshing friends list.');
+                            setFriendRefreshTrigger(prev => prev + 1);
+                        }
+                    }
+                }
+            )
+            .subscribe();
 
-            if (error) {
-                console.error('[DuelLobby] Error fetching friend notifications:', error.message);
-                return;
-            }
-
-            if (!notifs || notifs.length === 0) {
-                console.log('[DuelLobby] No friend notifications found.');
-                setFriends([]);
-                return;
-            }
-
-            console.log('[DuelLobby] Found raw friend notifications:', notifs.length);
-
-            // Collect friend user IDs
-            const friendIds = notifs.map(n =>
-                n.sender_id === user.id ? n.receiver_id : n.sender_id
-            ).filter(id => id !== user.id);
-
-            // Deduplicate
-            const uniqueIds = [...new Set(friendIds)];
-            if (uniqueIds.length === 0) {
-                console.log('[DuelLobby] No unique friend IDs after filtering.');
-                setFriends([]);
-                return;
-            }
-
-            console.log('[DuelLobby] Fetching profiles for unique friend IDs:', uniqueIds);
-
-            // Fetch friend profiles
-            const { data: profiles, error: profileError } = await supabase
-                .from('users')
-                .select('id, username, avatar_url, xp')
-                .in('id', uniqueIds);
-
-            if (profileError) {
-                console.error('[DuelLobby] Error fetching friend profiles:', profileError.message);
-                return;
-            }
-
-            if (profiles) {
-                console.log('[DuelLobby] Successfully fetched profiles:', profiles.length);
-                const friendsList = profiles.map(p => {
-                    const rank = getRankData(p.xp || 0);
-                    return {
-                        id: p.id,
-                        name: p.username || 'Unknown',
-                        avatar: p.avatar_url,
-                        rankName: rank.name,
-                        rankIcon: rank.icon,
-                        course: 'N/A',
-                        status: onlineUserIds.has(String(p.id)) ? 'online' : 'offline'
-                    };
-                });
-                setFriends(friendsList);
-            }
+        return () => {
+            supabase.removeChannel(notifChannel);
         };
-
-        fetchFriends();
-    }, [isOpen, user, onlineUserIds]);
+    }, [isOpen, user]);
 
     // Update friends' status when onlineUserIds changes
     useEffect(() => {

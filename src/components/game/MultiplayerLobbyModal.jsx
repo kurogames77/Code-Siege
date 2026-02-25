@@ -163,70 +163,94 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
     }, [isMuted]);
 
     // --- FETCH FRIENDS ---
+    const [friendRefreshTrigger, setFriendRefreshTrigger] = useState(0);
+
+    const fetchFriends = React.useCallback(async () => {
+        if (!user?.id) return;
+        console.log('[MultiplayerLobby] fetchFriends called. User:', user.id, user.name);
+
+        const { data: notifs, error } = await supabase
+            .from('notifications')
+            .select('sender_id, receiver_id')
+            .eq('type', 'friend_request')
+            .eq('action_status', 'accepted')
+            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+
+        if (error) {
+            console.error('[MultiplayerLobby] Error fetching friends:', error.message);
+            return;
+        }
+
+        if (!notifs || notifs.length === 0) {
+            setAllFriends([]);
+            return;
+        }
+
+        const friendIds = notifs.map(n =>
+            n.sender_id === user.id ? n.receiver_id : n.sender_id
+        ).filter(id => id !== user.id);
+
+        const uniqueIds = [...new Set(friendIds)];
+        if (uniqueIds.length === 0) {
+            setAllFriends([]);
+            return;
+        }
+
+        const { data: profiles, error: profileError } = await supabase
+            .from('users')
+            .select('id, username, avatar_url, xp')
+            .in('id', uniqueIds);
+
+        if (profileError) {
+            console.error('[MultiplayerLobby] Error fetching profiles:', profileError.message);
+            return;
+        }
+
+        if (profiles) {
+            const friendsList = profiles.map(p => {
+                const rank = getRankData(p.xp || 0);
+                return {
+                    id: p.id,
+                    name: p.username || 'Unknown',
+                    avatar: p.avatar_url,
+                    rankName: rank.name,
+                    rankIcon: rank.icon,
+                    xp: p.xp || 0
+                };
+            });
+            setAllFriends(friendsList);
+        }
+    }, [user]);
+
+    // Fetch friends on open and when the refresh trigger changes
+    useEffect(() => {
+        if (!isOpen || !user) return;
+        fetchFriends();
+    }, [isOpen, user, friendRefreshTrigger, fetchFriends]);
+
+    // Real-time listener for friend request acceptances
     useEffect(() => {
         if (!isOpen || !user) return;
 
-        const fetchFriends = async () => {
-            console.log('[MultiplayerLobby] fetchFriends called. User:', user?.id, user?.name);
-            if (!user?.id) return;
+        const notifChannel = supabase
+            .channel('multi-friend-updates')
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'notifications' },
+                (payload) => {
+                    if (payload.new.type === 'friend_request' && payload.new.action_status === 'accepted') {
+                        if (payload.new.sender_id === user.id || payload.new.receiver_id === user.id) {
+                            console.log('[MultiplayerLobby] Friend request accepted in real-time, refreshing friends list.');
+                            setFriendRefreshTrigger(prev => prev + 1);
+                        }
+                    }
+                }
+            )
+            .subscribe();
 
-            const { data: notifs, error } = await supabase
-                .from('notifications')
-                .select('sender_id, receiver_id')
-                .eq('type', 'friend_request')
-                .eq('action_status', 'accepted')
-                .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
-
-            if (error) {
-                console.error('[MultiplayerLobby] Error fetching friends:', error.message);
-                return;
-            }
-
-            console.log(`[MultiplayerLobby] Query result - notifs:`, notifs?.length);
-            if (!notifs || notifs.length === 0) {
-                setAllFriends([]);
-                return;
-            }
-
-            const friendIds = notifs.map(n =>
-                n.sender_id === user.id ? n.receiver_id : n.sender_id
-            ).filter(id => id !== user.id);
-
-            const uniqueIds = [...new Set(friendIds)];
-            if (uniqueIds.length === 0) {
-                setAllFriends([]);
-                return;
-            }
-
-            const { data: profiles, error: profileError } = await supabase
-                .from('users')
-                .select('id, username, avatar_url, xp')
-                .in('id', uniqueIds);
-
-            if (profileError) {
-                console.error('[MultiplayerLobby] Error fetching profiles:', profileError.message);
-                return;
-            }
-
-            if (profiles) {
-                console.log('[MultiplayerLobby] Successfully fetched profiles:', profiles.length);
-                const friendsList = profiles.map(p => {
-                    const rank = getRankData(p.xp || 0);
-                    return {
-                        id: p.id,
-                        name: p.username || 'Unknown',
-                        avatar: p.avatar_url,
-                        rankName: rank.name,
-                        rankIcon: rank.icon,
-                        xp: p.xp || 0
-                    };
-                });
-                console.log('[MultiplayerLobby] Formatted friends list:', friendsList.length);
-                setAllFriends(friendsList);
-            }
+        return () => {
+            supabase.removeChannel(notifChannel);
         };
-
-        fetchFriends();
     }, [isOpen, user]);
 
 
