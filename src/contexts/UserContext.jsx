@@ -23,6 +23,22 @@ export const UserProvider = ({ children }) => {
     useEffect(() => {
         checkAuth();
 
+        // Listen for auth state changes (essential for social logins)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('[Auth] State change:', event);
+            if (event === 'SIGNED_IN' && session) {
+                // If we don't have a profile yet, fetch it
+                if (!user) {
+                    localStorage.setItem('auth_token', session.access_token);
+                    await checkAuth();
+                }
+            } else if (event === 'SIGNED_OUT') {
+                setUser(null);
+                setIsAuthenticated(false);
+                localStorage.removeItem('auth_token');
+            }
+        });
+
         // Dynamic Realtime Listener for the current user's profile
         let profileChannel;
         let globalPresenceChannel;
@@ -86,6 +102,7 @@ export const UserProvider = ({ children }) => {
         }
 
         return () => {
+            if (subscription) subscription.unsubscribe();
             if (profileChannel) supabase.removeChannel(profileChannel);
             if (globalPresenceChannel) supabase.removeChannel(globalPresenceChannel);
             if (heartbeatInterval) clearInterval(heartbeatInterval);
@@ -190,6 +207,17 @@ export const UserProvider = ({ children }) => {
         return response;
     };
 
+    // Google Login
+    const loginWithGoogle = async () => {
+        try {
+            await authAPI.signInWithGoogle();
+            // Redirect happens automatically
+        } catch (error) {
+            console.error('Google login failed:', error);
+            throw error;
+        }
+    };
+
     // Logout
     const logout = async () => {
         try {
@@ -235,6 +263,8 @@ export const UserProvider = ({ children }) => {
                 school: profileData.school,
                 college: profileData.college,
                 course: profileData.course,
+                student_id: profileData.student_id,
+                role: profileData.role,
                 email: profileData.email,
                 gender: profileData.gender,
                 selected_hero: profileData.selectedHero,
@@ -319,6 +349,7 @@ export const UserProvider = ({ children }) => {
         onlineUserIds,
         register,
         login,
+        loginWithGoogle,
         logout,
         updateAvatar,
         updateProfile,

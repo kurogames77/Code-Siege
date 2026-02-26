@@ -96,6 +96,17 @@ export const authAPI = {
         return apiRequest('/auth/heartbeat', { method: 'POST' });
     },
 
+    signInWithGoogle: async () => {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: `${window.location.origin}/ConfirmationPage`
+            }
+        });
+        if (error) throw error;
+        return data;
+    },
+
     isAuthenticated: () => !!getToken(),
 };
 

@@ -598,6 +598,56 @@ body {
   box-shadow: 0 24px 48px rgba(90, 37, 188, 0.6);
 }
 
+.landing-modal__divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.landing-modal__divider::before,
+.landing-modal__divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(174, 142, 250, 0.2), transparent);
+}
+
+.landing-modal__divider span {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: rgba(205, 187, 255, 0.4);
+  font-weight: 700;
+}
+
+.landing-modal__google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(214, 188, 255, 0.2);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.landing-modal__google:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(214, 188, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.landing-modal__google svg {
+  color: #ffffff;
+}
+
 .animate-spin {
   animation: spin 1s linear infinite;
 }

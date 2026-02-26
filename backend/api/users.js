@@ -72,7 +72,7 @@ router.get('/:id', async (req, res) => {
 router.patch('/:id', authenticateUser, async (req, res) => {
     try {
         const { id } = req.params;
-        const { username, selected_hero, selected_theme, school, college, course, email, gender } = req.body;
+        const { username, selected_hero, selected_theme, school, college, course, student_id, role, email, gender } = req.body;
 
         // Ensure user can only update their own profile
         if (req.user.id !== id) {
@@ -86,6 +86,8 @@ router.patch('/:id', authenticateUser, async (req, res) => {
         if (school !== undefined) updates.school = school;
         if (college !== undefined) updates.college = college;
         if (course !== undefined) updates.course = course;
+        if (student_id !== undefined) updates.student_id = student_id;
+        if (role !== undefined) updates.role = role;
         if (email !== undefined) updates.email = email;
         if (gender !== undefined) updates.gender = gender;
 
