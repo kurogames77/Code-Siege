@@ -20,7 +20,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     const navigate = useNavigate();
     const [courses, setCourses] = useState([]);
     const [selectedLanguage, setSelectedLanguage] = useState('');
-    const [selectedDifficulty, setSelectedDifficulty] = useState('Normal');
+    const [selectedDifficulty, setSelectedDifficulty] = useState('Medium');
     const [selectedMode, setSelectedMode] = useState('Puzzle Blocks');
     const [selectedWager, setSelectedWager] = useState('100');
     const { playClick, playSuccess, playCancel, playSelect, playCountdownVoice } = useSound();
@@ -36,20 +36,19 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 .order('name', { ascending: true });
 
             if (error) {
-                console.error('[DuelLobby] Error fetching courses:', error);
+                console.error('[DuelLobby] Error fetching courses:', error.message, error.details, error.hint);
                 return;
             }
 
+            console.log('[DuelLobby] Courses response data:', data);
             if (data && data.length > 0) {
-                console.log('[DuelLobby] Courses fetched:', data.length);
+                console.log('[DuelLobby] Courses fetched successfully:', data.length);
                 setCourses(data);
-                // Only set if not already set or if empty
                 if (!selectedLanguage) {
-                    console.log('[DuelLobby] Setting default language:', data[0].name);
                     setSelectedLanguage(data[0].name);
                 }
             } else {
-                console.warn('[DuelLobby] No courses found in database');
+                console.warn('[DuelLobby] Courses table returned empty array. Check RLS or data.');
             }
         };
         fetchCourses();
@@ -525,9 +524,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                                 className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-rose-500 focus:outline-none transition-colors cursor-pointer"
                                             >
                                                 <option value="Easy">Easy</option>
-                                                <option value="Normal">Normal</option>
+                                                <option value="Medium">Medium</option>
                                                 <option value="Hard">Hard</option>
-                                                <option value="Extreme">Extreme</option>
                                             </select>
                                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />
                                         </div>
