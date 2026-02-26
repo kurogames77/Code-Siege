@@ -20,6 +20,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     const navigate = useNavigate();
     const [courses, setCourses] = useState([]);
     const [selectedLanguage, setSelectedLanguage] = useState('');
+    const [selectedDifficulty, setSelectedDifficulty] = useState('Normal');
     const [selectedMode, setSelectedMode] = useState('Puzzle Blocks');
     const [selectedWager, setSelectedWager] = useState('100');
     const { playClick, playSuccess, playCancel, playSelect, playCountdownVoice } = useSound();
@@ -28,13 +29,27 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     // Fetch courses from Supabase
     useEffect(() => {
         const fetchCourses = async () => {
+            console.log('[DuelLobby] Fetching courses...');
             const { data, error } = await supabase
                 .from('courses')
                 .select('id, name')
                 .order('name', { ascending: true });
+
+            if (error) {
+                console.error('[DuelLobby] Error fetching courses:', error);
+                return;
+            }
+
             if (data && data.length > 0) {
+                console.log('[DuelLobby] Courses fetched:', data.length);
                 setCourses(data);
-                if (!selectedLanguage) setSelectedLanguage(data[0].name);
+                // Only set if not already set or if empty
+                if (!selectedLanguage) {
+                    console.log('[DuelLobby] Setting default language:', data[0].name);
+                    setSelectedLanguage(data[0].name);
+                }
+            } else {
+                console.warn('[DuelLobby] No courses found in database');
             }
         };
         fetchCourses();
@@ -127,8 +142,11 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         }
 
         if (profiles) {
+            console.log('[DuelLobby] Profiles fetched:', profiles.length, profiles.map(p => p.username));
+            console.log('[DuelLobby] Current onlineUserIds:', Array.from(onlineUserIds));
             const friendsList = profiles.map(p => {
                 const rank = getRankData(p.xp || 0);
+                const isOnline = onlineUserIds.has(String(p.id)) || onlineUserIds.has(p.id);
                 return {
                     id: p.id,
                     name: p.username || 'Unknown',
@@ -136,7 +154,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                     rankName: rank.name,
                     rankIcon: rank.icon,
                     course: 'N/A',
-                    status: onlineUserIds.has(String(p.id)) ? 'online' : 'offline'
+                    status: isOnline ? 'online' : 'offline'
                 };
             });
             setFriends(friendsList);
@@ -180,7 +198,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         if (friends.length > 0) {
             setFriends(prev => prev.map(f => ({
                 ...f,
-                status: onlineUserIds.has(String(f.id)) ? 'online' : 'offline'
+                status: (onlineUserIds.has(String(f.id)) || onlineUserIds.has(f.id)) ? 'online' : 'offline'
             })));
         }
     }, [onlineUserIds]);
@@ -291,7 +309,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                     opponent: opponent.name,
                     language: selectedLanguage,
                     mode: selectedMode,
-                    wager: selectedWager
+                    wager: selectedWager,
+                    difficulty: selectedDifficulty
                 }
             });
         }
@@ -330,7 +349,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                         senderName: user.name,
                         senderAvatar: user.avatar,
                         senderRankName: user.rankName,
-                        senderRankIcon: user.rankIcon
+                        senderRankIcon: user.rankIcon,
+                        difficulty: selectedDifficulty
                     }
                 });
             }
@@ -480,11 +500,34 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                             <select
                                                 value={selectedLanguage}
                                                 onChange={(e) => { playSelect(); setSelectedLanguage(e.target.value); }}
-                                                className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-cyan-500 focus:outline-none transition-colors"
+                                                className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-cyan-500 focus:outline-none transition-colors cursor-pointer"
                                             >
-                                                {courses.map((c) => (
-                                                    <option key={c.id} value={c.name}>{c.name}</option>
-                                                ))}
+                                                {courses.length > 0 ? (
+                                                    courses.map((c) => (
+                                                        <option key={c.id} value={c.name}>{c.name}</option>
+                                                    ))
+                                                ) : (
+                                                    <option disabled value="">No Languages Found</option>
+                                                )}
+                                            </select>
+                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />
+                                        </div>
+                                    </div>
+
+                                    {/* DIFFICULTY SETTING */}
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Difficulty</label>
+                                        <div className="relative group">
+                                            <div className="absolute inset-0 bg-rose-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <select
+                                                value={selectedDifficulty}
+                                                onChange={(e) => { playSelect(); setSelectedDifficulty(e.target.value); }}
+                                                className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-rose-500 focus:outline-none transition-colors cursor-pointer"
+                                            >
+                                                <option value="Easy">Easy</option>
+                                                <option value="Normal">Normal</option>
+                                                <option value="Hard">Hard</option>
+                                                <option value="Extreme">Extreme</option>
                                             </select>
                                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />
                                         </div>
