@@ -297,7 +297,7 @@ const LandingPage = () => {
                     </h1>
 
                     <div className="hero-buttons">
-                        <button className="hero-btn" type="button" onClick={() => openSignup('teacher')}>
+                        <button className="hero-btn" type="button" onClick={() => openSignup('instructor')}>
                             I'm an Instructor
                         </button>
                         <button className="hero-btn" type="button" onClick={() => openSignup('student')}>
@@ -396,8 +396,8 @@ const LandingPage = () => {
                                     </button>
                                     <button
                                         type="button"
-                                        className={`landing-modal__role ${modal.role === 'teacher' ? 'is-active' : ''}`}
-                                        onClick={() => updateRole('teacher')}
+                                        className={`landing-modal__role ${modal.role === 'instructor' ? 'is-active' : ''}`}
+                                        onClick={() => updateRole('instructor')}
                                     >
                                         <User />
                                         Instructor
@@ -573,8 +573,8 @@ const LandingPage = () => {
                                 </button>
                                 <button
                                     type="button"
-                                    className={`landing-modal__role ${modal.role === 'teacher' ? 'is-active' : ''}`}
-                                    onClick={() => updateRole('teacher')}
+                                    className={`landing-modal__role ${modal.role === 'instructor' ? 'is-active' : ''}`}
+                                    onClick={() => updateRole('instructor')}
                                 >
                                     <User />
                                     Instructor
@@ -716,8 +716,8 @@ const LandingPage = () => {
                             </button>
                             <button
                                 type="button"
-                                className={`landing-modal__role ${modal.role === 'teacher' ? 'is-active' : ''}`}
-                                onClick={() => updateRole('teacher')}
+                                className={`landing-modal__role ${modal.role === 'instructor' ? 'is-active' : ''}`}
+                                onClick={() => updateRole('instructor')}
                             >
                                 <User />
                                 Instructor

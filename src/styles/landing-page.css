@@ -268,7 +268,7 @@ body {
 }
 
 .hero-btn:first-child {
-  /* Primary button style (Teacher) */
+  /* Primary button style (Instructor) */
   background: linear-gradient(135deg, #6D28D9 0%, #4F46E5 100%);
   box-shadow: 0 0 20px rgba(109, 40, 217, 0.5);
   border: 1px solid rgba(139, 92, 246, 0.5);
