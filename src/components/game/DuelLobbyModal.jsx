@@ -18,8 +18,13 @@ import { getRankFromExp as getRankData } from '../../utils/rankSystem';
 
 const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     const navigate = useNavigate();
-    const [courses, setCourses] = useState([]);
-    const [selectedLanguage, setSelectedLanguage] = useState('');
+    const [courses, setCourses] = useState([
+        { id: 'js', name: 'JavaScript' },
+        { id: 'py', name: 'Python' },
+        { id: 'mysql', name: 'MySQL' },
+        { id: 'cpp', name: 'C++' }
+    ]);
+    const [selectedLanguage, setSelectedLanguage] = useState('JavaScript');
     const [selectedDifficulty, setSelectedDifficulty] = useState('Medium');
     const [selectedMode, setSelectedMode] = useState('Puzzle Blocks');
     const [selectedWager, setSelectedWager] = useState('100');
