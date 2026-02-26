@@ -102,6 +102,7 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                 // Only react to invitations for THIS user
                 if (newNotif?.receiver_id === user.id &&
                     (newNotif.type === 'duel_invite' || newNotif.type === 'multiplayer_invite')) {
+                    console.log('[Auth] Incoming invitation:', newNotif.type, 'from:', newNotif.sender_id);
 
                     // Fetch sender details (name, avatar, xp)
                     const { data: sender } = await supabase
@@ -530,6 +531,7 @@ const GameNavbar = ({ onLobbyStateChange }) => {
             <AnimatePresence>
                 {activeInvitation && (
                     <InvitationPopup
+                        key={activeInvitation.id}
                         invitation={activeInvitation}
                         onAccept={handleAcceptInvite}
                         onDecline={handleDeclineInvite}

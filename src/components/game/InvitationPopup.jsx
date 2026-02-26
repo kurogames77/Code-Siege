@@ -25,7 +25,7 @@ const InvitationPopup = ({ invitation, onAccept, onDecline, onExpiry }) => {
             initial={{ y: -100, opacity: 0, scale: 0.9 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: -100, opacity: 0, scale: 0.9 }}
-            className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] w-full max-w-md pointer-events-auto"
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] w-full max-w-md pointer-events-auto"
         >
             <div className="bg-[#0B1221]/95 backdrop-blur-xl border border-cyan-500/30 rounded-2xl shadow-[0_0_50px_rgba(34,211,238,0.2)] p-4 overflow-hidden relative">
                 {/* Background Decor */}
