@@ -113,8 +113,8 @@ export const UserProvider = ({ children }) => {
         try {
             if (authAPI.isAuthenticated()) {
                 const { user: authUser, profile } = await authAPI.getMe();
-                if (profile) {
-                    setUser(formatUser(profile));
+                if (authUser) {
+                    setUser(formatUser(profile, authUser));
                     setIsAuthenticated(true);
 
                     // Sync token with Supabase client for storage permissions
@@ -141,31 +141,34 @@ export const UserProvider = ({ children }) => {
     };
 
     // Format API user to match existing app structure
-    const formatUser = (profile) => {
-        const exp = profile.xp || 0;
+    const formatUser = (profile, authUser = null) => {
+        if (!profile && !authUser) return null;
+
+        const exp = profile?.xp || 0;
         const currentRank = getRankFromExp(exp);
         const nextRank = getNextRank(exp);
         const progress = getRankProgress(exp);
 
         return {
-            id: profile.id,
-            name: profile.username,
-            email: profile.email,
-            studentId: profile.student_id || '',
-            course: profile.course || '',
-            school: profile.school || '',
-            college: profile.college || '',
-            avatar: profile.avatar_url,
+            id: profile?.id || authUser?.id,
+            name: profile?.username || authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0],
+            email: profile?.email || authUser?.email,
+            studentId: profile?.student_id || '',
+            course: profile?.course || '',
+            school: profile?.school || '',
+            college: profile?.college || '',
+            avatar: profile?.avatar_url || authUser?.user_metadata?.avatar_url,
             level: currentRank.id, // Level is now the Rank ID (1-12)
             exp: exp,
-            gems: profile.gems || 0,
-            role: profile.role || 'student',
-            rankName: currentRank.name,
+            gems: profile?.gems || 0,
+            role: profile?.role || 'user',
+            rank: currentRank.name,
             rankIcon: currentRank.icon,
-            nextRankExp: nextRank ? nextRank.minExp : null,
+            nextRank: nextRank?.name,
+            pointsToNextRank: nextRank ? (nextRank.minExp - exp) : 0,
             rankProgress: progress,
-            selectedHero: profile.selected_hero || '3',
-            selectedTheme: profile.selected_theme || 'default',
+            selectedHero: profile?.selected_hero || '3',
+            selectedTheme: profile?.selected_theme || 'default',
             stats: {
                 winnings: 0,
                 losses: 0,

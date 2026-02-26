@@ -6,15 +6,18 @@ import '../styles/landing-page.css'; // Reuse landing page styles for consistenc
 
 const ConfirmationPage = () => {
     const navigate = useNavigate();
-    const { isAuthenticated } = useUser();
+    const { isAuthenticated, loading } = useUser();
 
     useEffect(() => {
+        // Wait for auth to load before making decisions
+        if (loading) return;
+
         // If the user lands here but is already logged in (e.g. via social login)
         // redirect them to home so the profile completion logic can run
         if (isAuthenticated) {
             navigate('/', { replace: true });
         }
-    }, [isAuthenticated, navigate]);
+    }, [isAuthenticated, loading, navigate]);
 
     const handleReturnLogin = () => {
         navigate('/', { state: { openLogin: true } });
