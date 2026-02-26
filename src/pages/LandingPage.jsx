@@ -116,6 +116,8 @@ const LandingPage = () => {
             if (!user.studentId) {
                 if (modal?.type !== 'complete_profile') {
                     setModal({ type: 'complete_profile', role: (user.role === 'user' || !user.role) ? 'student' : user.role });
+                    // Initialize fullName from user metadata/current name so they can fix it if "wrong"
+                    setFullName(user.name || '');
                 }
                 return;
             }
@@ -229,7 +231,7 @@ const LandingPage = () => {
                 student_id: id,
                 course: course,
                 role: role,
-                name: user.name // Keep existing name from Google
+                username: fullName.trim() // Use the name from the form instead of keeping the "wrong" one
             });
 
             toast.popup('Profile completed! Welcome to Code Siege.');
@@ -720,6 +722,20 @@ const LandingPage = () => {
                         )}
 
                         <form className="landing-modal__form" onSubmit={handleCompleteProfile}>
+                            <label className="landing-modal__field">
+                                <span className="landing-modal__label">Full Name</span>
+                                <div className="landing-modal__input">
+                                    <User />
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="Enter your full name"
+                                        value={fullName}
+                                        onChange={handleNameInput}
+                                    />
+                                </div>
+                            </label>
+
                             <label className="landing-modal__field">
                                 <span className="landing-modal__label">{modal.role === 'student' ? 'Student ID' : 'Instructor ID'}</span>
                                 <div className="landing-modal__input">

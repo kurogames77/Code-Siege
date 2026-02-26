@@ -25,14 +25,13 @@ export const UserProvider = ({ children }) => {
 
         // Listen for auth state changes (essential for social logins)
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('[Auth] State change:', event);
+            console.log('[Auth] State change event:', event, 'Session active:', !!session);
             if (event === 'SIGNED_IN' && session) {
-                // If we don't have a profile yet, fetch it
-                if (!user) {
-                    localStorage.setItem('auth_token', session.access_token);
-                    await checkAuth();
-                }
+                console.log('[Auth] Social login detected, syncing session...');
+                localStorage.setItem('auth_token', session.access_token);
+                await checkAuth();
             } else if (event === 'SIGNED_OUT') {
+                console.log('[Auth] User signed out');
                 setUser(null);
                 setIsAuthenticated(false);
                 localStorage.removeItem('auth_token');
@@ -128,6 +127,7 @@ export const UserProvider = ({ children }) => {
                 }
             }
         } catch (error) {
+            console.error('[Auth] checkAuth error:', error);
             // Silently handle 401/invalid token - this is expected on fresh load or expired sessions
             // Only log non-401 errors
             if (error.message && !error.message.includes('Invalid token') && !error.message.includes('401')) {
@@ -136,6 +136,7 @@ export const UserProvider = ({ children }) => {
             // Token might be expired, clear it
             localStorage.removeItem('auth_token');
         } finally {
+            console.log('[Auth] Auth check finished. User:', user?.email, 'Authenticated:', isAuthenticated);
             setLoading(false);
         }
     };
