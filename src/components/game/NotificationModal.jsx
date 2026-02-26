@@ -237,7 +237,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
                         exit={{ opacity: 0, y: -20, scale: 0.95 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="relative w-[420px] max-h-[70vh] bg-gradient-to-b from-[#0d1b2a] to-[#0a1628] border border-cyan-500/20 rounded-2xl shadow-[0_0_60px_rgba(6,182,212,0.15)] overflow-hidden z-10 font-galsb"
+                        className="relative w-[420px] max-h-[85vh] bg-gradient-to-b from-[#0d1b2a] to-[#0a1628] border border-cyan-500/20 rounded-2xl shadow-[0_0_60px_rgba(6,182,212,0.15)] overflow-hidden z-10 font-galsb flex flex-col"
                     >
                         {/* Glow Effect */}
                         <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-cyan-500/5 to-transparent pointer-events-none" />
@@ -279,7 +279,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
                         </div>
 
                         {/* Notifications List */}
-                        <div className="overflow-y-auto max-h-[55vh] custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar">
                             {loading ? (
                                 <div className="flex flex-col items-center justify-center py-16">
                                     <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" />
