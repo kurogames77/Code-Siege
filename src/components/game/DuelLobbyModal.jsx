@@ -29,26 +29,35 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     // Fetch courses from Supabase
     useEffect(() => {
         const fetchCourses = async () => {
-            console.log('[DuelLobby] Fetching courses...');
-            const { data, error } = await supabase
-                .from('courses')
-                .select('id, name')
-                .order('name', { ascending: true });
+            try {
+                console.log('[DuelLobby] Fetching courses from Supabase...');
+                console.log('[DuelLobby] Supabase URL:', supabase.supabaseUrl);
 
-            if (error) {
-                console.error('[DuelLobby] Error fetching courses:', error.message, error.details, error.hint);
-                return;
-            }
+                const { data, error, status } = await supabase
+                    .from('courses')
+                    .select('*')
+                    .order('name', { ascending: true });
 
-            console.log('[DuelLobby] Courses response data:', data);
-            if (data && data.length > 0) {
-                console.log('[DuelLobby] Courses fetched successfully:', data.length);
-                setCourses(data);
-                if (!selectedLanguage) {
-                    setSelectedLanguage(data[0].name);
+                console.log('[DuelLobby] Fetch Response Status:', status);
+
+                if (error) {
+                    console.error('[DuelLobby] Supabase Error:', error.message, error.details, error.hint);
+                    return;
                 }
-            } else {
-                console.warn('[DuelLobby] Courses table returned empty array. Check RLS or data.');
+
+                console.log('[DuelLobby] Received data:', data);
+
+                if (data && data.length > 0) {
+                    console.log('[DuelLobby] Setting courses state:', data.length, 'items');
+                    setCourses(data);
+                    if (!selectedLanguage) {
+                        setSelectedLanguage(data[0].name);
+                    }
+                } else {
+                    console.warn('[DuelLobby] Courses table is empty or blocked by RLS.');
+                }
+            } catch (err) {
+                console.error('[DuelLobby] Critical error in fetchCourses:', err);
             }
         };
         fetchCourses();
@@ -463,7 +472,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                     </div>
                                 ) : (
                                     <>
-                                        <h1 className="text-2xl font-black italic uppercase tracking-tighter text-white">Private Duel [v1.0.2]</h1>
+                                        <h1 className="text-2xl font-black italic uppercase tracking-tighter text-white">Private Duel</h1>
                                         <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-slate-500 uppercase">
                                             <span>ID: 8472-9921</span>
                                             <span className="w-1 h-1 bg-slate-600 rounded-full" />
