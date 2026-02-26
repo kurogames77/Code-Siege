@@ -30,7 +30,7 @@ router.post('/register', async (req, res) => {
         }
 
         // INSTRUCTOR REGISTRATION: Store as pending application (no auth user yet)
-        if (role === 'teacher') {
+        if (role === 'instructor') {
             // Check if email already exists in applications or users
             // Use supabaseService to bypass RLS
             const { data: existingApp } = await supabaseService

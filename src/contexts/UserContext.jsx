@@ -45,7 +45,7 @@ export const UserProvider = ({ children }) => {
             level: currentRank.id,
             exp: exp,
             gems: profile?.gems || 0,
-            role: profile?.role || 'user',
+            role: profile?.role || 'student',
             rank: currentRank.name,
             rankIcon: currentRank.icon,
             nextRank: nextRank?.name,
@@ -257,13 +257,17 @@ export const UserProvider = ({ children }) => {
     const updateProfile = async (profileData) => {
         if (!user) return;
         try {
+            // Map old roles to new roles to avoid constraint violations
+            const role = profileData.role === 'teacher' ? 'instructor' :
+                (profileData.role === 'user' ? 'student' : (profileData.role || 'student'));
+
             const response = await userAPI.updateProfile(user.id, {
-                username: profileData.name,
+                username: profileData.username || profileData.name || user.name,
                 school: profileData.school,
                 college: profileData.college,
                 course: profileData.course,
                 student_id: profileData.student_id,
-                role: profileData.role,
+                role: role,
                 email: profileData.email,
                 gender: profileData.gender,
                 selected_hero: profileData.selectedHero,
