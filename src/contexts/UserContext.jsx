@@ -47,6 +47,7 @@ export const UserProvider = ({ children }) => {
             gems: profile?.gems || 0,
             role: profile?.role || 'student',
             rank: currentRank.name,
+            rankName: currentRank.name,
             rankIcon: currentRank.icon,
             nextRank: nextRank?.name,
             pointsToNextRank: nextRank ? (nextRank.minExp - exp) : 0,
