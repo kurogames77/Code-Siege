@@ -9,14 +9,24 @@ const ConfirmationPage = () => {
     const { isAuthenticated, loading } = useUser();
 
     useEffect(() => {
-        // Wait for auth to load before making decisions
-        if (loading) return;
+        const checkDirectAuth = async () => {
+            // Wait for context loading first
+            if (loading) return;
 
-        // If the user lands here but is already logged in (e.g. via social login)
-        // redirect them to home so the profile completion logic can run
-        if (isAuthenticated) {
-            navigate('/', { replace: true });
-        }
+            // If context already knows we are authenticated, redirect
+            if (isAuthenticated) {
+                navigate('/', { replace: true });
+                return;
+            }
+
+            // Fallback: Check Supabase directly (in case context hasn't updated yet)
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                navigate('/', { replace: true });
+            }
+        };
+
+        checkDirectAuth();
     }, [isAuthenticated, loading, navigate]);
 
     const handleReturnLogin = () => {

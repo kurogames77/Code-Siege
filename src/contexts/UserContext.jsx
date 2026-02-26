@@ -109,21 +109,22 @@ export const UserProvider = ({ children }) => {
     }, [user?.id]);
 
     const checkAuth = async () => {
+        console.log('[Auth] Starting checkAuth...');
         try {
+            // 1. Proactively check Supabase session (standard for social redirects)
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                console.log('[Auth] Supabase session found, syncing token...');
+                localStorage.setItem('auth_token', session.access_token);
+            }
+
+            // 2. Proceed with our custom backend check
             if (authAPI.isAuthenticated()) {
                 const { user: authUser, profile } = await authAPI.getMe();
+                console.log('[Auth] getMe results:', !!authUser, !!profile);
                 if (authUser) {
                     setUser(formatUser(profile, authUser));
                     setIsAuthenticated(true);
-
-                    // Sync token with Supabase client for storage permissions
-                    const token = localStorage.getItem('auth_token');
-                    if (token) {
-                        await supabase.auth.setSession({
-                            access_token: token,
-                            refresh_token: '' // Custom backend doesn't provide refresh token yet
-                        });
-                    }
                 }
             }
         } catch (error) {
@@ -150,15 +151,20 @@ export const UserProvider = ({ children }) => {
         const nextRank = getNextRank(exp);
         const progress = getRankProgress(exp);
 
+        // Prioritize full_name from Google if the profile username is just the email prefix
+        const googleName = authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || authUser?.email?.split('@')[0];
+        const profileName = profile?.username;
+        const displayName = (profileName && profileName !== authUser?.email?.split('@')[0]) ? profileName : googleName;
+
         return {
             id: profile?.id || authUser?.id,
-            name: profile?.username || authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0],
+            name: displayName,
             email: profile?.email || authUser?.email,
             studentId: profile?.student_id || '',
             course: profile?.course || '',
             school: profile?.school || '',
             college: profile?.college || '',
-            avatar: profile?.avatar_url || authUser?.user_metadata?.avatar_url,
+            avatar: profile?.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture,
             level: currentRank.id, // Level is now the Rank ID (1-12)
             exp: exp,
             gems: profile?.gems || 0,
