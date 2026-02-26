@@ -77,20 +77,34 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [invitedFriendId, setInvitedFriendId] = useState(null);
     const [successInviteIds, setSuccessInviteIds] = useState(new Set());
+    const [lobbyId, setLobbyId] = useState(null);
 
     // MODALS
     const [showAddFriendModal, setShowAddFriendModal] = useState(false);
     const [modalMode, setModalMode] = useState('opponent'); // 'friend' | 'opponent'
 
-    // Set initial opponent from prop (when accepting a duel invite)
+    // Set initial opponent and lobby from prop (when accepting a duel invite)
     useEffect(() => {
-        if (isOpen && initialOpponent && !opponent) {
-            console.log('[DuelLobby] Setting initial opponent from invite:', initialOpponent.name);
-            setOpponent(initialOpponent);
-            setMatchState('lobby');
-            setTimer(60);
+        if (isOpen && initialOpponent) {
+            if (!opponent) {
+                console.log('[DuelLobby] Setting initial opponent from invite:', initialOpponent.name);
+                setOpponent(initialOpponent);
+                setMatchState('lobby');
+                setTimer(60);
+            }
+            if (initialOpponent.lobbyId && !lobbyId) {
+                setLobbyId(initialOpponent.lobbyId);
+            }
         }
-    }, [isOpen, initialOpponent]);
+    }, [isOpen, initialOpponent, opponent, lobbyId]);
+
+    // Generate lobbyId for host
+    useEffect(() => {
+        if (isOpen && !lobbyId && !initialOpponent) {
+            const id = Math.floor(1000 + Math.random() * 9000) + '-' + Math.floor(1000 + Math.random() * 9000);
+            setLobbyId(id);
+        }
+    }, [isOpen, lobbyId, initialOpponent]);
 
     // Get selected hero
     const selectedHeroImage = localStorage.getItem('selectedHeroImage') || 'hero1a.png';
@@ -335,7 +349,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                     sender_id: user.id,
                     receiver_id: friend.id,
                     title: user.name || user.username || 'Someone',
-                    message: 'invited you to a duel',
+                    message: `invited you to a duel [LOBBY:${lobbyId}]`,
                     action_status: 'pending',
                     is_read: false
                 });
@@ -352,6 +366,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                         senderAvatar: user.avatar,
                         senderRankName: user.rankName,
                         senderRankIcon: user.rankIcon,
+                        lobbyId: lobbyId,
                         difficulty: selectedDifficulty
                     }
                 });
@@ -473,7 +488,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                     <>
                                         <h1 className="text-2xl font-black italic uppercase tracking-tighter text-white">Private Duel</h1>
                                         <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-slate-500 uppercase">
-                                            <span>ID: 8472-9921</span>
+                                            <span>ID: {lobbyId || 'Initializing...'}</span>
                                             <span className="w-1 h-1 bg-slate-600 rounded-full" />
                                             <span className="text-emerald-500">Connected</span>
                                         </div>
@@ -1054,12 +1069,30 @@ const AddFriendModal = ({ isOpen, onClose, mode }) => {
                     sender_id: user.id,
                     receiver_id: foundUser.id,
                     title: user.name || user.username || 'Someone',
-                    message: mode === 'friend' ? 'wants to be your friend' : 'invited you to a duel',
+                    message: mode === 'friend' ? 'wants to be your friend' : `invited you to a duel [LOBBY:${lobbyId}]`,
                     action_status: 'pending',
                     is_read: false
                 });
 
             if (error) throw error;
+
+            // Broadcast the invite for real-time if it's a duel invite
+            if (mode !== 'friend' && lobbyChannelRef.current) {
+                lobbyChannelRef.current.send({
+                    type: 'broadcast',
+                    event: 'duel-invite',
+                    payload: {
+                        targetId: foundUser.id,
+                        senderId: user.id,
+                        senderName: user.name,
+                        senderAvatar: user.avatar,
+                        senderRankName: user.rankName,
+                        senderRankIcon: user.rankIcon,
+                        lobbyId: lobbyId,
+                        difficulty: selectedDifficulty
+                    }
+                });
+            }
 
             playSuccess();
             setAddStatus('sent');

@@ -48,7 +48,7 @@ const TYPE_CONFIG = {
     },
 };
 
-const NotificationModal = ({ isOpen, onClose }) => {
+const NotificationModal = ({ isOpen, onClose, onAcceptInvite, onDeclineInvite }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const { playClick, playSuccess, playCancel } = useSound();
@@ -118,6 +118,23 @@ const NotificationModal = ({ isOpen, onClose }) => {
         playSuccess();
         try {
             const notif = notifications.find(n => n.id === notifId);
+            if (!notif) return;
+
+            // Handle duel/multiplayer invites via parent handler if available
+            if ((notif.type === 'duel_invite' || notif.type === 'multiplayer_invite') && onAcceptInvite) {
+                // Parse lobbyId from message if present
+                const lobbyMatch = notif.message?.match(/\[LOBBY:([^\]]+)\]/);
+                const lobbyId = lobbyMatch ? lobbyMatch[1] : null;
+
+                onAcceptInvite({
+                    id: notif.id,
+                    type: notif.type,
+                    senderId: notif.sender_id,
+                    sender: notif.sender,
+                    lobbyId: lobbyId
+                });
+                return;
+            }
 
             await supabase
                 .from('notifications')
@@ -149,6 +166,20 @@ const NotificationModal = ({ isOpen, onClose }) => {
         try {
             // Find the notification to get sender info
             const notif = notifications.find(n => n.id === notifId);
+            if (!notif) return;
+
+            // Handle duel/multiplayer invites via parent handler if available
+            if ((notif.type === 'duel_invite' || notif.type === 'multiplayer_invite') && onDeclineInvite) {
+                onDeclineInvite({
+                    id: notif.id,
+                    type: notif.type,
+                    senderId: notif.sender_id,
+                    sender: notif.sender
+                });
+                // Update local state since parent only handles the DB/Global side
+                setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, action_status: 'declined', is_read: true } : n));
+                return;
+            }
 
             await supabase
                 .from('notifications')
@@ -295,7 +326,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
                                 </div>
                             ) : (
                                 <div className="p-3 space-y-2">
-                                    {notifications.filter(n => n.type !== 'duel_invite').map((notif) => {
+                                    {notifications.map((notif) => {
                                         const config = TYPE_CONFIG[notif.type] || TYPE_CONFIG.system;
                                         const IconComponent = config.icon;
                                         const sender = notif.sender;

@@ -130,20 +130,21 @@ const GameNavbar = ({ onLobbyStateChange }) => {
         return () => supabase.removeChannel(channel);
     }, [user?.id]);
 
-    const handleAcceptInvite = async () => {
-        if (!activeInvitation) return;
+    const handleAcceptInvite = async (invitationOverride) => {
+        const invitation = invitationOverride || activeInvitation;
+        if (!invitation) return;
         playSuccess();
 
         try {
-            // Update status
+            // Update status in DB
             await supabase
                 .from('notifications')
                 .update({ action_status: 'accepted', is_read: true })
-                .eq('id', activeInvitation.id);
+                .eq('id', invitation.id);
 
-            const isDuel = activeInvitation.type === 'duel_invite';
+            const isDuel = invitation.type === 'duel_invite';
 
-            if (isDuel && activeInvitation.senderId) {
+            if (isDuel && invitation.senderId) {
                 // Send duel-accept broadcast back to the challenger
                 const lobbyChannel = supabase.channel('duel-lobby');
                 await lobbyChannel.subscribe(async (status) => {
@@ -152,7 +153,7 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                             type: 'broadcast',
                             event: 'duel-accept',
                             payload: {
-                                targetId: activeInvitation.senderId,
+                                targetId: invitation.senderId,
                                 senderId: user.id,
                                 senderName: user.name,
                                 senderAvatar: user.avatar,
@@ -160,18 +161,20 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                                 senderRankIcon: user.rankIcon
                             }
                         });
-                        supabase.removeChannel(lobbyChannel);
+                        // Give it a moment to send before removing
+                        setTimeout(() => supabase.removeChannel(lobbyChannel), 1000);
                     }
                 });
 
                 // Build opponent data from the sender
-                const senderRank = getRankData(activeInvitation.sender?.xp || 0);
+                const senderRank = getRankData(invitation.sender?.xp || 0);
                 setDuelOpponent({
-                    id: activeInvitation.senderId,
-                    name: activeInvitation.sender?.username || 'Opponent',
-                    avatar: activeInvitation.sender?.avatar_url,
+                    id: invitation.senderId,
+                    name: invitation.sender?.username || 'Opponent',
+                    avatar: invitation.sender?.avatar_url,
                     rankName: senderRank.name,
-                    rankIcon: senderRank.icon
+                    rankIcon: senderRank.icon,
+                    lobbyId: invitation.lobbyId // Extract lobbyId if available
                 });
             }
 
@@ -179,7 +182,15 @@ const GameNavbar = ({ onLobbyStateChange }) => {
             if (location.pathname !== '/play') {
                 navigate('/play', {
                     state: {
-                        [isDuel ? 'openDuelLobby' : 'openMultiplayerLobby']: true
+                        [isDuel ? 'openDuelLobby' : 'openMultiplayerLobby']: true,
+                        duelOpponent: isDuel ? {
+                            id: invitation.senderId,
+                            name: invitation.sender?.username || 'Opponent',
+                            avatar: invitation.sender?.avatar_url,
+                            rankName: getRankData(invitation.sender?.xp || 0).name,
+                            rankIcon: getRankData(invitation.sender?.xp || 0).icon,
+                            lobbyId: invitation.lobbyId
+                        } : null
                     }
                 });
             } else {
@@ -188,7 +199,8 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                 else setIsMultiplayerLobbyOpen(true);
             }
 
-            setActiveInvitation(null);
+            if (!invitationOverride) setActiveInvitation(null);
+            else if (isNotificationOpen) setIsNotificationOpen(false);
         } catch (error) {
             console.error('Failed to accept invite:', error);
             toast.error('Failed to join lobby');
@@ -526,6 +538,8 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                             .then(({ count }) => setNotificationCount(count || 0));
                     }
                 }}
+                onAcceptInvite={handleAcceptInvite}
+                onDeclineInvite={handleDeclineInvite}
             />
 
             <AnimatePresence>
