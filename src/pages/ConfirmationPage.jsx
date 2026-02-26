@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { Check, ArrowLeft } from 'lucide-react';
+import supabase from '../lib/supabase';
 import '../styles/landing-page.css'; // Reuse landing page styles for consistency
 
 const ConfirmationPage = () => {

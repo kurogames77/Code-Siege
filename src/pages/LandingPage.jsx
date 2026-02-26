@@ -92,11 +92,21 @@ const LandingPage = () => {
         }
     }, [location]);
 
-    // Check for auth redirect (e.g. email confirmation) on Landing Page too
+    // Check for auth redirect (e.g. email confirmation/magic link) 
     useEffect(() => {
-        console.log("LandingPage: Checking hash", location.hash);
-        if (location.hash && (location.hash.includes('access_token') || location.hash.includes('type=initial_recovery') || location.hash.includes('type=signup'))) {
-            navigate('/ConfirmationPage');
+        if (location.hash) {
+            console.log("LandingPage: Checking hash", location.hash);
+            // Only redirect to ConfirmationPage for specific magic link types
+            // Social login redirects have access_token but usually skip the 'type' parameter or handle it differently
+            // We want social login users to stay here to see the "Complete Profile" modal
+            const isMagicLink = location.hash.includes('type=signup') ||
+                location.hash.includes('type=initial_recovery') ||
+                location.hash.includes('type=recovery') ||
+                location.hash.includes('type=invite');
+
+            if (isMagicLink) {
+                navigate('/ConfirmationPage');
+            }
         }
     }, [location, navigate]);
 

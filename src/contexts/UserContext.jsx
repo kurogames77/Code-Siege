@@ -17,28 +17,120 @@ export const UserProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-
     const [onlineUserIds, setOnlineUserIds] = useState(new Set());
 
+    // Format API user to match existing app structure
+    const formatUser = (profile, authUser = null) => {
+        if (!profile && !authUser) return null;
+
+        const exp = profile?.xp || 0;
+        const currentRank = getRankFromExp(exp);
+        const nextRank = getNextRank(exp);
+        const progress = getRankProgress(exp);
+
+        // Prioritize full_name from Google if the profile username is just the email prefix
+        const googleName = authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || authUser?.email?.split('@')[0];
+        const profileName = profile?.username;
+        const displayName = (profileName && profileName !== authUser?.email?.split('@')[0]) ? profileName : googleName;
+
+        return {
+            id: profile?.id || authUser?.id,
+            name: displayName,
+            email: profile?.email || authUser?.email,
+            studentId: profile?.student_id || '',
+            course: profile?.course || '',
+            school: profile?.school || '',
+            college: profile?.college || '',
+            avatar: profile?.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture,
+            level: currentRank.id,
+            exp: exp,
+            gems: profile?.gems || 0,
+            role: profile?.role || 'user',
+            rank: currentRank.name,
+            rankIcon: currentRank.icon,
+            nextRank: nextRank?.name,
+            pointsToNextRank: nextRank ? (nextRank.minExp - exp) : 0,
+            rankProgress: progress,
+            selectedHero: profile?.selected_hero || '3',
+            selectedTheme: profile?.selected_theme || 'default',
+            stats: {
+                winnings: 0,
+                losses: 0,
+                winRate: "0%",
+                leaderboardRank: 0
+            },
+            towerProgress: profile?.tower_progress || {},
+            isBanned: profile?.is_banned || false
+        };
+    };
+
+    const checkAuth = async () => {
+        console.log('[Auth] Starting checkAuth...');
+        try {
+            // 1. Proactively check Supabase session (important for social redirects)
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                console.log('[Auth] Supabase session found, syncing token...');
+                localStorage.setItem('auth_token', session.access_token);
+            }
+
+            // 2. Proceed with backend check
+            if (authAPI.isAuthenticated()) {
+                const { user: authUser, profile } = await authAPI.getMe();
+                console.log('[Auth] getMe results:', !!authUser, !!profile);
+                if (authUser) {
+                    setUser(formatUser(profile, authUser));
+                    setIsAuthenticated(true);
+                    return;
+                }
+            }
+
+            // If we reach here, no valid session/token
+            setUser(null);
+            setIsAuthenticated(false);
+        } catch (error) {
+            console.error('[Auth] checkAuth error:', error);
+            if (error.message && !error.message.includes('Invalid token') && !error.message.includes('401')) {
+                console.error('Auth check failed:', error);
+            }
+            localStorage.removeItem('auth_token');
+            setUser(null);
+            setIsAuthenticated(false);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 1. Initial Auth Check on mount
     useEffect(() => {
         checkAuth();
+    }, []);
 
-        // Listen for auth state changes (essential for social logins)
+    // 2. Stable Auth State Listener (Social Logins)
+    useEffect(() => {
+        console.log('[Auth] Subscribing to onAuthStateChange');
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             console.log('[Auth] State change event:', event, 'Session active:', !!session);
-            if (event === 'SIGNED_IN' && session) {
-                console.log('[Auth] Social login detected, syncing session...');
+            if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session) {
+                console.log('[Auth] Auth event detected, syncing token and re-checking profile...');
                 localStorage.setItem('auth_token', session.access_token);
                 await checkAuth();
             } else if (event === 'SIGNED_OUT') {
-                console.log('[Auth] User signed out');
+                console.log('[Auth] SIGNED_OUT detected');
                 setUser(null);
                 setIsAuthenticated(false);
                 localStorage.removeItem('auth_token');
             }
         });
 
-        // Dynamic Realtime Listener for the current user's profile
+        return () => {
+            console.log('[Auth] Unsubscribing from onAuthStateChange');
+            if (subscription) subscription.unsubscribe();
+        };
+    }, []);
+
+    // 3. Realtime User Data & Presence (depends on user.id)
+    useEffect(() => {
         let profileChannel;
         let globalPresenceChannel;
         let heartbeatInterval;
@@ -51,7 +143,7 @@ export const UserProvider = ({ children }) => {
                 } catch (err) {
                     console.error('Heartbeat failed:', err);
                 }
-            }, 30000); // Send heartbeat every 30 seconds
+            }, 30000);
 
             // Profile updates
             profileChannel = supabase
@@ -61,12 +153,12 @@ export const UserProvider = ({ children }) => {
                     { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${user.id}` },
                     (payload) => {
                         console.log('[Realtime] Profile updated:', payload.new);
-                        setUser(prev => ({ ...prev, ...formatUser(payload.new) }));
+                        setUser(prev => ({ ...prev, ...formatUser(payload.new, user) }));
                     }
                 )
                 .subscribe();
 
-            // Global Presence - tracks all online users across the app
+            // Global Presence
             globalPresenceChannel = supabase.channel('global-presence', {
                 config: {
                     presence: {
@@ -101,113 +193,23 @@ export const UserProvider = ({ children }) => {
         }
 
         return () => {
-            if (subscription) subscription.unsubscribe();
             if (profileChannel) supabase.removeChannel(profileChannel);
             if (globalPresenceChannel) supabase.removeChannel(globalPresenceChannel);
             if (heartbeatInterval) clearInterval(heartbeatInterval);
         };
     }, [user?.id]);
 
-    const checkAuth = async () => {
-        console.log('[Auth] Starting checkAuth...');
-        try {
-            // 1. Proactively check Supabase session (standard for social redirects)
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                console.log('[Auth] Supabase session found, syncing token...');
-                localStorage.setItem('auth_token', session.access_token);
-            }
-
-            // 2. Proceed with our custom backend check
-            if (authAPI.isAuthenticated()) {
-                const { user: authUser, profile } = await authAPI.getMe();
-                console.log('[Auth] getMe results:', !!authUser, !!profile);
-                if (authUser) {
-                    setUser(formatUser(profile, authUser));
-                    setIsAuthenticated(true);
-                }
-            }
-        } catch (error) {
-            console.error('[Auth] checkAuth error:', error);
-            // Silently handle 401/invalid token - this is expected on fresh load or expired sessions
-            // Only log non-401 errors
-            if (error.message && !error.message.includes('Invalid token') && !error.message.includes('401')) {
-                console.error('Auth check failed:', error);
-            }
-            // Token might be expired, clear it
-            localStorage.removeItem('auth_token');
-        } finally {
-            console.log('[Auth] Auth check finished. User:', user?.email, 'Authenticated:', isAuthenticated);
-            setLoading(false);
-        }
-    };
-
-    // Format API user to match existing app structure
-    const formatUser = (profile, authUser = null) => {
-        if (!profile && !authUser) return null;
-
-        const exp = profile?.xp || 0;
-        const currentRank = getRankFromExp(exp);
-        const nextRank = getNextRank(exp);
-        const progress = getRankProgress(exp);
-
-        // Prioritize full_name from Google if the profile username is just the email prefix
-        const googleName = authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || authUser?.email?.split('@')[0];
-        const profileName = profile?.username;
-        const displayName = (profileName && profileName !== authUser?.email?.split('@')[0]) ? profileName : googleName;
-
-        return {
-            id: profile?.id || authUser?.id,
-            name: displayName,
-            email: profile?.email || authUser?.email,
-            studentId: profile?.student_id || '',
-            course: profile?.course || '',
-            school: profile?.school || '',
-            college: profile?.college || '',
-            avatar: profile?.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture,
-            level: currentRank.id, // Level is now the Rank ID (1-12)
-            exp: exp,
-            gems: profile?.gems || 0,
-            role: profile?.role || 'user',
-            rank: currentRank.name,
-            rankIcon: currentRank.icon,
-            nextRank: nextRank?.name,
-            pointsToNextRank: nextRank ? (nextRank.minExp - exp) : 0,
-            rankProgress: progress,
-            selectedHero: profile?.selected_hero || '3',
-            selectedTheme: profile?.selected_theme || 'default',
-            stats: {
-                winnings: 0,
-                losses: 0,
-                winRate: "0%",
-                leaderboardRank: 0
-            },
-            towerProgress: profile.tower_progress || {},
-            isBanned: profile.is_banned || false
-        };
-    };
-
-    // Register new user
-    // Register new user
     const register = async (email, password, username, options = {}) => {
-        const response = await authAPI.register(email, password, username, options);
-        // Do not auto-login after registration (wait for email verification or manual login)
-        // if (response.profile) {
-        //     setUser(formatUser(response.profile));
-        //     setIsAuthenticated(true);
-        // }
-        return response;
+        return await authAPI.register(email, password, username, options);
     };
 
-    // Login (supports email or student_id)
     const login = async (identifier, password, useStudentId = false) => {
         const response = await authAPI.login(identifier, password, useStudentId);
         if (response.profile) {
             setUser(formatUser(response.profile));
             setIsAuthenticated(true);
-
-            // Sync session with Supabase client (Fire and forget)
             if (response.session) {
+                localStorage.setItem('auth_token', response.session.access_token);
                 supabase.auth.setSession({
                     access_token: response.session.access_token,
                     refresh_token: response.session.refresh_token || ''
@@ -217,45 +219,34 @@ export const UserProvider = ({ children }) => {
         return response;
     };
 
-    // Google Login
     const loginWithGoogle = async () => {
         try {
             await authAPI.signInWithGoogle();
-            // Redirect happens automatically
         } catch (error) {
             console.error('Google login failed:', error);
             throw error;
         }
     };
 
-    // Logout
     const logout = async () => {
         try {
-            // Fire and forget - don't wait for server response to block UI
             authAPI.logout().catch(err => console.error('Logout API failed:', err));
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
-            // Immediate UI update
             setUser(null);
             setIsAuthenticated(false);
             localStorage.removeItem('auth_token');
         }
     };
 
-    // Update avatar
     const updateAvatar = async (file) => {
         if (!user) return;
-
         try {
             const response = await userAPI.updateAvatar(user.id, file);
             if (response.profile) {
-                const formatted = formatUser(response.profile);
-                setUser(prev => ({
-                    ...prev,
-                    ...formatted,
-                    avatar: formatted.avatar // Explicitly ensure avatar is updated
-                }));
+                const formatted = formatUser(response.profile, user);
+                setUser(prev => ({ ...prev, ...formatted }));
             }
         } catch (error) {
             console.error('Failed to update avatar:', error);
@@ -263,10 +254,8 @@ export const UserProvider = ({ children }) => {
         }
     };
 
-    // Update profile
     const updateProfile = async (profileData) => {
         if (!user) return;
-
         try {
             const response = await userAPI.updateProfile(user.id, {
                 username: profileData.name,
@@ -282,11 +271,8 @@ export const UserProvider = ({ children }) => {
             });
 
             if (response.profile) {
-                const formatted = formatUser(response.profile);
-                setUser(prev => ({
-                    ...prev,
-                    ...formatted
-                }));
+                const formatted = formatUser(response.profile, user);
+                setUser(prev => ({ ...prev, ...formatted }));
             } else {
                 setUser(prev => ({ ...prev, ...profileData, name: profileData.name }));
             }
@@ -297,10 +283,8 @@ export const UserProvider = ({ children }) => {
         }
     };
 
-    // Update tower progress
     const updateTowerProgress = async (towerId, floor, score = 0) => {
         if (!user) return;
-
         try {
             await progressAPI.completeFloor(towerId, floor, score);
             setUser(prev => ({
@@ -316,10 +300,8 @@ export const UserProvider = ({ children }) => {
         }
     };
 
-    // Update EXP
     const updateExp = async (amount) => {
         if (!user) return;
-
         try {
             const response = await progressAPI.addXP(amount);
             setUser(prev => ({
@@ -334,10 +316,8 @@ export const UserProvider = ({ children }) => {
         }
     };
 
-    // Update gems
     const updateGems = async (amount) => {
         if (!user) return;
-
         try {
             const response = await userAPI.updateGems(user.id, amount);
             setUser(prev => ({
@@ -352,21 +332,9 @@ export const UserProvider = ({ children }) => {
     };
 
     const value = {
-        user,
-        setUser,
-        loading,
-        isAuthenticated,
-        onlineUserIds,
-        register,
-        login,
-        loginWithGoogle,
-        logout,
-        updateAvatar,
-        updateProfile,
-        updateTowerProgress,
-        updateExp,
-        updateGems,
-        checkAuth
+        user, setUser, loading, isAuthenticated, onlineUserIds,
+        register, login, loginWithGoogle, logout,
+        updateAvatar, updateProfile, updateTowerProgress, updateExp, updateGems, checkAuth
     };
 
     return (
