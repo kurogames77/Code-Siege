@@ -156,23 +156,20 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
 
         if (profiles) {
             console.log('[DuelLobby] Profiles fetched:', profiles.length, profiles.map(p => p.username));
-            console.log('[DuelLobby] Current onlineUserIds:', Array.from(onlineUserIds));
             const friendsList = profiles.map(p => {
                 const rank = getRankData(p.xp || 0);
-                const isOnline = onlineUserIds.has(String(p.id)) || onlineUserIds.has(p.id);
                 return {
                     id: p.id,
                     name: p.username || 'Unknown',
                     avatar: p.avatar_url,
                     rankName: rank.name,
                     rankIcon: rank.icon,
-                    course: 'N/A',
-                    status: isOnline ? 'online' : 'offline'
+                    course: 'N/A'
                 };
             });
             setFriends(friendsList);
         }
-    }, [user, onlineUserIds]);
+    }, [user]);
 
     // Fetch friends on open and when the refresh trigger changes
     useEffect(() => {
@@ -206,15 +203,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         };
     }, [isOpen, user]);
 
-    // Update friends' status when onlineUserIds changes
-    useEffect(() => {
-        if (friends.length > 0) {
-            setFriends(prev => prev.map(f => ({
-                ...f,
-                status: (onlineUserIds.has(String(f.id)) || onlineUserIds.has(f.id)) ? 'online' : 'offline'
-            })));
-        }
-    }, [onlineUserIds]);
+    // Status is now derived during render
 
     // --- REALTIME PRESENCE & BROADCAST ---
     const lobbyChannelRef = React.useRef(null);
@@ -431,6 +420,11 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     }, [isMuted]);
 
     // --- RENDER ---
+
+    // --- COMPUTED ARRAYS ---
+    const onlineFriends = friends.filter(f => onlineUserIds.has(String(f.id)) || onlineUserIds.has(f.id));
+    const offlineFriends = friends.filter(f => !onlineUserIds.has(String(f.id)) && !onlineUserIds.has(f.id));
+    const lobbyPlayersOnly = onlineUsers.filter(u => !friends.some(f => f.id === u.id));
 
     const formatTime = (seconds) => {
         const m = Math.floor(seconds / 60);
@@ -746,15 +740,15 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                             <UserPlus className="w-4 h-4 text-slate-400 group-hover/add:text-cyan-400" />
                                         </button>
                                     </h3>
-                                    <span className="text-[10px] px-2 py-1 bg-white/10 rounded text-slate-500 font-bold">{friends.filter(f => f.status === 'online').length + onlineUsers.filter(u => !friends.some(f => f.id === u.id)).length} Online</span>
+                                    <span className="text-[10px] px-2 py-1 bg-white/10 rounded text-slate-500 font-bold">{onlineFriends.length + lobbyPlayersOnly.length} Online</span>
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto space-y-1 -mx-2 px-2 custom-scrollbar">
                                     {/* ONLINE FRIENDS */}
-                                    {friends.filter(f => f.status === 'online').length > 0 && (
+                                    {onlineFriends.length > 0 && (
                                         <>
                                             <p className="text-[10px] font-bold text-emerald-500/70 uppercase tracking-widest px-1 pt-1 pb-1">Friends</p>
-                                            {friends.filter(f => f.status === 'online').map((friend) => (
+                                            {onlineFriends.map((friend) => (
                                                 <button
                                                     key={friend.id}
                                                     onClick={() => handleInvite(friend)}
@@ -800,11 +794,11 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                     )}
 
                                     {/* LOBBY PLAYERS (non-friends currently in the duel lobby) */}
-                                    {onlineUsers.filter(u => !friends.some(f => f.id === u.id)).length > 0 && (
+                                    {lobbyPlayersOnly.length > 0 && (
                                         <>
                                             <div className="border-t border-white/5 mt-2 pt-2" />
                                             <p className="text-[10px] font-bold text-cyan-500/70 uppercase tracking-widest px-1 pb-1">In Lobby</p>
-                                            {onlineUsers.filter(u => !friends.some(f => f.id === u.id)).map((lobbyPlayer) => (
+                                            {lobbyPlayersOnly.map((lobbyPlayer) => (
                                                 <button
                                                     key={lobbyPlayer.id}
                                                     onClick={() => handleInvite({ id: lobbyPlayer.id, name: lobbyPlayer.name, avatar: lobbyPlayer.avatar, rankName: lobbyPlayer.rankName, rankIcon: lobbyPlayer.rankIcon, status: 'online' })}
@@ -850,11 +844,11 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                     )}
 
                                     {/* OFFLINE FRIENDS */}
-                                    {friends.filter(f => f.status === 'offline').length > 0 && (
+                                    {offlineFriends.length > 0 && (
                                         <>
                                             <div className="border-t border-white/5 mt-2 pt-2" />
                                             <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-1 pb-1">Offline</p>
-                                            {friends.filter(f => f.status === 'offline').map((friend) => (
+                                            {offlineFriends.map((friend) => (
                                                 <div
                                                     key={friend.id}
                                                     className="w-full p-3 rounded-xl flex items-center gap-3 opacity-40"
