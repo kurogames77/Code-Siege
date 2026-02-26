@@ -1,10 +1,20 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '../contexts/UserContext';
 import { Check, ArrowLeft } from 'lucide-react';
 import '../styles/landing-page.css'; // Reuse landing page styles for consistency
 
 const ConfirmationPage = () => {
     const navigate = useNavigate();
+    const { isAuthenticated } = useUser();
+
+    useEffect(() => {
+        // If the user lands here but is already logged in (e.g. via social login)
+        // redirect them to home so the profile completion logic can run
+        if (isAuthenticated) {
+            navigate('/', { replace: true });
+        }
+    }, [isAuthenticated, navigate]);
 
     const handleReturnLogin = () => {
         navigate('/', { state: { openLogin: true } });
