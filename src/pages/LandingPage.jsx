@@ -15,7 +15,7 @@ import { useToast } from '../contexts/ToastContext';
 const LandingPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { login, register, loginWithGoogle, isAuthenticated, user } = useUser();
+    const { login, register, loginWithGoogle, isAuthenticated, user, updateProfile } = useUser();
     const toast = useToast();
 
     const [modal, setModal] = useState(null);
@@ -786,13 +786,13 @@ const LandingPage = () => {
                                         Saving Profile...
                                     </>
                                 ) : (
-                                    'Enter Code Siege'
+                                    'Complete Registration'
                                 )}
                             </button>
                         </form>
 
                         <div className="landing-modal__footnote mt-6">
-                            <span>Logged in as </span>
+                            <span>Register as </span>
                             <span className="text-white font-bold ml-1">{user.email}</span>
                         </div>
                     </div>
