@@ -984,33 +984,44 @@ const AddFriendModal = ({ isOpen, onClose, mode }) => {
 
     const handleSearch = async () => {
         if (!searchQuery.trim()) return;
+        const query = searchQuery.trim();
+
         setSearching(true);
         setSearchError('');
         setFoundUser(null);
 
+        console.log(`[Search] Searching for: "${query}"...`);
+        const startTime = Date.now();
+
         try {
-            const query = searchQuery.trim();
             // Search by exact student_id OR partial username
+            // Use .neq('id', user.id) to avoid finding yourself first
             const { data, error } = await supabase
                 .from('users')
                 .select('id, username, student_id, avatar_url, xp, level, course')
-                .or(`student_id.eq."${query}",username.ilike.%${query}%`)
-                .limit(1)
-                .single();
+                .or(`student_id.eq.${query},username.ilike.%${query}%`)
+                .neq('id', user?.id)
+                .limit(1);
 
-            if (error || !data) {
-                setSearchError('No player found with that name or ID');
+            const duration = Date.now() - startTime;
+            console.log(`[Search] Query took ${duration}ms. Result:`, data);
+
+            if (error) {
+                console.error('[Search] Error:', error);
+                setSearchError('Search failed. Try again.');
                 return;
             }
 
-            if (data.id === user?.id) {
-                setSearchError("That's your own ID!");
+            if (!data || data.length === 0) {
+                setSearchError('No other player found with that name or ID');
                 return;
             }
 
+            const found = data[0];
             playSuccess();
-            setFoundUser(data);
+            setFoundUser(found);
         } catch (err) {
+            console.error('[Search] Unexpected Error:', err);
             setSearchError('Search failed. Try again.');
         } finally {
             setSearching(false);
