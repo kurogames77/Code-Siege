@@ -36,7 +36,20 @@ const apiRequest = async (endpoint, options = {}) => {
         },
     };
 
-    console.log(`[API] Request: ${options.method || 'GET'} ${endpoint}`, options.body ? JSON.parse(options.body) : '');
+    let safeBody = '';
+    if (options.body) {
+        try {
+            const parsed = JSON.parse(options.body);
+            if (parsed.password) {
+                parsed.password = '***CENSORED***';
+            }
+            safeBody = parsed;
+        } catch (e) {
+            safeBody = options.body;
+        }
+    }
+
+    console.log(`[API] Request: ${options.method || 'GET'} ${endpoint}`, safeBody);
     const response = await fetch(`${API_BASE}${endpoint}`, config);
     console.log(`[API] Response: ${response.status} ${endpoint}`);
     const data = await response.json();
