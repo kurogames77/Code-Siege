@@ -437,8 +437,6 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     // --- RENDER ---
 
     // --- COMPUTED ARRAYS ---
-    console.log('[DuelLobby] Friends:', friends.map(f => f.id));
-    console.log('[DuelLobby] OnlineUserIds:', Array.from(onlineUserIds));
     const onlineFriends = friends.filter(f => onlineUserIds.has(String(f.id)) || onlineUserIds.has(f.id));
     const offlineFriends = friends.filter(f => !onlineUserIds.has(String(f.id)) && !onlineUserIds.has(f.id));
     const lobbyPlayersOnly = onlineUsers.filter(u => !friends.some(f => f.id === u.id));
