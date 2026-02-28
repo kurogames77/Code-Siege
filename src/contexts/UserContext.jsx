@@ -172,23 +172,28 @@ export const UserProvider = ({ children }) => {
                 .on('presence', { event: 'sync' }, () => {
                     const state = globalPresenceChannel.presenceState();
                     const onlineIds = new Set(Object.keys(state).map(id => String(id)));
+                    console.log('[Presence] Synced. Online IDs:', Array.from(onlineIds));
                     setOnlineUserIds(onlineIds);
                 })
-                .on('presence', { event: 'join', key: '*', currentPresences: [], newPresences: [] }, () => {
+                .on('presence', { event: 'join', key: '*', currentPresences: [], newPresences: [] }, (payload) => {
                     const state = globalPresenceChannel.presenceState();
+                    console.log('[Presence] Join:', payload);
                     setOnlineUserIds(new Set(Object.keys(state).map(id => String(id))));
                 })
-                .on('presence', { event: 'leave', key: '*', leftPresences: [], currentPresences: [] }, () => {
+                .on('presence', { event: 'leave', key: '*', leftPresences: [], currentPresences: [] }, (payload) => {
                     const state = globalPresenceChannel.presenceState();
+                    console.log('[Presence] Leave:', payload);
                     setOnlineUserIds(new Set(Object.keys(state).map(id => String(id))));
                 })
                 .subscribe(async (status) => {
+                    console.log('[Presence] Subscription status:', status);
                     if (status === 'SUBSCRIBED') {
-                        await globalPresenceChannel.track({
+                        const tracked = await globalPresenceChannel.track({
                             id: user.id,
                             name: user.name,
                             online_at: new Date().toISOString(),
                         });
+                        console.log('[Presence] Tracked status:', tracked);
                     }
                 });
         }

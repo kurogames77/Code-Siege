@@ -983,22 +983,23 @@ const AddFriendModal = ({ isOpen, onClose, mode }) => {
     const [searchError, setSearchError] = useState('');
 
     const handleSearch = async () => {
-        const query = searchQuery.trim();
-        if (!query) return;
-
+        if (!searchQuery.trim()) return;
         setSearching(true);
         setSearchError('');
         setFoundUser(null);
 
         try {
+            const query = searchQuery.trim();
+            // Search by exact student_id OR partial username
             const { data, error } = await supabase
                 .from('users')
-                .select('id, username, student_id, avatar_url, course, xp')
-                .eq('student_id', query)
+                .select('id, username, student_id, avatar_url, xp, level, course')
+                .or(`student_id.eq."${query}",username.ilike.%${query}%`)
+                .limit(1)
                 .single();
 
             if (error || !data) {
-                setSearchError('No player found with that ID');
+                setSearchError('No player found with that name or ID');
                 return;
             }
 
