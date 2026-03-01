@@ -112,10 +112,12 @@ export const UserProvider = ({ children }) => {
         console.log('[Auth] Subscribing to onAuthStateChange');
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             console.log('[Auth] State change event:', event, 'Session active:', !!session);
-            if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session) {
-                console.log('[Auth] Auth event detected, syncing token and re-checking profile...');
+            if ((event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') && session) {
+                console.log('[Auth] Auth event detected, syncing token...');
                 localStorage.setItem('auth_token', session.access_token);
-                await checkAuth();
+                if (event !== 'TOKEN_REFRESHED') {
+                    await checkAuth();
+                }
             } else if (event === 'SIGNED_OUT') {
                 console.log('[Auth] SIGNED_OUT detected');
                 setUser(null);

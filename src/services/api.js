@@ -24,7 +24,7 @@ const setToken = (token) => {
 /**
  * Make authenticated API request
  */
-const apiRequest = async (endpoint, options = {}) => {
+const apiRequest = async (endpoint, options = {}, _isRetry = false) => {
     const token = getToken();
 
     const config = {
@@ -52,6 +52,23 @@ const apiRequest = async (endpoint, options = {}) => {
     console.log(`[API] Request: ${options.method || 'GET'} ${endpoint}`, safeBody);
     const response = await fetch(`${API_BASE}${endpoint}`, config);
     console.log(`[API] Response: ${response.status} ${endpoint}`);
+
+    // Auto-refresh token on 401 and retry once
+    if (response.status === 401 && !_isRetry) {
+        console.log('[API] 401 received, attempting token refresh...');
+        try {
+            const { default: supabase } = await import('../lib/supabase');
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.access_token) {
+                console.log('[API] Token refreshed, retrying request...');
+                setToken(session.access_token);
+                return apiRequest(endpoint, options, true);
+            }
+        } catch (refreshErr) {
+            console.error('[API] Token refresh failed:', refreshErr);
+        }
+    }
+
     const data = await response.json();
 
     if (!response.ok) {
