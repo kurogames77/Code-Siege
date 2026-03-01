@@ -215,6 +215,17 @@ export const userAPI = {
             method: 'PATCH',
         });
     },
+
+    getFriends: async () => {
+        return apiRequest('/users/friends');
+    },
+
+    sendDuelInvite: async (receiverId, senderName, lobbyId) => {
+        return apiRequest('/users/duel-invite', {
+            method: 'POST',
+            body: JSON.stringify({ receiverId, senderName, lobbyId }),
+        });
+    },
 };
 
 // ============================================

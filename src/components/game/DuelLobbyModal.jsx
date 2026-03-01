@@ -132,57 +132,28 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     const fetchFriends = React.useCallback(async () => {
         if (!user) return;
         console.log('[DuelLobby] Fetching friends for user:', user.id);
-        const { data: notifs, error } = await supabase
-            .from('notifications')
-            .select('sender_id, receiver_id')
-            .eq('type', 'friend_request')
-            .eq('action_status', 'accepted')
-            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
-
-        if (error) {
-            console.error('[DuelLobby] Error fetching friend notifications:', error.message);
-            return;
-        }
-
-        if (!notifs || notifs.length === 0) {
+        try {
+            const result = await userAPI.getFriends();
+            if (result?.friends) {
+                const friendsList = result.friends.map(p => {
+                    const rank = getRankData(p.xp || 0);
+                    return {
+                        id: p.id,
+                        name: p.username || 'Unknown',
+                        avatar: p.avatar_url,
+                        rankName: rank.name,
+                        rankIcon: rank.icon,
+                        course: p.course || 'N/A'
+                    };
+                });
+                setFriends(friendsList);
+                console.log('[DuelLobby] Friends fetched:', friendsList.length, friendsList.map(f => f.name));
+            } else {
+                setFriends([]);
+            }
+        } catch (err) {
+            console.error('[DuelLobby] Error fetching friends:', err);
             setFriends([]);
-            return;
-        }
-
-        const friendIds = notifs.map(n =>
-            n.sender_id === user.id ? n.receiver_id : n.sender_id
-        ).filter(id => id !== user.id);
-
-        const uniqueIds = [...new Set(friendIds)];
-        if (uniqueIds.length === 0) {
-            setFriends([]);
-            return;
-        }
-
-        const { data: profiles, error: profileError } = await supabase
-            .from('users')
-            .select('id, username, avatar_url, xp')
-            .in('id', uniqueIds);
-
-        if (profileError) {
-            console.error('[DuelLobby] Error fetching friend profiles:', profileError.message);
-            return;
-        }
-
-        if (profiles) {
-            console.log('[DuelLobby] Profiles fetched:', profiles.length, profiles.map(p => p.username));
-            const friendsList = profiles.map(p => {
-                const rank = getRankData(p.xp || 0);
-                return {
-                    id: p.id,
-                    name: p.username || 'Unknown',
-                    avatar: p.avatar_url,
-                    rankName: rank.name,
-                    rankIcon: rank.icon,
-                    course: 'N/A'
-                };
-            });
-            setFriends(friendsList);
         }
     }, [user]);
 
@@ -342,18 +313,12 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         setInvitedFriendId(friend.id);
 
         try {
-            // 1. Send persistent notification
-            await supabase
-                .from('notifications')
-                .insert({
-                    type: 'duel_invite',
-                    sender_id: user.id,
-                    receiver_id: friend.id,
-                    title: user.name || user.username || 'Someone',
-                    message: `invited you to a duel [LOBBY:${lobbyId}]`,
-                    action_status: 'pending',
-                    is_read: false
-                });
+            // 1. Send persistent notification via backend API
+            await userAPI.sendDuelInvite(
+                friend.id,
+                user.name || user.username || 'Someone',
+                lobbyId
+            );
 
             // 2. Broadcast the invite for real-time
             if (lobbyChannelRef.current) {

@@ -265,6 +265,95 @@ router.patch('/notifications/clear-all', authenticateUser, async (req, res) => {
 });
 
 /**
+ * GET /api/users/friends
+ * Fetch accepted friends for the authenticated user
+ * Uses service-role client to bypass RLS
+ */
+router.get('/friends', authenticateUser, async (req, res) => {
+    try {
+        const db = supabaseService || supabase;
+        const userId = req.user.id;
+
+        // Find all accepted friend_request notifications involving this user
+        const { data: notifs, error } = await db
+            .from('notifications')
+            .select('sender_id, receiver_id')
+            .eq('type', 'friend_request')
+            .eq('action_status', 'accepted')
+            .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`);
+
+        if (error) {
+            console.error('Fetch friends error:', error);
+            return res.status(400).json({ error: error.message });
+        }
+
+        if (!notifs || notifs.length === 0) {
+            return res.json({ friends: [] });
+        }
+
+        // Extract unique friend IDs
+        const friendIds = notifs.map(n =>
+            n.sender_id === userId ? n.receiver_id : n.sender_id
+        ).filter(id => id !== userId);
+        const uniqueIds = [...new Set(friendIds)];
+
+        if (uniqueIds.length === 0) {
+            return res.json({ friends: [] });
+        }
+
+        // Fetch friend profiles
+        const { data: profiles, error: profileError } = await db
+            .from('users')
+            .select('id, username, avatar_url, xp, course')
+            .in('id', uniqueIds);
+
+        if (profileError) {
+            console.error('Fetch friend profiles error:', profileError);
+            return res.status(400).json({ error: profileError.message });
+        }
+
+        res.json({ friends: profiles || [] });
+    } catch (error) {
+        console.error('Fetch friends error:', error);
+        res.status(500).json({ error: 'Failed to fetch friends' });
+    }
+});
+
+/**
+ * POST /api/users/duel-invite
+ * Send a duel invite notification
+ * Uses service-role client to bypass RLS
+ */
+router.post('/duel-invite', authenticateUser, async (req, res) => {
+    try {
+        const { receiverId, senderName, lobbyId } = req.body;
+        const db = supabaseService || supabase;
+
+        const { error } = await db
+            .from('notifications')
+            .insert({
+                type: 'duel_invite',
+                sender_id: req.user.id,
+                receiver_id: receiverId,
+                title: senderName || 'Someone',
+                message: `invited you to a duel [LOBBY:${lobbyId || 'unknown'}]`,
+                action_status: 'pending',
+                is_read: false
+            });
+
+        if (error) {
+            console.error('Duel invite error:', error);
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json({ status: 'sent' });
+    } catch (error) {
+        console.error('Duel invite error:', error);
+        res.status(500).json({ error: 'Failed to send duel invite' });
+    }
+});
+
+/**
  * GET /api/users/leaderboard
  * Get top users sorted by XP for leaderboard
  */
