@@ -192,6 +192,29 @@ export const userAPI = {
             body: JSON.stringify({ receiverId, senderName, mode, lobbyId }),
         });
     },
+
+    getNotifications: async () => {
+        return apiRequest('/users/notifications');
+    },
+
+    respondToNotification: async (notifId, action, senderName) => {
+        return apiRequest(`/users/notifications/${notifId}/respond`, {
+            method: 'PATCH',
+            body: JSON.stringify({ action, senderName }),
+        });
+    },
+
+    dismissNotification: async (notifId) => {
+        return apiRequest(`/users/notifications/${notifId}/dismiss`, {
+            method: 'PATCH',
+        });
+    },
+
+    clearAllNotifications: async () => {
+        return apiRequest('/users/notifications/clear-all', {
+            method: 'PATCH',
+        });
+    },
 };
 
 // ============================================

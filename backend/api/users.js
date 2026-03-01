@@ -127,6 +127,144 @@ router.post('/friend-request', authenticateUser, async (req, res) => {
 });
 
 /**
+ * GET /api/users/notifications
+ * Fetch notifications for the authenticated user (with sender info)
+ * Uses service-role client to bypass RLS
+ */
+router.get('/notifications', authenticateUser, async (req, res) => {
+    try {
+        const db = supabaseService || supabase;
+
+        const { data, error } = await db
+            .from('notifications')
+            .select(`
+                id,
+                type,
+                title,
+                message,
+                sender_id,
+                action_status,
+                is_read,
+                created_at,
+                sender:users!notifications_sender_id_fkey(
+                    id, username, student_id, avatar_url, course, xp
+                )
+            `)
+            .eq('receiver_id', req.user.id)
+            .order('created_at', { ascending: false })
+            .limit(30);
+
+        if (error) {
+            console.error('Fetch notifications error:', error);
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json({ notifications: data || [] });
+    } catch (error) {
+        console.error('Fetch notifications error:', error);
+        res.status(500).json({ error: 'Failed to fetch notifications' });
+    }
+});
+
+/**
+ * PATCH /api/users/notifications/:id/respond
+ * Accept or decline a notification (friend_request, duel_invite, etc.)
+ * Also sends a response notification back to the sender
+ */
+router.patch('/notifications/:id/respond', authenticateUser, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { action, senderName } = req.body; // action: 'accepted' or 'declined'
+        const db = supabaseService || supabase;
+
+        // Get the notification first
+        const { data: notif, error: fetchError } = await db
+            .from('notifications')
+            .select('id, type, sender_id, receiver_id')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !notif) {
+            return res.status(404).json({ error: 'Notification not found' });
+        }
+
+        // Update the notification status
+        const { error: updateError } = await db
+            .from('notifications')
+            .update({ action_status: action, is_read: true })
+            .eq('id', id);
+
+        if (updateError) {
+            return res.status(400).json({ error: updateError.message });
+        }
+
+        // Send a response notification back to the original sender
+        if (notif.sender_id) {
+            const title = action === 'accepted'
+                ? `${senderName || 'Someone'} accepted your friend request!`
+                : `${senderName || 'Someone'} declined your friend request.`;
+            const message = action === 'accepted' ? 'You are now friends.' : null;
+
+            await db.from('notifications').insert({
+                type: 'system',
+                sender_id: req.user.id,
+                receiver_id: notif.sender_id,
+                title,
+                message,
+                action_status: 'viewed',
+                is_read: false
+            });
+        }
+
+        res.json({ status: action });
+    } catch (error) {
+        console.error('Respond to notification error:', error);
+        res.status(500).json({ error: 'Failed to respond to notification' });
+    }
+});
+
+/**
+ * PATCH /api/users/notifications/:id/dismiss
+ * Mark a single notification as read
+ */
+router.patch('/notifications/:id/dismiss', authenticateUser, async (req, res) => {
+    try {
+        const db = supabaseService || supabase;
+        const { error } = await db
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('id', req.params.id);
+
+        if (error) return res.status(400).json({ error: error.message });
+        res.json({ status: 'dismissed' });
+    } catch (error) {
+        console.error('Dismiss notification error:', error);
+        res.status(500).json({ error: 'Failed to dismiss notification' });
+    }
+});
+
+/**
+ * PATCH /api/users/notifications/clear-all
+ * Mark all notifications as read for the authenticated user
+ */
+router.patch('/notifications/clear-all', authenticateUser, async (req, res) => {
+    try {
+        const db = supabaseService || supabase;
+        const { error } = await db
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('receiver_id', req.user.id)
+            .eq('is_read', false);
+
+        if (error) return res.status(400).json({ error: error.message });
+        res.json({ status: 'cleared' });
+    } catch (error) {
+        console.error('Clear all notifications error:', error);
+        res.status(500).json({ error: 'Failed to clear notifications' });
+    }
+});
+
+/**
  * GET /api/users/leaderboard
  * Get top users sorted by XP for leaderboard
  */

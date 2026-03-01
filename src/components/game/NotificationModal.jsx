@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, UserPlus, Users, Check, XIcon, Bell, ShoppingBag, Trophy, Swords, Clock, Trash2 } from 'lucide-react';
 import useSound from '../../hooks/useSound';
 import { useUser } from '../../contexts/UserContext';
+import { userAPI } from '../../services/api';
 import supabase from '../../lib/supabase';
 import { getRankFromExp as getRankData } from '../../utils/rankSystem';
 import notificationIcon from '../../assets/Notification.png';
@@ -63,27 +64,9 @@ const NotificationModal = ({ isOpen, onClose, onAcceptInvite, onDeclineInvite })
         const fetchNotifications = async () => {
             setLoading(true);
             try {
-                const { data, error } = await supabase
-                    .from('notifications')
-                    .select(`
-                        id,
-                        type,
-                        title,
-                        message,
-                        sender_id,
-                        action_status,
-                        is_read,
-                        created_at,
-                        sender:users!notifications_sender_id_fkey(
-                            id, username, student_id, avatar_url, course, xp
-                        )
-                    `)
-                    .eq('receiver_id', user.id)
-                    .order('created_at', { ascending: false })
-                    .limit(30);
-
-                if (data) {
-                    setNotifications(data);
+                const result = await userAPI.getNotifications();
+                if (result?.notifications) {
+                    setNotifications(result.notifications);
                 }
             } catch (err) {
                 console.error('Failed to fetch notifications:', err);
@@ -136,26 +119,8 @@ const NotificationModal = ({ isOpen, onClose, onAcceptInvite, onDeclineInvite })
                 return;
             }
 
-            await supabase
-                .from('notifications')
-                .update({ action_status: 'accepted', is_read: true })
-                .eq('id', notifId);
+            await userAPI.respondToNotification(notifId, 'accepted', user.name || 'Someone');
             setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, action_status: 'accepted', is_read: true } : n));
-
-            // Send a notification back to the original sender (friend requests only)
-            if (notif?.sender_id && notif.type === 'friend_request') {
-                await supabase
-                    .from('notifications')
-                    .insert({
-                        type: 'system',
-                        sender_id: user.id,
-                        receiver_id: notif.sender_id,
-                        title: `${user.name || 'Someone'} accepted your friend request!`,
-                        message: 'You are now friends.',
-                        action_status: 'viewed',
-                        is_read: false
-                    });
-            }
         } catch (err) {
             console.error('Failed to accept:', err);
         }
@@ -164,7 +129,6 @@ const NotificationModal = ({ isOpen, onClose, onAcceptInvite, onDeclineInvite })
     const handleDecline = async (notifId) => {
         playCancel();
         try {
-            // Find the notification to get sender info
             const notif = notifications.find(n => n.id === notifId);
             if (!notif) return;
 
@@ -176,31 +140,12 @@ const NotificationModal = ({ isOpen, onClose, onAcceptInvite, onDeclineInvite })
                     senderId: notif.sender_id,
                     sender: notif.sender
                 });
-                // Update local state since parent only handles the DB/Global side
                 setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, action_status: 'declined', is_read: true } : n));
                 return;
             }
 
-            await supabase
-                .from('notifications')
-                .update({ action_status: 'declined', is_read: true })
-                .eq('id', notifId);
+            await userAPI.respondToNotification(notifId, 'declined', user.name || 'Someone');
             setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, action_status: 'declined', is_read: true } : n));
-
-            // Send a notification back to the original sender
-            if (notif?.sender_id) {
-                await supabase
-                    .from('notifications')
-                    .insert({
-                        type: 'system',
-                        sender_id: user.id,
-                        receiver_id: notif.sender_id,
-                        title: `${user.name || 'Someone'} declined your friend request.`,
-                        message: null,
-                        action_status: 'viewed',
-                        is_read: false
-                    });
-            }
         } catch (err) {
             console.error('Failed to decline:', err);
         }
@@ -209,10 +154,7 @@ const NotificationModal = ({ isOpen, onClose, onAcceptInvite, onDeclineInvite })
     const handleDismiss = async (notifId) => {
         playClick();
         try {
-            await supabase
-                .from('notifications')
-                .update({ is_read: true })
-                .eq('id', notifId);
+            await userAPI.dismissNotification(notifId);
             setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, is_read: true } : n));
         } catch (err) {
             console.error('Failed to dismiss:', err);
@@ -222,11 +164,7 @@ const NotificationModal = ({ isOpen, onClose, onAcceptInvite, onDeclineInvite })
     const handleClearAll = async () => {
         playClick();
         try {
-            await supabase
-                .from('notifications')
-                .update({ is_read: true })
-                .eq('receiver_id', user.id)
-                .eq('is_read', false);
+            await userAPI.clearAllNotifications();
             setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
         } catch (err) {
             console.error('Failed to clear all:', err);
