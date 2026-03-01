@@ -185,6 +185,13 @@ export const userAPI = {
     searchUser: async (query) => {
         return apiRequest(`/users/search?q=${encodeURIComponent(query)}`);
     },
+
+    sendFriendRequest: async (receiverId, senderName, mode, lobbyId) => {
+        return apiRequest('/users/friend-request', {
+            method: 'POST',
+            body: JSON.stringify({ receiverId, senderName, mode, lobbyId }),
+        });
+    },
 };
 
 // ============================================

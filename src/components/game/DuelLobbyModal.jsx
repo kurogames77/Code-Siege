@@ -1031,75 +1031,39 @@ const AddFriendModal = ({ isOpen, onClose, mode }) => {
         setAddStatus('sending');
 
         try {
-            // Check if a friend_request notification already exists between these users
-            const { data: existing } = await supabase
-                .from('notifications')
-                .select('id, action_status')
-                .eq('type', 'friend_request')
-                .or(`and(sender_id.eq.${user.id},receiver_id.eq.${foundUser.id}),and(sender_id.eq.${foundUser.id},receiver_id.eq.${user.id})`)
-                .limit(1);
+            // Send friend request via backend API (bypasses RLS)
+            const result = await userAPI.sendFriendRequest(
+                foundUser.id,
+                user.name || user.username || 'Someone',
+                mode,
+                null // lobbyId not needed for friend mode
+            );
 
-            if (existing && existing.length > 0) {
-                const req = existing[0];
-                if (req.action_status === 'accepted') {
-                    setAddStatus('already_friends');
-                } else if (req.action_status === 'pending') {
-                    setAddStatus('already_sent');
-                } else {
-                    // Declined — allow re-send by updating
-                    await supabase
-                        .from('notifications')
-                        .update({
-                            action_status: 'pending',
-                            is_read: false,
-                            created_at: new Date().toISOString(),
-                            sender_id: user.id,
-                            receiver_id: foundUser.id,
-                            title: user.name || user.username || 'Someone',
-                            message: `wants to be your friend`
-                        })
-                        .eq('id', req.id);
-                    playSuccess();
-                    setAddStatus('sent');
+            if (result.status === 'already_friends') {
+                setAddStatus('already_friends');
+            } else if (result.status === 'already_sent') {
+                setAddStatus('already_sent');
+            } else if (result.status === 'sent') {
+                // Broadcast the invite for real-time if it's a duel invite
+                if (mode !== 'friend' && lobbyChannelRef?.current) {
+                    lobbyChannelRef.current.send({
+                        type: 'broadcast',
+                        event: 'duel-invite',
+                        payload: {
+                            targetId: foundUser.id,
+                            senderId: user.id,
+                            senderName: user.name,
+                            senderAvatar: user.avatar,
+                            senderRankName: user.rankName,
+                            senderRankIcon: user.rankIcon,
+                            lobbyId: lobbyId,
+                            difficulty: selectedDifficulty
+                        }
+                    });
                 }
-                return;
+                playSuccess();
+                setAddStatus('sent');
             }
-
-            // Create new notification
-            const { error } = await supabase
-                .from('notifications')
-                .insert({
-                    type: mode === 'friend' ? 'friend_request' : 'duel_invite',
-                    sender_id: user.id,
-                    receiver_id: foundUser.id,
-                    title: user.name || user.username || 'Someone',
-                    message: mode === 'friend' ? 'wants to be your friend' : `invited you to a duel [LOBBY:${lobbyId}]`,
-                    action_status: 'pending',
-                    is_read: false
-                });
-
-            if (error) throw error;
-
-            // Broadcast the invite for real-time if it's a duel invite
-            if (mode !== 'friend' && lobbyChannelRef.current) {
-                lobbyChannelRef.current.send({
-                    type: 'broadcast',
-                    event: 'duel-invite',
-                    payload: {
-                        targetId: foundUser.id,
-                        senderId: user.id,
-                        senderName: user.name,
-                        senderAvatar: user.avatar,
-                        senderRankName: user.rankName,
-                        senderRankIcon: user.rankIcon,
-                        lobbyId: lobbyId,
-                        difficulty: selectedDifficulty
-                    }
-                });
-            }
-
-            playSuccess();
-            setAddStatus('sent');
         } catch (err) {
             console.error('Failed to send friend request:', err);
             setAddStatus('error');

@@ -44,6 +44,89 @@ router.get('/search', authenticateUser, async (req, res) => {
 });
 
 /**
+ * POST /api/users/friend-request
+ * Send a friend request (or duel invite) via the notifications table
+ * Uses service-role client to bypass RLS
+ */
+router.post('/friend-request', authenticateUser, async (req, res) => {
+    try {
+        const { receiverId, senderName, mode, lobbyId } = req.body;
+        const senderId = req.user.id;
+
+        if (!receiverId) {
+            return res.status(400).json({ error: 'receiverId is required' });
+        }
+
+        const db = supabaseService || supabase;
+
+        // Check if a friend_request notification already exists between these users
+        const { data: existing, error: checkError } = await db
+            .from('notifications')
+            .select('id, action_status')
+            .eq('type', 'friend_request')
+            .or(`and(sender_id.eq.${senderId},receiver_id.eq.${receiverId}),and(sender_id.eq.${receiverId},receiver_id.eq.${senderId})`)
+            .limit(1);
+
+        if (checkError) {
+            console.error('Friend request check error:', checkError);
+            return res.status(400).json({ error: checkError.message });
+        }
+
+        if (existing && existing.length > 0) {
+            const req_item = existing[0];
+            if (req_item.action_status === 'accepted') {
+                return res.json({ status: 'already_friends' });
+            } else if (req_item.action_status === 'pending') {
+                return res.json({ status: 'already_sent' });
+            } else {
+                // Declined — allow re-send by updating
+                await db
+                    .from('notifications')
+                    .update({
+                        action_status: 'pending',
+                        is_read: false,
+                        created_at: new Date().toISOString(),
+                        sender_id: senderId,
+                        receiver_id: receiverId,
+                        title: senderName || 'Someone',
+                        message: 'wants to be your friend'
+                    })
+                    .eq('id', req_item.id);
+                return res.json({ status: 'sent' });
+            }
+        }
+
+        // Create new notification
+        const notifType = mode === 'friend' ? 'friend_request' : 'duel_invite';
+        const message = mode === 'friend'
+            ? 'wants to be your friend'
+            : `invited you to a duel [LOBBY:${lobbyId || 'unknown'}]`;
+
+        const { error: insertError } = await db
+            .from('notifications')
+            .insert({
+                type: notifType,
+                sender_id: senderId,
+                receiver_id: receiverId,
+                title: senderName || 'Someone',
+                message: message,
+                action_status: 'pending',
+                is_read: false
+            });
+
+        if (insertError) {
+            console.error('Friend request insert error:', insertError);
+            return res.status(400).json({ error: insertError.message });
+        }
+
+        res.json({ status: 'sent' });
+    } catch (error) {
+        console.error('Friend request error:', error);
+        res.status(500).json({ error: 'Failed to send friend request' });
+    }
+});
+
+/**
  * GET /api/users/leaderboard
  * Get top users sorted by XP for leaderboard
  */
