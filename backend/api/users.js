@@ -1,8 +1,47 @@
 import express from 'express';
 import supabase from '../lib/supabase.js';
+import { supabaseService } from '../lib/supabase.js';
 import { authenticateUser } from '../middleware/auth.js';
 
 const router = express.Router();
+
+/**
+ * GET /api/users/search?q=<query>
+ * Search for a user by student_id (exact) or username (partial, case-insensitive)
+ * Uses service-role client to bypass RLS
+ */
+router.get('/search', authenticateUser, async (req, res) => {
+    try {
+        const { q } = req.query;
+        if (!q || !q.trim()) {
+            return res.status(400).json({ error: 'Search query is required' });
+        }
+
+        const query = q.trim();
+        const db = supabaseService || supabase;
+
+        const { data, error } = await db
+            .from('users')
+            .select('id, username, student_id, avatar_url, xp, level, course')
+            .or(`student_id.eq.${query},username.ilike.%${query}%`)
+            .neq('id', req.user.id)
+            .limit(1);
+
+        if (error) {
+            console.error('User search error:', error);
+            return res.status(400).json({ error: error.message });
+        }
+
+        if (!data || data.length === 0) {
+            return res.status(404).json({ error: 'No user found' });
+        }
+
+        res.json({ user: data[0] });
+    } catch (error) {
+        console.error('User search error:', error);
+        res.status(500).json({ error: 'Search failed' });
+    }
+});
 
 /**
  * GET /api/users/leaderboard

@@ -181,6 +181,10 @@ export const userAPI = {
             body: JSON.stringify({ amount }),
         });
     },
+
+    searchUser: async (query) => {
+        return apiRequest(`/users/search?q=${encodeURIComponent(query)}`);
+    },
 };
 
 // ============================================

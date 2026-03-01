@@ -11,6 +11,7 @@ import lobbyMusic from '../../assets/sounds/lobbymusic.mp3';
 import useSound from '../../hooks/useSound';
 import { useUser } from '../../contexts/UserContext';
 import supabase from '../../lib/supabase';
+import { userAPI } from '../../services/api';
 import rankGold from '../../assets/rankbadges/rank6.png';
 import rankSilver from '../../assets/rankbadges/rank3.png';
 import rankDiamond from '../../assets/rankbadges/rank12.png';
@@ -994,35 +995,26 @@ const AddFriendModal = ({ isOpen, onClose, mode }) => {
         const startTime = Date.now();
 
         try {
-            // Search by exact student_id OR partial username
-            // Use .neq('id', user.id) to avoid finding yourself first
-            const { data, error } = await supabase
-                .from('users')
-                .select('id, username, student_id, avatar_url, xp, level, course')
-                .or(`student_id.eq.${query},username.ilike.%${query}%`)
-                .neq('id', user?.id)
-                .limit(1);
+            // Search via backend API (uses service-role client, bypasses RLS)
+            const result = await userAPI.searchUser(query);
 
             const duration = Date.now() - startTime;
-            console.log(`[Search] Query took ${duration}ms. Result:`, data);
+            console.log(`[Search] Query took ${duration}ms. Result:`, result);
 
-            if (error) {
-                console.error('[Search] Error:', error);
-                setSearchError('Search failed. Try again.');
-                return;
-            }
-
-            if (!data || data.length === 0) {
+            if (!result || !result.user) {
                 setSearchError('No other player found with that name or ID');
                 return;
             }
 
-            const found = data[0];
             playSuccess();
-            setFoundUser(found);
+            setFoundUser(result.user);
         } catch (err) {
-            console.error('[Search] Unexpected Error:', err);
-            setSearchError('Search failed. Try again.');
+            console.error('[Search] Error:', err);
+            if (err.message && err.message.includes('No user found')) {
+                setSearchError('No other player found with that name or ID');
+            } else {
+                setSearchError('Search failed. Try again.');
+            }
         } finally {
             setSearching(false);
         }
