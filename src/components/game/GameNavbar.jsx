@@ -106,11 +106,11 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                     (newNotif.type === 'duel_invite' || newNotif.type === 'multiplayer_invite')) {
                     console.log('[Auth] Incoming invitation:', newNotif.type, 'from:', newNotif.sender_id);
 
-                    // Fetch sender details via backend API
+                    // Fetch sender details via backend API (by ID)
                     let sender = null;
                     try {
-                        const result = await userAPI.searchUser(newNotif.title);
-                        sender = result?.users?.find(u => u.id === newNotif.sender_id) || null;
+                        const result = await userAPI.getUserProfile(newNotif.sender_id);
+                        sender = result?.user || null;
                     } catch (err) {
                         console.error('[Invite] Failed to fetch sender details:', err);
                     }

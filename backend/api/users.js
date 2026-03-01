@@ -44,6 +44,31 @@ router.get('/search', authenticateUser, async (req, res) => {
 });
 
 /**
+ * GET /api/users/profile/:id
+ * Get a user's public profile by ID
+ * Uses service-role client to bypass RLS
+ */
+router.get('/profile/:id', authenticateUser, async (req, res) => {
+    try {
+        const db = supabaseService || supabase;
+        const { data, error } = await db
+            .from('users')
+            .select('id, username, student_id, avatar_url, course, xp, level')
+            .eq('id', req.params.id)
+            .single();
+
+        if (error || !data) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json({ user: data });
+    } catch (error) {
+        console.error('Get user profile error:', error);
+        res.status(500).json({ error: 'Failed to get user profile' });
+    }
+});
+
+/**
  * POST /api/users/friend-request
  * Send a friend request (or duel invite) via the notifications table
  * Uses service-role client to bypass RLS

@@ -192,6 +192,10 @@ export const userAPI = {
         });
     },
 
+    getUserProfile: async (userId) => {
+        return apiRequest(`/users/profile/${userId}`);
+    },
+
     updateGems: async (userId, amount) => {
         return apiRequest(`/users/${userId}/gems`, {
             method: 'PATCH',
