@@ -175,14 +175,14 @@ export const UserProvider = ({ children }) => {
                     console.log('[Presence] Synced. Online IDs:', Array.from(onlineIds));
                     setOnlineUserIds(onlineIds);
                 })
-                .on('presence', { event: 'join', key: '*', currentPresences: [], newPresences: [] }, (payload) => {
+                .on('presence', { event: 'join' }, ({ key, newPresences }) => {
                     const state = globalPresenceChannel.presenceState();
-                    console.log('[Presence] Join:', payload);
+                    console.log('[Presence] Join:', { key, newPresences });
                     setOnlineUserIds(new Set(Object.keys(state).map(id => String(id))));
                 })
-                .on('presence', { event: 'leave', key: '*', leftPresences: [], currentPresences: [] }, (payload) => {
+                .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
                     const state = globalPresenceChannel.presenceState();
-                    console.log('[Presence] Leave:', payload);
+                    console.log('[Presence] Leave:', { key, leftPresences });
                     setOnlineUserIds(new Set(Object.keys(state).map(id => String(id))));
                 })
                 .subscribe(async (status) => {
