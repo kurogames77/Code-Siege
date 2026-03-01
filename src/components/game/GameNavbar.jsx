@@ -30,6 +30,7 @@ import useSound from '../../hooks/useSound';
 import { useMusic } from '../../contexts/MusicContext';
 import { useUser } from '../../contexts/UserContext'; // New Context
 import supabase from '../../lib/supabase';
+import { userAPI } from '../../services/api';
 import { getRankFromExp as getRankData } from '../../utils/rankSystem';
 
 const GameNavbar = ({ onLobbyStateChange }) => {
@@ -59,12 +60,13 @@ const GameNavbar = ({ onLobbyStateChange }) => {
     useEffect(() => {
         if (!user?.id) return;
         const fetchCount = async () => {
-            const { count } = await supabase
-                .from('notifications')
-                .select('*', { count: 'exact', head: true })
-                .eq('receiver_id', user.id)
-                .eq('is_read', false);
-            setNotificationCount(count || 0);
+            try {
+                const result = await userAPI.getNotifications();
+                const unread = (result?.notifications || []).filter(n => !n.is_read).length;
+                setNotificationCount(unread);
+            } catch (err) {
+                console.error('Failed to fetch notification count:', err);
+            }
         };
         fetchCount();
 
@@ -104,15 +106,19 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                     (newNotif.type === 'duel_invite' || newNotif.type === 'multiplayer_invite')) {
                     console.log('[Auth] Incoming invitation:', newNotif.type, 'from:', newNotif.sender_id);
 
-                    // Fetch sender details (name, avatar, xp)
-                    const { data: sender } = await supabase
-                        .from('users')
-                        .select('username, avatar_url, course, xp')
-                        .eq('id', newNotif.sender_id)
-                        .single();
+                    // Fetch sender details via backend API
+                    let sender = null;
+                    try {
+                        const result = await userAPI.searchUser(newNotif.title);
+                        sender = result?.users?.find(u => u.id === newNotif.sender_id) || null;
+                    } catch (err) {
+                        console.error('[Invite] Failed to fetch sender details:', err);
+                    }
 
                     if (sender) {
                         const rank = getRankData(sender.xp || 0);
+                        // Parse lobbyId from message
+                        const lobbyMatch = newNotif.message?.match(/\[LOBBY:([^\]]+)\]/);
                         setActiveInvitation({
                             id: newNotif.id,
                             type: newNotif.type,
@@ -120,7 +126,8 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                             sender: sender,
                             rankName: rank.name,
                             rankIcon: rank.icon,
-                            rankColor: rank.color
+                            rankColor: rank.color,
+                            lobbyId: lobbyMatch ? lobbyMatch[1] : null
                         });
                     }
                 }
@@ -136,11 +143,8 @@ const GameNavbar = ({ onLobbyStateChange }) => {
         playSuccess();
 
         try {
-            // Update status in DB
-            await supabase
-                .from('notifications')
-                .update({ action_status: 'accepted', is_read: true })
-                .eq('id', invitation.id);
+            // Update status via backend API
+            await userAPI.respondToNotification(invitation.id, 'accepted', user.name || 'Someone');
 
             const isDuel = invitation.type === 'duel_invite';
 
@@ -212,10 +216,7 @@ const GameNavbar = ({ onLobbyStateChange }) => {
         playCancel();
 
         try {
-            await supabase
-                .from('notifications')
-                .update({ action_status: 'declined', is_read: true })
-                .eq('id', activeInvitation.id);
+            await userAPI.respondToNotification(activeInvitation.id, 'declined', user.name || 'Someone');
 
             setActiveInvitation(null);
         } catch (error) {
@@ -530,12 +531,12 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                     setIsNotificationOpen(false);
                     // Refresh count when closing
                     if (user?.id) {
-                        supabase
-                            .from('notifications')
-                            .select('*', { count: 'exact', head: true })
-                            .eq('receiver_id', user.id)
-                            .eq('is_read', false)
-                            .then(({ count }) => setNotificationCount(count || 0));
+                        userAPI.getNotifications()
+                            .then(result => {
+                                const unread = (result?.notifications || []).filter(n => !n.is_read).length;
+                                setNotificationCount(unread);
+                            })
+                            .catch(err => console.error('Failed to refresh count:', err));
                     }
                 }}
                 onAcceptInvite={handleAcceptInvite}
