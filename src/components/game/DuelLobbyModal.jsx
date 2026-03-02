@@ -199,6 +199,14 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
 
     // --- REALTIME PRESENCE & BROADCAST ---
     const lobbyChannelRef = React.useRef(null);
+    const acceptSentRef = React.useRef(false);
+
+    // Reset acceptSent when modal closes
+    useEffect(() => {
+        if (!isOpen) {
+            acceptSentRef.current = false;
+        }
+    }, [isOpen]);
 
     useEffect(() => {
         if (!isOpen || !user) return;
@@ -250,6 +258,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             .on('broadcast', { event: 'player-ready' }, ({ payload }) => {
                 // Use ref to check opponent to avoid stale closure
                 const currentOpponent = opponentRef.current;
+                console.log('[DuelLobby] Received player-ready broadcast:', payload, 'currentOpponent:', currentOpponent?.id);
                 if (currentOpponent && payload.playerId === currentOpponent.id) {
                     setIsOpponentReady(payload.isReady);
                 }
@@ -271,6 +280,24 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                         rankIcon: user.rankIcon,
                         online_at: new Date().toISOString(),
                     });
+
+                    // If we're the invited player, send duel-accept to the host
+                    if (initialOpponent && !acceptSentRef.current) {
+                        acceptSentRef.current = true;
+                        console.log('[DuelLobby] Sending duel-accept broadcast to host:', initialOpponent.id);
+                        await channel.send({
+                            type: 'broadcast',
+                            event: 'duel-accept',
+                            payload: {
+                                targetId: initialOpponent.id,
+                                senderId: user.id,
+                                senderName: user.name,
+                                senderAvatar: user.avatar,
+                                senderRankName: user.rankName,
+                                senderRankIcon: user.rankIcon
+                            }
+                        });
+                    }
                 }
             });
 

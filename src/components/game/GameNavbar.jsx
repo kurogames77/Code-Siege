@@ -149,42 +149,9 @@ const GameNavbar = ({ onLobbyStateChange }) => {
             const isDuel = invitation.type === 'duel_invite';
 
             if (isDuel && invitation.senderId) {
-                // Send duel-accept broadcast back to the challenger
-                // Try to find existing duel-lobby channel to avoid creating a separate instance
-                const existingChannels = supabase.getChannels();
-                let lobbyChannel = existingChannels.find(ch => ch.topic === 'realtime:duel-lobby');
-                let isTemporary = false;
-
-                const acceptPayload = {
-                    type: 'broadcast',
-                    event: 'duel-accept',
-                    payload: {
-                        targetId: invitation.senderId,
-                        senderId: user.id,
-                        senderName: user.name,
-                        senderAvatar: user.avatar,
-                        senderRankName: user.rankName,
-                        senderRankIcon: user.rankIcon
-                    }
-                };
-
-                if (lobbyChannel) {
-                    // Reuse existing channel — already subscribed
-                    console.log('[GameNavbar] Reusing existing duel-lobby channel for accept broadcast');
-                    await lobbyChannel.send(acceptPayload);
-                } else {
-                    // Create temporary channel if no existing one found
-                    console.log('[GameNavbar] Creating temporary duel-lobby channel for accept broadcast');
-                    isTemporary = true;
-                    lobbyChannel = supabase.channel('duel-lobby');
-                    await lobbyChannel.subscribe(async (status) => {
-                        if (status === 'SUBSCRIBED') {
-                            await lobbyChannel.send(acceptPayload);
-                            // Give it a moment to send before removing
-                            setTimeout(() => supabase.removeChannel(lobbyChannel), 1000);
-                        }
-                    });
-                }
+                // NOTE: The duel-accept broadcast is now sent by DuelLobbyModal 
+                // when its channel subscribes. This avoids creating a temporary 
+                // channel here that would conflict with DuelLobbyModal's channel.
 
                 // Build opponent data from the sender
                 const senderRank = getRankData(invitation.sender?.xp || 0);
