@@ -789,7 +789,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                                     key={friend.id}
                                                     onClick={() => handleInvite(friend)}
                                                     disabled={!!opponent}
-                                                    className="w-full p-3 rounded-xl border transition-all flex items-center gap-3 group text-left bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20"
+                                                    className={`w-full p-3 rounded-xl border transition-all flex items-center gap-3 group text-left ${!!opponent ? 'bg-slate-800/80 border-slate-700 opacity-50 cursor-not-allowed' : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20'}`}
                                                 >
                                                     <div className="relative">
                                                         <div className="w-10 h-10 rounded-lg bg-slate-800 overflow-hidden border border-white/10">
@@ -810,11 +810,11 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                                             <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest truncate">{friend.rankName}</p>
                                                         </div>
                                                     </div>
-                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-lg ${opponent?.id === friend.id || successInviteIds.has(friend.id)
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-lg ${opponent?.id == friend.id || successInviteIds.has(friend.id)
                                                         ? 'bg-blue-600/50 cursor-default'
                                                         : invitedFriendId === friend.id
                                                             ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30'
-                                                            : 'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-900/20 hover:scale-110 active:scale-95'
+                                                            : `bg-rose-500 text-white shadow-rose-900/20 ${!!opponent ? 'opacity-50' : 'hover:bg-rose-400 hover:scale-110 active:scale-95'}`
                                                         }`}>
                                                         {opponent?.id === friend.id || successInviteIds.has(friend.id) ? (
                                                             <Check className="w-5 h-5 text-blue-200" />
@@ -839,7 +839,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                                     key={lobbyPlayer.id}
                                                     onClick={() => handleInvite({ id: lobbyPlayer.id, name: lobbyPlayer.name, avatar: lobbyPlayer.avatar, rankName: lobbyPlayer.rankName, rankIcon: lobbyPlayer.rankIcon, status: 'online' })}
                                                     disabled={!!opponent}
-                                                    className="w-full p-3 rounded-xl border transition-all flex items-center gap-3 group text-left bg-cyan-500/5 border-cyan-500/10 hover:bg-cyan-500/10 hover:border-cyan-500/20"
+                                                    className={`w-full p-3 rounded-xl border transition-all flex items-center gap-3 group text-left ${!!opponent ? 'bg-slate-800/80 border-slate-700 opacity-50 cursor-not-allowed' : 'bg-cyan-500/5 border-cyan-500/10 hover:bg-cyan-500/10 hover:border-cyan-500/20'}`}
                                                 >
                                                     <div className="relative">
                                                         <div className="w-10 h-10 rounded-lg bg-slate-800 overflow-hidden border border-white/10">
@@ -860,11 +860,11 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                                             <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest truncate">{lobbyPlayer.rankName || 'In Lobby'}</p>
                                                         </div>
                                                     </div>
-                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-lg ${opponent?.id === lobbyPlayer.id || successInviteIds.has(lobbyPlayer.id)
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-lg ${opponent?.id == lobbyPlayer.id || successInviteIds.has(lobbyPlayer.id)
                                                         ? 'bg-blue-600/50 cursor-default'
                                                         : invitedFriendId === lobbyPlayer.id
                                                             ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30'
-                                                            : 'bg-cyan-500 hover:bg-cyan-400 text-white shadow-cyan-900/20 hover:scale-110 active:scale-95'
+                                                            : `bg-cyan-500 text-white shadow-cyan-900/20 ${!!opponent ? 'opacity-50' : 'hover:bg-cyan-400 hover:scale-110 active:scale-95'}`
                                                         }`}>
                                                         {opponent?.id === lobbyPlayer.id || successInviteIds.has(lobbyPlayer.id) ? (
                                                             <Check className="w-5 h-5 text-blue-200" />
