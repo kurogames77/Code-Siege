@@ -331,6 +331,9 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             navigate(`/arena-battle/b-${Math.floor(Math.random() * 9000) + 1000}`, {
                 state: {
                     opponent: opponent.name,
+                    opponentAvatar: opponent.avatar,
+                    opponentRankName: opponent.rankName,
+                    opponentRankIcon: opponent.rankIcon,
                     language: selectedLanguage,
                     mode: selectedMode,
                     wager: selectedWager,

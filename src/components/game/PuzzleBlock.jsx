@@ -68,6 +68,11 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
             case 'string': return { from: '#a855f7', to: '#9333ea' }; // Purple 500-600
             case 'keyword': return { from: '#22d3ee', to: '#0891b2' }; // Cyan 400-600
             case 'value': return { from: '#10b981', to: '#059669' }; // Emerald 500-600
+            case 'variable': return { from: '#3b82f6', to: '#2563eb' }; // Blue 500-600
+            case 'print': return { from: '#f59e0b', to: '#d97706' }; // Amber 500-600
+            case 'operator': return { from: '#ec4899', to: '#db2777' }; // Pink 500-600
+            case 'loop': return { from: '#8b5cf6', to: '#7c3aed' }; // Violet 500-600
+            case 'condition': return { from: '#14b8a6', to: '#0d9488' }; // Teal 500-600
             default: return { from: '#475569', to: '#334155' }; // Slate 500-600
         }
     };

@@ -19,11 +19,12 @@ import VictoryModal from '../components/game/VictoryModal';
 import DefeatModal from '../components/game/DefeatModal';
 
 import { useUser } from '../contexts/UserContext';
+import { getRankFromExp as getRankData } from '../utils/rankSystem';
 
 const ArenaBattle = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { opponent = 'Unknown Recruiter', language = 'JavaScript', wager = '100' } = location.state || {};
+    const { opponent = 'Unknown Recruiter', opponentAvatar, opponentRankName, opponentRankIcon, language = 'JavaScript', wager = '100' } = location.state || {};
 
     // Mimic ChallengeModal State
     const [blocks, setBlocks] = useState([]);
@@ -316,70 +317,50 @@ const ArenaBattle = () => {
                     {/* Top HUD Bar */}
                     <div className="h-16 bg-[#050810] flex items-center justify-between px-6 border-b border-cyan-500/20 shrink-0 relative z-40">
                         <div className="flex items-center gap-8">
-                            <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 bg-cyan-500 rounded-full animate-ping" />
-                                <span className="text-cyan-500 font-mono text-xs tracking-[0.2em] uppercase">Simloop_Active</span>
-                            </div>
-                            <div className="h-8 w-px bg-cyan-900/50" />
                             <CodeTimer
                                 onExpire={handleTimeout}
                                 onWarning={() => playCountdownVoice("Warning. 10 seconds remaining.")}
                             />
-                            {/* HINT BUTTON REMOVED */}
                         </div>
 
                         {/* Top Center: Progress/Versus Bar */}
                         <div className="absolute left-1/2 -translate-x-1/2 top-0 h-full flex items-center gap-8">
                             {/* Player Side (Left) */}
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 border border-cyan-500/50 bg-black/50 p-0.5 relative">
+                                <div className="w-10 h-10 rounded-lg border border-cyan-500/50 bg-black/50 overflow-hidden relative">
                                     <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-cyan-500" />
                                     <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-cyan-500" />
                                     <img
-                                        src={user?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"}
+                                        src={user?.avatar}
                                         alt="Player"
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
-                                <div className="flex flex-col items-end min-w-[140px]">
-                                    <div className="flex items-baseline gap-2 mb-0.5">
-                                        <span className="font-galsb text-[10px] text-cyan-300 tracking-wider uppercase">{user?.rank || 'Novice'}</span>
+                                {user?.rankIcon && <img src={user.rankIcon} alt="Rank" className="w-8 h-8 object-contain" />}
+                                <div className="flex flex-col items-end">
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="font-galsb text-[10px] text-cyan-300 tracking-wider uppercase">{user?.rankName || 'Novice'}</span>
                                         <span className="font-galsb text-sm text-white tracking-widest uppercase">{user?.name || 'Player'}</span>
-                                    </div>
-                                    <div className="w-full h-2 bg-slate-800/80 skew-x-[-10deg] p-[1px] relative overflow-hidden">
-                                        <motion.div
-                                            initial={{ width: "0%" }}
-                                            animate={{ width: "45%" }}
-                                            className="h-full bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.6)]"
-                                        />
-                                        <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_2px,#000_2px)] bg-[size:4px_100%] opacity-30" />
                                     </div>
                                 </div>
                             </div>
                             <div className="font-galsb text-red-500 italic text-xl animate-pulse">VS</div>
                             {/* Opponent Side (Right) */}
                             <div className="flex items-center gap-3">
-                                <div className="flex flex-col items-start min-w-[140px]">
-                                    <div className="flex items-baseline gap-2 mb-0.5">
+                                <div className="flex flex-col items-start">
+                                    <div className="flex items-baseline gap-2">
                                         <span className="font-galsb text-sm text-white tracking-widest uppercase">{opponent}</span>
-                                        <span className="font-galsb text-[10px] text-red-400 tracking-wider uppercase">VETERAN</span>
-                                    </div>
-                                    <div className="w-full h-2 bg-slate-800/80 skew-x-[-10deg] p-[1px] relative overflow-hidden">
-                                        <motion.div
-                                            initial={{ width: "0%" }}
-                                            animate={{ width: "65%" }}
-                                            className="h-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.6)]"
-                                        />
-                                        <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_2px,#000_2px)] bg-[size:4px_100%] opacity-30" />
+                                        <span className="font-galsb text-[10px] text-red-400 tracking-wider uppercase">{opponentRankName || 'Novice'}</span>
                                     </div>
                                 </div>
-                                <div className="w-10 h-10 border border-red-500/50 bg-black/50 p-0.5 relative">
+                                {opponentRankIcon && <img src={opponentRankIcon} alt="Rank" className="w-8 h-8 object-contain" />}
+                                <div className="w-10 h-10 rounded-lg border border-red-500/50 bg-black/50 overflow-hidden relative">
                                     <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-red-500" />
                                     <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-red-500" />
                                     <img
-                                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${opponent}`}
+                                        src={opponentAvatar}
                                         alt="Opponent"
-                                        className="w-full h-full object-cover grayscale opacity-80"
+                                        className="w-full h-full object-cover"
                                     />
                                 </div>
                             </div>
