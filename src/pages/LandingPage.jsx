@@ -145,7 +145,7 @@ const LandingPage = () => {
                 navigate('/play');
             }
         }
-    }, [isAuthenticated, user, navigate, location.state]);
+    }, [isAuthenticated, user, navigate, location.state, modal?.type]);
 
     const handleSubmit = async (event) => {
         event.preventDefault();

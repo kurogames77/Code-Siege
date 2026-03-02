@@ -37,7 +37,8 @@ export const UserProvider = ({ children }) => {
             id: profile?.id || authUser?.id,
             name: displayName,
             email: profile?.email || authUser?.email,
-            studentId: profile?.student_id || '',
+            // Fallback studentId to ID to prevent users without one from getting stuck in 'complete_profile' UI loops
+            studentId: profile?.student_id || profile?.id || authUser?.id || 'legacy-user',
             course: profile?.course || '',
             school: profile?.school || '',
             college: profile?.college || '',
