@@ -539,7 +539,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                             <select
                                                 value={selectedLanguage}
                                                 onChange={(e) => { playSelect(); setSelectedLanguage(e.target.value); }}
-                                                className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-cyan-500 focus:outline-none transition-colors cursor-pointer"
+                                                disabled={!!opponent}
+                                                className={`w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-cyan-500 focus:outline-none transition-colors ${!!opponent ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                             >
                                                 {courses.length > 0 ? (
                                                     courses.map((c) => (
@@ -561,7 +562,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                             <select
                                                 value={selectedDifficulty}
                                                 onChange={(e) => { playSelect(); setSelectedDifficulty(e.target.value); }}
-                                                className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-rose-500 focus:outline-none transition-colors cursor-pointer"
+                                                disabled={!!opponent}
+                                                className={`w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-rose-500 focus:outline-none transition-colors ${!!opponent ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                             >
                                                 <option value="Easy">Easy</option>
                                                 <option value="Medium">Medium</option>
@@ -578,7 +580,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                             <select
                                                 value={selectedMode}
                                                 onChange={(e) => { playSelect(); setSelectedMode(e.target.value); }}
-                                                className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-violet-500 focus:outline-none transition-colors"
+                                                disabled={!!opponent}
+                                                className={`w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-violet-500 focus:outline-none transition-colors ${!!opponent ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                             >
                                                 <option>Puzzle Blocks</option>
                                                 <option>Blocks</option>
@@ -595,7 +598,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                             <select
                                                 value={selectedWager}
                                                 onChange={(e) => { playSelect(); setSelectedWager(e.target.value); }}
-                                                className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-amber-500 focus:outline-none transition-colors"
+                                                disabled={!!opponent}
+                                                className={`w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-amber-500 focus:outline-none transition-colors ${!!opponent ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                             >
                                                 <option value="50">50 EXP</option>
                                                 <option value="100">100 EXP</option>
@@ -806,13 +810,13 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                                             <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest truncate">{friend.rankName}</p>
                                                         </div>
                                                     </div>
-                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-lg ${successInviteIds.has(friend.id)
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-lg ${opponent?.id === friend.id || successInviteIds.has(friend.id)
                                                         ? 'bg-blue-600/50 cursor-default'
                                                         : invitedFriendId === friend.id
                                                             ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30'
                                                             : 'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-900/20 hover:scale-110 active:scale-95'
                                                         }`}>
-                                                        {successInviteIds.has(friend.id) ? (
+                                                        {opponent?.id === friend.id || successInviteIds.has(friend.id) ? (
                                                             <Check className="w-5 h-5 text-blue-200" />
                                                         ) : invitedFriendId === friend.id ? (
                                                             <div className="w-5 h-5 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
@@ -856,13 +860,13 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                                             <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest truncate">{lobbyPlayer.rankName || 'In Lobby'}</p>
                                                         </div>
                                                     </div>
-                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-lg ${successInviteIds.has(lobbyPlayer.id)
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 shadow-lg ${opponent?.id === lobbyPlayer.id || successInviteIds.has(lobbyPlayer.id)
                                                         ? 'bg-blue-600/50 cursor-default'
                                                         : invitedFriendId === lobbyPlayer.id
                                                             ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30'
                                                             : 'bg-cyan-500 hover:bg-cyan-400 text-white shadow-cyan-900/20 hover:scale-110 active:scale-95'
                                                         }`}>
-                                                        {successInviteIds.has(lobbyPlayer.id) ? (
+                                                        {opponent?.id === lobbyPlayer.id || successInviteIds.has(lobbyPlayer.id) ? (
                                                             <Check className="w-5 h-5 text-blue-200" />
                                                         ) : invitedFriendId === lobbyPlayer.id ? (
                                                             <div className="w-5 h-5 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
