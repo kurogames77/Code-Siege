@@ -25,7 +25,7 @@ import { supabase } from '../services/supabase';
 const ArenaBattle = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { opponent = 'Unknown Recruiter', opponentAvatar, opponentRankName, opponentRankIcon, language = 'JavaScript', wager = '100' } = location.state || {};
+    const { opponent = 'Unknown Recruiter', opponentAvatar, opponentRankName, opponentRankIcon, language = 'JavaScript', wager = '100', mode: lobbyMode = 'Puzzle Blocks', difficulty } = location.state || {};
 
     // Mimic ChallengeModal State
     const [blocks, setBlocks] = useState([]);
@@ -51,9 +51,16 @@ const ArenaBattle = () => {
     const arenaChannelRef = useRef(null);
     const [opponentWithdrew, setOpponentWithdrew] = useState(false);
 
-    // Level/Mode
+    // Level/Mode - use lobby selection
     const level = 1;
-    const mode = level >= 21 ? 'code' : level >= 11 ? 'brick' : 'jigsaw';
+    // Map lobby mode names to PuzzleBlock variant
+    const getActiveMode = () => {
+        if (lobbyMode === 'Text Code') return 'code';
+        if (lobbyMode === 'Puzzle Blocks') return 'brick';
+        if (lobbyMode === 'Interlocking Puzzle') return 'jigsaw';
+        return 'brick'; // default to brick for clean snapping
+    };
+    const mode = getActiveMode();
 
     const sensors = useSensors(useSensor(PointerSensor));
     const containerRef = useRef(null);
@@ -126,21 +133,28 @@ const ArenaBattle = () => {
         setIsWithdrawModalOpen(true);
     };
 
-    const handleConfirmWithdraw = () => {
+    const handleConfirmWithdraw = async () => {
         playClick();
         const wagerAmount = parseInt(wager, 10) || 100;
         updateExp(-wagerAmount);
 
-        // Broadcast withdrawal to opponent
+        // Broadcast withdrawal to opponent - await + delay to ensure message is sent
+        // before navigation unmounts the component and removes the channel
         if (arenaChannelRef.current) {
-            arenaChannelRef.current.send({
-                type: 'broadcast',
-                event: 'duel-withdraw',
-                payload: {
-                    withdrawnBy: user.id,
-                    withdrawnName: user.name
-                }
-            });
+            try {
+                await arenaChannelRef.current.send({
+                    type: 'broadcast',
+                    event: 'duel-withdraw',
+                    payload: {
+                        withdrawnBy: user.id,
+                        withdrawnName: user.name
+                    }
+                });
+                // Wait for the broadcast to be delivered before navigating
+                await new Promise(resolve => setTimeout(resolve, 500));
+            } catch (err) {
+                console.error('[ArenaBattle] Failed to send withdraw broadcast:', err);
+            }
         }
 
         navigate('/play', { state: { openDuelLobby: true } });
