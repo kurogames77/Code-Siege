@@ -338,7 +338,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                     language: selectedLanguage,
                     mode: selectedMode,
                     wager: selectedWager,
-                    difficulty: selectedDifficulty
+                    difficulty: selectedDifficulty,
+                    lobbyId: lobbyId
                 }
             });
         }

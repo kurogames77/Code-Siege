@@ -25,7 +25,7 @@ import { supabase } from '../services/supabase';
 const ArenaBattle = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { opponent = 'Unknown Recruiter', opponentAvatar, opponentRankName, opponentRankIcon, language = 'JavaScript', wager = '100', mode: lobbyMode = 'Puzzle Blocks', difficulty } = location.state || {};
+    const { opponent = 'Unknown Recruiter', opponentAvatar, opponentRankName, opponentRankIcon, language = 'JavaScript', wager = '100', mode: lobbyMode = 'Puzzle Blocks', difficulty, lobbyId } = location.state || {};
 
     // Mimic ChallengeModal State
     const [blocks, setBlocks] = useState([]);
@@ -104,10 +104,13 @@ const ArenaBattle = () => {
 
     // --- ARENA CHANNEL FOR DUEL COMMUNICATION ---
     useEffect(() => {
-        if (!user) return;
+        if (!user || !lobbyId) return;
 
-        const channel = supabase.channel('duel-arena', {
-            config: { broadcast: { self: false } }
+        const channelName = `duel-arena-${lobbyId}`;
+        console.log('[ArenaBattle] Subscribing to channel:', channelName);
+
+        const channel = supabase.channel(channelName, {
+            config: { broadcast: { ack: true, self: false } }
         });
         arenaChannelRef.current = channel;
 
@@ -121,11 +124,32 @@ const ArenaBattle = () => {
                     updateExp(wagerAmount);
                 }
             })
-            .subscribe();
+            .subscribe((status) => {
+                console.log('[ArenaBattle] Channel status:', status);
+            });
 
         return () => {
             supabase.removeChannel(channel);
         };
+    }, [user, lobbyId]);
+
+    // --- HANDLE TAB CLOSE / BROWSER CLOSE ---
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            if (arenaChannelRef.current && user) {
+                // Best-effort broadcast on tab close
+                arenaChannelRef.current.send({
+                    type: 'broadcast',
+                    event: 'duel-withdraw',
+                    payload: {
+                        withdrawnBy: user.id,
+                        withdrawnName: user.name
+                    }
+                });
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [user]);
 
     const handleWithdraw = () => {
