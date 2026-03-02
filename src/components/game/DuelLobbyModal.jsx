@@ -80,6 +80,12 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     const [successInviteIds, setSuccessInviteIds] = useState(new Set());
     const [lobbyId, setLobbyId] = useState(null);
 
+    // Refs to avoid stale closures in broadcast handlers
+    const matchStateRef = React.useRef(matchState);
+    const opponentRef = React.useRef(opponent);
+    React.useEffect(() => { matchStateRef.current = matchState; }, [matchState]);
+    React.useEffect(() => { opponentRef.current = opponent; }, [opponent]);
+
     // MODALS
     const [showAddFriendModal, setShowAddFriendModal] = useState(false);
     const [modalMode, setModalMode] = useState('opponent'); // 'friend' | 'opponent'
@@ -227,7 +233,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             })
             .on('broadcast', { event: 'duel-accept' }, ({ payload }) => {
                 // If we are the sender and the recipient accepted
-                if (payload.targetId === user.id && matchState === 'idle') {
+                console.log('[DuelLobby] Received duel-accept broadcast:', payload, 'current matchState:', matchStateRef.current);
+                if (payload.targetId === user.id && matchStateRef.current === 'idle') {
                     playSuccess();
                     setOpponent({
                         id: payload.senderId,
@@ -241,12 +248,14 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 }
             })
             .on('broadcast', { event: 'player-ready' }, ({ payload }) => {
-                if (opponent && payload.playerId === opponent.id) {
+                // Use ref to check opponent to avoid stale closure
+                const currentOpponent = opponentRef.current;
+                if (currentOpponent && payload.playerId === currentOpponent.id) {
                     setIsOpponentReady(payload.isReady);
                 }
             })
             .on('broadcast', { event: 'game-start' }, ({ payload }) => {
-                if (payload.targetId === user.id && matchState !== 'starting') {
+                if (payload.targetId === user.id && matchStateRef.current !== 'starting') {
                     console.log('[DuelLobby] Received game-start broadcast, starting countdown');
                     setMatchState('starting');
                     setStartCountdown(5);
@@ -268,7 +277,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [isOpen, user, opponent, matchState]);
+    }, [isOpen, user]);
 
     // --- TIMERS ---
 
