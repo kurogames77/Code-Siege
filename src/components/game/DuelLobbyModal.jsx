@@ -149,7 +149,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                         avatar: p.avatar_url,
                         rankName: rank.name,
                         rankIcon: rank.icon,
-                        course: p.course || 'N/A'
+                        course: p.course || 'N/A',
+                        lastActiveAt: p.last_active_at
                     };
                 });
                 setFriends(friendsList);
@@ -442,8 +443,18 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     // --- RENDER ---
 
     // --- COMPUTED ARRAYS ---
-    const onlineFriends = friends.filter(f => onlineUserIds.has(String(f.id)) || onlineUserIds.has(f.id));
-    const offlineFriends = friends.filter(f => !onlineUserIds.has(String(f.id)) && !onlineUserIds.has(f.id));
+    // A friend is online if Supabase Presence has their ID OR their last heartbeat was within 2 minutes
+    const isOnline = (f) => {
+        if (onlineUserIds.has(String(f.id)) || onlineUserIds.has(f.id)) return true;
+        if (f.lastActiveAt) {
+            const lastActive = new Date(f.lastActiveAt).getTime();
+            const now = Date.now();
+            return (now - lastActive) < 120000; // 2 minutes
+        }
+        return false;
+    };
+    const onlineFriends = friends.filter(isOnline);
+    const offlineFriends = friends.filter(f => !isOnline(f));
     const lobbyPlayersOnly = onlineUsers.filter(u => !friends.some(f => f.id === u.id));
 
     const formatTime = (seconds) => {

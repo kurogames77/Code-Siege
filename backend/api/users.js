@@ -329,7 +329,7 @@ router.get('/friends', authenticateUser, async (req, res) => {
         // Fetch friend profiles
         const { data: profiles, error: profileError } = await db
             .from('users')
-            .select('id, username, avatar_url, xp, course')
+            .select('id, username, avatar_url, xp, course, last_active_at')
             .in('id', uniqueIds);
 
         if (profileError) {
