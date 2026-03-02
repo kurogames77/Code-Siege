@@ -20,6 +20,7 @@ import DefeatModal from '../components/game/DefeatModal';
 
 import { useUser } from '../contexts/UserContext';
 import { getRankFromExp as getRankData } from '../utils/rankSystem';
+import { supabase } from '../services/supabase';
 
 const ArenaBattle = () => {
     const navigate = useNavigate();
@@ -47,6 +48,8 @@ const ArenaBattle = () => {
     const [showVictory, setShowVictory] = useState(false);
     const [showDefeat, setShowDefeat] = useState(false);
     const videoRef = useRef(null);
+    const arenaChannelRef = useRef(null);
+    const [opponentWithdrew, setOpponentWithdrew] = useState(false);
 
     // Level/Mode
     const level = 1;
@@ -92,6 +95,32 @@ const ArenaBattle = () => {
         }
     }, [opponent]); // Added opponent dependency
 
+    // --- ARENA CHANNEL FOR DUEL COMMUNICATION ---
+    useEffect(() => {
+        if (!user) return;
+
+        const channel = supabase.channel('duel-arena', {
+            config: { broadcast: { self: false } }
+        });
+        arenaChannelRef.current = channel;
+
+        channel
+            .on('broadcast', { event: 'duel-withdraw' }, ({ payload }) => {
+                console.log('[ArenaBattle] Opponent withdrew:', payload);
+                if (payload.withdrawnBy !== user.id) {
+                    // Opponent withdrew — this player wins!
+                    setOpponentWithdrew(true);
+                    const wagerAmount = parseInt(wager, 10) || 100;
+                    updateExp(wagerAmount);
+                }
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [user]);
+
     const handleWithdraw = () => {
         playClick();
         setIsWithdrawModalOpen(true);
@@ -101,6 +130,19 @@ const ArenaBattle = () => {
         playClick();
         const wagerAmount = parseInt(wager, 10) || 100;
         updateExp(-wagerAmount);
+
+        // Broadcast withdrawal to opponent
+        if (arenaChannelRef.current) {
+            arenaChannelRef.current.send({
+                type: 'broadcast',
+                event: 'duel-withdraw',
+                payload: {
+                    withdrawnBy: user.id,
+                    withdrawnName: user.name
+                }
+            });
+        }
+
         navigate('/play', { state: { openDuelLobby: true } });
     };
 
@@ -129,8 +171,8 @@ const ArenaBattle = () => {
         const isConnected = (b1, b2) => {
             const dx = b2.position.x - b1.position.x;
             const dy = b2.position.y - b1.position.y;
-            const BLOCK_WIDTH = 180;
-            const BLOCK_HEIGHT = 60;
+            const BLOCK_WIDTH = 140;
+            const BLOCK_HEIGHT = 48;
             const isHoriz = Math.abs(dx - BLOCK_WIDTH) < 10 && Math.abs(dy) < 10;
             const isVert = Math.abs(dy - BLOCK_HEIGHT) < 10 && Math.abs(dx) < 10;
             return isHoriz || isVert;
@@ -205,8 +247,8 @@ const ArenaBattle = () => {
                 }
             };
             const SNAP_THRESHOLD = 30;
-            const BLOCK_WIDTH = 180;
-            const BLOCK_HEIGHT = 60;
+            const BLOCK_WIDTH = 140;
+            const BLOCK_HEIGHT = 48;
             for (const other of newBlocks) {
                 if (other.id === active.id) continue;
                 const dx = updatedBlock.position.x - other.position.x;
@@ -308,6 +350,52 @@ const ArenaBattle = () => {
                         losses={{ exp: parseInt(wager, 10) || 100 }}
                         onRetry={handleResetGame}
                     />
+                </motion.div>
+            ) : opponentWithdrew ? (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-black/95 backdrop-blur-md"
+                >
+                    <motion.div
+                        initial={{ scale: 0.8, y: 30 }}
+                        animate={{ scale: 1, y: 0 }}
+                        transition={{ type: 'spring', bounce: 0.4 }}
+                        className="bg-[#0f0e17] border border-emerald-500/50 p-1 max-w-lg w-full relative"
+                    >
+                        <div className="absolute -inset-1 bg-emerald-600/20 blur animate-pulse" />
+                        <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-emerald-500 z-20" />
+                        <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-emerald-500 z-20" />
+                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-emerald-500 z-20" />
+                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-emerald-500 z-20" />
+                        <div className="bg-[#0b0a10] p-8 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.03)_1px,transparent_1px)] bg-[size:20px_20px] opacity-50" />
+                            <div className="relative z-10 flex flex-col items-center">
+                                <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6 ring-1 ring-emerald-500/50">
+                                    <Trophy className="w-8 h-8 text-emerald-500" />
+                                </div>
+                                <h2 className="text-3xl font-black text-emerald-400 mb-2 uppercase tracking-[0.2em] font-mono">
+                                    VICTORY!
+                                </h2>
+                                <div className="h-px w-24 bg-emerald-500/50 my-4" />
+                                <p className="text-emerald-200/80 font-mono text-sm mb-6 text-center leading-relaxed">
+                                    Your opponent <span className="text-white font-bold">{opponent}</span> has withdrawn from the duel.
+                                    You win by forfeit!
+                                </p>
+                                <div className="bg-emerald-950/20 border border-emerald-500/30 p-4 rounded-lg mb-6 w-full flex items-center justify-center gap-3">
+                                    <img src={expIcon} className="w-8 h-8 object-contain" alt="EXP" />
+                                    <span className="text-3xl font-black text-emerald-400 font-mono">+{parseInt(wager, 10) || 100}</span>
+                                    <span className="text-sm font-bold text-emerald-400 self-end mb-1">EXP</span>
+                                </div>
+                                <Button
+                                    onClick={handleResetGame}
+                                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 uppercase tracking-widest font-bold text-sm shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                                >
+                                    Return to Lobby
+                                </Button>
+                            </div>
+                        </div>
+                    </motion.div>
                 </motion.div>
             ) : (
                 <>
