@@ -91,12 +91,34 @@ export const UserProvider = ({ children }) => {
             setIsAuthenticated(false);
         } catch (error) {
             console.error('[Auth] checkAuth error:', error);
-            if (error.message && !error.message.includes('Invalid token') && !error.message.includes('401')) {
-                console.error('Auth check failed:', error);
+            // Only clear the token on definitive auth rejections.
+            // Do NOT clear on network errors or other transient failures,
+            // as that would log the user out across tabs unnecessarily.
+            const isAuthError =
+                (error.message && (
+                    error.message.includes('Invalid token') ||
+                    error.message.includes('401') ||
+                    error.message.includes('Unauthorized') ||
+                    error.message.includes('jwt expired')
+                )) ||
+                error.status === 401;
+
+            if (isAuthError) {
+                console.log('[Auth] Definitive auth error — clearing token.');
+                localStorage.removeItem('auth_token');
+                setUser(null);
+                setIsAuthenticated(false);
+            } else {
+                // Transient error (network, server, etc.) — keep existing auth state
+                console.warn('[Auth] Transient error during auth check — keeping existing state.');
+                // If we already have a token but couldn't verify, keep loading=false but don't log out
+                const existingToken = localStorage.getItem('auth_token');
+                if (!existingToken) {
+                    setUser(null);
+                    setIsAuthenticated(false);
+                }
+                // If token exists but check failed transiently, leave user/isAuthenticated as-is
             }
-            localStorage.removeItem('auth_token');
-            setUser(null);
-            setIsAuthenticated(false);
         } finally {
             setLoading(false);
         }

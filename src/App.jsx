@@ -27,6 +27,7 @@ import { UserProvider } from './contexts/UserContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import ThemeOverlay from './components/game/ThemeOverlay';
+import ProtectedRoute from './components/common/ProtectedRoute';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import MainMusicPlayer from './components/common/MainMusicPlayer';
 import GlobalAudioControl from './components/common/GlobalAudioControl';
@@ -63,27 +64,29 @@ function App() {
                   <ThemeOverlay />
                   <InactivityGuard>
                     <Routes>
+                      {/* Public routes - no auth required */}
                       <Route path="/" element={<LandingPage />} />
-                      <Route path="/play" element={<PlayPage />} />
-                      <Route path="/tower/:id" element={<TowerView />} />
-                      <Route path="/tower-tydorin" element={<TowerTydorinView />} />
-                      <Route path="/gamecode-tydorin/:floor/:towerId" element={<GameCodeTydorin />} />
-                      <Route path="/tower-shadow" element={<TowerShadowView />} />
-                      <Route path="/gamecode-shadow/:floor/:towerId" element={<GameCodeShadow />} />
-                      <Route path="/gamecode/:floor/:towerId" element={<GameCode />} />
-                      <Route path="/arena-battle/:battleId" element={<ArenaBattle />} />
-                      <Route path="/grand-arena/:battleId" element={<GrandArena />} />
-                      <Route path="/instructor" element={<InstructorPage />} />
                       <Route path="/ConfirmationPage" element={<ConfirmationPage />} />
-                      <Route path="/admin" element={<AdminPage />} />
-                      <Route path="/tower-prytody" element={<TowerPrytodyView />} />
-                      <Route path="/gamecode-prytody/:floor/:towerId" element={<GameCodePrytody />} />
-                      <Route path="/tower-abyss" element={<TowerAbyssView />} />
-                      <Route path="/gamecode-abyss/:floor/:towerId" element={<GameCodeAbyss />} />
-                      <Route path="/tower-aeterd" element={<TowerAeterdView />} />
-                      <Route path="/gamecode-aeterd/:floor/:towerId" element={<GameCodeAeterd />} />
-
                       <Route path="/payment-callback" element={<PaymentCallbackPage />} />
+
+                      {/* Protected routes - require authentication */}
+                      <Route path="/play" element={<ProtectedRoute><PlayPage /></ProtectedRoute>} />
+                      <Route path="/tower/:id" element={<ProtectedRoute><TowerView /></ProtectedRoute>} />
+                      <Route path="/tower-tydorin" element={<ProtectedRoute><TowerTydorinView /></ProtectedRoute>} />
+                      <Route path="/gamecode-tydorin/:floor/:towerId" element={<ProtectedRoute><GameCodeTydorin /></ProtectedRoute>} />
+                      <Route path="/tower-shadow" element={<ProtectedRoute><TowerShadowView /></ProtectedRoute>} />
+                      <Route path="/gamecode-shadow/:floor/:towerId" element={<ProtectedRoute><GameCodeShadow /></ProtectedRoute>} />
+                      <Route path="/gamecode/:floor/:towerId" element={<ProtectedRoute><GameCode /></ProtectedRoute>} />
+                      <Route path="/arena-battle/:battleId" element={<ProtectedRoute><ArenaBattle /></ProtectedRoute>} />
+                      <Route path="/grand-arena/:battleId" element={<ProtectedRoute><GrandArena /></ProtectedRoute>} />
+                      <Route path="/instructor" element={<ProtectedRoute><InstructorPage /></ProtectedRoute>} />
+                      <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+                      <Route path="/tower-prytody" element={<ProtectedRoute><TowerPrytodyView /></ProtectedRoute>} />
+                      <Route path="/gamecode-prytody/:floor/:towerId" element={<ProtectedRoute><GameCodePrytody /></ProtectedRoute>} />
+                      <Route path="/tower-abyss" element={<ProtectedRoute><TowerAbyssView /></ProtectedRoute>} />
+                      <Route path="/gamecode-abyss/:floor/:towerId" element={<ProtectedRoute><GameCodeAbyss /></ProtectedRoute>} />
+                      <Route path="/tower-aeterd" element={<ProtectedRoute><TowerAeterdView /></ProtectedRoute>} />
+                      <Route path="/gamecode-aeterd/:floor/:towerId" element={<ProtectedRoute><GameCodeAeterd /></ProtectedRoute>} />
                     </Routes>
                   </InactivityGuard>
                 </QuestProvider>
