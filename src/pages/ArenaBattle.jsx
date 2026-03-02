@@ -20,7 +20,7 @@ import DefeatModal from '../components/game/DefeatModal';
 
 import { useUser } from '../contexts/UserContext';
 import { getRankFromExp as getRankData } from '../utils/rankSystem';
-import { supabase } from '../services/supabase';
+import supabase from '../lib/supabase';
 
 const ArenaBattle = () => {
     const navigate = useNavigate();
@@ -175,7 +175,7 @@ const ArenaBattle = () => {
                     }
                 });
                 // Wait for the broadcast to be delivered before navigating
-                await new Promise(resolve => setTimeout(resolve, 500));
+                await new Promise(resolve => setTimeout(resolve, 1500));
             } catch (err) {
                 console.error('[ArenaBattle] Failed to send withdraw broadcast:', err);
             }
