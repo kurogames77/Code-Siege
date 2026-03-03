@@ -168,6 +168,13 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     useEffect(() => {
         if (!isOpen || !user) return;
         fetchFriends();
+
+        // Periodically re-fetch friends to get fresh last_active_at values
+        const refreshInterval = setInterval(() => {
+            fetchFriends();
+        }, 15000); // every 15 seconds
+
+        return () => clearInterval(refreshInterval);
     }, [isOpen, user, friendRefreshTrigger, fetchFriends]);
 
     // Real-time listener for friend request acceptances
@@ -444,14 +451,18 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     // --- RENDER ---
 
     // --- COMPUTED ARRAYS ---
-    // A friend is online if Supabase Presence has their ID OR their last heartbeat was within 2 minutes
+    // A friend is online if Supabase Presence has their ID OR their last heartbeat was within 3 minutes
     const isOnline = (f) => {
-        if (onlineUserIds.has(String(f.id)) || onlineUserIds.has(f.id)) return true;
+        const inPresence = onlineUserIds.has(String(f.id)) || onlineUserIds.has(f.id);
+        if (inPresence) return true;
         if (f.lastActiveAt) {
             const lastActive = new Date(f.lastActiveAt).getTime();
             const now = Date.now();
-            return (now - lastActive) < 120000; // 2 minutes
+            const diff = now - lastActive;
+            console.log(`[DuelLobby] isOnline check for ${f.name}: inPresence=${inPresence}, lastActiveAt=${f.lastActiveAt}, diff=${Math.round(diff / 1000)}s, onlineUserIds=[${Array.from(onlineUserIds).join(',')}]`);
+            return diff < 180000; // 3 minutes
         }
+        console.log(`[DuelLobby] isOnline check for ${f.name}: inPresence=${inPresence}, no lastActiveAt`);
         return false;
     };
     const onlineFriends = friends.filter(isOnline);
