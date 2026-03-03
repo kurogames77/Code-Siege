@@ -323,6 +323,21 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             interval = setInterval(() => {
                 setTimer((prev) => prev - 1);
             }, 1000);
+        } else if (matchState === 'lobby' && timer === 0 && opponent) {
+            // Auto-start the game when lobby timer expires and opponent is present
+            console.log('[DuelLobby] Timer expired, auto-starting game');
+            if (lobbyChannelRef.current) {
+                lobbyChannelRef.current.send({
+                    type: 'broadcast',
+                    event: 'game-start',
+                    payload: {
+                        targetId: opponent?.id,
+                        startedBy: user.id
+                    }
+                });
+            }
+            setMatchState('starting');
+            setStartCountdown(5);
         }
         return () => clearInterval(interval);
     }, [matchState, timer]);
