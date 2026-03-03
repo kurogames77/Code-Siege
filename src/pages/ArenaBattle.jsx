@@ -55,10 +55,10 @@ const ArenaBattle = () => {
     const level = 1;
     // Map lobby mode names to PuzzleBlock variant
     const getActiveMode = () => {
-        if (lobbyMode === 'Text Code') return 'code';
-        if (lobbyMode === 'Puzzle Blocks') return 'brick';
-        if (lobbyMode === 'Interlocking Puzzle') return 'jigsaw';
-        return 'brick'; // default to brick for clean snapping
+        if (lobbyMode === 'Hardcode') return 'code';
+        if (lobbyMode === 'Blocks') return 'brick';
+        if (lobbyMode === 'Puzzle Blocks') return 'jigsaw';
+        return 'jigsaw'; // default to jigsaw
     };
     const mode = getActiveMode();
 
