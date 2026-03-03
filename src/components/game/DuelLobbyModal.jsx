@@ -547,26 +547,31 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                     </div>
                                 )}
 
-                                <div className={`space-y-6 ${!!opponent ? 'pointer-events-none opacity-50' : ''}`}>
+                                <div className="space-y-6">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Language</label>
                                         <div className="relative group">
-                                            <div className="absolute inset-0 bg-cyan-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            <select
-                                                value={selectedLanguage}
-                                                onChange={(e) => { playSelect(); setSelectedLanguage(e.target.value); }}
-                                                disabled={!!opponent}
-                                                className={`w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-cyan-500 focus:outline-none transition-colors ${!!opponent ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                                            >
-                                                {courses.length > 0 ? (
-                                                    courses.map((c) => (
-                                                        <option key={c.id} value={c.name}>{c.name}</option>
-                                                    ))
-                                                ) : (
-                                                    <option disabled value="">No Languages Found</option>
-                                                )}
-                                            </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />
+                                            {!opponent && <div className="absolute inset-0 bg-cyan-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />}
+                                            {opponent ? (
+                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-sm px-4 py-3 rounded-xl cursor-not-allowed">
+                                                    {selectedLanguage || 'N/A'}
+                                                </div>
+                                            ) : (
+                                                <select
+                                                    value={selectedLanguage}
+                                                    onChange={(e) => { playSelect(); setSelectedLanguage(e.target.value); }}
+                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-cyan-500 focus:outline-none transition-colors cursor-pointer"
+                                                >
+                                                    {courses.length > 0 ? (
+                                                        courses.map((c) => (
+                                                            <option key={c.id} value={c.name}>{c.name}</option>
+                                                        ))
+                                                    ) : (
+                                                        <option disabled value="">No Languages Found</option>
+                                                    )}
+                                                </select>
+                                            )}
+                                            {!opponent && <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />}
                                         </div>
                                     </div>
 
@@ -574,55 +579,70 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Difficulty</label>
                                         <div className="relative group">
-                                            <div className="absolute inset-0 bg-rose-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            <select
-                                                value={selectedDifficulty}
-                                                onChange={(e) => { playSelect(); setSelectedDifficulty(e.target.value); }}
-                                                disabled={!!opponent}
-                                                className={`w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-rose-500 focus:outline-none transition-colors ${!!opponent ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                                            >
-                                                <option value="Easy">Easy</option>
-                                                <option value="Medium">Medium</option>
-                                                <option value="Hard">Hard</option>
-                                            </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />
+                                            {!opponent && <div className="absolute inset-0 bg-rose-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />}
+                                            {opponent ? (
+                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-sm px-4 py-3 rounded-xl cursor-not-allowed">
+                                                    {selectedDifficulty}
+                                                </div>
+                                            ) : (
+                                                <select
+                                                    value={selectedDifficulty}
+                                                    onChange={(e) => { playSelect(); setSelectedDifficulty(e.target.value); }}
+                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-rose-500 focus:outline-none transition-colors cursor-pointer"
+                                                >
+                                                    <option value="Easy">Easy</option>
+                                                    <option value="Medium">Medium</option>
+                                                    <option value="Hard">Hard</option>
+                                                </select>
+                                            )}
+                                            {!opponent && <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />}
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mode</label>
                                         <div className="relative group">
-                                            <div className="absolute inset-0 bg-violet-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            <select
-                                                value={selectedMode}
-                                                onChange={(e) => { playSelect(); setSelectedMode(e.target.value); }}
-                                                disabled={!!opponent}
-                                                className={`w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-violet-500 focus:outline-none transition-colors ${!!opponent ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                                            >
-                                                <option>Puzzle Blocks</option>
-                                                <option>Blocks</option>
-                                                <option>Hardcode</option>
-                                            </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />
+                                            {!opponent && <div className="absolute inset-0 bg-violet-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />}
+                                            {opponent ? (
+                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-sm px-4 py-3 rounded-xl cursor-not-allowed">
+                                                    {selectedMode}
+                                                </div>
+                                            ) : (
+                                                <select
+                                                    value={selectedMode}
+                                                    onChange={(e) => { playSelect(); setSelectedMode(e.target.value); }}
+                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-violet-500 focus:outline-none transition-colors cursor-pointer"
+                                                >
+                                                    <option>Puzzle Blocks</option>
+                                                    <option>Blocks</option>
+                                                    <option>Hardcode</option>
+                                                </select>
+                                            )}
+                                            {!opponent && <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />}
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Wager (EXP)</label>
                                         <div className="relative group">
-                                            <div className="absolute inset-0 bg-amber-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            <select
-                                                value={selectedWager}
-                                                onChange={(e) => { playSelect(); setSelectedWager(e.target.value); }}
-                                                disabled={!!opponent}
-                                                className={`w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-amber-500 focus:outline-none transition-colors ${!!opponent ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                                            >
-                                                <option value="50">50 EXP</option>
-                                                <option value="100">100 EXP</option>
-                                                <option value="250">250 EXP</option>
-                                                <option value="500">500 EXP</option>
-                                            </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />
+                                            {!opponent && <div className="absolute inset-0 bg-amber-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />}
+                                            {opponent ? (
+                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-sm px-4 py-3 rounded-xl cursor-not-allowed">
+                                                    {selectedWager} EXP
+                                                </div>
+                                            ) : (
+                                                <select
+                                                    value={selectedWager}
+                                                    onChange={(e) => { playSelect(); setSelectedWager(e.target.value); }}
+                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-amber-500 focus:outline-none transition-colors cursor-pointer"
+                                                >
+                                                    <option value="50">50 EXP</option>
+                                                    <option value="100">100 EXP</option>
+                                                    <option value="250">250 EXP</option>
+                                                    <option value="500">500 EXP</option>
+                                                </select>
+                                            )}
+                                            {!opponent && <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />}
                                         </div>
                                     </div>
 
