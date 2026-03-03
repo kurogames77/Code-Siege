@@ -541,8 +541,13 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                             {/* LEFT SIDEBAR: SETTINGS */}
                             <div className="w-80 bg-black/60 border-r border-white/5 flex flex-col p-6 backdrop-blur-md" onClick={(e) => e.stopPropagation()}>
                                 <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-6">Match Settings</h3>
+                                {!!opponent && (
+                                    <div className="mb-4 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center gap-2">
+                                        <span className="text-amber-400 text-[10px] font-black uppercase tracking-widest">🔒 Settings Locked</span>
+                                    </div>
+                                )}
 
-                                <div className="space-y-6">
+                                <div className={`space-y-6 ${!!opponent ? 'pointer-events-none opacity-50' : ''}`}>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Language</label>
                                         <div className="relative group">
