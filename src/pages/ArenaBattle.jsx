@@ -124,6 +124,18 @@ const ArenaBattle = () => {
                     updateExp(wagerAmount);
                 }
             })
+            .on('broadcast', { event: 'duel-complete' }, ({ payload }) => {
+                console.log('[ArenaBattle] Opponent completed the puzzle:', payload);
+                if (payload.winnerId !== user.id) {
+                    // Opponent solved it first — this player loses
+                    setBattleOutcome('lose');
+                    setIsFailed(true);
+                    setResult({ type: 'error', message: `> ${opponent} solved the puzzle first! You lose.` });
+                    setTimeout(() => {
+                        setShowPostScene(true);
+                    }, 1000);
+                }
+            })
             .subscribe((status) => {
                 console.log('[ArenaBattle] Channel status:', status);
             });
@@ -257,6 +269,18 @@ const ArenaBattle = () => {
             const wagerAmount = parseInt(wager, 10) || 100;
             updateExp(wagerAmount);
             setBattleOutcome('win');
+
+            // Broadcast to opponent that we completed the puzzle
+            if (arenaChannelRef.current) {
+                arenaChannelRef.current.send({
+                    type: 'broadcast',
+                    event: 'duel-complete',
+                    payload: {
+                        winnerId: user.id,
+                        winnerName: user.name
+                    }
+                });
+            }
 
             setTimeout(() => {
                 setShowPostScene(true);

@@ -175,6 +175,11 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
                     className="transition-colors duration-300"
                 />
 
+                {/* Clip to block shape to prevent overflow */}
+                <clipPath id={`clip-${id}`}>
+                    <rect x="4" y="2" width={width - 8} height={height - 4} />
+                </clipPath>
+
                 {/* Content Text */}
                 <text
                     x={width / 2}
@@ -182,10 +187,14 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
                     dominantBaseline="middle"
                     textAnchor="middle"
                     fill="white"
-                    className="font-mono font-bold text-sm tracking-tight pointer-events-none"
-                    style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }}
+                    clipPath={`url(#clip-${id})`}
+                    className="font-mono font-bold pointer-events-none"
+                    style={{
+                        fontSize: content.length > 25 ? '8px' : content.length > 18 ? '10px' : '12px',
+                        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))'
+                    }}
                 >
-                    {content}
+                    {content.length > 30 ? content.substring(0, 28) + '…' : content}
                 </text>
             </svg>
         </div>
