@@ -253,8 +253,8 @@ router.patch('/notifications/:id/respond', authenticateUser, async (req, res) =>
                     is_read: false
                 });
             }
-        } else if (notif.sender_id) {
-            // For declined or other notification types, still send response notification
+        } else if (notif.sender_id && notif.type === 'friend_request') {
+            // For declined friend requests, still send response notification
             const title = action === 'accepted'
                 ? `${senderName || 'Someone'} accepted your friend request!`
                 : `${senderName || 'Someone'} declined your friend request.`;
