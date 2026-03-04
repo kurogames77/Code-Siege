@@ -176,6 +176,8 @@ router.get('/notifications', authenticateUser, async (req, res) => {
                 )
             `)
             .eq('receiver_id', req.user.id)
+            .neq('type', 'duel_invite')
+            .neq('type', 'multiplayer_invite')
             .order('created_at', { ascending: false })
             .limit(30);
 
