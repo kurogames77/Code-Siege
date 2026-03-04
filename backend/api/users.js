@@ -331,9 +331,7 @@ router.get('/friends', authenticateUser, async (req, res) => {
         const { data: friendNotifs, error } = await db
             .from('notifications')
             .select('sender_id, receiver_id')
-            .eq('type', 'friend_request')
-            .eq('action_status', 'accepted')
-            .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`);
+            .or(`and(type.eq.friend_request,action_status.eq.accepted,sender_id.eq.${userId}),and(type.eq.friend_request,action_status.eq.accepted,receiver_id.eq.${userId})`);
 
         if (error) {
             console.error('Fetch friends error:', error);
