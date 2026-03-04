@@ -84,6 +84,20 @@ router.post('/friend-request', authenticateUser, async (req, res) => {
 
         const db = supabaseService || supabase;
 
+        // Check the user_progress table for existing friendship
+        // Friendships are stored as rows with tower_id = 'friend:<friend_uuid>'
+        const { data: existingFriendship, error: friendshipError } = await db
+            .from('user_progress')
+            .select('id')
+            .eq('user_id', senderId)
+            .eq('tower_id', `friend:${receiverId}`)
+            .eq('floor', 0)
+            .limit(1);
+
+        if (!friendshipError && existingFriendship && existingFriendship.length > 0) {
+            return res.json({ status: 'already_friends' });
+        }
+
         // Check if a friend_request notification already exists between these users
         const { data: existing, error: checkError } = await db
             .from('notifications')
@@ -223,8 +237,43 @@ router.patch('/notifications/:id/respond', authenticateUser, async (req, res) =>
             return res.status(400).json({ error: updateError.message });
         }
 
-        // Send a response notification back to the original sender
-        if (notif.sender_id) {
+        // If accepting a friend request, insert friendship rows into user_progress
+        if (action === 'accepted' && notif.type === 'friend_request' && notif.sender_id) {
+            // Insert friendship rows for BOTH users (so lookups work from either side)
+            // Uses tower_id='friend:<friend_uuid>' with floor=0
+            // The UNIQUE(user_id, tower_id, floor) constraint prevents duplicates
+            const { data: inserted, error: friendshipError } = await db
+                .from('user_progress')
+                .upsert([
+                    { user_id: notif.receiver_id, tower_id: `friend:${notif.sender_id}`, floor: 0, completed: true },
+                    { user_id: notif.sender_id, tower_id: `friend:${notif.receiver_id}`, floor: 0, completed: true }
+                ], { onConflict: 'user_id,tower_id,floor', ignoreDuplicates: true })
+                .select('id');
+
+            if (friendshipError) {
+                console.error('Friendship insert error:', friendshipError);
+            }
+
+            // Only send the "accepted" notification if this is a NEW friendship
+            // (upsert with ignoreDuplicates returns empty array if already existed)
+            const isNewFriendship = inserted && inserted.length > 0;
+
+            if (isNewFriendship) {
+                const title = `${senderName || 'Someone'} accepted your friend request!`;
+                const message = 'You are now friends.';
+
+                await db.from('notifications').insert({
+                    type: 'system',
+                    sender_id: req.user.id,
+                    receiver_id: notif.sender_id,
+                    title,
+                    message,
+                    action_status: 'viewed',
+                    is_read: false
+                });
+            }
+        } else if (notif.sender_id) {
+            // For declined or other notification types, still send response notification
             const title = action === 'accepted'
                 ? `${senderName || 'Someone'} accepted your friend request!`
                 : `${senderName || 'Someone'} declined your friend request.`;
@@ -299,27 +348,24 @@ router.get('/friends', authenticateUser, async (req, res) => {
         const db = supabaseService || supabase;
         const userId = req.user.id;
 
-        // Find all accepted friend_request notifications involving this user
-        const { data: notifs, error } = await db
-            .from('notifications')
-            .select('sender_id, receiver_id')
-            .eq('type', 'friend_request')
-            .eq('action_status', 'accepted')
-            .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`);
+        // Query user_progress for friendship rows (tower_id starts with 'friend:')
+        const { data: friendRows, error } = await db
+            .from('user_progress')
+            .select('tower_id')
+            .eq('user_id', userId)
+            .like('tower_id', 'friend:%');
 
         if (error) {
             console.error('Fetch friends error:', error);
             return res.status(400).json({ error: error.message });
         }
 
-        if (!notifs || notifs.length === 0) {
+        if (!friendRows || friendRows.length === 0) {
             return res.json({ friends: [] });
         }
 
-        // Extract unique friend IDs
-        const friendIds = notifs.map(n =>
-            n.sender_id === userId ? n.receiver_id : n.sender_id
-        ).filter(id => id !== userId);
+        // Extract friend IDs from tower_id format 'friend:<uuid>'
+        const friendIds = friendRows.map(r => r.tower_id.replace('friend:', ''));
         const uniqueIds = [...new Set(friendIds)];
 
         if (uniqueIds.length === 0) {
