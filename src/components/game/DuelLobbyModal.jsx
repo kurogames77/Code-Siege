@@ -84,8 +84,16 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     // Refs to avoid stale closures in broadcast handlers
     const matchStateRef = React.useRef(matchState);
     const opponentRef = React.useRef(opponent);
+    const selectedLanguageRef = React.useRef(selectedLanguage);
+    const selectedDifficultyRef = React.useRef(selectedDifficulty);
+    const selectedModeRef = React.useRef(selectedMode);
+    const selectedWagerRef = React.useRef(selectedWager);
     React.useEffect(() => { matchStateRef.current = matchState; }, [matchState]);
     React.useEffect(() => { opponentRef.current = opponent; }, [opponent]);
+    React.useEffect(() => { selectedLanguageRef.current = selectedLanguage; }, [selectedLanguage]);
+    React.useEffect(() => { selectedDifficultyRef.current = selectedDifficulty; }, [selectedDifficulty]);
+    React.useEffect(() => { selectedModeRef.current = selectedMode; }, [selectedMode]);
+    React.useEffect(() => { selectedWagerRef.current = selectedWager; }, [selectedWager]);
 
     // MODALS
     const [showAddFriendModal, setShowAddFriendModal] = useState(false);
@@ -218,9 +226,9 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     }, [isOpen]);
 
     useEffect(() => {
-        if (!isOpen || !user) return;
+        if (!isOpen || !user || !lobbyId) return;
 
-        const channel = supabase.channel('duel-lobby', {
+        const channel = supabase.channel(`duel-lobby-${lobbyId}`, {
             config: {
                 presence: {
                     key: user.id,
@@ -249,7 +257,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 }
             })
             .on('broadcast', { event: 'duel-accept' }, ({ payload }) => {
-                // If we are the sender and the recipient accepted
+                // If we are the sender (host) and the recipient (guest) accepted
                 console.log('[DuelLobby] Received duel-accept broadcast:', payload, 'current matchState:', matchStateRef.current);
                 if (payload.targetId === user.id && matchStateRef.current === 'idle') {
                     playSuccess();
@@ -262,6 +270,29 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                     });
                     setMatchState('lobby');
                     setTimer(60);
+
+                    // Host sends current settings to the guest
+                    channel.send({
+                        type: 'broadcast',
+                        event: 'sync-settings',
+                        payload: {
+                            targetId: payload.senderId,
+                            language: selectedLanguageRef.current,
+                            difficulty: selectedDifficultyRef.current,
+                            mode: selectedModeRef.current,
+                            wager: selectedWagerRef.current
+                        }
+                    });
+                }
+            })
+            .on('broadcast', { event: 'sync-settings' }, ({ payload }) => {
+                // Guest receives the host's match settings
+                if (payload.targetId === user.id) {
+                    console.log('[DuelLobby] Received sync-settings from host:', payload);
+                    setSelectedLanguage(payload.language);
+                    setSelectedDifficulty(payload.difficulty);
+                    setSelectedMode(payload.mode);
+                    setSelectedWager(payload.wager);
                 }
             })
             .on('broadcast', { event: 'player-ready' }, ({ payload }) => {
@@ -313,7 +344,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [isOpen, user]);
+    }, [isOpen, user, lobbyId]);
 
     // --- TIMERS ---
 
