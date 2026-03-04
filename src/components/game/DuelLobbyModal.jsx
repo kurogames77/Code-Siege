@@ -11,7 +11,9 @@ import lobbyMusic from '../../assets/sounds/lobbymusic.mp3';
 import useSound from '../../hooks/useSound';
 import { useUser } from '../../contexts/UserContext';
 import supabase from '../../lib/supabase';
-import { userAPI } from '../../services/api';
+import { authAPI, userAPI } from '../../services/api';
+import { getRankFromExp } from '../../utils/rankSystem';
+import heroStatic from '../../assets/hero/hero-static.png';
 import rankGold from '../../assets/rankbadges/rank6.png';
 import rankSilver from '../../assets/rankbadges/rank3.png';
 import rankDiamond from '../../assets/rankbadges/rank12.png';
@@ -1151,15 +1153,7 @@ const AddFriendModal = ({ isOpen, onClose, mode }) => {
         }
     }, [isOpen]);
 
-    // Determine rank from XP
-    const getRankName = (xp) => {
-        if (xp >= 5000) return 'Diamond';
-        if (xp >= 3000) return 'Platinum';
-        if (xp >= 1500) return 'Gold';
-        if (xp >= 500) return 'Silver';
-        if (xp >= 100) return 'Bronze';
-        return 'Novice';
-    };
+    // Removed local rank determination, using getRankFromExp from rankSystem.js
 
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -1242,18 +1236,25 @@ const AddFriendModal = ({ isOpen, onClose, mode }) => {
                             <div className="flex items-center gap-4 relative z-10">
                                 {/* Avatar */}
                                 <div className="w-16 h-16 rounded-xl border-2 border-cyan-500/40 bg-slate-800 overflow-hidden shadow-[0_0_20px_rgba(34,211,238,0.2)] shrink-0">
-                                    <img
-                                        src={foundUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${foundUser.username}`}
-                                        alt="Avatar"
-                                        className="w-full h-full object-cover"
-                                    />
+                                    {foundUser.avatar_url ? (
+                                        <img
+                                            src={foundUser.avatar_url}
+                                            alt="Avatar"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-slate-800">
+                                            <User className="w-8 h-8 text-slate-500" />
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Info */}
                                 <div className="flex-1 min-w-0">
                                     <h4 className="text-white font-black text-lg uppercase tracking-wider truncate">{foundUser.username}</h4>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">{getRankName(foundUser.xp || 0)}</span>
+                                        <img src={getRankFromExp(foundUser.xp || 0).icon} alt="Rank" className="w-5 h-5 object-contain" />
+                                        <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">{getRankFromExp(foundUser.xp || 0).name}</span>
                                         <span className="w-1 h-1 bg-slate-600 rounded-full" />
                                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{foundUser.course || 'N/A'}</span>
                                     </div>
