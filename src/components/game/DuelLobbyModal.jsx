@@ -13,7 +13,6 @@ import { useUser } from '../../contexts/UserContext';
 import supabase from '../../lib/supabase';
 import { authAPI, userAPI } from '../../services/api';
 import { getRankFromExp } from '../../utils/rankSystem';
-import heroStatic from '../../assets/hero/hero-static.png';
 import rankGold from '../../assets/rankbadges/rank6.png';
 import rankSilver from '../../assets/rankbadges/rank3.png';
 import rankDiamond from '../../assets/rankbadges/rank12.png';
