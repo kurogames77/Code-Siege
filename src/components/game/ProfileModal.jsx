@@ -1,12 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Camera, Trophy, Medal, Target, Swords, User, Users, History, Settings, Info, Image as ImageIcon, CheckCircle2, XCircle, Clock, Book, Bell, Lock, Globe, Edit, Save, Award, Download, Palette, Circle } from 'lucide-react';
+import { X, Camera, Trophy, Medal, Target, Swords, User, Users, History, Settings, Info, Image as ImageIcon, CheckCircle2, XCircle, Clock, Book, Bell, Lock, Globe, Edit, Save, Award, Download, Palette, Circle, KeyRound } from 'lucide-react';
 
 
 import useSound from '../../hooks/useSound';
 import { useUser } from '../../contexts/UserContext';
 import { useToast } from '../../contexts/ToastContext';
-import { useTheme } from '../../contexts/ThemeContext'; // Import Theme Context
+import { useTheme } from '../../contexts/ThemeContext';
+import { userAPI } from '../../services/api';
+import supabase from '../../lib/supabase';
 import heroAsset from '../../assets/hero1.png';
 import hero1aStatic from '../../assets/hero1a.png';
 import hero2Static from '../../assets/hero2.png';
@@ -27,6 +29,9 @@ const ProfileModal = ({ isOpen, onClose }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState({});
     const [isUploading, setIsUploading] = useState(false);
+    const [friendsList, setFriendsList] = useState([]);
+    const [friendsLoading, setFriendsLoading] = useState(false);
+    const [changingPassword, setChangingPassword] = useState(false);
     const fileInputRef = useRef(null);
     const { playClick, playCancel, playSelect, playSuccess } = useSound();
     const toast = useToast();
@@ -241,17 +246,34 @@ const ProfileModal = ({ isOpen, onClose }) => {
     );
 
     const renderFriendsContent = () => {
-        const friends = user?.friends || [];
-        const onlineFriends = friends.filter(f => onlineUserIds.has(String(f.id)) || onlineUserIds.has(f.id));
-        const offlineFriends = friends.filter(f => !onlineUserIds.has(String(f.id)) && !onlineUserIds.has(f.id));
+        const fetchFriends = async () => {
+            setFriendsLoading(true);
+            try {
+                const result = await userAPI.getFriends();
+                setFriendsList(result?.friends || result || []);
+            } catch (e) {
+                console.error('Failed to fetch friends:', e);
+            } finally {
+                setFriendsLoading(false);
+            }
+        };
+        // Only fetch once when this renders
+        if (!friendsLoading && friendsList.length === 0) fetchFriends();
+
+        const onlineFriends = friendsList.filter(f => onlineUserIds.has(String(f.id)) || onlineUserIds.has(f.id));
+        const offlineFriends = friendsList.filter(f => !onlineUserIds.has(String(f.id)) && !onlineUserIds.has(f.id));
         return (
             <div className="flex-1 p-12 overflow-y-auto custom-scrollbar">
                 <h3 className={`text-2xl font-black text-white italic uppercase tracking-widest mb-8 flex items-center gap-4`}>
                     <Users className={`w-6 h-6 text-${currentTheme.colors.primary}-400`} /> Friends
-                    <span className="ml-auto text-sm font-bold text-slate-500 normal-case tracking-normal">{friends.length} total</span>
+                    <span className="ml-auto text-sm font-bold text-slate-500 normal-case tracking-normal">{friendsList.length} total</span>
                 </h3>
 
-                {friends.length === 0 ? (
+                {friendsLoading ? (
+                    <div className="flex items-center justify-center py-20 opacity-40">
+                        <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                ) : friendsList.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
                         <Users className="w-16 h-16 text-slate-600 mb-4" />
                         <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">No friends yet</p>
@@ -265,8 +287,8 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                 {onlineFriends.map(friend => (
                                     <div key={friend.id} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-900/40 border border-white/5 hover:bg-white/5 transition-colors">
                                         <div className="relative shrink-0">
-                                            {friend.avatar ? (
-                                                <img src={friend.avatar} className="w-10 h-10 rounded-xl object-cover" alt="" />
+                                            {friend.avatar_url || friend.avatar ? (
+                                                <img src={friend.avatar_url || friend.avatar} className="w-10 h-10 rounded-xl object-cover" alt="" />
                                             ) : (
                                                 <div className="w-10 h-10 rounded-xl bg-slate-700 flex items-center justify-center">
                                                     <User className="w-5 h-5 text-slate-400" />
@@ -275,7 +297,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                             <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-slate-900" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-black text-white truncate">{friend.name}</p>
+                                            <p className="text-sm font-black text-white truncate">{friend.name || friend.full_name}</p>
                                             <p className={`text-[10px] font-bold text-${currentTheme.colors.primary}-400 uppercase tracking-widest`}>{friend.rankName || 'Siege Novice'}</p>
                                         </div>
                                         <span className="text-[10px] font-bold text-emerald-400 uppercase">Online</span>
@@ -289,8 +311,8 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                 {offlineFriends.map(friend => (
                                     <div key={friend.id} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-900/20 border border-white/5 opacity-60">
                                         <div className="relative shrink-0">
-                                            {friend.avatar ? (
-                                                <img src={friend.avatar} className="w-10 h-10 rounded-xl object-cover grayscale" alt="" />
+                                            {friend.avatar_url || friend.avatar ? (
+                                                <img src={friend.avatar_url || friend.avatar} className="w-10 h-10 rounded-xl object-cover grayscale" alt="" />
                                             ) : (
                                                 <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center">
                                                     <User className="w-5 h-5 text-slate-600" />
@@ -299,7 +321,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                             <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-slate-600 border-2 border-slate-900" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-black text-slate-400 truncate">{friend.name}</p>
+                                            <p className="text-sm font-black text-slate-400 truncate">{friend.name || friend.full_name}</p>
                                             <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{friend.rankName || 'Siege Novice'}</p>
                                         </div>
                                         <span className="text-[10px] font-bold text-slate-600 uppercase">Offline</span>
@@ -311,6 +333,24 @@ const ProfileModal = ({ isOpen, onClose }) => {
                 )}
             </div>
         );
+    };
+
+    const handleChangePassword = async () => {
+        if (!user?.email) return;
+        setChangingPassword(true);
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+                redirectTo: `${window.location.origin}/`,
+            });
+            if (error) throw error;
+            toast.success(`Password reset email sent to ${user.email}!`);
+            playSuccess();
+        } catch (err) {
+            console.error('Password reset failed:', err);
+            toast.error('Failed to send reset email. Try again.');
+        } finally {
+            setChangingPassword(false);
+        }
     };
 
     const renderHistoryContent = () => (
@@ -547,7 +587,6 @@ const ProfileModal = ({ isOpen, onClose }) => {
             </h3>
             <div className="space-y-6">
                 {[
-
                     { label: 'Profile Privacy', icon: <Lock className="w-4 h-4" />, status: 'Public' },
                     { label: 'College', icon: <Globe className="w-4 h-4" />, status: user.college || 'Not Set' },
                 ].map((setting, i) => (
@@ -561,6 +600,24 @@ const ProfileModal = ({ isOpen, onClose }) => {
                         <span className="text-xs font-black text-cyan-400 uppercase tracking-widest">{setting.status}</span>
                     </div>
                 ))}
+
+                {/* Change Password */}
+                <div
+                    onClick={handleChangePassword}
+                    className="flex items-center justify-between p-6 bg-slate-900/40 border border-white/5 rounded-3xl hover:bg-white/5 transition-colors cursor-pointer group"
+                >
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-slate-800 rounded-xl border border-white/5 text-slate-400 group-hover:text-cyan-400 transition-colors">
+                            <KeyRound className="w-4 h-4" />
+                        </div>
+                        <span className="text-sm font-black text-slate-200 uppercase tracking-widest">Change Password</span>
+                    </div>
+                    {changingPassword ? (
+                        <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                        <span className="text-xs font-black text-cyan-400 uppercase tracking-widest">Send Email</span>
+                    )}
+                </div>
 
                 <div className="mt-12 p-8 bg-rose-500/5 border border-rose-500/20 rounded-3xl">
                     <h4 className="text-xs font-black text-rose-400 uppercase tracking-widest mb-4">Account Actions</h4>

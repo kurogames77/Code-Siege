@@ -119,8 +119,11 @@ const LandingPage = () => {
         }
     }, [location]);
 
-    // Redirect if already authenticated
+    // Redirect if already authenticated — but NOT right after a logout
     useEffect(() => {
+        // If we just logged out, skip the redirect until auth state clears
+        if (location.state?.loggedOut) return;
+
         if (isAuthenticated && user) {
             // Check for incomplete profile (social login)
             if (!user.studentId) {

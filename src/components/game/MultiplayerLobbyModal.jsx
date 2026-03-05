@@ -675,49 +675,39 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                 <div key={i} className="relative group">
                                                     {/* Banner Shape */}
                                                     <div
-                                                        className={`w-44 h-[480px] relative flex flex-col transition-all duration-300 ${player
+                                                        className={`w-44 h-[520px] relative flex flex-col transition-all duration-300 ${player
                                                             ? (isGrey ? 'bg-slate-800 border-t-4 border-slate-600 grayscale' : 'bg-gradient-to-b from-cyan-900/80 to-blue-900/80 border-t-4 border-cyan-400')
                                                             : 'bg-slate-800/40 border-t-4 border-slate-600/40'
                                                             }`}
                                                         style={{ clipPath: 'polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%)' }}
                                                     >
                                                         {player ? (
-                                                            <div className={`flex flex-col items-center pt-8 px-4 h-full relative z-10 ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
-                                                                {/* Hero Image - Full Body */}
-                                                                <div className="absolute inset-0 z-0 pointer-events-none flex items-end justify-center overflow-hidden">
+                                                            <div className={`flex flex-col items-center h-full relative ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
+                                                                {/* Hero Image — fills center-bottom, no cutoff */}
+                                                                <div className="absolute inset-0 z-0 pointer-events-none flex items-end justify-center overflow-hidden pb-12">
                                                                     <motion.img
-                                                                        initial={{ scale: 1.0, y: 50 }}
-                                                                        animate={{
-                                                                            scale: isGrey ? 0.9 : 1.05,
-                                                                            y: isGrey ? 20 : 70
-                                                                        }}
+                                                                        initial={{ scale: 1.0 }}
+                                                                        animate={{ scale: isGrey ? 0.9 : 1.0 }}
                                                                         src={player.heroImage || player.avatar}
-                                                                        className={`w-full h-full object-contain transition-all duration-700 ${isGrey ? 'brightness-50 grayscale' : 'drop-shadow-[0_20px_50px_rgba(34,211,238,0.4)] brightness-110'}`}
+                                                                        className={`w-full h-[85%] object-contain object-bottom transition-all duration-700 ${isGrey ? 'brightness-50 grayscale' : 'drop-shadow-[0_20px_50px_rgba(34,211,238,0.4)] brightness-110'}`}
                                                                         alt="Hero"
                                                                     />
-                                                                    <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent" />
+                                                                    <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/80 to-transparent" />
                                                                 </div>
 
-
-                                                                {/* User Info Overlay */}
-                                                                <div className="relative z-30 flex flex-col items-center pt-[60px] pointer-events-none w-full">
-                                                                    {/* Avatar Frame */}
-                                                                    <div className={`w-24 h-24 rounded-xl border-2 p-0.5 relative mb-3 transition-all duration-500 ${isGrey ? 'border-slate-500 grayscale' : 'border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.5)] scale-110'}`}>
-                                                                        <img src={player.avatar} className="w-full h-full object-cover rounded-lg" alt="" />
-
+                                                                {/* Top: Avatar + Name (compact, doesn't cover hero body) */}
+                                                                <div className="relative z-30 flex flex-col items-center pt-4 px-2 w-full pointer-events-none">
+                                                                    <div className={`w-14 h-14 rounded-lg border-2 p-0.5 mb-1.5 transition-all duration-500 ${isGrey ? 'border-slate-500' : 'border-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.5)]'}`}>
+                                                                        <img src={player.avatar} className="w-full h-full object-cover rounded-md" alt="" />
                                                                     </div>
-
-                                                                    <h3 className={`text-sm font-black italic uppercase tracking-tighter mb-1 truncate w-full text-center drop-shadow-[0_4px_12px_rgba(0,0,0,1)] ${isGrey ? 'text-slate-400' : 'text-white scale-110'}`}>{player.name}</h3>
-                                                                    <span className={`text-[10px] font-black uppercase tracking-[0.3em] shadow-black drop-shadow-sm ${isGrey ? 'text-slate-500' : 'text-cyan-400'}`}>{displayRankName}</span>
+                                                                    <h3 className={`text-[10px] font-black italic uppercase tracking-tighter text-center truncate w-full drop-shadow-[0_2px_8px_rgba(0,0,0,1)] ${isGrey ? 'text-slate-400' : 'text-white'}`}>{player.name}</h3>
+                                                                    <span className={`text-[9px] font-black uppercase tracking-[0.2em] drop-shadow-sm ${isGrey ? 'text-slate-500' : 'text-cyan-400'}`}>{displayRankName}</span>
                                                                 </div>
 
-                                                                {/* Rank Info - Bottom */}
-                                                                <div className="relative z-30 flex flex-col items-center pb-8 mt-auto pointer-events-none w-full">
-                                                                    <img src={displayRankIcon} className={`w-16 h-16 object-contain mb-1 drop-shadow-2xl transition-all ${isGrey ? 'grayscale opacity-50' : 'scale-110 shadow-cyan-500/20'}`} alt="Rank" />
-
+                                                                {/* Bottom: Rank Icon */}
+                                                                <div className="relative z-30 flex flex-col items-center pb-6 mt-auto pointer-events-none w-full">
+                                                                    <img src={displayRankIcon} className={`w-12 h-12 object-contain drop-shadow-2xl transition-all ${isGrey ? 'grayscale opacity-50' : 'scale-110'}`} alt="Rank" />
                                                                 </div>
-
-
                                                             </div>
                                                         ) : (
                                                             <div className="flex-1 flex flex-col items-center justify-center relative opacity-30">
