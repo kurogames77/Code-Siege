@@ -267,7 +267,10 @@ export const UserProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            authAPI.logout().catch(err => console.error('Logout API failed:', err));
+            // Clear Supabase session first (this prevents auto-login on F5)
+            await supabase.auth.signOut();
+            // Also notify backend (fire and forget)
+            authAPI.logout?.()?.catch?.(err => console.error('Logout API failed:', err));
         } catch (error) {
             console.error('Logout error:', error);
         } finally {

@@ -59,8 +59,9 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
     // Language & Wager Selection
     const [selectedMode, setSelectedMode] = useState('Ranked');
     const [isSearching, setIsSearching] = useState(false);
-    const [selectedLanguage, setSelectedLanguage] = useState(null);
-    const [selectedWager, setSelectedWager] = useState(null);
+    const [selectedLanguage, setSelectedLanguage] = useState('JavaScript');
+    const [selectedDifficulty, setSelectedDifficulty] = useState('Medium');
+    const [selectedWager, setSelectedWager] = useState(100);
     const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
     const [showWagerDropdown, setShowWagerDropdown] = useState(false);
 
@@ -498,6 +499,119 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                         {/* CONTENT AREA */}
                         <div className="flex-1 flex overflow-hidden">
 
+                            {/* LEFT SIDEBAR: MATCH SETTINGS */}
+                            <div className="w-80 bg-black/60 border-r border-white/5 flex flex-col p-6 backdrop-blur-md" onClick={(e) => e.stopPropagation()}>
+                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-6">Match Settings</h3>
+                                {matchState !== 'idle' && (
+                                    <div className="mb-4 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center gap-2">
+                                        <span className="text-amber-400 text-[10px] font-black uppercase tracking-widest">🔒 Settings Locked</span>
+                                    </div>
+                                )}
+
+                                <div className="space-y-6">
+                                    {/* Language */}
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Language</label>
+                                        <div className="relative group">
+                                            {matchState === 'idle' && <div className="absolute inset-0 bg-cyan-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />}
+                                            {matchState !== 'idle' ? (
+                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-sm px-4 py-3 rounded-xl cursor-not-allowed">
+                                                    {selectedLanguage || 'N/A'}
+                                                </div>
+                                            ) : (
+                                                <select
+                                                    value={selectedLanguage}
+                                                    onChange={(e) => { playSelect(); setSelectedLanguage(e.target.value); }}
+                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-cyan-500 focus:outline-none transition-colors cursor-pointer"
+                                                >
+                                                    {languages.map((lang) => (
+                                                        <option key={lang} value={lang}>{lang}</option>
+                                                    ))}
+                                                </select>
+                                            )}
+                                            {matchState === 'idle' && <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />}
+                                        </div>
+                                    </div>
+
+                                    {/* Difficulty */}
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Difficulty</label>
+                                        <div className="relative group">
+                                            {matchState === 'idle' && <div className="absolute inset-0 bg-rose-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />}
+                                            {matchState !== 'idle' ? (
+                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-sm px-4 py-3 rounded-xl cursor-not-allowed">
+                                                    {selectedDifficulty}
+                                                </div>
+                                            ) : (
+                                                <select
+                                                    value={selectedDifficulty}
+                                                    onChange={(e) => { playSelect(); setSelectedDifficulty(e.target.value); }}
+                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-rose-500 focus:outline-none transition-colors cursor-pointer"
+                                                >
+                                                    <option value="Easy">Easy</option>
+                                                    <option value="Medium">Medium</option>
+                                                    <option value="Hard">Hard</option>
+                                                </select>
+                                            )}
+                                            {matchState === 'idle' && <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />}
+                                        </div>
+                                    </div>
+
+                                    {/* Mode */}
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mode</label>
+                                        <div className="relative group">
+                                            {matchState === 'idle' && <div className="absolute inset-0 bg-violet-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />}
+                                            {matchState !== 'idle' ? (
+                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-sm px-4 py-3 rounded-xl cursor-not-allowed">
+                                                    {selectedMode}
+                                                </div>
+                                            ) : (
+                                                <select
+                                                    value={selectedMode}
+                                                    onChange={(e) => { playSelect(); setSelectedMode(e.target.value); }}
+                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-violet-500 focus:outline-none transition-colors cursor-pointer"
+                                                >
+                                                    <option value="Ranked">Ranked</option>
+                                                    <option value="Casual">Casual</option>
+                                                </select>
+                                            )}
+                                            {matchState === 'idle' && <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />}
+                                        </div>
+                                    </div>
+
+                                    {/* Wager */}
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Wager (EXP)</label>
+                                        <div className="relative group">
+                                            {matchState === 'idle' && <div className="absolute inset-0 bg-amber-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />}
+                                            {matchState !== 'idle' ? (
+                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-sm px-4 py-3 rounded-xl cursor-not-allowed">
+                                                    {selectedWager} EXP
+                                                </div>
+                                            ) : (
+                                                <select
+                                                    value={selectedWager}
+                                                    onChange={(e) => { playSelect(); setSelectedWager(Number(e.target.value)); }}
+                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-amber-500 focus:outline-none transition-colors cursor-pointer"
+                                                >
+                                                    {wagerOptions.map((amount) => (
+                                                        <option key={amount} value={amount}>{amount} EXP</option>
+                                                    ))}
+                                                </select>
+                                            )}
+                                            {matchState === 'idle' && <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />}
+                                        </div>
+                                    </div>
+
+                                    {/* Time Limit */}
+                                    <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase">Time Limit</p>
+                                        <p className="text-xl font-black text-white">10:00</p>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* CENTER: BANNERS */}
                             <div className="flex-1 flex flex-col items-center justify-center relative">
 
@@ -523,7 +637,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                         }
 
                                         // Visual State: Grey if in ready_check and not ready
-                                        const isGrey = matchState === 'ready_check' && !player.isReady;
+                                        const isGrey = matchState === 'ready_check' && !player?.isReady;
 
                                         return (
                                             <div key={i} className="relative group">
@@ -585,81 +699,11 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                     })}
                                 </div>
 
-                                {/* BOTTOM BAR: ACTION BUTTON WITH DROPDOWNS */}
+                                {/* BOTTOM BAR: ACTION BUTTON */}
                                 <div className="mt-12 flex items-center justify-center gap-6 relative">
                                     {inviteError && (
                                         <div className="absolute -top-16 bg-rose-500 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg animate-bounce">
                                             {inviteError}
-                                        </div>
-                                    )}
-
-                                    {/* Language Dropdown */}
-                                    {matchState === 'idle' && (
-                                        <div className="relative">
-                                            <button
-                                                onClick={() => {
-                                                    setShowLanguageDropdown(!showLanguageDropdown);
-                                                    setShowWagerDropdown(false);
-                                                }}
-                                                className="h-14 px-6 rounded-xl bg-slate-800 border-2 border-slate-700 hover:border-cyan-500 text-white font-bold transition-all flex items-center gap-2"
-                                            >
-                                                <span className="text-sm uppercase tracking-wider">
-                                                    {selectedLanguage || 'Select Language'}
-                                                </span>
-                                                <ChevronDown className="w-4 h-4" />
-                                            </button>
-                                            {showLanguageDropdown && (
-                                                <div className="absolute bottom-full mb-2 left-0 w-full bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-2xl z-50">
-                                                    {languages.map((lang) => (
-                                                        <button
-                                                            key={lang}
-                                                            onClick={() => {
-                                                                playSelect();
-                                                                setSelectedLanguage(lang);
-                                                                setShowLanguageDropdown(false);
-                                                            }}
-                                                            className="w-full px-4 py-3 text-left text-sm font-medium text-white hover:bg-cyan-500/20 transition-colors border-b border-slate-800 last:border-0"
-                                                        >
-                                                            {lang}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Wager Dropdown */}
-                                    {matchState === 'idle' && (
-                                        <div className="relative">
-                                            <button
-                                                onClick={() => {
-                                                    setShowWagerDropdown(!showWagerDropdown);
-                                                    setShowLanguageDropdown(false);
-                                                }}
-                                                className="h-14 px-6 rounded-xl bg-slate-800 border-2 border-slate-700 hover:border-amber-500 text-white font-bold transition-all flex items-center gap-2"
-                                            >
-                                                <span className="text-sm uppercase tracking-wider">
-                                                    {selectedWager ? `${selectedWager} EXP` : 'Select Wager'}
-                                                </span>
-                                                <ChevronDown className="w-4 h-4" />
-                                            </button>
-                                            {showWagerDropdown && (
-                                                <div className="absolute bottom-full mb-2 left-0 w-full bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-2xl z-50">
-                                                    {wagerOptions.map((amount) => (
-                                                        <button
-                                                            key={amount}
-                                                            onClick={() => {
-                                                                playSelect();
-                                                                setSelectedWager(amount);
-                                                                setShowWagerDropdown(false);
-                                                            }}
-                                                            className="w-full px-4 py-3 text-left text-sm font-medium text-white hover:bg-amber-500/20 transition-colors border-b border-slate-800 last:border-0"
-                                                        >
-                                                            {amount} EXP
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
                                         </div>
                                     )}
 
@@ -679,12 +723,10 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                     ) : (
                                         <button
                                             onClick={handleFindMatch}
-                                            disabled={!selectedLanguage || !selectedWager || matchState === 'searching'}
+                                            disabled={matchState === 'searching'}
                                             className={`h-14 px-16 rounded-full border-2 flex items-center justify-center gap-2 group transition-transform ${matchState === 'searching'
                                                 ? 'bg-slate-700 border-slate-500 text-slate-300'
-                                                : (!selectedLanguage || !selectedWager)
-                                                    ? 'bg-slate-700 border-slate-600 text-slate-500 cursor-not-allowed'
-                                                    : 'bg-gradient-to-b from-yellow-300 to-amber-500 border-yellow-200/50 shadow-[0_0_30px_rgba(245,158,11,0.4)] text-black hover:scale-105'
+                                                : 'bg-gradient-to-b from-yellow-300 to-amber-500 border-yellow-200/50 shadow-[0_0_30px_rgba(245,158,11,0.4)] text-black hover:scale-105'
                                                 }`}
                                         >
                                             <span className="font-black uppercase tracking-widest text-lg drop-shadow-sm">
