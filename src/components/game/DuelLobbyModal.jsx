@@ -436,6 +436,15 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             setSuccessInviteIds(prev => new Set([...prev, friend.id]));
             setInvitedFriendId(null);
             playSuccess();
+
+            // Revert the checkmark back to a plus sign after 10 seconds if they haven't joined
+            setTimeout(() => {
+                setSuccessInviteIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(friend.id);
+                    return next;
+                });
+            }, 10000);
         } catch (err) {
             console.error('Failed to send multi invite:', err);
             setInvitedFriendId(null);
