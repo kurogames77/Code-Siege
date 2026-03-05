@@ -500,114 +500,114 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                         <div className="flex-1 flex overflow-hidden">
 
                             {/* LEFT SIDEBAR: MATCH SETTINGS */}
-                            <div className="w-80 bg-black/60 border-r border-white/5 flex flex-col p-6 backdrop-blur-md" onClick={(e) => e.stopPropagation()}>
-                                <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-6">Match Settings</h3>
+                            <div className="w-56 bg-black/60 border-r border-white/5 flex flex-col p-4 backdrop-blur-md" onClick={(e) => e.stopPropagation()}>
+                                <h3 className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Match Settings</h3>
                                 {matchState !== 'idle' && (
-                                    <div className="mb-4 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center gap-2">
-                                        <span className="text-amber-400 text-[10px] font-black uppercase tracking-widest">🔒 Settings Locked</span>
+                                    <div className="mb-3 px-2 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center gap-1.5">
+                                        <span className="text-amber-400 text-[9px] font-black uppercase tracking-widest">🔒 Locked</span>
                                     </div>
                                 )}
 
-                                <div className="space-y-6">
+                                <div className="space-y-4">
                                     {/* Language */}
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Language</label>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Language</label>
                                         <div className="relative group">
-                                            {matchState === 'idle' && <div className="absolute inset-0 bg-cyan-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />}
+                                            {matchState === 'idle' && <div className="absolute inset-0 bg-cyan-500/20 blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />}
                                             {matchState !== 'idle' ? (
-                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-sm px-4 py-3 rounded-xl cursor-not-allowed">
+                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-xs px-3 py-2 rounded-lg cursor-not-allowed">
                                                     {selectedLanguage || 'N/A'}
                                                 </div>
                                             ) : (
                                                 <select
                                                     value={selectedLanguage}
                                                     onChange={(e) => { playSelect(); setSelectedLanguage(e.target.value); }}
-                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-cyan-500 focus:outline-none transition-colors cursor-pointer"
+                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-xs px-3 py-2 rounded-lg appearance-none relative z-10 focus:border-cyan-500 focus:outline-none transition-colors cursor-pointer"
                                                 >
                                                     {languages.map((lang) => (
                                                         <option key={lang} value={lang}>{lang}</option>
                                                     ))}
                                                 </select>
                                             )}
-                                            {matchState === 'idle' && <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />}
+                                            {matchState === 'idle' && <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 z-20 pointer-events-none" />}
                                         </div>
                                     </div>
 
                                     {/* Difficulty */}
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Difficulty</label>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Difficulty</label>
                                         <div className="relative group">
-                                            {matchState === 'idle' && <div className="absolute inset-0 bg-rose-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />}
+                                            {matchState === 'idle' && <div className="absolute inset-0 bg-rose-500/20 blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />}
                                             {matchState !== 'idle' ? (
-                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-sm px-4 py-3 rounded-xl cursor-not-allowed">
+                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-xs px-3 py-2 rounded-lg cursor-not-allowed">
                                                     {selectedDifficulty}
                                                 </div>
                                             ) : (
                                                 <select
                                                     value={selectedDifficulty}
                                                     onChange={(e) => { playSelect(); setSelectedDifficulty(e.target.value); }}
-                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-rose-500 focus:outline-none transition-colors cursor-pointer"
+                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-xs px-3 py-2 rounded-lg appearance-none relative z-10 focus:border-rose-500 focus:outline-none transition-colors cursor-pointer"
                                                 >
                                                     <option value="Easy">Easy</option>
                                                     <option value="Medium">Medium</option>
                                                     <option value="Hard">Hard</option>
                                                 </select>
                                             )}
-                                            {matchState === 'idle' && <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />}
+                                            {matchState === 'idle' && <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 z-20 pointer-events-none" />}
                                         </div>
                                     </div>
 
                                     {/* Mode */}
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mode</label>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Mode</label>
                                         <div className="relative group">
-                                            {matchState === 'idle' && <div className="absolute inset-0 bg-violet-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />}
+                                            {matchState === 'idle' && <div className="absolute inset-0 bg-violet-500/20 blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />}
                                             {matchState !== 'idle' ? (
-                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-sm px-4 py-3 rounded-xl cursor-not-allowed">
+                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-xs px-3 py-2 rounded-lg cursor-not-allowed">
                                                     {selectedMode}
                                                 </div>
                                             ) : (
                                                 <select
                                                     value={selectedMode}
                                                     onChange={(e) => { playSelect(); setSelectedMode(e.target.value); }}
-                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-violet-500 focus:outline-none transition-colors cursor-pointer"
+                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-xs px-3 py-2 rounded-lg appearance-none relative z-10 focus:border-violet-500 focus:outline-none transition-colors cursor-pointer"
                                                 >
                                                     <option value="Ranked">Ranked</option>
                                                     <option value="Casual">Casual</option>
                                                 </select>
                                             )}
-                                            {matchState === 'idle' && <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />}
+                                            {matchState === 'idle' && <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 z-20 pointer-events-none" />}
                                         </div>
                                     </div>
 
                                     {/* Wager */}
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Wager (EXP)</label>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Wager (EXP)</label>
                                         <div className="relative group">
-                                            {matchState === 'idle' && <div className="absolute inset-0 bg-amber-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />}
+                                            {matchState === 'idle' && <div className="absolute inset-0 bg-amber-500/20 blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />}
                                             {matchState !== 'idle' ? (
-                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-sm px-4 py-3 rounded-xl cursor-not-allowed">
+                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-xs px-3 py-2 rounded-lg cursor-not-allowed">
                                                     {selectedWager} EXP
                                                 </div>
                                             ) : (
                                                 <select
                                                     value={selectedWager}
                                                     onChange={(e) => { playSelect(); setSelectedWager(Number(e.target.value)); }}
-                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-amber-500 focus:outline-none transition-colors cursor-pointer"
+                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-xs px-3 py-2 rounded-lg appearance-none relative z-10 focus:border-amber-500 focus:outline-none transition-colors cursor-pointer"
                                                 >
                                                     {wagerOptions.map((amount) => (
                                                         <option key={amount} value={amount}>{amount} EXP</option>
                                                     ))}
                                                 </select>
                                             )}
-                                            {matchState === 'idle' && <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-20 pointer-events-none" />}
+                                            {matchState === 'idle' && <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 z-20 pointer-events-none" />}
                                         </div>
                                     </div>
 
                                     {/* Time Limit */}
-                                    <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-1">
-                                        <p className="text-[10px] font-bold text-slate-500 uppercase">Time Limit</p>
-                                        <p className="text-xl font-black text-white">10:00</p>
+                                    <div className="p-3 rounded-lg bg-white/5 border border-white/5 space-y-0.5">
+                                        <p className="text-[9px] font-bold text-slate-500 uppercase">Time Limit</p>
+                                        <p className="text-lg font-black text-white">10:00</p>
                                     </div>
                                 </div>
                             </div>

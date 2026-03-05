@@ -59,12 +59,12 @@ const LogoutModal = ({ isOpen, onClose, onConfirm }) => {
                             <div className="grid grid-cols-2 gap-3 pt-4">
                                 <button
                                     onClick={() => { playClick(); onClose(); }}
-                                    className="py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700text-slate-300 font-black uppercase tracking-widest text-[10px] transition-all border border-white/5"
+                                    className="py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-black uppercase tracking-widest text-[10px] transition-all border border-white/5"
                                 >
                                     Stay Here
                                 </button>
                                 <button
-                                    onClick={() => { playCancel(); onConfirm(); }}
+                                    onClick={() => { playCancel(); onClose(); onConfirm(); }}
                                     className="py-3.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black uppercase tracking-widest text-[10px] transition-all shadow-[0_4px_20px_rgba(225,29,72,0.3)] hover:shadow-[0_4px_30px_rgba(225,29,72,0.5)] transform hover:-translate-y-0.5 active:translate-y-0"
                                 >
                                     Logout

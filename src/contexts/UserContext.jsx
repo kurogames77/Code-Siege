@@ -346,17 +346,31 @@ export const UserProvider = ({ children }) => {
 
     const updateExp = async (amount) => {
         if (!user) return;
+        // 1. Optimistically update local state so UI reflects immediately
+        const newExp = (user.exp || 0) + amount;
+        const rankData = getRankFromExp(newExp);
+        setUser(prev => ({
+            ...prev,
+            exp: newExp,
+            rankName: rankData?.name || prev.rankName,
+            rankIcon: rankData?.icon || prev.rankIcon,
+        }));
+        // 2. Sync to backend (best effort — don't throw so UI callers aren't blocked)
         try {
             const response = await progressAPI.addXP(amount);
-            setUser(prev => ({
-                ...prev,
-                exp: response.xp,
-                level: response.level
-            }));
+            if (response?.xp !== undefined) {
+                const serverRank = getRankFromExp(response.xp);
+                setUser(prev => ({
+                    ...prev,
+                    exp: response.xp,
+                    level: response.level ?? prev.level,
+                    rankName: serverRank?.name || prev.rankName,
+                    rankIcon: serverRank?.icon || prev.rankIcon,
+                }));
+            }
             return response;
         } catch (error) {
-            console.error('Failed to update XP:', error);
-            throw error;
+            console.error('Failed to sync XP to backend (local state already updated):', error);
         }
     };
 
