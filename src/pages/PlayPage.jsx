@@ -23,7 +23,7 @@ const PlayPage = () => {
     const mapRef = useRef(null);
     const location = useLocation();
 
-    const { user: contextUser } = useUser();
+    const { user: contextUser, loading } = useUser();
 
     // Provide stable fallback to prevent crash and infinite loops while navigating away during logout
     const defaultUser = useMemo(() => ({ towerProgress: {} }), []);
@@ -189,6 +189,17 @@ const PlayPage = () => {
             navigate('/verify-email');
         }
     }, [location, navigate]);
+
+    if (loading) {
+        return (
+            <div className="relative w-full h-screen bg-[#0f0c29] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-16 h-16 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
+                    <div className="text-cyan-500 font-galsb tracking-[0.2em] animate-pulse">LOADING ARENA...</div>
+                </div>
+            </div>
+        );
+    }
 
     const pathPositions = towers.map(t => ({
         // Align towers to the first map (left half)
