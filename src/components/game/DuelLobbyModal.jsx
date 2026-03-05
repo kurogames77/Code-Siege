@@ -628,11 +628,6 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                 ) : (
                                     <>
                                         <h1 className="text-2xl font-black italic uppercase tracking-tighter text-white">Private Duel</h1>
-                                        <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-slate-500 uppercase">
-                                            <span>ID: {lobbyId || 'Initializing...'}</span>
-                                            <span className="w-1 h-1 bg-slate-600 rounded-full" />
-                                            <span className="text-emerald-500">Connected</span>
-                                        </div>
                                     </>
                                 )}
                             </div>

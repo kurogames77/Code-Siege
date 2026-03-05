@@ -610,6 +610,38 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                         <p className="text-lg font-black text-white">10:00</p>
                                     </div>
                                 </div>
+
+                                {/* FIND MATCH / READY CHECK BUTTON — pinned to sidebar bottom */}
+                                <div className="mt-auto pt-4 border-t border-white/5">
+                                    {inviteError && (
+                                        <div className="mb-2 bg-rose-500 text-white px-3 py-1.5 rounded-lg text-[9px] font-bold">
+                                            {inviteError}
+                                        </div>
+                                    )}
+                                    {matchState === 'ready_check' ? (
+                                        <button
+                                            onClick={handleReadyClick}
+                                            disabled={players.find(p => p.id === user.id)?.isReady}
+                                            className={`w-full h-11 rounded-xl border-2 flex items-center justify-center gap-2 transition-all text-xs font-black uppercase tracking-widest ${players.find(p => p.id === user.id)?.isReady
+                                                ? 'bg-emerald-600 border-emerald-400 text-white cursor-default'
+                                                : 'bg-gradient-to-b from-amber-400 to-orange-500 border-amber-300 text-black hover:scale-105 shadow-[0_0_20px_rgba(245,158,11,0.5)]'
+                                                }`}
+                                        >
+                                            {players.find(p => p.id === user.id)?.isReady ? 'Ready!' : 'Click to Ready'}
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={handleFindMatch}
+                                            disabled={matchState === 'searching'}
+                                            className={`w-full h-11 rounded-xl border-2 flex items-center justify-center gap-2 transition-all text-xs font-black uppercase tracking-widest ${matchState === 'searching'
+                                                ? 'bg-slate-700 border-slate-500 text-slate-300'
+                                                : 'bg-gradient-to-b from-yellow-300 to-amber-500 border-yellow-200/50 shadow-[0_0_20px_rgba(245,158,11,0.4)] text-black hover:scale-105'
+                                                }`}
+                                        >
+                                            {matchState === 'searching' ? 'Searching...' : 'Find Match'}
+                                        </button>
+                                    )}
+                                </div>
                             </div>
 
                             {/* CENTER: BANNERS + FIND MATCH BUTTON */}
@@ -698,43 +730,6 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                             );
                                         })}
                                     </div>
-                                </div>
-
-                                {/* BOTTOM BAR: ACTION BUTTON — always pinned */}
-                                <div className="shrink-0 py-5 flex items-center justify-center gap-6 relative border-t border-white/5 bg-[#0f1724]/80">
-                                    {inviteError && (
-                                        <div className="absolute -top-16 bg-rose-500 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg animate-bounce">
-                                            {inviteError}
-                                        </div>
-                                    )}
-
-                                    {matchState === 'ready_check' ? (
-                                        <button
-                                            onClick={handleReadyClick}
-                                            disabled={players.find(p => p.id === user.id)?.isReady}
-                                            className={`h-14 px-16 rounded-full border-2 flex items-center justify-center gap-2 transition-all ${players.find(p => p.id === user.id)?.isReady
-                                                ? 'bg-emerald-600 border-emerald-400 text-white cursor-default'
-                                                : 'bg-gradient-to-b from-amber-400 to-orange-500 border-amber-300 text-ammber-950 font-black hover:scale-105 shadow-[0_0_30px_rgba(245,158,11,0.6)]'
-                                                }`}
-                                        >
-                                            <span className="font-black uppercase tracking-widest text-lg">
-                                                {players.find(p => p.id === user.id)?.isReady ? 'READY!' : 'CLICK TO READY'}
-                                            </span>
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={handleFindMatch}
-                                            disabled={matchState === 'searching'}
-                                            className={`h-14 px-16 rounded-full border-2 flex items-center justify-center gap-2 group transition-transform ${matchState === 'searching'
-                                                ? 'bg-slate-700 border-slate-500 text-slate-300'
-                                                : 'bg-gradient-to-b from-yellow-300 to-amber-500 border-yellow-200/50 shadow-[0_0_30px_rgba(245,158,11,0.4)] text-black hover:scale-105'
-                                                }`}
-                                        >
-                                            <span className="font-black uppercase tracking-widest text-lg drop-shadow-sm">
-                                                {matchState === 'searching' ? 'Searching...' : 'Find Match'}
-                                            </span>
-                                        </button>
-                                    )}
                                 </div>
                             </div>
 

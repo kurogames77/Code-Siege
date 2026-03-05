@@ -25,6 +25,13 @@ const PlayPage = () => {
 
     const { user: contextUser, loading } = useUser();
 
+    // Auth guard — redirect to landing when logged out
+    useEffect(() => {
+        if (!loading && !contextUser) {
+            navigate('/', { replace: true });
+        }
+    }, [loading, contextUser, navigate]);
+
     // Provide stable fallback to prevent crash and infinite loops while navigating away during logout
     const defaultUser = useMemo(() => ({ towerProgress: {} }), []);
     const user = contextUser || defaultUser;

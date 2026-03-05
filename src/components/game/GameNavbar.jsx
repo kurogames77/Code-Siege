@@ -502,9 +502,10 @@ const GameNavbar = ({ onLobbyStateChange }) => {
             <LogoutModal
                 isOpen={isLogoutOpen}
                 onClose={() => setIsLogoutOpen(false)}
-                onConfirm={async () => {
-                    await logout();
-                    navigate('/', { state: { loggedOut: true } });
+                onConfirm={() => {
+                    // Navigate first so PlayPage unmounts, then clear session
+                    navigate('/', { replace: true, state: { loggedOut: true } });
+                    logout();
                 }}
             />
 

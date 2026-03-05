@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Camera, Trophy, Medal, Target, Swords, User, History, Settings, Info, Image as ImageIcon, CheckCircle2, XCircle, Clock, Book, Bell, Lock, Globe, Edit, Save, Award, Download, Palette } from 'lucide-react';
+import { X, Camera, Trophy, Medal, Target, Swords, User, Users, History, Settings, Info, Image as ImageIcon, CheckCircle2, XCircle, Clock, Book, Bell, Lock, Globe, Edit, Save, Award, Download, Palette, Circle } from 'lucide-react';
 
 
 import useSound from '../../hooks/useSound';
@@ -21,7 +21,7 @@ import halloweenTheme from '../../assets/halloween_theme_bundle.png';
 import winterTheme from '../../assets/winter_theme_bundle.png';
 
 const ProfileModal = ({ isOpen, onClose }) => {
-    const { user, updateAvatar, updateProfile } = useUser();
+    const { user, updateAvatar, updateProfile, onlineUserIds } = useUser();
     const { currentTheme, setTheme, themes } = useTheme(); // Destructure all needed values
     const [activeTab, setActiveTab] = useState('profile');
     const [isEditing, setIsEditing] = useState(false);
@@ -104,6 +104,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
     const tabs = [
         { id: 'profile', label: 'Profile', icon: <User className="w-4 h-4" /> },
         { id: 'history', label: 'History', icon: <History className="w-4 h-4" /> },
+        { id: 'friends', label: 'Friends', icon: <Users className="w-4 h-4" /> },
         { id: 'collection', label: 'Collection', icon: <ImageIcon className="w-4 h-4" /> },
         { id: 'certificates', label: 'Certificates', icon: <Award className="w-4 h-4" /> },
         { id: 'themes', label: 'Themes', icon: <Palette className="w-4 h-4" /> },
@@ -238,6 +239,79 @@ const ProfileModal = ({ isOpen, onClose }) => {
             </div>
         </div >
     );
+
+    const renderFriendsContent = () => {
+        const friends = user?.friends || [];
+        const onlineFriends = friends.filter(f => onlineUserIds.has(String(f.id)) || onlineUserIds.has(f.id));
+        const offlineFriends = friends.filter(f => !onlineUserIds.has(String(f.id)) && !onlineUserIds.has(f.id));
+        return (
+            <div className="flex-1 p-12 overflow-y-auto custom-scrollbar">
+                <h3 className={`text-2xl font-black text-white italic uppercase tracking-widest mb-8 flex items-center gap-4`}>
+                    <Users className={`w-6 h-6 text-${currentTheme.colors.primary}-400`} /> Friends
+                    <span className="ml-auto text-sm font-bold text-slate-500 normal-case tracking-normal">{friends.length} total</span>
+                </h3>
+
+                {friends.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
+                        <Users className="w-16 h-16 text-slate-600 mb-4" />
+                        <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">No friends yet</p>
+                        <p className="text-slate-600 text-xs mt-2">Add friends from the duel lobby!</p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {onlineFriends.length > 0 && (
+                            <>
+                                <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2 px-1">Online — {onlineFriends.length}</div>
+                                {onlineFriends.map(friend => (
+                                    <div key={friend.id} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-900/40 border border-white/5 hover:bg-white/5 transition-colors">
+                                        <div className="relative shrink-0">
+                                            {friend.avatar ? (
+                                                <img src={friend.avatar} className="w-10 h-10 rounded-xl object-cover" alt="" />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-xl bg-slate-700 flex items-center justify-center">
+                                                    <User className="w-5 h-5 text-slate-400" />
+                                                </div>
+                                            )}
+                                            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-slate-900" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-black text-white truncate">{friend.name}</p>
+                                            <p className={`text-[10px] font-bold text-${currentTheme.colors.primary}-400 uppercase tracking-widest`}>{friend.rankName || 'Siege Novice'}</p>
+                                        </div>
+                                        <span className="text-[10px] font-bold text-emerald-400 uppercase">Online</span>
+                                    </div>
+                                ))}
+                            </>
+                        )}
+                        {offlineFriends.length > 0 && (
+                            <>
+                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-4 mb-2 px-1">Offline — {offlineFriends.length}</div>
+                                {offlineFriends.map(friend => (
+                                    <div key={friend.id} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-900/20 border border-white/5 opacity-60">
+                                        <div className="relative shrink-0">
+                                            {friend.avatar ? (
+                                                <img src={friend.avatar} className="w-10 h-10 rounded-xl object-cover grayscale" alt="" />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center">
+                                                    <User className="w-5 h-5 text-slate-600" />
+                                                </div>
+                                            )}
+                                            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-slate-600 border-2 border-slate-900" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-black text-slate-400 truncate">{friend.name}</p>
+                                            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{friend.rankName || 'Siege Novice'}</p>
+                                        </div>
+                                        <span className="text-[10px] font-bold text-slate-600 uppercase">Offline</span>
+                                    </div>
+                                ))}
+                            </>
+                        )}
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     const renderHistoryContent = () => (
         <div className="flex-1 p-12 overflow-y-auto custom-scrollbar">
@@ -570,6 +644,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                 >
                                     {activeTab === 'profile' && renderProfileContent()}
                                     {activeTab === 'history' && renderHistoryContent()}
+                                    {activeTab === 'friends' && renderFriendsContent()}
                                     {activeTab === 'collection' && renderCollectionContent()}
                                     {activeTab === 'certificates' && renderCertificatesContent()}
                                     {activeTab === 'themes' && renderThemesContent()}
