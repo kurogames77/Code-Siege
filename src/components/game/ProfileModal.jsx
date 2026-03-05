@@ -7,7 +7,7 @@ import useSound from '../../hooks/useSound';
 import { useUser } from '../../contexts/UserContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { userAPI } from '../../services/api';
+import { userAPI, battlesAPI } from '../../services/api';
 import supabase from '../../lib/supabase';
 import heroAsset from '../../assets/hero1.png';
 import hero1aStatic from '../../assets/hero1a.png';
@@ -32,6 +32,20 @@ const ProfileModal = ({ isOpen, onClose }) => {
     const [friendsList, setFriendsList] = useState([]);
     const [friendsLoading, setFriendsLoading] = useState(false);
     const [changingPassword, setChangingPassword] = useState(false);
+    const [stats, setStats] = useState({ winnings: 0, losses: 0, winRate: '0%' });
+
+    // Fetch battle stats on mount
+    useEffect(() => {
+        if (!isOpen) return;
+        battlesAPI.getHistory().then(data => {
+            const history = Array.isArray(data) ? data : (data?.battles || []);
+            const wins = history.filter(b => b.winner_id === user?.id || b.result === 'Win' || b.result === 'win').length;
+            const losses = history.filter(b => b.winner_id && b.winner_id !== user?.id && (b.result !== 'Win' && b.result !== 'win')).length || (history.length - wins);
+            const total = wins + losses;
+            const winRate = total > 0 ? `${Math.round((wins / total) * 100)}%` : '0%';
+            setStats({ winnings: wins, losses: total - wins, winRate });
+        }).catch(() => { });
+    }, [isOpen, user?.id]);
     const fileInputRef = useRef(null);
     const { playClick, playCancel, playSelect, playSuccess } = useSound();
     const toast = useToast();
@@ -198,15 +212,15 @@ const ProfileModal = ({ isOpen, onClose }) => {
             {/* Stats Grid */}
             <div className="grid grid-cols-3 gap-6 mb-12">
                 <div className={`bg-slate-900/40 border border-white/5 p-6 rounded-3xl text-center`}>
-                    <div className={`text-2xl font-black text-${currentTheme.colors.accent}-400 mb-1`}>{user.stats.winnings}</div>
+                    <div className={`text-2xl font-black text-${currentTheme.colors.accent}-400 mb-1`}>{stats.winnings}</div>
                     <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Winnings</div>
                 </div>
                 <div className="bg-slate-900/40 border border-white/5 p-6 rounded-3xl text-center">
-                    <div className="text-2xl font-black text-rose-400 mb-1">{user.stats.losses}</div>
+                    <div className="text-2xl font-black text-rose-400 mb-1">{stats.losses}</div>
                     <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Losses</div>
                 </div>
                 <div className="bg-slate-900/40 border border-white/5 p-6 rounded-3xl text-center">
-                    <div className={`text-2xl font-black text-${currentTheme.colors.primary}-400 mb-1`}>{user.stats.winRate}</div>
+                    <div className={`text-2xl font-black text-${currentTheme.colors.primary}-400 mb-1`}>{stats.winRate}</div>
                     <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Win Rate</div>
                 </div>
             </div>
@@ -260,6 +274,12 @@ const ProfileModal = ({ isOpen, onClose }) => {
         // Only fetch once when this renders
         if (!friendsLoading && friendsList.length === 0) fetchFriends();
 
+        // Helper to get name from whatever field the API uses
+        const getFriendName = (f) =>
+            f.name || f.full_name || f.username || f.user_name || f.display_name || 'Unknown';
+        const getFriendAvatar = (f) =>
+            f.avatar_url || f.avatar || f.profilePicture || null;
+
         const onlineFriends = friendsList.filter(f => onlineUserIds.has(String(f.id)) || onlineUserIds.has(f.id));
         const offlineFriends = friendsList.filter(f => !onlineUserIds.has(String(f.id)) && !onlineUserIds.has(f.id));
         return (
@@ -287,8 +307,8 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                 {onlineFriends.map(friend => (
                                     <div key={friend.id} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-900/40 border border-white/5 hover:bg-white/5 transition-colors">
                                         <div className="relative shrink-0">
-                                            {friend.avatar_url || friend.avatar ? (
-                                                <img src={friend.avatar_url || friend.avatar} className="w-10 h-10 rounded-xl object-cover" alt="" />
+                                            {getFriendAvatar(friend) ? (
+                                                <img src={getFriendAvatar(friend)} className="w-10 h-10 rounded-xl object-cover" alt="" />
                                             ) : (
                                                 <div className="w-10 h-10 rounded-xl bg-slate-700 flex items-center justify-center">
                                                     <User className="w-5 h-5 text-slate-400" />
@@ -297,7 +317,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                             <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-slate-900" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-black text-white truncate">{friend.name || friend.full_name}</p>
+                                            <p className="text-sm font-black text-white truncate">{getFriendName(friend)}</p>
                                             <p className={`text-[10px] font-bold text-${currentTheme.colors.primary}-400 uppercase tracking-widest`}>{friend.rankName || 'Siege Novice'}</p>
                                         </div>
                                         <span className="text-[10px] font-bold text-emerald-400 uppercase">Online</span>
@@ -311,8 +331,8 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                 {offlineFriends.map(friend => (
                                     <div key={friend.id} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-900/20 border border-white/5 opacity-60">
                                         <div className="relative shrink-0">
-                                            {friend.avatar_url || friend.avatar ? (
-                                                <img src={friend.avatar_url || friend.avatar} className="w-10 h-10 rounded-xl object-cover grayscale" alt="" />
+                                            {getFriendAvatar(friend) ? (
+                                                <img src={getFriendAvatar(friend)} className="w-10 h-10 rounded-xl object-cover grayscale" alt="" />
                                             ) : (
                                                 <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center">
                                                     <User className="w-5 h-5 text-slate-600" />
@@ -321,7 +341,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                             <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-slate-600 border-2 border-slate-900" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-black text-slate-400 truncate">{friend.name || friend.full_name}</p>
+                                            <p className="text-sm font-black text-slate-400 truncate">{getFriendName(friend)}</p>
                                             <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{friend.rankName || 'Siege Novice'}</p>
                                         </div>
                                         <span className="text-[10px] font-bold text-slate-600 uppercase">Offline</span>
@@ -342,7 +362,16 @@ const ProfileModal = ({ isOpen, onClose }) => {
             const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
                 redirectTo: `${window.location.origin}/`,
             });
-            if (error) throw error;
+            if (error) {
+                // Supabase rate-limits: parse wait time if present
+                const waitMatch = error.message?.match(/(\d+) second/);
+                const waitSec = waitMatch ? parseInt(waitMatch[1]) : null;
+                const msg = waitSec
+                    ? `Please wait ${waitSec}s before requesting another reset email.`
+                    : (error.message || 'Failed to send reset email. Try again.');
+                toast.error(msg);
+                return;
+            }
             toast.success(`Password reset email sent to ${user.email}!`);
             playSuccess();
         } catch (err) {

@@ -533,52 +533,6 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                         </div>
                                     </div>
 
-                                    {/* Difficulty */}
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Difficulty</label>
-                                        <div className="relative group">
-                                            {matchState === 'idle' && <div className="absolute inset-0 bg-rose-500/20 blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />}
-                                            {matchState !== 'idle' ? (
-                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-xs px-3 py-2 rounded-lg cursor-not-allowed">
-                                                    {selectedDifficulty}
-                                                </div>
-                                            ) : (
-                                                <select
-                                                    value={selectedDifficulty}
-                                                    onChange={(e) => { playSelect(); setSelectedDifficulty(e.target.value); }}
-                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-xs px-3 py-2 rounded-lg appearance-none relative z-10 focus:border-rose-500 focus:outline-none transition-colors cursor-pointer"
-                                                >
-                                                    <option value="Easy">Easy</option>
-                                                    <option value="Medium">Medium</option>
-                                                    <option value="Hard">Hard</option>
-                                                </select>
-                                            )}
-                                            {matchState === 'idle' && <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 z-20 pointer-events-none" />}
-                                        </div>
-                                    </div>
-
-                                    {/* Mode */}
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Mode</label>
-                                        <div className="relative group">
-                                            {matchState === 'idle' && <div className="absolute inset-0 bg-violet-500/20 blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />}
-                                            {matchState !== 'idle' ? (
-                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-xs px-3 py-2 rounded-lg cursor-not-allowed">
-                                                    {selectedMode}
-                                                </div>
-                                            ) : (
-                                                <select
-                                                    value={selectedMode}
-                                                    onChange={(e) => { playSelect(); setSelectedMode(e.target.value); }}
-                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-xs px-3 py-2 rounded-lg appearance-none relative z-10 focus:border-violet-500 focus:outline-none transition-colors cursor-pointer"
-                                                >
-                                                    <option value="Ranked">Ranked</option>
-                                                    <option value="Casual">Casual</option>
-                                                </select>
-                                            )}
-                                            {matchState === 'idle' && <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 z-20 pointer-events-none" />}
-                                        </div>
-                                    </div>
 
                                     {/* Wager */}
                                     <div className="space-y-1">
