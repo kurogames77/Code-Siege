@@ -65,7 +65,17 @@ export const UserProvider = ({ children }) => {
         };
     };
 
+    // Lock to prevent concurrent checkAuth calls (F5 refresh causes mount + SIGNED_IN to race)
+    const checkAuthInProgress = React.useRef(false);
+    const initialCheckDone = React.useRef(false);
+
     const checkAuth = async () => {
+        // Prevent concurrent calls — on F5, mount + SIGNED_IN fire almost simultaneously
+        if (checkAuthInProgress.current) {
+            console.log('[Auth] checkAuth already in progress, skipping...');
+            return;
+        }
+        checkAuthInProgress.current = true;
         console.log('[Auth] Starting checkAuth...');
         try {
             // 1. Proactively check Supabase session (important for social redirects)
@@ -98,11 +108,16 @@ export const UserProvider = ({ children }) => {
             if (error.message && !error.message.includes('Invalid token') && !error.message.includes('401')) {
                 console.error('Auth check failed:', error);
             }
-            localStorage.removeItem('auth_token');
+            // Don't remove token on timeout — could be transient backend issue
+            if (error.message !== 'Auth check timed out') {
+                localStorage.removeItem('auth_token');
+            }
             setUser(null);
             setIsAuthenticated(false);
         } finally {
             setLoading(false);
+            checkAuthInProgress.current = false;
+            initialCheckDone.current = true;
         }
     };
 
@@ -116,11 +131,20 @@ export const UserProvider = ({ children }) => {
         console.log('[Auth] Subscribing to onAuthStateChange');
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             console.log('[Auth] State change event:', event, 'Session active:', !!session);
+
+            // Skip INITIAL_SESSION event — we already handle this via checkAuth on mount
+            if (event === 'INITIAL_SESSION') return;
+
             if ((event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') && session) {
                 console.log('[Auth] Auth event detected, syncing token...');
                 localStorage.setItem('auth_token', session.access_token);
                 if (event !== 'TOKEN_REFRESHED') {
-                    await checkAuth();
+                    // Only re-check if the initial mount check is done to avoid racing
+                    if (initialCheckDone.current) {
+                        await checkAuth();
+                    } else {
+                        console.log('[Auth] Skipping redundant checkAuth — initial check still in progress');
+                    }
                 }
             } else if (event === 'SIGNED_OUT') {
                 console.log('[Auth] SIGNED_OUT detected');

@@ -16,6 +16,7 @@ import { useUser } from '../../contexts/UserContext';
 
 import { getRankFromExp as getRankData } from '../../utils/rankSystem';
 import supabase from '../../lib/supabase';
+import { userAPI } from '../../services/api';
 
 const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
     const navigate = useNavigate();
@@ -169,57 +170,29 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
         if (!user?.id) return;
         console.log('[MultiplayerLobby] fetchFriends called. User:', user.id, user.name);
 
-        const { data: notifs, error } = await supabase
-            .from('notifications')
-            .select('sender_id, receiver_id')
-            .eq('type', 'friend_request')
-            .eq('action_status', 'accepted')
-            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
-
-        if (error) {
-            console.error('[MultiplayerLobby] Error fetching friends:', error.message);
-            return;
-        }
-
-        if (!notifs || notifs.length === 0) {
+        try {
+            const result = await userAPI.getFriends();
+            if (result?.friends) {
+                const friendsList = result.friends.map(p => {
+                    const rank = getRankData(p.xp || 0);
+                    return {
+                        id: p.id,
+                        name: p.username || 'Unknown',
+                        avatar: p.avatar_url,
+                        rankName: rank.name,
+                        rankIcon: rank.icon,
+                        xp: p.xp || 0,
+                        lastActiveAt: p.last_active_at
+                    };
+                });
+                setAllFriends(friendsList);
+                console.log('[MultiplayerLobby] Friends fetched:', friendsList.length, friendsList.map(f => f.name));
+            } else {
+                setAllFriends([]);
+            }
+        } catch (err) {
+            console.error('[MultiplayerLobby] Error fetching friends:', err);
             setAllFriends([]);
-            return;
-        }
-
-        const friendIds = notifs.map(n =>
-            n.sender_id === user.id ? n.receiver_id : n.sender_id
-        ).filter(id => id !== user.id);
-
-        const uniqueIds = [...new Set(friendIds)];
-        if (uniqueIds.length === 0) {
-            setAllFriends([]);
-            return;
-        }
-
-        const { data: profiles, error: profileError } = await supabase
-            .from('users')
-            .select('id, username, avatar_url, xp, last_active_at')
-            .in('id', uniqueIds);
-
-        if (profileError) {
-            console.error('[MultiplayerLobby] Error fetching profiles:', profileError.message);
-            return;
-        }
-
-        if (profiles) {
-            const friendsList = profiles.map(p => {
-                const rank = getRankData(p.xp || 0);
-                return {
-                    id: p.id,
-                    name: p.username || 'Unknown',
-                    avatar: p.avatar_url,
-                    rankName: rank.name,
-                    rankIcon: rank.icon,
-                    xp: p.xp || 0,
-                    lastActiveAt: p.last_active_at
-                };
-            });
-            setAllFriends(friendsList);
         }
     }, [user]);
 
