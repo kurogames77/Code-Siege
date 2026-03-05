@@ -389,29 +389,31 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
         if (invitedFriendId === friend.id) return;
         playClick();
         setInvitedFriendId(friend.id);
+        setInviteError(null);
+
+        const timeoutId = setTimeout(() => {
+            setInvitedFriendId(null);
+            setInviteError('Invite timed out. Try again.');
+            setTimeout(() => setInviteError(null), 3000);
+        }, 10000);
 
         try {
-            await supabase
-                .from('notifications')
-                .insert({
-                    type: 'multiplayer_invite',
-                    sender_id: user.id,
-                    receiver_id: friend.id,
-                    title: user.name || user.username || 'Someone',
-                    message: 'invited you to a multiplayer match',
-                    action_status: 'pending',
-                    is_read: false
-                });
-            // Note: Since multi-lobby is currently simulated, we don't have a 
-            // shared realtime channel here yet like in DuelLobbyModal.
-            // But the notification will let the friend see the invite.
+            await userAPI.sendDuelInvite(friend.id, user.name || 'Someone', null);
             setSuccessInviteIds(prev => new Set([...prev, friend.id]));
-            setInvitedFriendId(null);
             playSuccess();
+            setTimeout(() => {
+                setSuccessInviteIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(friend.id);
+                    return next;
+                });
+            }, 10000);
         } catch (err) {
             console.error('Failed to send multi invite:', err);
             setInviteError('Failed to send invitation');
             setTimeout(() => setInviteError(null), 3000);
+        } finally {
+            clearTimeout(timeoutId);
             setInvitedFriendId(null);
         }
     };

@@ -11,7 +11,7 @@ import lobbyMusic from '../../assets/sounds/lobbymusic.mp3';
 import useSound from '../../hooks/useSound';
 import { useUser } from '../../contexts/UserContext';
 import supabase from '../../lib/supabase';
-import { authAPI, userAPI } from '../../services/api';
+import { authAPI, userAPI, battlesAPI } from '../../services/api';
 import { getRankFromExp } from '../../utils/rankSystem';
 import rankGold from '../../assets/rankbadges/rank6.png';
 import rankSilver from '../../assets/rankbadges/rank3.png';
@@ -279,11 +279,12 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                         setIsUserReady(false);
                         setIsOpponentReady(false);
                         setTimer(0);
+                        setStartCountdown(5); // cancel any in-progress launch
                     }
                 }
             })
             .on('broadcast', { event: 'player-leave' }, ({ payload }) => {
-                // Explicit leave broadcast (for immediate detection)
+                // Explicit leave broadcast: ALWAYS reset lobby — no state guard
                 const currentOpponent = opponentRef.current;
                 if (currentOpponent && String(payload.playerId) === String(currentOpponent.id)) {
                     console.log('[DuelLobby] Opponent sent player-leave broadcast:', currentOpponent.name);
@@ -292,6 +293,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                     setIsUserReady(false);
                     setIsOpponentReady(false);
                     setTimer(0);
+                    setStartCountdown(5); // Reset countdown so next match starts fresh
                 }
             })
             .on('broadcast', { event: 'duel-invite' }, ({ payload }) => {
@@ -405,15 +407,15 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
 
     // --- TIMERS ---
 
-    // Lobby Timer (60s -> 0) — stops when opponent leaves
+    // Lobby Timer (60s -> 0) — only runs when both matchState is 'lobby' AND opponent is present
     useEffect(() => {
         let interval;
         if (matchState === 'lobby' && timer > 0 && opponent) {
             interval = setInterval(() => {
                 setTimer((prev) => prev - 1);
             }, 1000);
-        } else if (matchState === 'lobby' && timer === 0 && opponentRef.current) {
-            // Auto-start the game when lobby timer expires and opponent is still present
+        } else if (matchState === 'lobby' && timer === 0 && opponentRef.current && opponent) {
+            // SAFETY: only auto-start if the opponent state AND ref BOTH confirm opponent is present
             console.log('[DuelLobby] Timer expired, auto-starting game');
             if (lobbyChannelRef.current) {
                 lobbyChannelRef.current.send({
@@ -440,19 +442,39 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 setStartCountdown((prev) => prev - 1);
             }, 1000);
         } else if (matchState === 'starting' && startCountdown === 0) {
-            navigate(`/arena-battle/b-${Math.floor(Math.random() * 9000) + 1000}`, {
-                state: {
-                    opponent: opponent.name,
-                    opponentAvatar: opponent.avatar,
-                    opponentRankName: opponent.rankName,
-                    opponentRankIcon: opponent.rankIcon,
-                    language: selectedLanguage,
-                    mode: selectedMode,
-                    wager: selectedWager,
-                    difficulty: selectedDifficulty,
-                    lobbyId: lobbyId
+            // Safety: if opponent is gone by now, abort
+            if (!opponentRef.current) {
+                console.warn('[DuelLobby] Countdown hit 0 but opponent is gone — aborting launch.');
+                setMatchState('idle');
+                setTimer(0);
+                return;
+            }
+            // Create battle record then navigate
+            const launchBattle = async () => {
+                let battleRecordId = null;
+                try {
+                    const battleRecord = await battlesAPI.create('duel', opponentRef.current.id);
+                    battleRecordId = battleRecord?.battle?.id || battleRecord?.id || null;
+                    console.log('[DuelLobby] Battle record created:', battleRecordId);
+                } catch (err) {
+                    console.error('[DuelLobby] Failed to create battle record:', err);
                 }
-            });
+                navigate(`/arena-battle/b-${battleRecordId || Math.floor(Math.random() * 9000) + 1000}`, {
+                    state: {
+                        opponent: opponent.name,
+                        opponentAvatar: opponent.avatar,
+                        opponentRankName: opponent.rankName,
+                        opponentRankIcon: opponent.rankIcon,
+                        language: selectedLanguage,
+                        mode: selectedMode,
+                        wager: selectedWager,
+                        difficulty: selectedDifficulty,
+                        lobbyId: lobbyId,
+                        battleRecordId
+                    }
+                });
+            };
+            launchBattle();
         }
         return () => clearInterval(interval);
     }, [matchState, startCountdown, navigate, opponent, selectedLanguage, selectedWager]);
