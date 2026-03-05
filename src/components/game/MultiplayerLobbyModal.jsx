@@ -198,7 +198,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
 
         const { data: profiles, error: profileError } = await supabase
             .from('users')
-            .select('id, username, avatar_url, xp')
+            .select('id, username, avatar_url, xp, last_active_at')
             .in('id', uniqueIds);
 
         if (profileError) {
@@ -215,7 +215,8 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                     avatar: p.avatar_url,
                     rankName: rank.name,
                     rankIcon: rank.icon,
-                    xp: p.xp || 0
+                    xp: p.xp || 0,
+                    lastActiveAt: p.last_active_at
                 };
             });
             setAllFriends(friendsList);
@@ -226,6 +227,13 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
     useEffect(() => {
         if (!isOpen || !user) return;
         fetchFriends();
+
+        // Periodically re-fetch friends to get fresh last_active_at values
+        const refreshInterval = setInterval(() => {
+            fetchFriends();
+        }, 15000); // every 15 seconds
+
+        return () => clearInterval(refreshInterval);
     }, [isOpen, user, friendRefreshTrigger, fetchFriends]);
 
     // Real-time listener for friend request acceptances
@@ -445,12 +453,24 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
 
     // --- RENDER HELPERS ---
 
+    // A friend is online if Supabase Presence has their ID OR their last heartbeat was within 3 minutes
+    const isOnline = (f) => {
+        const inPresence = onlineUserIds.has(String(f.id)) || onlineUserIds.has(f.id);
+        if (inPresence) return true;
+        if (f.lastActiveAt) {
+            const lastActive = new Date(f.lastActiveAt).getTime();
+            const diff = Date.now() - lastActive;
+            return diff < 180000; // 3 minutes
+        }
+        return false;
+    };
+
     const friends = allFriends
-        .filter(f => onlineUserIds.has(String(f.id)))
+        .filter(isOnline)
         .map(f => ({ ...f, status: 'online' }));
 
     const offlineFriends = allFriends
-        .filter(f => !onlineUserIds.has(String(f.id)))
+        .filter(f => !isOnline(f))
         .map(f => ({ ...f, status: 'offline' }));
 
     const slots = [0, 1, 2, 3, 4];

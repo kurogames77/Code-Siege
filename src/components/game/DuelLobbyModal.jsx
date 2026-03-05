@@ -249,6 +249,50 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                         status: 'online'
                     }));
                 setOnlineUsers(users);
+
+                // Check if the opponent has left the presence state
+                const currentOpponent = opponentRef.current;
+                if (currentOpponent && matchStateRef.current === 'lobby') {
+                    const opponentStillPresent = Object.values(state)
+                        .flat()
+                        .some(u => String(u.id) === String(currentOpponent.id));
+                    if (!opponentStillPresent) {
+                        console.log('[DuelLobby] Opponent left (detected via sync). Resetting lobby.');
+                        setOpponent(null);
+                        setMatchState('idle');
+                        setIsUserReady(false);
+                        setIsOpponentReady(false);
+                        setTimer(0);
+                    }
+                }
+            })
+            .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+                // Detect opponent leaving via presence leave event
+                const currentOpponent = opponentRef.current;
+                if (currentOpponent) {
+                    const opponentLeft = leftPresences.some(p => String(p.id) === String(currentOpponent.id)) ||
+                        String(key) === String(currentOpponent.id);
+                    if (opponentLeft) {
+                        console.log('[DuelLobby] Opponent left (detected via leave event):', currentOpponent.name);
+                        setOpponent(null);
+                        setMatchState('idle');
+                        setIsUserReady(false);
+                        setIsOpponentReady(false);
+                        setTimer(0);
+                    }
+                }
+            })
+            .on('broadcast', { event: 'player-leave' }, ({ payload }) => {
+                // Explicit leave broadcast (for immediate detection)
+                const currentOpponent = opponentRef.current;
+                if (currentOpponent && String(payload.playerId) === String(currentOpponent.id)) {
+                    console.log('[DuelLobby] Opponent sent player-leave broadcast:', currentOpponent.name);
+                    setOpponent(null);
+                    setMatchState('idle');
+                    setIsUserReady(false);
+                    setIsOpponentReady(false);
+                    setTimer(0);
+                }
             })
             .on('broadcast', { event: 'duel-invite' }, ({ payload }) => {
                 if (payload.targetId === user.id) {
@@ -342,6 +386,12 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             });
 
         return () => {
+            // Broadcast leave before disconnecting so the other player knows immediately
+            channel.send({
+                type: 'broadcast',
+                event: 'player-leave',
+                payload: { playerId: user.id }
+            });
             supabase.removeChannel(channel);
         };
     }, [isOpen, user, lobbyId]);
