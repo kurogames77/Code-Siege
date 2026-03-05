@@ -303,7 +303,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             .on('broadcast', { event: 'duel-accept' }, ({ payload }) => {
                 // If we are the sender (host) and the recipient (guest) accepted
                 console.log('[DuelLobby] Received duel-accept broadcast:', payload, 'current matchState:', matchStateRef.current);
-                if (payload.targetId === user.id && matchStateRef.current === 'idle') {
+                if (payload.targetId === user.id) {
+                    // Always accept — remove idle guard so re-accepts work even if state wasn't reset
                     playSuccess();
                     setOpponent({
                         id: payload.senderId,
@@ -313,6 +314,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                         rankIcon: payload.senderRankIcon
                     });
                     setMatchState('lobby');
+                    setIsUserReady(false);
+                    setIsOpponentReady(false);
                     setTimer(60);
 
                     // Host sends current settings to the guest
@@ -386,13 +389,17 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             });
 
         return () => {
-            // Broadcast leave before disconnecting so the other player knows immediately
-            channel.send({
+            // Send leave broadcast then tear down the channel.
+            // Using a short timeout to give the async send time to go through
+            // before removeChannel destroys the connection.
+            const ch = channel;
+            ch.send({
                 type: 'broadcast',
                 event: 'player-leave',
                 payload: { playerId: user.id }
+            }).finally(() => {
+                supabase.removeChannel(ch);
             });
-            supabase.removeChannel(channel);
         };
     }, [isOpen, user, lobbyId]);
 
