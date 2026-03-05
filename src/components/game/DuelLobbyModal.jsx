@@ -98,6 +98,26 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     // MODALS
     const [showAddFriendModal, setShowAddFriendModal] = useState(false);
     const [modalMode, setModalMode] = useState('opponent'); // 'friend' | 'opponent'
+    const [showExitModal, setShowExitModal] = useState(false);
+
+    // --- FULL STATE RESET ---
+    // Called whenever the lobby needs to be fully cleared (on close, on cancel, on opponent leave)
+    const resetLobbyState = React.useCallback(() => {
+        setMatchState('idle');
+        setOpponent(null);
+        setIsUserReady(false);
+        setIsOpponentReady(false);
+        setTimer(0);
+        setStartCountdown(5);
+        setOnlineUsers([]);
+        setInvitedFriendId(null);
+        setSuccessInviteIds(new Set());
+        setLobbyId(null); // Force a fresh lobbyId on next open
+        setShowExitModal(false);
+        acceptSentRef.current = false;
+        opponentRef.current = null;
+        matchStateRef.current = 'idle';
+    }, []);
 
     // Set initial opponent and lobby from prop (when accepting a duel invite)
     useEffect(() => {
@@ -218,12 +238,21 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     const lobbyChannelRef = React.useRef(null);
     const acceptSentRef = React.useRef(false);
 
-    // Reset acceptSent when modal closes
+    // Full reset when modal is closed (isOpen → false)
     useEffect(() => {
         if (!isOpen) {
             acceptSentRef.current = false;
+            // Broadcast leave if we were in an active lobby
+            if (lobbyChannelRef.current && opponentRef.current) {
+                lobbyChannelRef.current.send({
+                    type: 'broadcast',
+                    event: 'player-leave',
+                    payload: { playerId: user?.id }
+                }).catch(() => { });
+            }
+            resetLobbyState();
         }
-    }, [isOpen]);
+    }, [isOpen, resetLobbyState]);
 
     useEffect(() => {
         if (!isOpen || !user || !lobbyId) return;
@@ -632,7 +661,17 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                         {/* HEADER */}
                         <div className="h-20 flex items-center justify-between px-8 border-b border-white/10 bg-black/40 backdrop-blur-md relative">
                             {/* Left: Back Button */}
-                            <button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-full border border-slate-600 hover:border-red-500 hover:bg-red-500/20 transition-all duration-300 group z-20 relative">
+                            <button
+                                onClick={() => {
+                                    if (matchState === 'lobby' || matchState === 'starting') {
+                                        setShowExitModal(true);
+                                    } else {
+                                        resetLobbyState();
+                                        onBack();
+                                    }
+                                }}
+                                className="w-9 h-9 flex items-center justify-center rounded-full border border-slate-600 hover:border-red-500 hover:bg-red-500/20 transition-all duration-300 group z-20 relative"
+                            >
                                 <X className="w-5 h-5 text-slate-400 group-hover:text-red-400 transition-transform duration-300 group-hover:rotate-90" />
                             </button>
 
@@ -1150,11 +1189,73 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                         volume={0.8}
                         preload="auto"
                     />
-                    {
-                        showAddFriendModal && (
-                            <AddFriendModal isOpen={showAddFriendModal} onClose={() => setShowAddFriendModal(false)} mode={modalMode} />
-                        )
-                    }
+                    {showAddFriendModal && (
+                        <AddFriendModal isOpen={showAddFriendModal} onClose={() => setShowAddFriendModal(false)} mode={modalMode} />
+                    )}
+
+                    {/* Exit Confirmation Modal */}
+                    <AnimatePresence>
+                        {showExitModal && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center"
+                            >
+                                <motion.div
+                                    initial={{ scale: 0.9, y: 20 }}
+                                    animate={{ scale: 1, y: 0 }}
+                                    exit={{ scale: 0.9, y: 20 }}
+                                    transition={{ type: 'spring', bounce: 0.35 }}
+                                    className="bg-[#0f0e17] border border-red-500/50 p-1 max-w-md w-full mx-4 relative"
+                                >
+                                    <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-red-500 z-20" />
+                                    <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-red-500 z-20" />
+                                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-red-500 z-20" />
+                                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-red-500 z-20" />
+                                    <div className="bg-[#0b0a10] p-8 relative overflow-hidden">
+                                        <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.03)_1px,transparent_1px)] bg-[size:20px_20px]" />
+                                        <div className="relative z-10 flex flex-col items-center text-center">
+                                            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-5 ring-1 ring-red-500/40 animate-pulse">
+                                                <X className="w-8 h-8 text-red-500" />
+                                            </div>
+                                            <h2 className="text-2xl font-black text-red-400 uppercase tracking-widest mb-2">Abandon Duel?</h2>
+                                            <div className="h-px w-20 bg-red-500/40 mb-4" />
+                                            <p className="text-slate-400 text-sm font-mono mb-8 leading-relaxed">
+                                                Leaving will cancel the match for both players.<br />
+                                                Your opponent will be notified you left.
+                                            </p>
+                                            <div className="grid grid-cols-2 gap-4 w-full">
+                                                <button
+                                                    onClick={() => setShowExitModal(false)}
+                                                    className="py-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 font-black text-xs uppercase tracking-widest transition-all rounded-lg"
+                                                >
+                                                    Continue
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        // Broadcast leave before closing
+                                                        if (lobbyChannelRef.current) {
+                                                            lobbyChannelRef.current.send({
+                                                                type: 'broadcast',
+                                                                event: 'player-leave',
+                                                                payload: { playerId: user?.id }
+                                                            }).catch(() => { });
+                                                        }
+                                                        resetLobbyState();
+                                                        onBack();
+                                                    }}
+                                                    className="py-3 bg-red-600/20 hover:bg-red-600 border border-red-500 text-red-400 hover:text-white font-black text-xs uppercase tracking-widest transition-all duration-300 rounded-lg"
+                                                >
+                                                    Leave Lobby
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div >
             )}
         </AnimatePresence >
