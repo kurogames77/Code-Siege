@@ -75,9 +75,13 @@ export const UserProvider = ({ children }) => {
                 localStorage.setItem('auth_token', session.access_token);
             }
 
-            // 2. Proceed with backend check
+            // 2. Proceed with backend check (with timeout to prevent infinite loading)
             if (authAPI.isAuthenticated()) {
-                const { user: authUser, profile } = await authAPI.getMe();
+                const getMeWithTimeout = Promise.race([
+                    authAPI.getMe(),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Auth check timed out')), 10000))
+                ]);
+                const { user: authUser, profile } = await getMeWithTimeout;
                 console.log('[Auth] getMe results:', !!authUser, !!profile);
                 if (authUser) {
                     setUser(formatUser(profile, authUser));
@@ -216,6 +220,7 @@ export const UserProvider = ({ children }) => {
         if (response.profile) {
             setUser(formatUser(response.profile));
             setIsAuthenticated(true);
+            setLoading(false); // Ensure loading is cleared after successful login
             if (response.session) {
                 localStorage.setItem('auth_token', response.session.access_token);
                 supabase.auth.setSession({
