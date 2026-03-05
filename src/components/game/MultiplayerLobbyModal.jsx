@@ -765,19 +765,17 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                     ) : (
                                         friends.map(friend => {
                                             return (
-                                                <div key={friend.id} className="p-3 rounded-xl hover:bg-white/5 flex items-center gap-4 group transition-all cursor-pointer border border-transparent hover:border-white/5">
+                                                <div key={friend.id} className="p-2.5 rounded-xl hover:bg-white/5 flex items-center gap-3 group transition-all cursor-pointer border border-transparent hover:border-white/5">
                                                     <div className="relative shrink-0">
                                                         <div className="absolute -inset-1 bg-cyan-500/20 rounded-lg blur opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                        <img src={friend.avatar} className="w-12 h-12 rounded-lg border border-white/20 relative z-10" alt="" />
-                                                        <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full z-20" />
+                                                        <img src={friend.avatar} className="w-10 h-10 rounded-lg border border-white/20 relative z-10" alt="" />
+                                                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full z-20" />
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <span className="text-sm font-black text-slate-200 truncate block tracking-tight group-hover:text-white transition-colors">{friend.name}</span>
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="relative w-8 h-8">
-                                                                <img src={friend.rankIcon} className="w-full h-full object-contain drop-shadow-sm" alt="" />
-                                                            </div>
-                                                            <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">{friend.rankName}</span>
+                                                        <span className="text-xs font-black text-slate-200 truncate block tracking-tight group-hover:text-white transition-colors">{friend.name}</span>
+                                                        <div className="flex items-center gap-1 mt-0.5">
+                                                            <img src={friend.rankIcon} className="w-4 h-4 object-contain" alt="" />
+                                                            <span className="text-[9px] font-bold text-amber-500 uppercase tracking-wider truncate">{friend.rankName}</span>
                                                         </div>
                                                     </div>
                                                     <button
@@ -786,19 +784,19 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
                                                             handleInvite(friend);
                                                         }}
                                                         disabled={invitedFriendId === friend.id || successInviteIds.has(friend.id)}
-                                                        className={`w-9 h-9 rounded-lg flex items-center justify-center text-white transition-all shrink-0 shadow-lg ${successInviteIds.has(friend.id)
+                                                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-white transition-all shrink-0 ${successInviteIds.has(friend.id)
                                                             ? 'bg-blue-600/50 cursor-default'
                                                             : invitedFriendId === friend.id
                                                                 ? 'bg-amber-600/50 cursor-not-allowed'
-                                                                : 'bg-emerald-600 hover:bg-emerald-500 hover:scale-110 active:scale-95 shadow-emerald-900/20'
+                                                                : 'bg-emerald-600 hover:bg-emerald-500 hover:scale-110 active:scale-95 shadow-lg shadow-emerald-900/20'
                                                             }`}
                                                     >
                                                         {successInviteIds.has(friend.id) ? (
-                                                            <Check className="w-5 h-5 text-blue-200" />
+                                                            <Check className="w-4 h-4 text-blue-200" />
                                                         ) : invitedFriendId === friend.id ? (
-                                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                            <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                                         ) : (
-                                                            <UserPlus className="w-4 h-4" />
+                                                            <UserPlus className="w-3.5 h-3.5" />
                                                         )}
                                                     </button>
                                                 </div>

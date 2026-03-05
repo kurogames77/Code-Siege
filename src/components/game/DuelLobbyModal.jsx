@@ -398,22 +398,22 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
 
     // --- TIMERS ---
 
-    // Lobby Timer (60s -> 0)
+    // Lobby Timer (60s -> 0) — stops when opponent leaves
     useEffect(() => {
         let interval;
-        if (matchState === 'lobby' && timer > 0) {
+        if (matchState === 'lobby' && timer > 0 && opponent) {
             interval = setInterval(() => {
                 setTimer((prev) => prev - 1);
             }, 1000);
-        } else if (matchState === 'lobby' && timer === 0 && opponent) {
-            // Auto-start the game when lobby timer expires and opponent is present
+        } else if (matchState === 'lobby' && timer === 0 && opponentRef.current) {
+            // Auto-start the game when lobby timer expires and opponent is still present
             console.log('[DuelLobby] Timer expired, auto-starting game');
             if (lobbyChannelRef.current) {
                 lobbyChannelRef.current.send({
                     type: 'broadcast',
                     event: 'game-start',
                     payload: {
-                        targetId: opponent?.id,
+                        targetId: opponentRef.current?.id,
                         startedBy: user.id
                     }
                 });
@@ -422,7 +422,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             setStartCountdown(5);
         }
         return () => clearInterval(interval);
-    }, [matchState, timer]);
+    }, [matchState, timer, opponent]);
 
     // Launch Countdown (5s -> 0)
     useEffect(() => {
