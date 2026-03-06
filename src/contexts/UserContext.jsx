@@ -79,6 +79,22 @@ export const UserProvider = ({ children }) => {
         checkAuthInProgress.current = true;
         console.log('[Auth] Starting checkAuth...');
         try {
+            // 0. GUARD: If user explicitly logged out, block any session restoration
+            if (localStorage.getItem('code_siege_logged_out') === 'true') {
+                console.log('[Auth] Logged-out flag detected — force-clearing session');
+                localStorage.removeItem('auth_token');
+                // Kill any Supabase-cached session silently
+                try { await supabase.auth.signOut({ scope: 'local' }); } catch (_) { }
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('sb-') || key.includes('supabase')) {
+                        localStorage.removeItem(key);
+                    }
+                });
+                setUser(null);
+                setIsAuthenticated(false);
+                return;
+            }
+
             // 1. Proactively check Supabase session (important for social redirects)
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
@@ -137,6 +153,12 @@ export const UserProvider = ({ children }) => {
             if (event === 'INITIAL_SESSION') return;
 
             if ((event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') && session) {
+                // GUARD: Ignore Supabase auto-restore if user explicitly logged out
+                if (localStorage.getItem('code_siege_logged_out') === 'true') {
+                    console.log('[Auth] Ignoring', event, '— user is logged out');
+                    try { await supabase.auth.signOut({ scope: 'local' }); } catch (_) { }
+                    return;
+                }
                 console.log('[Auth] Auth event detected, syncing token...');
                 localStorage.setItem('auth_token', session.access_token);
                 if (event !== 'TOKEN_REFRESHED') {
@@ -247,6 +269,8 @@ export const UserProvider = ({ children }) => {
             setIsAuthenticated(true);
             setLoading(false); // Ensure loading is cleared after successful login
             if (response.session) {
+                // Clear logged-out flag on successful login
+                localStorage.removeItem('code_siege_logged_out');
                 localStorage.setItem('auth_token', response.session.access_token);
                 supabase.auth.setSession({
                     access_token: response.session.access_token,
@@ -267,8 +291,10 @@ export const UserProvider = ({ children }) => {
     };
 
     const logout = async () => {
+        // FIRST: Set logged-out flag before anything else — survives hard refresh
+        localStorage.setItem('code_siege_logged_out', 'true');
         try {
-            // 1. Notify backend first (clears last_active_at)
+            // 1. Notify backend (clears last_active_at)
             try {
                 await authAPI.logout();
             } catch (err) {
@@ -279,11 +305,11 @@ export const UserProvider = ({ children }) => {
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
-            // 3. Force-clear local state regardless
+            // 3. Force-clear local state
             setUser(null);
             setIsAuthenticated(false);
             localStorage.removeItem('auth_token');
-            // 4. Clear any Supabase-managed localStorage keys as safety net
+            // 4. Clear ALL Supabase-managed localStorage keys
             Object.keys(localStorage).forEach(key => {
                 if (key.startsWith('sb-') || key.includes('supabase')) {
                     localStorage.removeItem(key);
