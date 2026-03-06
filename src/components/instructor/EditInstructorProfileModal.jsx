@@ -8,6 +8,7 @@ const EditInstructorProfileModal = ({ isOpen, onClose, currentProfile }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [instructorId, setInstructorId] = useState('');
+    const [instructorCodeValue, setInstructorCodeValue] = useState('');
     const [role, setRole] = useState('Instructor');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -23,6 +24,7 @@ const EditInstructorProfileModal = ({ isOpen, onClose, currentProfile }) => {
             setEmail(user?.email || '');
             // user.studentId is used for Instructor ID in this system
             setInstructorId(user?.studentId || '');
+            setInstructorCodeValue(user?.instructorCode || '');
             setRole('Instructor');
 
             if (user?.avatar || currentProfile?.image) {
@@ -48,10 +50,11 @@ const EditInstructorProfileModal = ({ isOpen, onClose, currentProfile }) => {
         setIsLoading(true);
 
         try {
-            if (name !== user.name) {
-                await updateProfile({
-                    name,
-                });
+            if (name !== user.name || instructorCodeValue !== (user?.instructorCode || '')) {
+                const updates = {};
+                if (name !== user.name) updates.name = name;
+                if (instructorCodeValue !== (user?.instructorCode || '')) updates.student_code = instructorCodeValue;
+                await updateProfile(updates);
             }
 
             if (image) {
@@ -190,6 +193,25 @@ const EditInstructorProfileModal = ({ isOpen, onClose, currentProfile }) => {
                                         LOCKED
                                     </div>
                                 </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                                    Student Code
+                                </label>
+                                <div className="relative group">
+                                    <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
+                                    <input
+                                        type="text"
+                                        value={instructorCodeValue}
+                                        onChange={(e) => setInstructorCodeValue(e.target.value)}
+                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 focus:bg-slate-900 transition-all font-bold tracking-wide"
+                                        placeholder="Set a code for your students"
+                                    />
+                                </div>
+                                <p className="text-[9px] text-slate-500 ml-1 uppercase tracking-wider">
+                                    Students will need this code to register
+                                </p>
                             </div>
 
                             <div className="space-y-2">

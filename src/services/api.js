@@ -86,10 +86,10 @@ const apiRequest = async (endpoint, options = {}, _isRetry = false) => {
 // ============================================
 
 export const authAPI = {
-    register: async (email, password, username, { student_id, course, role } = {}) => {
+    register: async (email, password, username, { student_id, course, role, student_code } = {}) => {
         const data = await apiRequest('/auth/register', {
             method: 'POST',
-            body: JSON.stringify({ email, password, username, student_id, course, role }),
+            body: JSON.stringify({ email, password, username, student_id, course, role, student_code }),
         });
         if (data.session?.access_token) {
             setToken(data.session.access_token);
@@ -241,10 +241,10 @@ export const userAPI = {
         return apiRequest('/users/friends');
     },
 
-    sendDuelInvite: async (receiverId, senderName, lobbyId) => {
+    sendDuelInvite: async (receiverId, senderName, lobbyId, mode) => {
         return apiRequest('/users/duel-invite', {
             method: 'POST',
-            body: JSON.stringify({ receiverId, senderName, lobbyId }),
+            body: JSON.stringify({ receiverId, senderName, lobbyId, mode }),
         });
     },
 };

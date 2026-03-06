@@ -54,6 +54,7 @@ export const UserProvider = ({ children }) => {
             rankProgress: progress,
             selectedHero: profile?.selected_hero || '3',
             selectedTheme: profile?.selected_theme || 'default',
+            instructorCode: profile?.student_code || '',
             stats: {
                 winnings: 0,
                 losses: 0,
@@ -267,16 +268,27 @@ export const UserProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            // Clear Supabase session first (this prevents auto-login on F5)
-            await supabase.auth.signOut();
-            // Also notify backend (fire and forget)
-            authAPI.logout?.()?.catch?.(err => console.error('Logout API failed:', err));
+            // 1. Notify backend first (clears last_active_at)
+            try {
+                await authAPI.logout();
+            } catch (err) {
+                console.error('Logout API failed (non-blocking):', err);
+            }
+            // 2. Sign out globally from Supabase (invalidates ALL sessions/tokens)
+            await supabase.auth.signOut({ scope: 'global' });
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
+            // 3. Force-clear local state regardless
             setUser(null);
             setIsAuthenticated(false);
             localStorage.removeItem('auth_token');
+            // 4. Clear any Supabase-managed localStorage keys as safety net
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('sb-') || key.includes('supabase')) {
+                    localStorage.removeItem(key);
+                }
+            });
         }
     };
 
@@ -311,7 +323,8 @@ export const UserProvider = ({ children }) => {
                 email: profileData.email,
                 gender: profileData.gender,
                 selected_hero: profileData.selectedHero,
-                selected_theme: profileData.selectedTheme
+                selected_theme: profileData.selectedTheme,
+                student_code: profileData.student_code
             });
 
             if (response.profile) {

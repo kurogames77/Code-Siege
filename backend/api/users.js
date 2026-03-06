@@ -374,22 +374,29 @@ router.get('/friends', authenticateUser, async (req, res) => {
 
 /**
  * POST /api/users/duel-invite
- * Send a duel invite notification
+ * Send a duel or multiplayer invite notification
  * Uses service-role client to bypass RLS
  */
 router.post('/duel-invite', authenticateUser, async (req, res) => {
     try {
-        const { receiverId, senderName, lobbyId } = req.body;
+        const { receiverId, senderName, lobbyId, mode } = req.body;
         const db = supabaseService || supabase;
+
+        // Determine notification type based on mode
+        const isMultiplayer = mode === 'multiplayer';
+        const notifType = isMultiplayer ? 'multiplayer_invite' : 'duel_invite';
+        const notifMessage = isMultiplayer
+            ? `invited you to a multiplayer lobby [LOBBY:${lobbyId || 'unknown'}]`
+            : `invited you to a duel [LOBBY:${lobbyId || 'unknown'}]`;
 
         const { error } = await db
             .from('notifications')
             .insert({
-                type: 'duel_invite',
+                type: notifType,
                 sender_id: req.user.id,
                 receiver_id: receiverId,
                 title: senderName || 'Someone',
-                message: `invited you to a duel [LOBBY:${lobbyId || 'unknown'}]`,
+                message: notifMessage,
                 action_status: 'pending',
                 is_read: false
             });
@@ -474,7 +481,7 @@ router.get('/:id', async (req, res) => {
 router.patch('/:id', authenticateUser, async (req, res) => {
     try {
         const { id } = req.params;
-        const { username, selected_hero, selected_theme, school, college, course, student_id, role, email, gender } = req.body;
+        const { username, selected_hero, selected_theme, school, college, course, student_id, role, email, gender, student_code } = req.body;
 
         // Ensure user can only update their own profile
         if (req.user.id !== id) {
@@ -492,6 +499,7 @@ router.patch('/:id', authenticateUser, async (req, res) => {
         if (role !== undefined) updates.role = role;
         if (email !== undefined) updates.email = email;
         if (gender !== undefined) updates.gender = gender;
+        if (student_code !== undefined) updates.student_code = student_code;
 
         const { data: profile, error } = await supabase
             .from('users')

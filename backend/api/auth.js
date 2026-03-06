@@ -13,7 +13,7 @@ router.post('/register', async (req, res) => {
     console.log('[Auth] POST /register request received');
     res.setHeader('X-Backend-Version', '2.2');
     try {
-        let { email, password, username, student_id, course, role } = req.body;
+        let { email, password, username, student_id, course, role, student_code } = req.body;
 
         // Trim inputs
         if (email) email = email.trim();
@@ -93,6 +93,28 @@ router.post('/register', async (req, res) => {
             });
         }
 
+        // STUDENT REGISTRATION: Validate student code first
+        if (student_code) {
+            student_code = student_code.trim();
+        }
+        if (!student_code) {
+            return res.status(400).json({ error: 'Student code is required. Please ask your instructor for the correct code.' });
+        }
+
+        const { data: instructorMatch, error: codeError } = await supabaseService
+            .from('users')
+            .select('id, username')
+            .eq('student_code', student_code)
+            .eq('role', 'instructor')
+            .limit(1)
+            .single();
+
+        if (codeError || !instructorMatch) {
+            return res.status(400).json({ error: 'Invalid student code. Please ask your instructor for the correct code.' });
+        }
+
+        console.log(`[Auth] Student code validated: "${student_code}" belongs to instructor ${instructorMatch.username}`);
+
         // STUDENT REGISTRATION: Normal flow with immediate signup
         const { data: authData, error: authError } = await supabase.auth.signUp({
             email,
@@ -129,6 +151,7 @@ router.post('/register', async (req, res) => {
             username,
             student_id: student_id || null,
             course: course || null,
+            student_code: student_code || null,
             role: 'user',
             level: 1,
             xp: 0,

@@ -398,7 +398,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
         }, 10000);
 
         try {
-            await userAPI.sendDuelInvite(friend.id, user.name || 'Someone', null);
+            await userAPI.sendDuelInvite(friend.id, user.name || 'Someone', null, 'multiplayer');
             setSuccessInviteIds(prev => new Set([...prev, friend.id]));
             playSuccess();
             setTimeout(() => {

@@ -30,6 +30,7 @@ const LandingPage = () => {
     const [studentId, setStudentId] = useState('');
     const [instructorId, setInstructorId] = useState('');
     const [course, setCourse] = useState('');
+    const [instructorCode, setInstructorCode] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
     const openSignup = (role = 'student') => {
@@ -81,6 +82,7 @@ const LandingPage = () => {
         setStudentId('');
         setInstructorId('');
         setCourse('');
+        setInstructorCode('');
         setError('');
         setShowPassword(false);
     };
@@ -125,8 +127,9 @@ const LandingPage = () => {
         if (location.state?.loggedOut) return;
 
         if (isAuthenticated && user) {
-            // Check for incomplete profile (social login)
-            if (!user.studentId) {
+            // Check for incomplete profile (social login) — only for students
+            // Instructors/admins don't need studentId to proceed
+            if (user.role !== 'instructor' && user.role !== 'admin' && !user.studentId) {
                 if (modal?.type !== 'complete_profile') {
                     setModal({ type: 'complete_profile', role: (user.role === 'user' || !user.role) ? 'student' : user.role });
                     // Initialize fullName from user metadata/current name so they can fix it if "wrong"
@@ -171,7 +174,8 @@ const LandingPage = () => {
                 const response = await register(email.trim(), password, fullName, {
                     student_id: (modal?.role === 'student' ? studentId : instructorId).trim(),
                     course: course,
-                    role: modal?.role
+                    role: modal?.role,
+                    student_code: modal?.role === 'student' ? instructorCode.trim() : undefined
                 });
 
                 // Show success message or close modal depending on role
@@ -244,7 +248,8 @@ const LandingPage = () => {
                 student_id: id,
                 course: course,
                 role: role,
-                username: fullName.trim() // Use the name from the form instead of keeping the "wrong" one
+                username: fullName.trim(),
+                student_code: role === 'student' ? instructorCode.trim() : undefined
             });
 
             toast.popup('Profile completed! Welcome to Code Siege.');
@@ -441,6 +446,22 @@ const LandingPage = () => {
                                             />
                                         </div>
                                     </label>
+
+                                    {modal.role === 'student' && (
+                                        <label className="landing-modal__field">
+                                            <span className="landing-modal__label">Student Code</span>
+                                            <div className="landing-modal__input">
+                                                <Shield />
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    placeholder="Enter your student code"
+                                                    value={instructorCode}
+                                                    onChange={(e) => setInstructorCode(e.target.value)}
+                                                />
+                                            </div>
+                                        </label>
+                                    )}
 
                                     {modal.role === 'student' && (
                                         <label className="landing-modal__field">
@@ -762,6 +783,22 @@ const LandingPage = () => {
                                     />
                                 </div>
                             </label>
+
+                            {modal.role === 'student' && (
+                                <label className="landing-modal__field">
+                                    <span className="landing-modal__label">Student Code</span>
+                                    <div className="landing-modal__input">
+                                        <KeyRound />
+                                        <input
+                                            type="text"
+                                            required
+                                            placeholder="Enter your student code"
+                                            value={instructorCode}
+                                            onChange={(e) => setInstructorCode(e.target.value)}
+                                        />
+                                    </div>
+                                </label>
+                            )}
 
                             {modal.role === 'student' && (
                                 <label className="landing-modal__field">
