@@ -200,10 +200,11 @@ const LandingPage = () => {
                         throw new Error('Please enter your password');
                     }
 
-                    await login(studentId.trim(), password, true); // true = use student_id
+                    const studentResponse = await login(studentId.trim(), password, true);
                     toast.popup('Welcome back!');
                     closeModal();
-                    // Navigation handled by useEffect
+                    // Explicit navigate as safety net (useEffect may be blocked by stale state)
+                    navigate('/play');
                 } else {
                     // Instructors login with Instructor ID
                     if (!instructorId.trim()) {
@@ -213,10 +214,11 @@ const LandingPage = () => {
                         throw new Error('Please enter your password');
                     }
 
-                    await login(instructorId.trim(), password, true); // true = use id lookup
+                    const instructorResponse = await login(instructorId.trim(), password, true);
                     toast.popup('Welcome back!');
                     closeModal();
-                    // Navigation handled by useEffect
+                    // Explicit navigate — instructor redirect was failing via useEffect alone
+                    navigate('/instructor');
                 }
             }
         } catch (err) {

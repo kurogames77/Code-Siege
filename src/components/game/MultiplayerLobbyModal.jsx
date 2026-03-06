@@ -18,7 +18,7 @@ import { getRankFromExp as getRankData } from '../../utils/rankSystem';
 import supabase from '../../lib/supabase';
 import { userAPI } from '../../services/api';
 
-const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
+const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     const navigate = useNavigate();
 
     // Core User Data
@@ -82,6 +82,32 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack }) => {
     const [allFriends, setAllFriends] = useState([]);
     const [invitedFriendId, setInvitedFriendId] = useState(null);
     const [successInviteIds, setSuccessInviteIds] = useState(new Set());
+
+    // Add inviter to players when opened via invite
+    useEffect(() => {
+        if (isOpen && initialInviter && initialInviter.id) {
+            setPlayers(prev => {
+                // Don't add duplicates
+                if (prev.some(p => p.id === initialInviter.id)) return prev;
+                const inviterPlayer = {
+                    id: initialInviter.id,
+                    name: initialInviter.name || 'Player',
+                    level: 1,
+                    status: 'ready',
+                    avatar: initialInviter.avatar || heroAsset,
+                    heroImage: hero2Static,
+                    rankName: initialInviter.rankName || '',
+                    rankIcon: initialInviter.rankIcon || '',
+                    rankId: null,
+                    achievements: 0,
+                    ms: '—',
+                    logo: ccsLogo,
+                    isReady: true
+                };
+                return [...prev, inviterPlayer];
+            });
+        }
+    }, [isOpen, initialInviter]);
 
     // --- TIMERS & STATE MANAGEMENT ---
 

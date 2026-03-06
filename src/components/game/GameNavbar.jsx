@@ -53,6 +53,7 @@ const GameNavbar = ({ onLobbyStateChange }) => {
     const [notificationCount, setNotificationCount] = useState(0);
     const [activeInvitation, setActiveInvitation] = useState(null);
     const [duelOpponent, setDuelOpponent] = useState(null);
+    const [multiplayerInviter, setMultiplayerInviter] = useState(null);
     const { playClick, playCancel, playSuccess } = useSound();
 
 
@@ -147,37 +148,46 @@ const GameNavbar = ({ onLobbyStateChange }) => {
             await userAPI.respondToNotification(invitation.id, 'accepted', user.name || 'Someone');
 
             const isDuel = invitation.type === 'duel_invite';
+            const senderRank = getRankData(invitation.sender?.xp || 0);
 
             if (isDuel && invitation.senderId) {
-                // NOTE: The duel-accept broadcast is now sent by DuelLobbyModal 
-                // when its channel subscribes. This avoids creating a temporary 
-                // channel here that would conflict with DuelLobbyModal's channel.
-
                 // Build opponent data from the sender
-                const senderRank = getRankData(invitation.sender?.xp || 0);
                 setDuelOpponent({
                     id: invitation.senderId,
                     name: invitation.sender?.username || 'Opponent',
                     avatar: invitation.sender?.avatar_url,
                     rankName: senderRank.name,
                     rankIcon: senderRank.icon,
-                    lobbyId: invitation.lobbyId // Extract lobbyId if available
+                    lobbyId: invitation.lobbyId
+                });
+            } else if (!isDuel && invitation.senderId) {
+                // Build inviter data for multiplayer lobby
+                setMultiplayerInviter({
+                    id: invitation.senderId,
+                    name: invitation.sender?.username || 'Player',
+                    avatar: invitation.sender?.avatar_url,
+                    rankName: senderRank.name,
+                    rankIcon: senderRank.icon,
+                    lobbyId: invitation.lobbyId
                 });
             }
 
             // Redirect logic
+            const inviterData = {
+                id: invitation.senderId,
+                name: invitation.sender?.username || 'Player',
+                avatar: invitation.sender?.avatar_url,
+                rankName: senderRank.name,
+                rankIcon: senderRank.icon,
+                lobbyId: invitation.lobbyId
+            };
+
             if (location.pathname !== '/play') {
                 navigate('/play', {
                     state: {
                         [isDuel ? 'openDuelLobby' : 'openMultiplayerLobby']: true,
-                        duelOpponent: isDuel ? {
-                            id: invitation.senderId,
-                            name: invitation.sender?.username || 'Opponent',
-                            avatar: invitation.sender?.avatar_url,
-                            rankName: getRankData(invitation.sender?.xp || 0).name,
-                            rankIcon: getRankData(invitation.sender?.xp || 0).icon,
-                            lobbyId: invitation.lobbyId
-                        } : null
+                        duelOpponent: isDuel ? inviterData : null,
+                        multiplayerInviter: !isDuel ? inviterData : null
                     }
                 });
             } else {
@@ -222,6 +232,9 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                 setIsDuelLobbyOpen(true);
             }
             if (location.state?.openMultiplayerLobby || action === 'openMultiplayerLobby') {
+                if (location.state?.multiplayerInviter) {
+                    setMultiplayerInviter(location.state.multiplayerInviter);
+                }
                 setIsMultiplayerLobbyOpen(true);
             }
             if (location.state?.openShop) {
@@ -487,11 +500,13 @@ const GameNavbar = ({ onLobbyStateChange }) => {
 
             <MultiplayerLobbyModal
                 isOpen={isMultiplayerLobbyOpen}
-                onClose={() => setIsMultiplayerLobbyOpen(false)}
+                onClose={() => { setIsMultiplayerLobbyOpen(false); setMultiplayerInviter(null); }}
                 onBack={() => {
                     setIsMultiplayerLobbyOpen(false);
+                    setMultiplayerInviter(null);
                     setIsRankingOpen(true);
                 }}
+                initialInviter={multiplayerInviter}
             />
 
             <ProfileModal
