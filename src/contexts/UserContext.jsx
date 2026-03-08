@@ -338,23 +338,28 @@ export const UserProvider = ({ children }) => {
         logoutInProgress.current = true;
         // FIRST: Set logged-out flag before anything else — survives hard refresh
         localStorage.setItem('code_siege_logged_out', 'true');
-        // Immediately clear local state so UI reacts instantly
+        // Immediately clear React state so UI reacts instantly
+        // NOTE: Keep auth_token in localStorage until AFTER the backend call
+        // (the backend needs the Authorization header to identify the user and clear last_active_at)
         setUser(null);
         setIsAuthenticated(false);
-        localStorage.removeItem('auth_token');
         try {
-            // 1. Notify backend (clears last_active_at)
+            // 1. Notify backend (clears last_active_at) — token still in localStorage!
             try {
                 await authAPI.logout();
             } catch (err) {
                 console.error('Logout API failed (non-blocking):', err);
             }
-            // 2. Sign out globally from Supabase (invalidates ALL sessions/tokens)
+            // 2. NOW clear the auth token (after backend received it)
+            localStorage.removeItem('auth_token');
+            // 3. Sign out globally from Supabase (invalidates ALL sessions/tokens)
             await supabase.auth.signOut({ scope: 'global' });
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
-            // 3. Clear ALL Supabase-managed localStorage keys
+            // 4. Force-clear auth token (in case step 2 was skipped by error)
+            localStorage.removeItem('auth_token');
+            // 5. Clear ALL Supabase-managed localStorage keys
             Object.keys(localStorage).forEach(key => {
                 if (key.startsWith('sb-') || key.includes('supabase')) {
                     localStorage.removeItem(key);
