@@ -33,10 +33,11 @@ const InstructorSidebar = ({ activeTab, setActiveTab, isCollapsed, setIsCollapse
         setIsLogoutConfirmOpen(true);
     };
 
-    const handleConfirmLogout = () => {
-        // Navigate first so the page unmounts, then clear session
+    const handleConfirmLogout = async () => {
+        // Await logout to ensure backend clears last_active_at
+        // (UI state clears instantly inside logout(), so no visual delay)
+        await logout();
         navigate('/', { replace: true, state: { loggedOut: true } });
-        logout();
     };
 
     const menuItems = [

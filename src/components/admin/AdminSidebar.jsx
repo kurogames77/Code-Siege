@@ -10,10 +10,11 @@ const AdminSidebar = ({ activeTab, setActiveTab, theme = 'dark' }) => {
     const { logout } = useUser();
     const [showExitConfirm, setShowExitConfirm] = useState(false);
 
-    const handleExit = () => {
-        // Navigate first so the page unmounts, then clear session
+    const handleExit = async () => {
+        // Await logout to ensure backend clears last_active_at
+        // (UI state clears instantly inside logout(), so no visual delay)
+        await logout();
         navigate('/', { replace: true, state: { loggedOut: true } });
-        logout();
     };
 
     const menuItems = [

@@ -517,10 +517,11 @@ const GameNavbar = ({ onLobbyStateChange }) => {
             <LogoutModal
                 isOpen={isLogoutOpen}
                 onClose={() => setIsLogoutOpen(false)}
-                onConfirm={() => {
-                    // Navigate first so PlayPage unmounts, then clear session
+                onConfirm={async () => {
+                    // Await logout to ensure backend clears last_active_at
+                    // (UI state clears instantly inside logout(), so no visual delay)
+                    await logout();
                     navigate('/', { replace: true, state: { loggedOut: true } });
-                    logout();
                 }}
             />
 
