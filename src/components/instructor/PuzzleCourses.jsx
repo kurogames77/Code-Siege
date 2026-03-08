@@ -1123,15 +1123,7 @@ const PuzzleCourses = ({ theme }) => {
                                             <Terminal className="w-3 h-3" /> Core Logic Editors
                                         </p>
 
-                                        {/* Code Editors available for ALL modes */}
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Initial Code (Starter Code)</label>
-                                            <textarea
-                                                value={editLevelData.initial_code}
-                                                onChange={(e) => setEditLevelData({ ...editLevelData, initial_code: e.target.value })}
-                                                className={`w-full border rounded-xl px-4 py-3 text-sm font-mono focus:outline-none transition-all h-32 custom-scrollbar ${theme === 'dark' ? 'bg-black/50 border-white/10 text-emerald-400 focus:border-emerald-500/50' : 'bg-slate-50 border-slate-200 text-emerald-600 focus:border-emerald-500'}`}
-                                            />
-                                        </div>
+                                        {/* Simplified Code Editors */}
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Expected Output</label>
@@ -1150,33 +1142,6 @@ const PuzzleCourses = ({ theme }) => {
                                                 />
                                             </div>
                                         </div>
-
-                                        {/* Block Setup specific to Beginner/Intermediate modes */}
-                                        {!(formData.mode === 'Advance' || formData.mode === 'Advanced') && (
-                                            <div className="pt-4 mt-6 border-t border-slate-200/50 dark:border-white/5 space-y-4">
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                                    <Cpu className="w-3 h-3" /> Advanced: Game Engine Block Data (JSON)
-                                                </p>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Initial Blocks Schema (JSON)</label>
-                                                        <textarea
-                                                            value={editLevelData.initial_blocks}
-                                                            onChange={(e) => setEditLevelData({ ...editLevelData, initial_blocks: e.target.value })}
-                                                            className={`w-full border rounded-xl px-4 py-3 text-xs font-mono focus:outline-none transition-all h-40 custom-scrollbar whitespace-pre ${theme === 'dark' ? 'bg-black/50 border-white/10 text-amber-400 focus:border-amber-500/50' : 'bg-slate-50 border-slate-200 text-amber-600 focus:border-amber-500'}`}
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Correct Sequence IDs (JSON)</label>
-                                                        <textarea
-                                                            value={editLevelData.correct_sequence}
-                                                            onChange={(e) => setEditLevelData({ ...editLevelData, correct_sequence: e.target.value })}
-                                                            className={`w-full border rounded-xl px-4 py-3 text-xs font-mono focus:outline-none transition-all h-40 custom-scrollbar whitespace-pre ${theme === 'dark' ? 'bg-black/50 border-white/10 text-rose-400 focus:border-rose-500/50' : 'bg-slate-50 border-slate-200 text-rose-600 focus:border-rose-500'}`}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                                 <div className="pt-4 grid grid-cols-2 gap-4">
