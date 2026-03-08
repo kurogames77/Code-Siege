@@ -97,10 +97,10 @@ export const authAPI = {
         return data;
     },
 
-    login: async (identifier, password, useStudentId = false) => {
+    login: async (identifier, password, useStudentId = false, expectedRole = null) => {
         const body = useStudentId
-            ? { student_id: identifier, password }
-            : { email: identifier, password };
+            ? { student_id: identifier, password, expected_role: expectedRole }
+            : { email: identifier, password, expected_role: expectedRole };
 
         const data = await apiRequest('/auth/login', {
             method: 'POST',

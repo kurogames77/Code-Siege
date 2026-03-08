@@ -295,10 +295,10 @@ export const UserProvider = ({ children }) => {
         return response;
     };
 
-    const login = async (identifier, password, useStudentId = false) => {
+    const login = async (identifier, password, useStudentId = false, expectedRole = null) => {
         loginInProgress.current = true;
         try {
-            const response = await authAPI.login(identifier, password, useStudentId);
+            const response = await authAPI.login(identifier, password, useStudentId, expectedRole);
             if (response.profile) {
                 setUser(formatUser(response.profile));
                 setIsAuthenticated(true);

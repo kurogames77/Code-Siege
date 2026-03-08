@@ -201,8 +201,9 @@ const LandingPage = () => {
                     throw new Error('Please enter your password');
                 }
 
-                // Call login with the provided ID
-                const response = await login(idToSubmit, password, true);
+                // Call login with the provided ID and the expected role (the current tab)
+                const expectedRole = modal?.role || 'student';
+                const response = await login(idToSubmit, password, true, expectedRole);
                 toast.popup('Welcome back!');
                 closeModal();
 

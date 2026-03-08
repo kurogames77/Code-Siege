@@ -247,7 +247,7 @@ router.post('/login', async (req, res) => {
     console.log('[Auth] POST /login request received');
     res.setHeader('X-Backend-Version', '2.2');
     try {
-        let { email, password, student_id } = req.body;
+        let { email, password, student_id, expected_role } = req.body;
 
         // Trim inputs
         if (email) email = email.trim();
@@ -264,7 +264,7 @@ router.post('/login', async (req, res) => {
         let loginEmail = email;
 
         // Look up the user's profile to check their last_active_at status and resolve their email
-        let query = supabaseService.from('users').select('email, last_active_at');
+        let query = supabaseService.from('users').select('email, role, last_active_at');
         if (student_id && !email) {
             query = query.eq('student_id', student_id);
         } else {
@@ -281,6 +281,23 @@ router.post('/login', async (req, res) => {
                 return res.status(401).json({ error: 'ID not found' });
             }
         } else {
+            loginEmail = userProfile.email;
+
+            // STRICT LOGIN TAB ENFORCEMENT
+            if (expected_role) {
+                const isStudentTab = expected_role === 'student';
+                const isStudentAccount = userProfile.role === 'user';
+                const isInstructorAccount = userProfile.role === 'instructor' || userProfile.role === 'admin';
+
+                if (isStudentTab && isInstructorAccount) {
+                    logger.warn('AUTH_SERVICE', `Login blocked: Instructor used student tab to log in (${loginEmail})`);
+                    return res.status(401).json({ error: 'This is an instructor account. Please use the Instructor login tab.' });
+                }
+                if (!isStudentTab && isStudentAccount) {
+                    logger.warn('AUTH_SERVICE', `Login blocked: Student used instructor tab to log in (${loginEmail})`);
+                    return res.status(401).json({ error: 'This is a student account. Please use the Student login tab.' });
+                }
+            }
             loginEmail = userProfile.email;
 
             // STRICT SESSION ENFORCEMENT
