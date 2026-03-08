@@ -69,11 +69,19 @@ export const UserProvider = ({ children }) => {
     // Lock to prevent concurrent checkAuth calls (F5 refresh causes mount + SIGNED_IN to race)
     const checkAuthInProgress = React.useRef(false);
     const initialCheckDone = React.useRef(false);
+    // Guards to prevent onAuthStateChange from re-triggering checkAuth during active login/logout
+    const loginInProgress = React.useRef(false);
+    const logoutInProgress = React.useRef(false);
 
     const checkAuth = async () => {
         // Prevent concurrent calls — on F5, mount + SIGNED_IN fire almost simultaneously
         if (checkAuthInProgress.current) {
             console.log('[Auth] checkAuth already in progress, skipping...');
+            return;
+        }
+        // Don't re-check if login or logout is actively in progress
+        if (loginInProgress.current || logoutInProgress.current) {
+            console.log('[Auth] Skipping checkAuth — login/logout in progress');
             return;
         }
         checkAuthInProgress.current = true;
@@ -157,6 +165,11 @@ export const UserProvider = ({ children }) => {
                 if (localStorage.getItem('code_siege_logged_out') === 'true') {
                     console.log('[Auth] Ignoring', event, '— user is logged out');
                     try { await supabase.auth.signOut({ scope: 'local' }); } catch (_) { }
+                    return;
+                }
+                // GUARD: Skip if login/logout is actively in progress — they handle state themselves
+                if (loginInProgress.current || logoutInProgress.current) {
+                    console.log('[Auth] Ignoring', event, '— login/logout in progress');
                     return;
                 }
                 console.log('[Auth] Auth event detected, syncing token...');
@@ -259,26 +272,57 @@ export const UserProvider = ({ children }) => {
     }, [user?.id]);
 
     const register = async (email, password, username, options = {}) => {
-        return await authAPI.register(email, password, username, options);
-    };
-
-    const login = async (identifier, password, useStudentId = false) => {
-        const response = await authAPI.login(identifier, password, useStudentId);
-        if (response.profile) {
-            setUser(formatUser(response.profile));
-            setIsAuthenticated(true);
-            setLoading(false); // Ensure loading is cleared after successful login
-            if (response.session) {
-                // Clear logged-out flag on successful login
+        const response = await authAPI.register(email, password, username, options);
+        // Auto-login after successful student registration (if session returned)
+        if (response.session?.access_token && response.profile && !response.applicationPending) {
+            loginInProgress.current = true;
+            try {
                 localStorage.removeItem('code_siege_logged_out');
                 localStorage.setItem('auth_token', response.session.access_token);
-                supabase.auth.setSession({
+                setUser(formatUser(response.profile, response.user));
+                setIsAuthenticated(true);
+                setLoading(false);
+                await supabase.auth.setSession({
                     access_token: response.session.access_token,
                     refresh_token: response.session.refresh_token || ''
-                }).catch(err => console.error('Session sync failed:', err));
+                });
+            } catch (err) {
+                console.error('[Auth] Session sync after register failed:', err);
+            } finally {
+                loginInProgress.current = false;
             }
         }
         return response;
+    };
+
+    const login = async (identifier, password, useStudentId = false) => {
+        loginInProgress.current = true;
+        try {
+            const response = await authAPI.login(identifier, password, useStudentId);
+            if (response.profile) {
+                setUser(formatUser(response.profile));
+                setIsAuthenticated(true);
+                setLoading(false); // Ensure loading is cleared after successful login
+                if (response.session) {
+                    // Clear logged-out flag on successful login
+                    localStorage.removeItem('code_siege_logged_out');
+                    localStorage.setItem('auth_token', response.session.access_token);
+                    // Await setSession to prevent race with onAuthStateChange
+                    try {
+                        await supabase.auth.setSession({
+                            access_token: response.session.access_token,
+                            refresh_token: response.session.refresh_token || ''
+                        });
+                    } catch (err) {
+                        console.error('[Auth] Session sync failed (non-blocking):', err);
+                    }
+                }
+            }
+            return response;
+        } finally {
+            // Small delay to ensure onAuthStateChange SIGNED_IN event is suppressed
+            setTimeout(() => { loginInProgress.current = false; }, 500);
+        }
     };
 
     const loginWithGoogle = async () => {
@@ -291,8 +335,13 @@ export const UserProvider = ({ children }) => {
     };
 
     const logout = async () => {
+        logoutInProgress.current = true;
         // FIRST: Set logged-out flag before anything else — survives hard refresh
         localStorage.setItem('code_siege_logged_out', 'true');
+        // Immediately clear local state so UI reacts instantly
+        setUser(null);
+        setIsAuthenticated(false);
+        localStorage.removeItem('auth_token');
         try {
             // 1. Notify backend (clears last_active_at)
             try {
@@ -305,16 +354,14 @@ export const UserProvider = ({ children }) => {
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
-            // 3. Force-clear local state
-            setUser(null);
-            setIsAuthenticated(false);
-            localStorage.removeItem('auth_token');
-            // 4. Clear ALL Supabase-managed localStorage keys
+            // 3. Clear ALL Supabase-managed localStorage keys
             Object.keys(localStorage).forEach(key => {
                 if (key.startsWith('sb-') || key.includes('supabase')) {
                     localStorage.removeItem(key);
                 }
             });
+            // Release guard after a delay so onAuthStateChange SIGNED_OUT is suppressed
+            setTimeout(() => { logoutInProgress.current = false; }, 500);
         }
     };
 

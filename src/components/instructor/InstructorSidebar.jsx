@@ -33,14 +33,10 @@ const InstructorSidebar = ({ activeTab, setActiveTab, isCollapsed, setIsCollapse
         setIsLogoutConfirmOpen(true);
     };
 
-    const handleConfirmLogout = async () => {
-        try {
-            await logout();
-            navigate('/', { state: { loggedOut: true } });
-        } catch (error) {
-            console.error('Logout failed:', error);
-            navigate('/');
-        }
+    const handleConfirmLogout = () => {
+        // Navigate first so the page unmounts, then clear session
+        navigate('/', { replace: true, state: { loggedOut: true } });
+        logout();
     };
 
     const menuItems = [
