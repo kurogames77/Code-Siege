@@ -53,8 +53,10 @@ const apiRequest = async (endpoint, options = {}, _isRetry = false) => {
     const response = await fetch(`${API_BASE}${endpoint}`, config);
     console.log(`[API] Response: ${response.status} ${endpoint}`);
 
-    // Auto-refresh token on 401 and retry once
-    if (response.status === 401 && !_isRetry) {
+    // Auto-refresh token on 401 and retry once.
+    // DO NOT trigger this for login/register endpoints, as 401 there means authentication failed, not token expired.
+    const isAuthEndpoint = endpoint.startsWith('/auth/login') || endpoint.startsWith('/auth/register');
+    if (response.status === 401 && !_isRetry && !isAuthEndpoint) {
         console.log('[API] 401 received, attempting token refresh...');
         try {
             const { default: supabase } = await import('../lib/supabase');
