@@ -191,34 +191,30 @@ const LandingPage = () => {
                 }
             } else {
                 // Login
-                if (modal?.role === 'student') {
-                    // Students login with Student ID
-                    if (!studentId.trim()) {
-                        throw new Error('Please enter your Student ID');
-                    }
-                    if (!password.trim()) {
-                        throw new Error('Please enter your password');
-                    }
+                const isStudentTab = modal?.role === 'student';
+                const idToSubmit = isStudentTab ? studentId.trim() : instructorId.trim();
 
-                    const studentResponse = await login(studentId.trim(), password, true);
-                    toast.popup('Welcome back!');
-                    closeModal();
-                    // Explicit navigate as safety net (useEffect may be blocked by stale state)
-                    navigate('/play');
-                } else {
-                    // Instructors login with Instructor ID
-                    if (!instructorId.trim()) {
-                        throw new Error('Please enter your Instructor ID');
-                    }
-                    if (!password.trim()) {
-                        throw new Error('Please enter your password');
-                    }
+                if (!idToSubmit) {
+                    throw new Error(`Please enter your ${isStudentTab ? 'Student' : 'Instructor'} ID`);
+                }
+                if (!password.trim()) {
+                    throw new Error('Please enter your password');
+                }
 
-                    const instructorResponse = await login(instructorId.trim(), password, true);
-                    toast.popup('Welcome back!');
-                    closeModal();
-                    // Explicit navigate — instructor redirect was failing via useEffect alone
+                // Call login with the provided ID
+                const response = await login(idToSubmit, password, true);
+                toast.popup('Welcome back!');
+                closeModal();
+
+                // Explicitly navigate based on the ACTUAL role returned from the database,
+                // regardless of which tab the user used to log in.
+                const actualRole = response?.profile?.role || 'user';
+                if (actualRole === 'admin') {
+                    navigate('/admin');
+                } else if (actualRole === 'instructor') {
                     navigate('/instructor');
+                } else {
+                    navigate('/play');
                 }
             }
         } catch (err) {
