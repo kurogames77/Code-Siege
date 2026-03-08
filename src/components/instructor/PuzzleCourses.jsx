@@ -175,7 +175,12 @@ const PuzzleCourses = ({ theme }) => {
         setEditLevelData({
             name: level.name,
             description: level.description || '',
-            exp: level.rewards?.exp || 0
+            exp: level.rewards?.exp || 0,
+            initial_code: level.initial_code || '',
+            expected_output: level.expected_output || '',
+            solution: level.solution || '',
+            initial_blocks: typeof level.initial_blocks === 'object' ? JSON.stringify(level.initial_blocks, null, 2) : (level.initial_blocks || '[]'),
+            correct_sequence: typeof level.correct_sequence === 'object' ? JSON.stringify(level.correct_sequence, null, 2) : (level.correct_sequence || '[]')
         });
         setIsEditLevelModalOpen(true);
     };
@@ -183,11 +188,20 @@ const PuzzleCourses = ({ theme }) => {
     const handleEditLevelSubmit = async () => {
         if (!editingLevel) return;
         try {
-            await instructorAPI.updateLevel(editingLevel.id, {
+            // Need to parse blocks back to arrays/JSON objects for saving if they were strings in DB, 
+            // but the backend takes stringified JSON for these columns.
+            const updates = {
                 name: editLevelData.name,
                 description: editLevelData.description,
-                rewards: { exp: parseInt(editLevelData.exp), coins: 0 }
-            });
+                rewards: { exp: parseInt(editLevelData.exp), coins: 0 },
+                initial_code: editLevelData.initial_code,
+                expected_output: editLevelData.expected_output,
+                solution: editLevelData.solution,
+                initial_blocks: editLevelData.initial_blocks,
+                correct_sequence: editLevelData.correct_sequence
+            };
+
+            await instructorAPI.updateLevel(editingLevel.id, updates);
 
             // Update local state without refetching
             setCourseLevels(prev => ({
@@ -195,9 +209,7 @@ const PuzzleCourses = ({ theme }) => {
                 [selectedCourse.id]: prev[selectedCourse.id].map(l =>
                     l.id === editingLevel.id ? {
                         ...l,
-                        name: editLevelData.name,
-                        description: editLevelData.description,
-                        rewards: { exp: parseInt(editLevelData.exp), coins: 0 }
+                        ...updates
                     } : l
                 )
             }));
@@ -1058,42 +1070,34 @@ const PuzzleCourses = ({ theme }) => {
                             initial={{ scale: 0.95, y: 20 }}
                             animate={{ scale: 1, y: 0 }}
                             exit={{ scale: 0.95, y: 20 }}
-                            className={`w-full max-w-lg border rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 ${theme === 'dark' ? 'bg-[#0B1224] border-white/10' : 'bg-white border-slate-200'}`}
+                            className={`w-full max-w-3xl border rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 flex flex-col ${theme === 'dark' ? 'bg-[#0B1224] border-white/10' : 'bg-white border-slate-200'}`}
                         >
-                            <div className={`p-6 border-b flex items-center justify-between transition-colors ${theme === 'dark' ? 'bg-gradient-to-r from-cyan-500/10 to-transparent border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                            <div className={`p-6 border-b flex items-center justify-between shrink-0 transition-colors ${theme === 'dark' ? 'bg-gradient-to-r from-cyan-500/10 to-transparent border-white/5' : 'bg-slate-50 border-slate-200'}`}>
                                 <div className="flex items-center gap-4">
                                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center border transition-colors ${theme === 'dark' ? 'bg-cyan-500/20 border-cyan-500/30 text-cyan-500' : 'bg-white border-cyan-200 text-cyan-600'}`}>
-                                        <Edit2 className="w-5 h-5" />
+                                        <Code2 className="w-5 h-5" />
                                     </div>
                                     <div>
                                         <h3 className={`text-xl font-black italic tracking-tight transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{editingLevel.name}</h3>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Update Level Details</p>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Update Level Details & Code</p>
                                     </div>
                                 </div>
                                 <button onClick={() => setIsEditLevelModalOpen(false)}>
                                     <X className={`w-5 h-5 ${theme === 'dark' ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'}`} />
                                 </button>
                             </div>
-                            <div className="p-8 space-y-6">
+                            <div className="p-8 space-y-6 overflow-y-auto max-h-[75vh] custom-scrollbar">
                                 <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Level Name</label>
-                                        <input
-                                            type="text"
-                                            value={editLevelData.name}
-                                            onChange={(e) => setEditLevelData({ ...editLevelData, name: e.target.value })}
-                                            className={`w-full border rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all ${theme === 'dark' ? 'bg-slate-900 border-white/10 text-white focus:border-cyan-500/50' : 'bg-white border-slate-200 text-slate-900 focus:border-cyan-500'}`}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Description</label>
-                                        <textarea
-                                            value={editLevelData.description}
-                                            onChange={(e) => setEditLevelData({ ...editLevelData, description: e.target.value })}
-                                            className={`w-full border rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all h-24 resize-none ${theme === 'dark' ? 'bg-slate-900 border-white/10 text-white focus:border-cyan-500/50' : 'bg-white border-slate-200 text-slate-900 focus:border-cyan-500'}`}
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-1 gap-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Level Name</label>
+                                            <input
+                                                type="text"
+                                                value={editLevelData.name}
+                                                onChange={(e) => setEditLevelData({ ...editLevelData, name: e.target.value })}
+                                                className={`w-full border rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all ${theme === 'dark' ? 'bg-slate-900 border-white/10 text-white focus:border-cyan-500/50' : 'bg-white border-slate-200 text-slate-900 focus:border-cyan-500'}`}
+                                            />
+                                        </div>
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">EXP Reward</label>
                                             <input
@@ -1103,6 +1107,73 @@ const PuzzleCourses = ({ theme }) => {
                                                 className={`w-full border rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all ${theme === 'dark' ? 'bg-slate-900 border-white/10 text-white focus:border-cyan-500/50' : 'bg-white border-slate-200 text-slate-900 focus:border-cyan-500'}`}
                                             />
                                         </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Description / Task Prompt</label>
+                                        <textarea
+                                            value={editLevelData.description}
+                                            onChange={(e) => setEditLevelData({ ...editLevelData, description: e.target.value })}
+                                            className={`w-full border rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all h-24 resize-none ${theme === 'dark' ? 'bg-slate-900 border-white/10 text-white focus:border-cyan-500/50' : 'bg-white border-slate-200 text-slate-900 focus:border-cyan-500'}`}
+                                        />
+                                    </div>
+
+                                    {/* Code Editor Sections */}
+                                    <div className="pt-4 border-t border-slate-200/50 dark:border-white/5 space-y-4">
+                                        <p className="text-[10px] font-black text-cyan-500 uppercase tracking-widest flex items-center gap-2">
+                                            <Terminal className="w-3 h-3" /> Core Logic Editors
+                                        </p>
+
+                                        {(formData.mode === 'Advance' || formData.mode === 'Advanced') ? (
+                                            <>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Initial Code (Shown to student)</label>
+                                                    <textarea
+                                                        value={editLevelData.initial_code}
+                                                        onChange={(e) => setEditLevelData({ ...editLevelData, initial_code: e.target.value })}
+                                                        className={`w-full border rounded-xl px-4 py-3 text-sm font-mono focus:outline-none transition-all h-32 custom-scrollbar ${theme === 'dark' ? 'bg-black/50 border-white/10 text-emerald-400 focus:border-emerald-500/50' : 'bg-slate-50 border-slate-200 text-emerald-600 focus:border-emerald-500'}`}
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Expected Output</label>
+                                                        <textarea
+                                                            value={editLevelData.expected_output}
+                                                            onChange={(e) => setEditLevelData({ ...editLevelData, expected_output: e.target.value })}
+                                                            className={`w-full border rounded-xl px-4 py-3 text-sm font-mono focus:outline-none transition-all h-32 custom-scrollbar ${theme === 'dark' ? 'bg-black/50 border-white/10 text-blue-400 focus:border-blue-500/50' : 'bg-slate-50 border-slate-200 text-blue-600 focus:border-blue-500'}`}
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Reference Solution</label>
+                                                        <textarea
+                                                            value={editLevelData.solution}
+                                                            onChange={(e) => setEditLevelData({ ...editLevelData, solution: e.target.value })}
+                                                            className={`w-full border rounded-xl px-4 py-3 text-sm font-mono focus:outline-none transition-all h-32 custom-scrollbar ${theme === 'dark' ? 'bg-black/50 border-white/10 text-purple-400 focus:border-purple-500/50' : 'bg-slate-50 border-slate-200 text-purple-600 focus:border-purple-500'}`}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Initial Blocks (JSON)</label>
+                                                        <textarea
+                                                            value={editLevelData.initial_blocks}
+                                                            onChange={(e) => setEditLevelData({ ...editLevelData, initial_blocks: e.target.value })}
+                                                            className={`w-full border rounded-xl px-4 py-3 text-xs font-mono focus:outline-none transition-all h-48 custom-scrollbar whitespace-pre ${theme === 'dark' ? 'bg-black/50 border-white/10 text-amber-400 focus:border-amber-500/50' : 'bg-slate-50 border-slate-200 text-amber-600 focus:border-amber-500'}`}
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Correct Sequence (JSON)</label>
+                                                        <textarea
+                                                            value={editLevelData.correct_sequence}
+                                                            onChange={(e) => setEditLevelData({ ...editLevelData, correct_sequence: e.target.value })}
+                                                            className={`w-full border rounded-xl px-4 py-3 text-xs font-mono focus:outline-none transition-all h-48 custom-scrollbar whitespace-pre ${theme === 'dark' ? 'bg-black/50 border-white/10 text-rose-400 focus:border-rose-500/50' : 'bg-slate-50 border-slate-200 text-rose-600 focus:border-rose-500'}`}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="pt-4 grid grid-cols-2 gap-4">
