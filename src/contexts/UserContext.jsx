@@ -352,8 +352,10 @@ export const UserProvider = ({ children }) => {
             }
             // 2. NOW clear the auth token (after backend received it)
             localStorage.removeItem('auth_token');
-            // 3. Sign out globally from Supabase (invalidates ALL sessions/tokens)
-            await supabase.auth.signOut({ scope: 'global' });
+            // 3. Clear local Supabase client state (backend already invalidated the server session)
+            try {
+                await supabase.auth.signOut({ scope: 'local' });
+            } catch (_) { /* ignore — session may already be gone */ }
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
