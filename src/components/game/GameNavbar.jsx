@@ -520,6 +520,7 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                 onConfirm={async () => {
                     // Await logout to ensure backend clears last_active_at
                     // (UI state clears instantly inside logout(), so no visual delay)
+                    toast.success('Logged out successfully');
                     await logout();
                     navigate('/', { replace: true, state: { loggedOut: true } });
                 }}

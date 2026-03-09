@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
+import { useToast } from '../../contexts/ToastContext';
 import {
     LayoutDashboard,
     Users,
@@ -26,6 +27,7 @@ import LogoutConfirmationModal from './LogoutConfirmationModal';
 const InstructorSidebar = ({ activeTab, setActiveTab, isCollapsed, setIsCollapsed, theme }) => {
     const navigate = useNavigate();
     const { user, logout } = useUser();
+    const toast = useToast();
     const [isEditProfileOpen, setIsEditProfileOpen] = React.useState(false);
     const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = React.useState(false);
 
@@ -36,6 +38,7 @@ const InstructorSidebar = ({ activeTab, setActiveTab, isCollapsed, setIsCollapse
     const handleConfirmLogout = async () => {
         // Await logout to ensure backend clears last_active_at
         // (UI state clears instantly inside logout(), so no visual delay)
+        toast.success('Logged out successfully');
         await logout();
         navigate('/', { replace: true, state: { loggedOut: true } });
     };

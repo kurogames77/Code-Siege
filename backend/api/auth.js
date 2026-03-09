@@ -305,7 +305,7 @@ router.post('/login', async (req, res) => {
             // STRICT LOGIN TAB ENFORCEMENT
             if (expected_role) {
                 const isStudentTab = expected_role === 'student';
-                const isStudentAccount = userProfile.role === 'user';
+                const isStudentAccount = userProfile.role === 'user' || userProfile.role === 'student';
                 const isInstructorAccount = userProfile.role === 'instructor' || userProfile.role === 'admin';
 
                 if (isStudentTab && isInstructorAccount) {

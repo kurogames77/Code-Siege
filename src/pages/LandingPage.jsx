@@ -123,7 +123,7 @@ const LandingPage = () => {
     // Check for logout state
     useEffect(() => {
         if (location.state?.loggedOut) {
-            toast.popup('Logged out successfully');
+            toast.success('Logged out successfully');
             // Clear state to prevent showing again on refresh
             window.history.replaceState({}, document.title);
         }
@@ -191,7 +191,7 @@ const LandingPage = () => {
                 setLoading(false);
 
                 if (response?.applicationPending) {
-                    toast.popup('Application submitted! Please wait for the admin to send verification through gmail.');
+                    toast.success('Application submitted! Please wait for the admin to send verification through gmail.');
                     closeModal(); // Close immediately for instructors
                 } else {
                     setSignupSuccess(true); // Show 'Check Your Email' only for students
@@ -212,7 +212,7 @@ const LandingPage = () => {
                 // Call login with the provided ID and the expected role (the current tab)
                 const expectedRole = modal?.role || 'student';
                 const response = await login(idToSubmit, password, true, expectedRole);
-                toast.popup('Welcome back!');
+                toast.success('Welcome back!');
                 closeModal();
 
                 // Explicitly navigate based on the ACTUAL role returned from the database,
@@ -259,7 +259,7 @@ const LandingPage = () => {
                 student_code: role === 'student' ? instructorCode.trim() : undefined
             });
 
-            toast.popup('Profile completed! Welcome to Code Siege.');
+            toast.success('Profile completed! Welcome to Code Siege.');
             closeModal();
             // Navigation will be handled by the useEffect
         } catch (err) {
