@@ -98,22 +98,25 @@ router.post('/register', async (req, res) => {
             student_code = student_code.trim();
         }
         if (!student_code) {
-            return res.status(400).json({ error: 'Student code is required. Please ask your instructor for the correct code.' });
+            return res.status(400).json({ error: 'Student code is required to register.' });
         }
 
-        const { data: instructorMatch, error: codeError } = await supabaseService
-            .from('users')
-            .select('id, username')
-            .eq('student_code', student_code)
-            .eq('role', 'instructor')
-            .limit(1)
+        // Check if the code exists and is valid (not used)
+        const { data: codeRecord, error: codeError } = await supabaseService
+            .from('student_codes')
+            .select('id, is_used')
+            .eq('code', student_code)
             .single();
 
-        if (codeError || !instructorMatch) {
-            return res.status(400).json({ error: 'Invalid student code. Please ask your instructor for the correct code.' });
+        if (codeError || !codeRecord) {
+            return res.status(400).json({ error: 'Invalid student code.' });
         }
 
-        console.log(`[Auth] Student code validated: "${student_code}" belongs to instructor ${instructorMatch.username}`);
+        if (codeRecord.is_used) {
+            return res.status(400).json({ error: 'This student code has already been used.' });
+        }
+
+        console.log(`[Auth] Student registration code validated: "${student_code}"`);
 
         // STUDENT REGISTRATION: Normal flow with immediate signup
         const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -220,6 +223,22 @@ router.post('/register', async (req, res) => {
                 profile: null,
                 session: authData.session
             });
+        }
+
+        // Mark the student code as used
+        const { error: markCodeError } = await supabaseService
+            .from('student_codes')
+            .update({
+                is_used: true,
+                used_by: authData.user.id
+            })
+            .eq('code', student_code);
+
+        if (markCodeError) {
+            console.error('[Auth] Failed to mark student code as used:', markCodeError);
+            // We don't fail the registration here, but log it
+        } else {
+            console.log(`[Auth] Marked student code ${student_code} as used by ${authData.user.id}`);
         }
 
         logger.info('AUTH_SERVICE', `New student registered: ${username} (${email}), student_id: ${student_id}`);

@@ -43,6 +43,121 @@ router.get('/stats', async (req, res) => {
 });
 
 // ============================================
+// STUDENT CODES MANAGEMENT (ADMIN ONLY)
+// ============================================
+
+/**
+ * GET /api/instructor/student-codes
+ * Get all generated student codes with pagination
+ */
+router.get('/student-codes', requireAdmin, async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const search = req.query.search || '';
+        const offset = (page - 1) * limit;
+
+        let query = supabaseService
+            .from('student_codes')
+            .select('*, used_by:users!used_by(username, email)', { count: 'exact' })
+            .order('created_at', { ascending: false })
+            .range(offset, offset + limit - 1);
+
+        if (search) {
+            query = query.ilike('code', `%${search}%`);
+        }
+
+        const { data: codes, count, error } = await query;
+
+        if (error) {
+            console.error('Get student codes error:', error);
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json({
+            codes: codes || [],
+            total: count || 0,
+            page,
+            limit,
+            totalPages: Math.ceil((count || 0) / limit)
+        });
+    } catch (error) {
+        console.error('Get student codes error:', error);
+        res.status(500).json({ error: 'Failed to get student codes' });
+    }
+});
+
+/**
+ * POST /api/instructor/student-codes/upload
+ * Upload specific student codes
+ */
+router.post('/student-codes/upload', requireAdmin, async (req, res) => {
+    try {
+        const { codes } = req.body;
+        const adminId = req.user.id;
+
+        if (!Array.isArray(codes) || codes.length === 0) {
+            return res.status(400).json({ error: 'Please provide an array of codes to upload.' });
+        }
+
+        const codesToInsert = codes.map(code => ({
+            code: code.trim(),
+            is_used: false,
+            created_by: adminId
+        })).filter(c => c.code.length > 0);
+
+        if (codesToInsert.length === 0) {
+            return res.status(400).json({ error: 'No valid codes provided.' });
+        }
+
+        const { data: insertedCodes, error } = await supabaseService
+            .from('student_codes')
+            .insert(codesToInsert)
+            .select();
+
+        if (error) {
+            console.error('Insert student codes error:', error);
+            if (error.code === '23505') {
+                return res.status(400).json({ error: 'One or more of these codes already exist.' });
+            }
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.status(201).json({
+            message: `Successfully uploaded ${insertedCodes.length} codes`,
+            codes: insertedCodes
+        });
+    } catch (error) {
+        console.error('Upload student codes error:', error);
+        res.status(500).json({ error: 'Failed to upload student codes' });
+    }
+});
+
+/**
+ * DELETE /api/instructor/student-codes/:id
+ * Delete a student code
+ */
+router.delete('/student-codes/:id', requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const { error } = await supabaseService
+            .from('student_codes')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json({ message: 'Code deleted' });
+    } catch (error) {
+        console.error('Delete code error:', error);
+        res.status(500).json({ error: 'Failed to delete student code' });
+    }
+});
+
+// ============================================
 // INSTRUCTOR APPLICATION MANAGEMENT
 // ============================================
 
