@@ -72,6 +72,14 @@ const LandingPage = () => {
 
     const updateRole = (role) => {
         setError('');
+        setStudentId('');
+        setInstructorId('');
+        setPassword('');
+        setEmail('');
+        setFullName('');
+        setCourse('');
+        setInstructorCode('');
+        setSignupSuccess(false);
         setModal((prev) => (prev ? { ...prev, role } : prev));
     };
 
