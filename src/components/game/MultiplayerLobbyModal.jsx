@@ -209,6 +209,37 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                     setPlayers(prev => prev.map(p => p.id === userId ? { ...p, isReady } : p));
                 }
             })
+            .on('broadcast', { event: 'multi-invite-accept' }, (payload) => {
+                // If we are the host who invited them
+                if (payload.payload.targetId === user.id) {
+                    console.log('[Multiplayer] Friend accepted invite:', payload.payload.senderName);
+                    
+                    // Add them to our party UI
+                    setPlayers(prev => {
+                        if (prev.some(p => p.id === payload.payload.senderId)) return prev;
+                        
+                        const newPlayer = {
+                            id: payload.payload.senderId,
+                            name: payload.payload.senderName,
+                            level: 1,
+                            status: 'ready',
+                            avatar: payload.payload.senderAvatar || heroAsset,
+                            heroImage: hero2Static,
+                            rankName: payload.payload.senderRankName || '',
+                            rankIcon: payload.payload.senderRankIcon || '',
+                            rankId: null,
+                            achievements: 0,
+                            ms: '—',
+                            logo: ccsLogo,
+                            isReady: true // default to ready in lobby
+                        };
+                        return [...prev, newPlayer];
+                    });
+
+                    // Keep their invite button as a checkmark
+                    setSuccessInviteIds(prev => new Set([...prev, payload.payload.senderId]));
+                }
+            })
             .subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
                     // Initially track us as 'idle' in the lobby
@@ -219,6 +250,23 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                         wager: selectedWager,
                         playerData: currentUser // Send our visual data so others can see us
                     });
+
+                    // If we joined via an invite, tell the host we are here!
+                    if (initialInviter && initialInviter.id) {
+                        console.log('[Multiplayer] Sending invite-accept broadcast to host:', initialInviter.name);
+                        await channel.send({
+                            type: 'broadcast',
+                            event: 'multi-invite-accept',
+                            payload: {
+                                targetId: initialInviter.id,
+                                senderId: user.id,
+                                senderName: user.name,
+                                senderAvatar: user.avatar_url || currentUser.avatar,
+                                senderRankName: currentUser.rankName,
+                                senderRankIcon: currentUser.rankIcon
+                            }
+                        });
+                    }
                 }
             });
 
