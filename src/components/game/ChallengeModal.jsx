@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { DndContext, useSensor, useSensors, PointerSensor, DragOverlay } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Lightbulb, X, Trophy, Bug, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
-import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import PuzzleBlock from './PuzzleBlock';
 import CodeTimer from './CodeTimer';
 import Button from '../ui/Button';
@@ -60,7 +59,6 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
 
     const sensors = useSensors(useSensor(PointerSensor));
     const containerRef = useRef(null);
-    const transformComponentRef = useRef(null);
     const { playConnect, playCountdownVoice, playClick } = useSound();
     const { user, updateExp } = useUser();
 
@@ -636,63 +634,40 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                         onDragEnd={handleDragEnd} 
                                         modifiers={[restrictToCanvasBounds]}
                                     >
-                                        <div className="relative w-full flex-1 overflow-hidden group/canvas">
-                                            {/* Top-right Zoom Controls overlay */}
-                                            <div className="absolute top-4 right-4 z-50 flex flex-col gap-2 opacity-30 group-hover/canvas:opacity-100 transition-opacity">
-                                                <div className="bg-slate-900/80 backdrop-blur-md rounded-lg border border-cyan-500/30 p-1 flex flex-col gap-1">
-                                                    <div className="text-[9px] text-cyan-400 font-bold tracking-widest text-center pb-1 mb-1 border-b border-cyan-500/30">CANVAS</div>
-                                                    <div className="text-[8px] text-slate-400 text-center leading-tight mb-2 px-1">Scroll to Zoom<br />Drag empty space to pan</div>
-                                                </div>
+                                        <div className="relative w-full flex-1 overflow-hidden">
+                                            {/* Zoom Controls */}
+                                            <div className="absolute bottom-4 right-4 z-50 flex gap-2">
+                                                <button 
+                                                    onClick={() => setCanvasScale(s => Math.max(0.3, s - 0.1))} 
+                                                    className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg"
+                                                >
+                                                    <ZoomOut className="w-5 h-5" />
+                                                </button>
+                                                <button 
+                                                    onClick={() => setCanvasScale(getScaleForBlockCount(blocks.length))} 
+                                                    className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg"
+                                                >
+                                                    <Maximize className="w-5 h-5" />
+                                                </button>
+                                                <button 
+                                                    onClick={() => setCanvasScale(s => Math.min(2, s + 0.1))} 
+                                                    className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg"
+                                                >
+                                                    <ZoomIn className="w-5 h-5" />
+                                                </button>
                                             </div>
 
-                                            <TransformWrapper
-                                                key={canvasScale}
-                                                ref={transformComponentRef}
-                                                initialScale={canvasScale}
-                                                minScale={0.3}
-                                                maxScale={2}
-                                                centerOnInit={false}
-                                                wheel={{ step: 0.1 }}
-                                                panning={{
-                                                    velocityDisabled: true,
-                                                    excluded: ['puzzle-block'],
-                                                }}
+                                            {/* Scaled blocks container */}
+                                            <div 
+                                                className="w-full h-full origin-top-left"
+                                                style={{ transform: `scale(${canvasScale})`, width: `${100 / canvasScale}%`, height: `${100 / canvasScale}%` }}
                                             >
-                                                {({ zoomIn, zoomOut, resetTransform }) => (
-                                                    <>
-                                                        {/* Fixed UI controls for zoom */}
-                                                        <div className="absolute bottom-4 right-4 z-50 flex gap-2">
-                                                            <button 
-                                                                onClick={() => zoomOut()} 
-                                                                className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg"
-                                                            >
-                                                                <ZoomOut className="w-5 h-5" />
-                                                            </button>
-                                                            <button 
-                                                                onClick={() => resetTransform()} 
-                                                                className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg"
-                                                            >
-                                                                <Maximize className="w-5 h-5" />
-                                                            </button>
-                                                            <button 
-                                                                onClick={() => zoomIn()} 
-                                                                className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg"
-                                                            >
-                                                                <ZoomIn className="w-5 h-5" />
-                                                            </button>
-                                                        </div>
-
-                                                        <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }} contentStyle={{ width: "800px", height: "600px", position: "relative" }}>
-                                                            {/* Actual blocks container (large canvas) */}
-                                                            <div className="absolute inset-0">
-                                                                {blocks.map((block) => (
-                                                                    <PuzzleBlock key={block.id} {...block} variant={mode} />
-                                                                ))}
-                                                            </div>
-                                                        </TransformComponent>
-                                                    </>
-                                                )}
-                                            </TransformWrapper>
+                                                <div className="relative w-full h-full p-8">
+                                                    {blocks.map((block) => (
+                                                        <PuzzleBlock key={block.id} {...block} variant={mode} />
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
                                     </DndContext>
                                 )}
