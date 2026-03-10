@@ -518,7 +518,6 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                 isOpen={isLogoutOpen}
                 onClose={() => setIsLogoutOpen(false)}
                 onConfirm={async () => {
-                    toast.success('Logged out successfully');
                     // Navigate FIRST because logout() will immediately set user=null
                     // which completely unmounts THIS GameNavbar component
                     // and cancels the pending navigate()
