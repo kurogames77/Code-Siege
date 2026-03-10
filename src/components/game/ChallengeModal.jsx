@@ -61,9 +61,19 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
     const sensors = useSensors(useSensor(PointerSensor));
     const containerRef = useRef(null);
     const transformComponentRef = useRef(null);
-    const lastZoomTime = useRef(0);
     const { playConnect, playCountdownVoice, playClick } = useSound();
     const { user, updateExp } = useUser();
+
+    // Calculate initial scale based on block count
+    const getScaleForBlockCount = (count) => {
+        if (count <= 3) return 1;
+        if (count <= 5) return 0.85;
+        if (count <= 8) return 0.7;
+        if (count <= 12) return 0.55;
+        return 0.4;
+    };
+
+    const [canvasScale, setCanvasScale] = useState(1);
 
     useEffect(() => {
         if (puzzle) {
@@ -99,6 +109,10 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             if (mode === 'code') {
                 setCodeValue(puzzle.initialCode || "");
             }
+
+            // Set canvas scale based on block count
+            const blockCount = puzzle.initialBlocks?.length || 0;
+            setCanvasScale(getScaleForBlockCount(blockCount));
         }
     }, [puzzle, isOpen, mode, urlMode, urlDifficulty]);
 
@@ -183,43 +197,6 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
         }
 
         return value;
-    };
-
-    const handleDragMove = (event) => {
-        const { active } = event;
-        if (!active || !active.rect?.current?.translated) return;
-
-        const translate = active.rect.current.translated;
-        if (containerRef.current && transformComponentRef.current) {
-            const containerRect = containerRef.current.getBoundingClientRect();
-            
-            const isNearLeft = translate.left < containerRect.left + 50;
-            const isNearRight = translate.right > containerRect.right - 50;
-            const isNearTop = translate.top < containerRect.top + 50;
-            const isNearBottom = translate.bottom > containerRect.bottom - 50;
-
-            const isNearCenter = 
-                translate.left > containerRect.left + 200 &&
-                translate.right < containerRect.right - 200 &&
-                translate.top > containerRect.top + 150 &&
-                translate.bottom < containerRect.bottom - 150;
-
-            if (isNearLeft || isNearRight || isNearTop || isNearBottom) {
-                const now = Date.now();
-                if (now - lastZoomTime.current > 300) {
-                    transformComponentRef.current.zoomOut(0.1, 200);
-                    lastZoomTime.current = now;
-                }
-            } else if (isNearCenter) {
-                const now = Date.now();
-                // Optionally zoom in slowly if they bring it back to center and it's heavily zoomed out
-                const currentScale = transformComponentRef.current.instance.transformState.scale;
-                if (now - lastZoomTime.current > 500 && currentScale < 1) {
-                    transformComponentRef.current.zoomIn(0.1, 300);
-                    lastZoomTime.current = now;
-                }
-            }
-        }
     };
 
     const getRandomWittyError = () => {
@@ -657,7 +634,6 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                     <DndContext 
                                         sensors={sensors} 
                                         onDragEnd={handleDragEnd} 
-                                        onDragMove={handleDragMove}
                                         modifiers={[restrictToCanvasBounds]}
                                     >
                                         <div className="relative w-full flex-1 overflow-hidden group/canvas">
@@ -670,11 +646,12 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                             </div>
 
                                             <TransformWrapper
+                                                key={canvasScale}
                                                 ref={transformComponentRef}
-                                                initialScale={1}
+                                                initialScale={canvasScale}
                                                 minScale={0.3}
                                                 maxScale={2}
-                                                centerOnInit={false}
+                                                centerOnInit={true}
                                                 wheel={{ step: 0.1 }}
                                                 panning={{
                                                     velocityDisabled: true,
