@@ -125,12 +125,15 @@ const LandingPage = () => {
             // Only redirect to ConfirmationPage for specific magic link types
             // Social login redirects have access_token but usually skip the 'type' parameter or handle it differently
             // We want social login users to stay here to see the "Complete Profile" modal
+            const isRecovery = location.hash.includes('type=recovery') ||
+                location.hash.includes('type=initial_recovery');
+
             const isMagicLink = location.hash.includes('type=signup') ||
-                location.hash.includes('type=initial_recovery') ||
-                location.hash.includes('type=recovery') ||
                 location.hash.includes('type=invite');
 
-            if (isMagicLink) {
+            if (isRecovery) {
+                navigate('/reset-password' + location.hash);
+            } else if (isMagicLink) {
                 navigate('/ConfirmationPage');
             }
         }
