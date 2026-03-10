@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
+// eslint-disable-next-line no-unused-vars
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { X, ChevronDown, Users, Zap, Shield, Swords, UserPlus, Globe, Award, Medal, Volume2, VolumeX, User, Check } from 'lucide-react';
 import heroAsset from '../../assets/hero1.png';
