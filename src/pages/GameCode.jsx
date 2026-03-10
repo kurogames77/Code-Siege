@@ -64,6 +64,7 @@ const GameCode = () => {
     const [openLangDropdown, setOpenLangDropdown] = useState(false);
 
     const [dynamicPuzzle, setDynamicPuzzle] = useState(null);
+    const [loadingLevel, setLoadingLevel] = useState(true);
     // Safe User Context
     const { user, loading, updateTowerProgress } = useUser();
     const { updateQuestProgress } = useQuests();
@@ -76,17 +77,10 @@ const GameCode = () => {
         '4': { name: 'Nyx', image: 'hero2' }
     };
 
-    // Helper to get hero image (assuming imports or paths)
-    // Note: In a real scenario, imports should be at top. For now we rely on what's available or placeholders.
-    // To match ProfileModal, we might need to import these images if we want to show the character.
-    // For now, removing the broken character section or ensuring it doesn't crash is priority.
-
-    // Fetch dynamic level if relevant
-
-
     // Fetch dynamic level if relevant
     useEffect(() => {
         const fetchLevel = async () => {
+            setLoadingLevel(true);
             if (towerId === '1') { // Only for Eldoria (Python)
                 try {
                     // 1. Get user's current difficulty preference
@@ -141,6 +135,7 @@ const GameCode = () => {
                     console.error('Failed to load dynamic puzzle:', e);
                 }
             }
+            setLoadingLevel(false);
         };
         fetchLevel();
     }, [towerId, currentFloor, user?.id]);
@@ -425,7 +420,7 @@ const GameCode = () => {
             {/* Modals */}
             <LessonModal
                 key={currentFloor}
-                isOpen={showLesson && !showPostScene}
+                isOpen={showLesson && !showPostScene && !loadingLevel}
                 onStart={handleLessonStart}
                 objectives={currentObjectives}
             />
