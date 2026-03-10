@@ -480,6 +480,24 @@ export const instructorAPI = {
         });
     },
 
+    // Student Codes Management
+    getStudentCodes: async (page = 1, limit = 20, search = '') => {
+        return apiRequest(`/instructor/student-codes?page=${page}&limit=${limit}&search=${search}`);
+    },
+
+    uploadStudentCodes: async (codes) => {
+        return apiRequest('/instructor/student-codes/upload', {
+            method: 'POST',
+            body: JSON.stringify({ codes }),
+        });
+    },
+
+    deleteStudentCode: async (codeId) => {
+        return apiRequest(`/instructor/student-codes/${codeId}`, {
+            method: 'DELETE',
+        });
+    },
+
     // Application Management
     getApplications: async (status = 'pending') => {
         return apiRequest(`/instructor/applications?status=${status}`);

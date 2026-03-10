@@ -18,9 +18,9 @@ const StudentCodesManager = ({ theme }) => {
     const fetchCodes = async () => {
         try {
             setLoading(true);
-            const response = await api.get(`/instructor/student-codes?page=${page}&limit=20&search=${search}`);
-            setCodes(response.data.codes);
-            setTotalPages(response.data.totalPages);
+            const response = await api.instructor.getStudentCodes(page, 20, search);
+            setCodes(response.codes);
+            setTotalPages(response.totalPages);
         } catch (error) {
             console.error('Failed to fetch codes:', error);
             toast.popup('Failed to fetch student codes', 'error');
@@ -52,14 +52,14 @@ const StudentCodesManager = ({ theme }) => {
 
         try {
             setGenerating(true);
-            await api.post('/instructor/student-codes/upload', { codes: codesArray });
+            await api.instructor.uploadStudentCodes(codesArray);
             toast.popup(`Successfully uploaded ${codesArray.length} codes!`);
             setPage(1);
             setCodesInput('');
             fetchCodes();
         } catch (error) {
             console.error('Failed to upload codes:', error);
-            toast.popup(error.response?.data?.error || 'Failed to upload codes', 'error');
+            toast.popup(error.message || 'Failed to upload codes', 'error');
         } finally {
             setGenerating(false);
         }
@@ -69,7 +69,7 @@ const StudentCodesManager = ({ theme }) => {
         if (!window.confirm('Are you sure you want to delete this code?')) return;
 
         try {
-            await api.delete(`/instructor/student-codes/${id}`);
+            await api.instructor.deleteStudentCode(id);
             toast.popup('Code deleted');
             fetchCodes();
         } catch (error) {
