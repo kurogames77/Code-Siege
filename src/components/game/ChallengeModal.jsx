@@ -678,9 +678,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                 wheel={{ step: 0.1 }}
                                                 panning={{
                                                     velocityDisabled: true,
-                                                    // Allow panning only when middle mouse clicked, OR when holding spacebar, 
-                                                    // OR just map panning to standard drag on empty space (which TransformWrapper does by default
-                                                    // if we don't start dragging a dnd child)
+                                                    excluded: ['puzzle-block'],
                                                 }}
                                             >
                                                 {({ zoomIn, zoomOut, resetTransform }) => (

@@ -148,7 +148,7 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
             style={style}
             {...listeners}
             {...attributes}
-            className="absolute cursor-grab active:cursor-grabbing select-none group"
+            className="puzzle-block absolute cursor-grab active:cursor-grabbing select-none group"
         >
             <svg
                 width={width + tabDepth * 2}
