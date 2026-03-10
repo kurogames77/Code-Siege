@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { DndContext, useSensor, useSensors, PointerSensor, DragOverlay } from '@dnd-kit/core';
-import { restrictToParentElement } from '@dnd-kit/modifiers';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Lightbulb, X, Trophy, Bug, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
@@ -165,6 +164,27 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
         });
     };
 
+    const restrictToCanvasBounds = ({ transform, activeNodeRect }) => {
+        if (!containerRef.current || !activeNodeRect) return transform;
+
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const value = { ...transform };
+
+        if (activeNodeRect.top + transform.y < containerRect.top) {
+            value.y = containerRect.top - activeNodeRect.top;
+        } else if (activeNodeRect.bottom + transform.y > containerRect.bottom) {
+            value.y = containerRect.bottom - activeNodeRect.bottom;
+        }
+
+        if (activeNodeRect.left + transform.x < containerRect.left) {
+            value.x = containerRect.left - activeNodeRect.left;
+        } else if (activeNodeRect.right + transform.x > containerRect.right) {
+            value.x = containerRect.right - activeNodeRect.right;
+        }
+
+        return value;
+    };
+
     const handleDragMove = (event) => {
         const { active } = event;
         if (!active || !active.rect?.current?.translated) return;
@@ -173,15 +193,29 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
         if (containerRef.current && transformComponentRef.current) {
             const containerRect = containerRef.current.getBoundingClientRect();
             
-            const isNearLeft = translate.left < containerRect.left + 80;
-            const isNearRight = translate.right > containerRect.right - 80;
-            const isNearTop = translate.top < containerRect.top + 80;
-            const isNearBottom = translate.bottom > containerRect.bottom - 80;
+            const isNearLeft = translate.left < containerRect.left + 50;
+            const isNearRight = translate.right > containerRect.right - 50;
+            const isNearTop = translate.top < containerRect.top + 50;
+            const isNearBottom = translate.bottom > containerRect.bottom - 50;
+
+            const isNearCenter = 
+                translate.left > containerRect.left + 200 &&
+                translate.right < containerRect.right - 200 &&
+                translate.top > containerRect.top + 150 &&
+                translate.bottom < containerRect.bottom - 150;
 
             if (isNearLeft || isNearRight || isNearTop || isNearBottom) {
                 const now = Date.now();
-                if (now - lastZoomTime.current > 500) {
-                    transformComponentRef.current.zoomOut(0.1, 300);
+                if (now - lastZoomTime.current > 300) {
+                    transformComponentRef.current.zoomOut(0.1, 200);
+                    lastZoomTime.current = now;
+                }
+            } else if (isNearCenter) {
+                const now = Date.now();
+                // Optionally zoom in slowly if they bring it back to center and it's heavily zoomed out
+                const currentScale = transformComponentRef.current.instance.transformState.scale;
+                if (now - lastZoomTime.current > 500 && currentScale < 1) {
+                    transformComponentRef.current.zoomIn(0.1, 300);
                     lastZoomTime.current = now;
                 }
             }
@@ -624,7 +658,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                         sensors={sensors} 
                                         onDragEnd={handleDragEnd} 
                                         onDragMove={handleDragMove}
-                                        modifiers={[restrictToParentElement]}
+                                        modifiers={[restrictToCanvasBounds]}
                                     >
                                         <div className="relative w-full flex-1 overflow-hidden group/canvas">
                                             {/* Top-right Zoom Controls overlay */}
