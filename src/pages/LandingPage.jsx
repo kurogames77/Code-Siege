@@ -40,6 +40,9 @@ const LandingPage = () => {
     };
 
     useEffect(() => {
+        // Force scroll to top on mount
+        window.scrollTo(0, 0);
+
         const observerOptions = {
             threshold: 0.1,
             rootMargin: '0px 0px -50px 0px'
@@ -125,6 +128,8 @@ const LandingPage = () => {
         // First check: Did we just log out?
         if (location.state?.loggedOut) {
             toast.success('Logged out successfully');
+            // Force scroll to top
+            window.scrollTo(0, 0);
             // Clear state to prevent showing again on refresh
             window.history.replaceState({}, document.title);
             return; // STOP here. Do not process isAuthenticated redirects.
