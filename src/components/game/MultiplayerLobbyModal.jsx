@@ -628,6 +628,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
         .map(f => ({ ...f, status: 'offline' }));
 
     const slots = [0, 1, 2, 3, 4];
+    const settingsLocked = matchState !== 'idle' || players.length > 1;
 
     return (
         <AnimatePresence>
@@ -682,7 +683,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                             {/* LEFT SIDEBAR: MATCH SETTINGS */}
                             <div className="w-56 bg-black/60 border-r border-white/5 flex flex-col p-4 backdrop-blur-md" onClick={(e) => e.stopPropagation()}>
                                 <h3 className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Match Settings</h3>
-                                {matchState !== 'idle' && (
+                                {settingsLocked && (
                                     <div className="mb-3 px-2 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center gap-1.5">
                                         <span className="text-amber-400 text-[9px] font-black uppercase tracking-widest">🔒 Locked</span>
                                     </div>
@@ -693,8 +694,8 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                     <div className="space-y-1">
                                         <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Language</label>
                                         <div className="relative group">
-                                            {matchState === 'idle' && <div className="absolute inset-0 bg-cyan-500/20 blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />}
-                                            {matchState !== 'idle' ? (
+                                            {!settingsLocked && <div className="absolute inset-0 bg-cyan-500/20 blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />}
+                                            {settingsLocked ? (
                                                 <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-xs px-3 py-2 rounded-lg cursor-not-allowed">
                                                     {selectedLanguage || 'N/A'}
                                                 </div>
@@ -709,7 +710,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                                     ))}
                                                 </select>
                                             )}
-                                            {matchState === 'idle' && <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 z-20 pointer-events-none" />}
+                                            {!settingsLocked && <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 z-20 pointer-events-none" />}
                                         </div>
                                     </div>
 
@@ -718,8 +719,8 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                     <div className="space-y-1">
                                         <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Wager (EXP)</label>
                                         <div className="relative group">
-                                            {matchState === 'idle' && <div className="absolute inset-0 bg-amber-500/20 blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />}
-                                            {matchState !== 'idle' ? (
+                                            {!settingsLocked && <div className="absolute inset-0 bg-amber-500/20 blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />}
+                                            {settingsLocked ? (
                                                 <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-xs px-3 py-2 rounded-lg cursor-not-allowed">
                                                     {selectedWager} EXP
                                                 </div>
@@ -734,7 +735,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                                     ))}
                                                 </select>
                                             )}
-                                            {matchState === 'idle' && <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 z-20 pointer-events-none" />}
+                                            {!settingsLocked && <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 z-20 pointer-events-none" />}
                                         </div>
                                     </div>
 
