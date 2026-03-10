@@ -176,10 +176,7 @@ const GameCode = () => {
         setBattleOutcome('win');
         setCompletedRewards(null);
 
-        const timer = setTimeout(() => {
-            setShowLesson(true);
-        }, 1000);
-        return () => clearTimeout(timer);
+        setShowLesson(true);
     }, [allowedMode, currentFloor]);
 
     const handleLessonStart = () => {
