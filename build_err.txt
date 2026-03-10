@@ -1,0 +1,30 @@
+
+> codesiege@0.0.0 build
+> vite build
+
+[36mvite v7.3.0 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32m✓[39m 3008 modules transformed.
+
+[31m✗[39m Build failed in 10.69s
+[31merror during build:
+[31msrc/components/game/MultiplayerLobbyModal.jsx (17:40): "getRank" is not exported by "src/utils/rankSystem.js", imported by "src/components/game/MultiplayerLobbyModal.jsx".[31m
+file: [36mC:/Users/User/Desktop/Code Siege/Code Siege/src/components/game/MultiplayerLobbyModal.jsx:17:40[31m
+[33m
+15: import { useUser } from '../../contexts/UserContext';
+16: 
+17: import { getRankFromExp as getRankData, getRank } from '../../utils/rankSystem';
+                                            ^
+18: import supabase from '../../lib/supabase';
+19: import { userAPI, algorithmAPI } from '../../services/api';
+[31m
+    at getRollupError (file:///C:/Users/User/Desktop/Code%20Siege/Code%20Siege/node_modules/rollup/dist/es/shared/parseAst.js:401:41)
+    at error (file:///C:/Users/User/Desktop/Code%20Siege/Code%20Siege/node_modules/rollup/dist/es/shared/parseAst.js:397:42)
+    at Module.error (file:///C:/Users/User/Desktop/Code%20Siege/Code%20Siege/node_modules/rollup/dist/es/shared/node-entry.js:17022:16)
+    at Module.traceVariable (file:///C:/Users/User/Desktop/Code%20Siege/Code%20Siege/node_modules/rollup/dist/es/shared/node-entry.js:17478:29)
+    at ModuleScope.findVariable (file:///C:/Users/User/Desktop/Code%20Siege/Code%20Siege/node_modules/rollup/dist/es/shared/node-entry.js:15141:39)
+    at ReturnValueScope.findVariable (file:///C:/Users/User/Desktop/Code%20Siege/Code%20Siege/node_modules/rollup/dist/es/shared/node-entry.js:5688:38)
+    at FunctionBodyScope.findVariable (file:///C:/Users/User/Desktop/Code%20Siege/Code%20Siege/node_modules/rollup/dist/es/shared/node-entry.js:5688:38)
+    at ReturnValueScope.findVariable (file:///C:/Users/User/Desktop/Code%20Siege/Code%20Siege/node_modules/rollup/dist/es/shared/node-entry.js:5688:38)
+    at FunctionBodyScope.findVariable (file:///C:/Users/User/Desktop/Code%20Siege/Code%20Siege/node_modules/rollup/dist/es/shared/node-entry.js:5688:38)
+    at TrackingScope.findVariable (file:///C:/Users/User/Desktop/Code%20Siege/Code%20Siege/node_modules/rollup/dist/es/shared/node-entry.js:5688:38)[39m

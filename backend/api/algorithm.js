@@ -273,7 +273,7 @@ router.post('/full-analysis', authenticateUser, async (req, res) => {
  */
 router.post('/matchmaking', authenticateUser, async (req, res) => {
     try {
-        const { userId, k = 3 } = req.body;
+        const { userId, k = 3, candidateIds = null } = req.body;
 
         if (!userId) {
             return res.status(400).json({ error: 'userId is required' });
@@ -281,12 +281,21 @@ router.post('/matchmaking', authenticateUser, async (req, res) => {
 
         // Fetch all active players with their IRT-related metrics
         // We use rank (EXP-based), win_rate, and games_played as skill indicators
-        const { data: players, error: fetchError } = await supabase
+        // Build query for players (excluding requesting user)
+        let query = supabase
             .from('users')
             .select('id, username, exp, rank, avatar_url')
-            .neq('id', userId) // Exclude the requesting user for now
-            .order('exp', { ascending: false })
-            .limit(50); // Limit to top 50 active players
+            .neq('id', userId)
+            
+        if (candidateIds && Array.isArray(candidateIds) && candidateIds.length > 0) {
+            // Filter only to specifically requested candidates
+            query = query.in('id', candidateIds);
+        } else {
+            // Fallback: just get top active players
+            query = query.order('exp', { ascending: false }).limit(50);
+        }
+        
+        const { data: players, error: fetchError } = await query;
 
         if (fetchError) {
             console.error('[Matchmaking] Fetch error:', fetchError);

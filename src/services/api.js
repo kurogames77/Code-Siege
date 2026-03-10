@@ -428,10 +428,14 @@ export const algorithmAPI = {
     },
 
     // KMeans matchmaking - find players in the same skill cluster
-    matchmaking: async (userId, k = 3) => {
+    matchmaking: async (userId, k = 3, candidateIds = null) => {
+        const bodyData = { userId, k };
+        if (candidateIds) {
+            bodyData.candidateIds = candidateIds;
+        }
         return apiRequest('/algorithm/matchmaking', {
             method: 'POST',
-            body: JSON.stringify({ userId, k }),
+            body: JSON.stringify(bodyData),
         });
     },
 

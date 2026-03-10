@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { X, ChevronDown, Users, Zap, Shield, Swords, UserPlus, Globe, Award, Medal, Volume2, VolumeX, User, Check } from 'lucide-react';
 import heroAsset from '../../assets/hero1.png';
@@ -16,7 +16,7 @@ import { useUser } from '../../contexts/UserContext';
 
 import { getRankFromExp as getRankData } from '../../utils/rankSystem';
 import supabase from '../../lib/supabase';
-import { userAPI } from '../../services/api';
+import { userAPI, algorithmAPI } from '../../services/api';
 
 const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     const navigate = useNavigate();
@@ -57,13 +57,8 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     const [timer, setTimer] = useState(0); // Unified timer state
 
     // Language & Wager Selection
-    const [selectedMode, setSelectedMode] = useState('Ranked');
-    const [isSearching, setIsSearching] = useState(false);
     const [selectedLanguage, setSelectedLanguage] = useState('JavaScript');
-    const [selectedDifficulty, setSelectedDifficulty] = useState('Medium');
     const [selectedWager, setSelectedWager] = useState(100);
-    const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
-    const [showWagerDropdown, setShowWagerDropdown] = useState(false);
 
     const languages = ['Python', 'C#', 'C++', 'JavaScript', 'PHP', 'MySQL'];
     const wagerOptions = [50, 100, 200, 500, 1000];
@@ -71,7 +66,6 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     // Modals & Notifications
     const [showExitModal, setShowExitModal] = useState(false);
     const [inviteError, setInviteError] = useState(null);
-    const [startCount, setStartCount] = useState(5);
     const [isMuted, setIsMuted] = useState(() => {
         // Load mute state from localStorage
         const saved = localStorage.getItem('lobbyMusic_muted');
@@ -82,6 +76,11 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     const [allFriends, setAllFriends] = useState([]);
     const [invitedFriendId, setInvitedFriendId] = useState(null);
     const [successInviteIds, setSuccessInviteIds] = useState(new Set());
+
+    // Matchmaking Real-Time Queue
+    const [matchmakingQueue, setMatchmakingQueue] = useState({});
+    const channelRef = React.useRef(null);
+    const matchmakingIntervalRef = React.useRef(null);
 
     // Add inviter to players when opened via invite
     useEffect(() => {
@@ -165,6 +164,85 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             });
         }
     }, [matchState, timer, navigate, players, selectedWager, selectedLanguage]);
+
+    // --- REAL-TIME PRESENCE (MATCHMAKING QUEUE) ---
+    useEffect(() => {
+        if (!isOpen || !user) return;
+
+        // Create a unique channel for the matchmaking lobby
+        const channel = supabase.channel('matchmaking_queue', {
+            config: {
+                presence: {
+                    key: user.id
+                }
+            }
+        });
+
+        channelRef.current = channel;
+
+        channel
+            .on('presence', { event: 'sync' }, () => {
+                const state = channel.presenceState();
+                
+                // Flatten the presence state into a dictionary of users
+                const activePlayers = {};
+                for (const id in state) {
+                    // Get the most recent presence state for each user
+                    activePlayers[id] = state[id][0];
+                }
+                
+                setMatchmakingQueue(activePlayers);
+            })
+            .on('broadcast', { event: 'match_found' }, (payload) => {
+                // If we are part of the match group broadcasted by the host
+                if (payload.payload.playerIds.includes(user.id) && matchState === 'searching') {
+                    console.log('[Matchmaking] Received match broadcast!', payload.payload);
+                    setPlayers(payload.payload.players);
+                    startReadyPhase();
+                }
+            })
+            .on('broadcast', { event: 'ready_status' }, (payload) => {
+                // Sync ready status across the matched group
+                const { userId, isReady } = payload.payload;
+                if (matchState === 'ready_check') {
+                    setPlayers(prev => prev.map(p => p.id === userId ? { ...p, isReady } : p));
+                }
+            })
+            .subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    // Initially track us as 'idle' in the lobby
+                    await channel.track({
+                        id: user.id,
+                        status: 'idle',
+                        language: selectedLanguage,
+                        wager: selectedWager,
+                        playerData: currentUser // Send our visual data so others can see us
+                    });
+                }
+            });
+
+        return () => {
+            if (channelRef.current) {
+                supabase.removeChannel(channelRef.current);
+            }
+            if (matchmakingIntervalRef.current) {
+                clearInterval(matchmakingIntervalRef.current);
+            }
+        };
+    }, [isOpen, user]);
+
+    // Update our presence state when our settings or matchState changes
+    useEffect(() => {
+        if (channelRef.current && channelRef.current.state === 'joined') {
+            channelRef.current.track({
+                id: user.id,
+                status: matchState,
+                language: selectedLanguage,
+                wager: selectedWager,
+                playerData: currentUser
+            });
+        }
+    }, [matchState, selectedLanguage, selectedWager]);
 
     // Lobby music control
     useEffect(() => {
@@ -262,100 +340,96 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     }, [isOpen, user]);
 
 
-    // --- MATCHMAKING SIMULATION ---
+    // --- MATCHMAKING LOGIC (REAL) ---
 
-    // 1. Simulate Finding Players (during 'searching')
+    // 1. Finding Match Loop (during 'searching')
     useEffect(() => {
         if (matchState === 'searching') {
-            const interval = setInterval(() => {
-                setPlayers(prev => {
-                    // Randomly add players until we hit random target (3-5)
-                    const targetPlayers = 5; // Simulating seeking full lobby
-                    if (prev.length >= targetPlayers) return prev;
+            // Check for matches every 3 seconds while searching
+            matchmakingIntervalRef.current = setInterval(async () => {
+                if (!user || !user.id) return;
 
-                    if (Math.random() > 0.6) {
-                        const newId = prev.length + 100;
-                        const names = ['ixhia', 'Yunus Camba', 'Azzurra Braz-37', 'VoidWalker'];
-                        const randomRankId = Math.floor(Math.random() * 12) + 1;
-                        const randomHeroImage = [hero2Static, hero3Static, hero4Static][Math.floor(Math.random() * 3)];
+                // Only the "Host" of a potential match group should trigger the backend to avoid duplicate requests.
+                // We determine the host simply by sorting the available IDs.
+                
+                // Find online players looking for the same settings
+                const validCandidates = Object.values(matchmakingQueue).filter(p => 
+                    p.status === 'searching' && 
+                    p.language === selectedLanguage && 
+                    p.wager === selectedWager
+                );
 
-                        return [...prev, {
-                            id: newId,
-                            name: names[prev.length - 1] || `Player ${prev.length}`,
-                            level: Math.floor(Math.random() * 50),
-                            status: 'pending',
-                            isReady: false,
-                            avatar: heroAsset,
-                            heroImage: randomHeroImage, // Assign a static image
-                            rankId: randomRankId,
-                            achievements: Math.floor(Math.random() * 50) + 10,
-                            ms: '45ms',
-                            logo: Math.random() > 0.5 ? ccsLogo : jrmsuLogo
-                        }];
-                    }
-                    return prev;
-                });
-            }, 1500);
+                // We need at least 2 players (including us) to form a match
+                if (validCandidates.length >= 2) {
+                    const candidateIds = validCandidates.map(p => p.id);
+                    candidateIds.sort(); // Sort to deterministically pick a "host"
 
-            return () => clearInterval(interval);
-        }
-    }, [matchState]);
+                    // Am I the host? (First ID alphabetically)
+                    if (candidateIds[0] === user.id) {
+                        console.log(`[Matchmaking] I am the host out of ${candidateIds.length} candidates. Calling Algorithm...`);
+                        
+                        try {
+                            // Call K-Means Backend
+                            // We ask for k=1 initially if low pop, but the algorithm auto-handles k limits
+                            // We pass only the candidate IDs actually searching right now
+                            const result = await algorithmAPI.matchmaking(user.id, 2, candidateIds);
+                            
+                            if (result.status === 'success' && result.suggested_opponents.length > 0) {
+                                console.log('[Matchmaking] K-Means found a cluster!', result);
+                                
+                                // Build the final player list from the cluster
+                                const clusterPlayerIds = [user.id, ...result.suggested_opponents.map(o => o.player_id || o.id)];
+                                
+                                const finalPlayers = clusterPlayerIds.map(id => {
+                                    const queueData = matchmakingQueue[id]?.playerData;
+                                    if (queueData) {
+                                        return { ...queueData, isReady: false };
+                                    }
+                                    return null;
+                                }).filter(Boolean);
 
-    // 2. Trigger Ready Check when players found
-    useEffect(() => {
-        if (matchState === 'searching' && players.length >= 3) {
-            // Wait a moment then trigger ready check
-            // Logic: "showing the match players whether it shows 3 or 4 or 5... then change to Ready"
-            // Let's settle at 4 players for variation or wait for full 5? 
-            // Let's say if we have >= 3 and time is running out or just random chance to stop searching better?
-            // For robustness: lets wait until 5 OR if user cancels. 
-            // Actually user said "whether it shows 3 or 4 or 5". checking length change.
-            if (players.length === 5) {
-                startReadyPhase();
-            }
-        }
-    }, [matchState, players.length]);
+                                // Broadcast to other clustered players to join the match
+                                if (channelRef.current) {
+                                    channelRef.current.send({
+                                        type: 'broadcast',
+                                        event: 'match_found',
+                                        payload: {
+                                            playerIds: clusterPlayerIds,
+                                            players: finalPlayers
+                                        }
+                                    });
+                                }
 
-    const startReadyPhase = () => {
-        setMatchState('ready_check');
-        setTimer(60); // Restart to 1 minute
-        // Reset local user ready status to false so they have to click it? 
-        // "must click the ready button... if they click... color their entry" -> implies manual action.
-        setPlayers(prev => prev.map(p => ({ ...p, isReady: false })));
-    };
-
-
-    // 3. Simulate Opponents Clicking Ready (during 'ready_check')
-    useEffect(() => {
-        if (matchState === 'ready_check') {
-            const interval = setInterval(() => {
-                setPlayers(prev => {
-                    return prev.map(p => {
-                        if (p.id === user.id) return p; // Don't auto-ready current user
-                        if (p.isReady) return p;
-
-                        // Random chance to ready up
-                        if (Math.random() > 0.8) {
-                            return { ...p, isReady: true };
+                                // Update my own UI
+                                setPlayers(finalPlayers);
+                                startReadyPhase();
+                            }
+                        } catch (err) {
+                            console.error('[Matchmaking] Backend Error:', err);
                         }
-                        return p;
-                    });
-                });
-            }, 2000);
-            return () => clearInterval(interval);
-        }
-    }, [matchState]);
+                    }
+                }
+            }, 3000);
 
-    // 4. Auto-Start if ALL ready
+            return () => clearInterval(matchmakingIntervalRef.current);
+        }
+    }, [matchState, matchmakingQueue, selectedLanguage, selectedWager, user]);
+
+    // 2. Auto-Start if ALL ready
     useEffect(() => {
         if (matchState === 'ready_check') {
             const allReady = players.every(p => p.isReady);
-            if (allReady && players.length >= 3) {
+            if (allReady && players.length >= 2) { // Changed minimum to 2 for a real match
                 startGameCountdown();
             }
         }
     }, [matchState, players]);
 
+    const startReadyPhase = () => {
+        setMatchState('ready_check');
+        setTimer(60); // Restart to 1 minute
+        setPlayers(prev => prev.map(p => ({ ...p, isReady: false })));
+    };
 
     // --- HANDLERS ---
 
@@ -363,14 +437,12 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
         playClick();
         if (matchState === 'idle') {
             setMatchState('searching');
-            setTimer(60); // Set to 1 minute
-            // Keep invited players - don't reset
-            // setPlayers([{ ...current User, isReady: true }]); // OLD: This removed invited players
+            setTimer(60); // Set to 1 minute search timeout
         } else if (matchState === 'searching') {
             // Cancel Search
             setMatchState('idle');
             setTimer(0);
-            // Keep current players when canceling search
+            setPlayers([{ ...currentUser, isReady: true }]); // Reset back to just us
         }
     };
 
@@ -378,6 +450,15 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
         playSuccess();
         if (matchState === 'ready_check') {
             setPlayers(prev => prev.map(p => p.id === user.id ? { ...p, isReady: true } : p));
+            
+            // Broadcast our ready status to the group
+            if (channelRef.current) {
+                channelRef.current.send({
+                    type: 'broadcast',
+                    event: 'ready_status',
+                    payload: { userId: user.id, isReady: true }
+                });
+            }
         }
     };
 
@@ -387,10 +468,9 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
         // "if 4 or 5 then 2 or 1 not ready... continue remaining as long as you and 2 other are ready"
 
         const readyCount = players.filter(p => p.isReady).length;
-        const totalPlayers = players.length;
 
-        // Condition: You + 2 others = 3 minimum ready
-        if (readyCount >= 3) {
+        // Condition: You + 1 other = 2 minimum ready
+        if (readyCount >= 2) {
             // Filter out unready players and start
             setPlayers(prev => prev.filter(p => p.isReady));
             startGameCountdown();
