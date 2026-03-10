@@ -109,6 +109,29 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
         }
     }, [isOpen, initialInviter]);
 
+    // Sync other players' full visual data from presence once it's available
+    useEffect(() => {
+        if (players.length > 1 && Object.keys(matchmakingQueue).length > 0) {
+            let hasChanges = false;
+            const updated = players.map(p => {
+                if (p.id !== user?.id && matchmakingQueue[p.id]?.playerData) {
+                    const queueData = matchmakingQueue[p.id].playerData;
+                    // If they have a different hero image or we just want to ensure we have their full custom data
+                    if (p.heroImage !== queueData.heroImage) {
+                        hasChanges = true;
+                        return { 
+                            ...p, 
+                            heroImage: queueData.heroImage,
+                            // Keep their ready status intact
+                        };
+                    }
+                }
+                return p;
+            });
+            if (hasChanges) setPlayers(updated);
+        }
+    }, [matchmakingQueue, user, players]);
+
     // --- TIMERS & STATE MANAGEMENT ---
 
     // Unified Timer Tick
@@ -861,6 +884,9 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                         </div>
                                     ) : (
                                         friends.map(friend => {
+                                            const isInParty = players.some(p => p.id === friend.id);
+                                            const isInvited = successInviteIds.has(friend.id) || isInParty;
+
                                             return (
                                                 <div key={friend.id} className="p-2.5 rounded-xl hover:bg-white/5 flex items-center gap-3 group transition-all cursor-pointer border border-transparent hover:border-white/5">
                                                     <div className="relative shrink-0">
@@ -880,15 +906,15 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                                             e.stopPropagation();
                                                             handleInvite(friend);
                                                         }}
-                                                        disabled={invitedFriendId === friend.id || successInviteIds.has(friend.id)}
-                                                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-white transition-all shrink-0 ${successInviteIds.has(friend.id)
+                                                        disabled={invitedFriendId === friend.id || isInvited}
+                                                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-white transition-all shrink-0 ${isInvited
                                                             ? 'bg-blue-600/50 cursor-default'
                                                             : invitedFriendId === friend.id
                                                                 ? 'bg-amber-600/50 cursor-not-allowed'
                                                                 : 'bg-emerald-600 hover:bg-emerald-500 hover:scale-110 active:scale-95 shadow-lg shadow-emerald-900/20'
                                                             }`}
                                                     >
-                                                        {successInviteIds.has(friend.id) ? (
+                                                        {isInvited ? (
                                                             <Check className="w-4 h-4 text-blue-200" />
                                                         ) : invitedFriendId === friend.id ? (
                                                             <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
