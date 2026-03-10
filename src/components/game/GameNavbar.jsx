@@ -518,11 +518,12 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                 isOpen={isLogoutOpen}
                 onClose={() => setIsLogoutOpen(false)}
                 onConfirm={async () => {
-                    // Await logout to ensure backend clears last_active_at
-                    // (UI state clears instantly inside logout(), so no visual delay)
                     toast.success('Logged out successfully');
-                    await logout();
+                    // Navigate FIRST because logout() will immediately set user=null
+                    // which completely unmounts THIS GameNavbar component
+                    // and cancels the pending navigate()
                     navigate('/', { replace: true, state: { loggedOut: true } });
+                    await logout();
                 }}
             />
 
