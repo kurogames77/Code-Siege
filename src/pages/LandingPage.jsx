@@ -132,6 +132,8 @@ const LandingPage = () => {
                 location.hash.includes('type=invite');
 
             if (isRecovery) {
+                // Clear logged-out flag so checkAuth doesn't kill the recovery session
+                localStorage.removeItem('code_siege_logged_out');
                 navigate('/reset-password' + location.hash);
             } else if (isMagicLink) {
                 navigate('/ConfirmationPage');

@@ -18,28 +18,40 @@ const ResetPasswordPage = () => {
 
     // Wait for Supabase to detect the recovery session from the URL hash
     useEffect(() => {
+        // Clear the logged-out flag so the recovery session can survive
+        localStorage.removeItem('code_siege_logged_out');
+
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log('[ResetPassword] Auth event:', event);
-            if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
+            if (event === 'PASSWORD_RECOVERY') {
                 setSessionReady(true);
+                // Hide the access token from the URL
+                window.history.replaceState(null, '', window.location.pathname);
+            } else if (event === 'SIGNED_IN' && session) {
+                setSessionReady(true);
+                window.history.replaceState(null, '', window.location.pathname);
             }
         });
 
-        // Also check if session already exists (e.g. if page was refreshed)
+        // Also check if session already exists (e.g. if page was refreshed after hash was cleared)
         const checkSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
                 setSessionReady(true);
+                // Clear hash if still present
+                if (window.location.hash) {
+                    window.history.replaceState(null, '', window.location.pathname);
+                }
             } else {
-                // Give Supabase a moment to process the hash
+                // Give Supabase a moment to process the hash token
                 setTimeout(async () => {
                     const { data: { session: retrySession } } = await supabase.auth.getSession();
                     if (retrySession) {
                         setSessionReady(true);
+                        window.history.replaceState(null, '', window.location.pathname);
                     } else {
                         setSessionError(true);
                     }
-                }, 3000);
+                }, 4000);
             }
         };
 
@@ -78,6 +90,7 @@ const ResetPasswordPage = () => {
             // Sign out after password reset so they can log in fresh
             setTimeout(async () => {
                 await supabase.auth.signOut({ scope: 'local' });
+                localStorage.removeItem('auth_token');
             }, 1000);
         } catch (err) {
             console.error('Password update failed:', err);
@@ -88,6 +101,7 @@ const ResetPasswordPage = () => {
     };
 
     const handleReturnLogin = () => {
+        localStorage.setItem('code_siege_logged_out', 'true');
         navigate('/', { state: { openLogin: true } });
     };
 
