@@ -651,7 +651,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                 initialScale={canvasScale}
                                                 minScale={0.3}
                                                 maxScale={2}
-                                                centerOnInit={true}
+                                                centerOnInit={false}
                                                 wheel={{ step: 0.1 }}
                                                 panning={{
                                                     velocityDisabled: true,
@@ -682,7 +682,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                             </button>
                                                         </div>
 
-                                                        <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }} contentStyle={{ width: "2000px", height: "1500px", position: "relative" }}>
+                                                        <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }} contentStyle={{ width: "800px", height: "600px", position: "relative" }}>
                                                             {/* Actual blocks container (large canvas) */}
                                                             <div className="absolute inset-0">
                                                                 {blocks.map((block) => (
