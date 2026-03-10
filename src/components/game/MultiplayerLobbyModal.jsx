@@ -254,13 +254,40 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                             achievements: 0,
                             ms: '—',
                             logo: ccsLogo,
-                            isReady: true // default to ready in lobby
+                            isReady: true
                         };
-                        return [...prev, newPlayer];
+
+                        const updatedPlayers = [...prev, newPlayer];
+
+                        // Broadcast the full party list to ALL members so everyone stays in sync
+                        setTimeout(() => {
+                            if (channelRef.current) {
+                                const playerIds = updatedPlayers.map(p => p.id);
+                                console.log('[Multiplayer] Broadcasting party-sync to all members:', playerIds);
+                                channelRef.current.send({
+                                    type: 'broadcast',
+                                    event: 'party-sync',
+                                    payload: {
+                                        playerIds,
+                                        players: updatedPlayers
+                                    }
+                                });
+                            }
+                        }, 100);
+
+                        return updatedPlayers;
                     });
 
                     // Keep their invite button as a checkmark
                     setSuccessInviteIds(prev => new Set([...prev, payload.payload.senderId]));
+                }
+            })
+            .on('broadcast', { event: 'party-sync' }, (payload) => {
+                // All party members receive the full updated player list from the host
+                const { playerIds, players: syncedPlayers } = payload.payload;
+                if (playerIds.includes(user.id)) {
+                    console.log('[Multiplayer] Received party-sync, updating players:', playerIds);
+                    setPlayers(syncedPlayers);
                 }
             })
             .subscribe(async (status) => {
