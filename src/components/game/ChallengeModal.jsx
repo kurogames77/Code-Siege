@@ -60,6 +60,8 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
 
     const sensors = useSensors(useSensor(PointerSensor));
     const containerRef = useRef(null);
+    const transformComponentRef = useRef(null);
+    const lastZoomTime = useRef(0);
     const { playConnect, playCountdownVoice, playClick } = useSound();
     const { user, updateExp } = useUser();
 
@@ -160,6 +162,29 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             newBlocks[index] = updatedBlock;
             return newBlocks;
         });
+    };
+
+    const handleDragMove = (event) => {
+        const { active } = event;
+        if (!active || !active.rect?.current?.translated) return;
+
+        const translate = active.rect.current.translated;
+        if (containerRef.current && transformComponentRef.current) {
+            const containerRect = containerRef.current.getBoundingClientRect();
+            
+            const isNearLeft = translate.left < containerRect.left + 80;
+            const isNearRight = translate.right > containerRect.right - 80;
+            const isNearTop = translate.top < containerRect.top + 80;
+            const isNearBottom = translate.bottom > containerRect.bottom - 80;
+
+            if (isNearLeft || isNearRight || isNearTop || isNearBottom) {
+                const now = Date.now();
+                if (now - lastZoomTime.current > 500) {
+                    transformComponentRef.current.zoomOut(0.1, 300);
+                    lastZoomTime.current = now;
+                }
+            }
+        }
     };
 
     const getRandomWittyError = () => {
@@ -594,7 +619,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                         />
                                     </div>
                                 ) : (
-                                    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+                                    <DndContext sensors={sensors} onDragEnd={handleDragEnd} onDragMove={handleDragMove}>
                                         <div className="relative w-full flex-1 overflow-hidden group/canvas">
                                             {/* Top-right Zoom Controls overlay */}
                                             <div className="absolute top-4 right-4 z-50 flex flex-col gap-2 opacity-30 group-hover/canvas:opacity-100 transition-opacity">
@@ -605,6 +630,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                             </div>
 
                                             <TransformWrapper
+                                                ref={transformComponentRef}
                                                 initialScale={1}
                                                 minScale={0.3}
                                                 maxScale={2}
