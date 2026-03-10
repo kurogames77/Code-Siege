@@ -120,20 +120,17 @@ const LandingPage = () => {
         }
     }, [location, navigate]);
 
-    // Check for logout state
+    // Check for logout state and handle redirect logic
     useEffect(() => {
+        // First check: Did we just log out?
         if (location.state?.loggedOut) {
             toast.success('Logged out successfully');
             // Clear state to prevent showing again on refresh
             window.history.replaceState({}, document.title);
+            return; // STOP here. Do not process isAuthenticated redirects.
         }
-    }, [location]);
 
-    // Redirect if already authenticated — but NOT right after a logout
-    useEffect(() => {
-        // If we just logged out, skip the redirect until auth state clears
-        if (location.state?.loggedOut) return;
-
+        // Redirect if already authenticated — but NOT right after a logout
         if (isAuthenticated && user) {
             // Check for incomplete profile (social login) — only for students
             // Instructors/admins don't need studentId to proceed
