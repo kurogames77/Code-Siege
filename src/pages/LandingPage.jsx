@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Shield, GraduationCap, User, Mail, Lock, BookOpen, ChevronLeft, Loader2, AlertCircle, Eye, EyeOff, Trophy, Swords, Users, Castle } from 'lucide-react';
+import { Shield, GraduationCap, User, Mail, Lock, BookOpen, ChevronLeft, Loader2, AlertCircle, Eye, EyeOff, Trophy, Swords, Users, Castle, X, CheckCircle } from 'lucide-react';
 import { useRef } from 'react';
 import '../styles/landing-page.css';
+import supabase from '../lib/supabase';
 import nameImage from '../assets/name.png';
 import gameIcon from '../assets/icongame.png';
 import towerIcon from '../assets/tower11.png';
@@ -32,6 +33,13 @@ const LandingPage = () => {
     const [course, setCourse] = useState('');
     const [instructorCode, setInstructorCode] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+
+    // Forgot password state
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [forgotEmail, setForgotEmail] = useState('');
+    const [forgotLoading, setForgotLoading] = useState(false);
+    const [forgotSuccess, setForgotSuccess] = useState(false);
+    const [forgotError, setForgotError] = useState('');
 
     const openSignup = (role = 'student') => {
         setModal({ type: 'signup', role });
@@ -96,6 +104,11 @@ const LandingPage = () => {
         setInstructorCode('');
         setError('');
         setShowPassword(false);
+        setShowForgotPassword(false);
+        setForgotEmail('');
+        setForgotLoading(false);
+        setForgotSuccess(false);
+        setForgotError('');
     };
 
     useEffect(() => {
@@ -673,6 +686,21 @@ const LandingPage = () => {
                                     </div>
                                 </label>
 
+                                <div className="landing-modal__forgot">
+                                    <button
+                                        type="button"
+                                        className="landing-modal__forgot-link"
+                                        onClick={() => {
+                                            setShowForgotPassword(true);
+                                            setForgotError('');
+                                            setForgotSuccess(false);
+                                            setForgotEmail('');
+                                        }}
+                                    >
+                                        Forgot Password?
+                                    </button>
+                                </div>
+
                                 <button className="landing-modal__submit" type="submit" disabled={loading}>
                                     {loading ? (
                                         <>
@@ -726,6 +754,127 @@ const LandingPage = () => {
                     </div>
                 )
             }
+
+            {/* Forgot Password Popup */}
+            {showForgotPassword && (
+                <div className="landing-modal landing-modal--forgot" role="dialog" aria-modal="true" aria-labelledby="forgot-password-title">
+                    <div className="landing-modal__panel landing-modal__panel--forgot">
+                        <button
+                            className="landing-modal__forgot-close"
+                            type="button"
+                            onClick={() => setShowForgotPassword(false)}
+                        >
+                            <X size={18} />
+                        </button>
+
+                        {forgotSuccess ? (
+                            <div className="landing-modal__forgot-success">
+                                <div className="landing-modal__forgot-success-icon">
+                                    <CheckCircle size={32} />
+                                </div>
+                                <h3 id="forgot-password-title">Check Your Email</h3>
+                                <p>
+                                    We've sent a password reset link to <strong>{forgotEmail}</strong>.
+                                    Please check your inbox and follow the instructions to reset your password.
+                                </p>
+                                <button
+                                    type="button"
+                                    className="landing-modal__submit"
+                                    onClick={() => setShowForgotPassword(false)}
+                                >
+                                    Got it
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="landing-modal__header" id="forgot-password-title">
+                                    <div className="landing-modal__heading">
+                                        <h2>Reset Password</h2>
+                                    </div>
+                                    <p className="landing-modal__forgot-subtitle">
+                                        Enter the email address associated with your account and we'll send you a link to reset your password.
+                                    </p>
+                                </div>
+
+                                {forgotError && (
+                                    <div className="landing-modal__error">
+                                        <AlertCircle size={16} />
+                                        {forgotError}
+                                    </div>
+                                )}
+
+                                <form
+                                    className="landing-modal__form"
+                                    onSubmit={async (e) => {
+                                        e.preventDefault();
+                                        setForgotError('');
+                                        if (!forgotEmail.trim()) {
+                                            setForgotError('Please enter your email address.');
+                                            return;
+                                        }
+                                        setForgotLoading(true);
+                                        try {
+                                            const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+                                                redirectTo: `${window.location.origin}/`,
+                                            });
+                                            if (error) {
+                                                const waitMatch = error.message?.match(/(\d+) second/);
+                                                const waitSec = waitMatch ? parseInt(waitMatch[1]) : null;
+                                                setForgotError(
+                                                    waitSec
+                                                        ? `Please wait ${waitSec}s before requesting another reset email.`
+                                                        : (error.message || 'Failed to send reset email. Try again.')
+                                                );
+                                                return;
+                                            }
+                                            setForgotSuccess(true);
+                                        } catch (err) {
+                                            console.error('Password reset failed:', err);
+                                            setForgotError('Failed to send reset email. Please try again.');
+                                        } finally {
+                                            setForgotLoading(false);
+                                        }
+                                    }}
+                                >
+                                    <label className="landing-modal__field">
+                                        <span className="landing-modal__label">Email Address</span>
+                                        <div className="landing-modal__input">
+                                            <Mail />
+                                            <input
+                                                type="email"
+                                                required
+                                                placeholder="yourname@email.com"
+                                                value={forgotEmail}
+                                                onChange={(e) => setForgotEmail(e.target.value)}
+                                                autoFocus
+                                            />
+                                        </div>
+                                    </label>
+
+                                    <button className="landing-modal__submit" type="submit" disabled={forgotLoading}>
+                                        {forgotLoading ? (
+                                            <>
+                                                <Loader2 className="animate-spin" size={18} />
+                                                Sending...
+                                            </>
+                                        ) : (
+                                            'Send Reset Link'
+                                        )}
+                                    </button>
+                                </form>
+
+                                <div className="landing-modal__footnote">
+                                    <span>Remember your password?</span>
+                                    <button type="button" onClick={() => setShowForgotPassword(false)}>
+                                        Back to Login
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {modal?.type === 'complete_profile' && (
                 <div className="landing-modal" role="dialog" aria-modal="true" aria-labelledby="complete-profile-title">
                     <div className="landing-modal__panel landing-modal__panel--signup">
