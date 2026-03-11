@@ -103,6 +103,12 @@ export const UserProvider = ({ children }) => {
                 return;
             }
 
+            // 1. GUARD: If user is resetting password, don't interfere with the recovery session
+            if (localStorage.getItem('code_siege_resetting_password') === 'true') {
+                console.log('[Auth] Password reset in progress — skipping checkAuth');
+                return;
+            }
+
             // 1. Proactively check Supabase session (important for social redirects)
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {

@@ -18,13 +18,14 @@ const ResetPasswordPage = () => {
 
     // Wait for Supabase to detect the recovery session from the URL hash
     useEffect(() => {
-        // Clear the logged-out flag so the recovery session can survive
+        // Set flags so UserContext doesn't interfere with the recovery session
         localStorage.removeItem('code_siege_logged_out');
+        localStorage.setItem('code_siege_resetting_password', 'true');
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (event === 'PASSWORD_RECOVERY') {
                 setSessionReady(true);
-                // Hide the access token from the URL
+                // Hide the access token from the URL immediately
                 window.history.replaceState(null, '', window.location.pathname);
             } else if (event === 'SIGNED_IN' && session) {
                 setSessionReady(true);
@@ -37,7 +38,6 @@ const ResetPasswordPage = () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
                 setSessionReady(true);
-                // Clear hash if still present
                 if (window.location.hash) {
                     window.history.replaceState(null, '', window.location.pathname);
                 }
@@ -87,11 +87,13 @@ const ResetPasswordPage = () => {
 
             setSuccess(true);
 
-            // Sign out after password reset so they can log in fresh
+            // Clean up: clear the resetting flag, sign out, and remove tokens
+            localStorage.removeItem('code_siege_resetting_password');
+            localStorage.setItem('code_siege_logged_out', 'true');
+            localStorage.removeItem('auth_token');
             setTimeout(async () => {
-                await supabase.auth.signOut({ scope: 'local' });
-                localStorage.removeItem('auth_token');
-            }, 1000);
+                try { await supabase.auth.signOut({ scope: 'local' }); } catch (_) { }
+            }, 500);
         } catch (err) {
             console.error('Password update failed:', err);
             setError('Failed to update password. Please try again.');
@@ -101,7 +103,9 @@ const ResetPasswordPage = () => {
     };
 
     const handleReturnLogin = () => {
+        localStorage.removeItem('code_siege_resetting_password');
         localStorage.setItem('code_siege_logged_out', 'true');
+        localStorage.removeItem('auth_token');
         navigate('/', { state: { openLogin: true } });
     };
 

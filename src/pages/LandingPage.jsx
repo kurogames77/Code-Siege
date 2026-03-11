@@ -120,13 +120,8 @@ const LandingPage = () => {
         }
     }, [location]);
 
-    // Check for auth redirect (e.g. email confirmation/magic link) 
     useEffect(() => {
         if (location.hash) {
-            console.log("LandingPage: Checking hash", location.hash);
-            // Only redirect to ConfirmationPage for specific magic link types
-            // Social login redirects have access_token but usually skip the 'type' parameter or handle it differently
-            // We want social login users to stay here to see the "Complete Profile" modal
             const isRecovery = location.hash.includes('type=recovery') ||
                 location.hash.includes('type=initial_recovery');
 
@@ -134,9 +129,11 @@ const LandingPage = () => {
                 location.hash.includes('type=invite');
 
             if (isRecovery) {
-                // Clear logged-out flag so checkAuth doesn't kill the recovery session
+                // Clear logged-out flag and set resetting flag so UserContext doesn't interfere
                 localStorage.removeItem('code_siege_logged_out');
-                navigate('/reset-password' + location.hash);
+                localStorage.setItem('code_siege_resetting_password', 'true');
+                // Navigate with hash so ResetPasswordPage can process the token
+                navigate('/reset-password' + location.hash, { replace: true });
             } else if (isMagicLink) {
                 navigate('/ConfirmationPage');
             }
