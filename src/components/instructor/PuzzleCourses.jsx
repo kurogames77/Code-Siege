@@ -11,6 +11,26 @@ import javascriptIcon from '../../assets/free-javascript-3d-icon-download-in-png
 import mysqlIcon from '../../assets/free-mysql-9294870-7578013-Photoroom.png';
 import phpIcon from '../../assets/php_emblem-Photoroom.png';
 
+// Master list of all supported languages
+const SUPPORTED_LANGUAGES = [
+    { id: 'py', name: 'Python', color: 'yellow' },
+    { id: 'js', name: 'JavaScript', color: 'amber' },
+    { id: 'cpp', name: 'C++', color: 'blue' },
+    { id: 'cs', name: 'C#', color: 'purple' },
+    { id: 'mysql', name: 'MySQL', color: 'orange' },
+    { id: 'php', name: 'PHP', color: 'indigo' },
+    { id: 'java', name: 'Java', color: 'red' },
+    { id: 'ruby', name: 'Ruby', color: 'rose' },
+    { id: 'go', name: 'Go', color: 'cyan' },
+    { id: 'swift', name: 'Swift', color: 'orange' },
+    { id: 'kotlin', name: 'Kotlin', color: 'violet' },
+    { id: 'rust', name: 'Rust', color: 'amber' },
+    { id: 'ts', name: 'TypeScript', color: 'blue' },
+    { id: 'html', name: 'HTML/CSS', color: 'orange' },
+    { id: 'r', name: 'R', color: 'blue' },
+    { id: 'dart', name: 'Dart', color: 'cyan' },
+];
+
 const PuzzleCourses = ({ theme }) => {
     const [selectedCourse, setSelectedCourse] = useState(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -243,26 +263,24 @@ const PuzzleCourses = ({ theme }) => {
         setGenLogs([]); // Safety clear
     };
 
+    // Compute available languages (not yet added)
+    const existingIds = courses.map(c => c.id);
+    const availableLanguages = SUPPORTED_LANGUAGES.filter(lang => !existingIds.includes(lang.id));
+
     const handleAddLanguageSubmit = (e) => {
         e.preventDefault();
         if (newLangData.name) {
-            // Generate ID: 'python' -> 'py', 'javascript' -> 'js', etc. to match tower mapping
-            let generatedId = newLangData.name.toLowerCase().replace(/\s+/g, '');
-            if (generatedId.includes('python')) generatedId = 'py';
-            else if (generatedId === 'c++') generatedId = 'cpp';
-            else if (generatedId === 'c#') generatedId = 'cs';
-            else if (generatedId.includes('javascript')) generatedId = 'js';
-            else if (generatedId.includes('mysql') || generatedId.includes('sql')) generatedId = 'mysql';
-            else if (generatedId.includes('php')) generatedId = 'php';
-            else generatedId = generatedId.substring(0, 3);
+            // Find the selected language from the master list
+            const selectedLang = SUPPORTED_LANGUAGES.find(l => l.name === newLangData.name);
+            if (!selectedLang) return;
 
             saveMutation.mutate({
-                id: generatedId,
-                name: newLangData.name,
-                color: newLangData.color,
+                id: selectedLang.id,
+                name: selectedLang.name,
+                color: selectedLang.color,
                 icon_type: 'custom',
-                difficulty: 'Beginner', // Default
-                mode: 'Standard'        // Default
+                difficulty: 'Beginner',
+                mode: 'Standard'
             }, {
                 onSuccess: () => handleCloseModal()
             });
@@ -1189,19 +1207,31 @@ const PuzzleCourses = ({ theme }) => {
                             <div className="p-8 space-y-6">
                                 <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Language Name</label>
-                                        <input
-                                            type="text"
-                                            value={newLangData.name}
-                                            onChange={(e) => setNewLangData({ ...newLangData, name: e.target.value })}
-                                            placeholder="e.g. Ruby"
-                                            className={`w-full border rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all ${theme === 'dark' ? 'bg-slate-900 border-white/10 text-white focus:border-cyan-500/50' : 'bg-white border-slate-200 text-slate-900 focus:border-cyan-500'}`}
-                                        />
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Select Language</label>
+                                        {availableLanguages.length > 0 ? (
+                                            <div className="relative">
+                                                <select
+                                                    value={newLangData.name}
+                                                    onChange={(e) => setNewLangData({ ...newLangData, name: e.target.value })}
+                                                    className={`w-full border rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all appearance-none cursor-pointer ${theme === 'dark' ? 'bg-slate-900 border-white/10 text-white focus:border-cyan-500/50 hover:bg-slate-900/80' : 'bg-white border-slate-200 text-slate-900 focus:border-cyan-500'}`}
+                                                >
+                                                    <option value="" disabled className={theme === 'dark' ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>Choose a language...</option>
+                                                    {availableLanguages.map(lang => (
+                                                        <option key={lang.id} value={lang.name} className={theme === 'dark' ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>{lang.name}</option>
+                                                    ))}
+                                                </select>
+                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                                            </div>
+                                        ) : (
+                                            <p className={`text-sm font-bold italic px-4 py-3 rounded-xl ${theme === 'dark' ? 'text-slate-500 bg-slate-900/50' : 'text-slate-400 bg-slate-50'}`}>
+                                                All available languages have been added.
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="pt-4 grid grid-cols-2 gap-4">
                                     <button onClick={handleCloseModal} className={`px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${theme === 'dark' ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}>Cancel</button>
-                                    <button onClick={handleAddLanguageSubmit} disabled={!newLangData.name} className={`px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-600 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 transition-all ${(!newLangData.name) ? 'opacity-50 cursor-not-allowed' : 'hover:from-cyan-400 hover:to-cyan-500'}`}>
+                                    <button onClick={handleAddLanguageSubmit} disabled={!newLangData.name || availableLanguages.length === 0} className={`px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-600 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 transition-all ${(!newLangData.name || availableLanguages.length === 0) ? 'opacity-50 cursor-not-allowed' : 'hover:from-cyan-400 hover:to-cyan-500'}`}>
                                         <Plus className="w-4 h-4" />
                                         Add Language
                                     </button>
