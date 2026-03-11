@@ -520,14 +520,14 @@ router.post('/forgot-password', async (req, res) => {
             return res.status(400).json({ error: 'No account found with that ID and email combination.' });
         }
 
-        // Send password reset email via Supabase
+        // Send password reset email via Supabase (use service role for server-side)
         const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
-        const { error: resetError } = await supabase.auth.resetPasswordForEmail(userProfile.email, {
+        const { error: resetError } = await supabaseService.auth.resetPasswordForEmail(userProfile.email, {
             redirectTo: `${CLIENT_URL}/`,
         });
 
         if (resetError) {
-            console.error('[Auth] Password reset email error:', resetError.message);
+            console.error('[Auth] Password reset email error:', resetError.message, resetError);
             const waitMatch = resetError.message?.match(/(\d+) second/);
             if (waitMatch) {
                 return res.status(429).json({
