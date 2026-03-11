@@ -122,6 +122,25 @@ const LandingPage = () => {
 
     useEffect(() => {
         if (location.hash) {
+            // Handle Supabase error hashes (e.g. expired/invalid reset links)
+            if (location.hash.includes('error=')) {
+                const hashParams = new URLSearchParams(location.hash.substring(1));
+                const errorDesc = hashParams.get('error_description') || '';
+                const errorCode = hashParams.get('error_code') || '';
+
+                let message = 'Something went wrong. Please try again.';
+                if (errorCode === 'otp_expired' || errorDesc.toLowerCase().includes('expired')) {
+                    message = 'This reset link has expired or was already used. Please request a new one.';
+                } else if (errorDesc) {
+                    message = errorDesc.replace(/\+/g, ' ');
+                }
+
+                toast.error(message);
+                // Clear the error hash from URL
+                window.history.replaceState(null, '', window.location.pathname);
+                return;
+            }
+
             const isRecovery = location.hash.includes('type=recovery') ||
                 location.hash.includes('type=initial_recovery');
 
