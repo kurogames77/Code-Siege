@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Shield, GraduationCap, User, Mail, Lock, BookOpen, ChevronLeft, Loader2, AlertCircle, Eye, EyeOff, Trophy, Swords, Users, Castle, X, CheckCircle } from 'lucide-react';
 import { useRef } from 'react';
 import '../styles/landing-page.css';
-import supabase from '../lib/supabase';
+import { authAPI } from '../services/api';
 import nameImage from '../assets/name.png';
 import gameIcon from '../assets/icongame.png';
 import towerIcon from '../assets/tower11.png';
@@ -36,7 +36,7 @@ const LandingPage = () => {
 
     // Forgot password state
     const [showForgotPassword, setShowForgotPassword] = useState(false);
-    const [forgotEmail, setForgotEmail] = useState('');
+    const [forgotMaskedEmail, setForgotMaskedEmail] = useState('');
     const [forgotLoading, setForgotLoading] = useState(false);
     const [forgotSuccess, setForgotSuccess] = useState(false);
     const [forgotError, setForgotError] = useState('');
@@ -105,7 +105,7 @@ const LandingPage = () => {
         setError('');
         setShowPassword(false);
         setShowForgotPassword(false);
-        setForgotEmail('');
+        setForgotMaskedEmail('');
         setForgotLoading(false);
         setForgotSuccess(false);
         setForgotError('');
@@ -696,10 +696,16 @@ const LandingPage = () => {
                                         type="button"
                                         className="landing-modal__forgot-link"
                                         onClick={() => {
+                                            const currentId = modal?.role === 'instructor' ? instructorId : studentId;
+                                            if (!currentId || !currentId.trim()) {
+                                                setError(`Please enter your ${modal?.role === 'instructor' ? 'Instructor' : 'Student'} ID first.`);
+                                                return;
+                                            }
+                                            setError('');
                                             setShowForgotPassword(true);
                                             setForgotError('');
                                             setForgotSuccess(false);
-                                            setForgotEmail('');
+                                            setForgotMaskedEmail('');
                                         }}
                                     >
                                         Forgot Password?
@@ -779,7 +785,7 @@ const LandingPage = () => {
                                 </div>
                                 <h3 id="forgot-password-title">Check Your Email</h3>
                                 <p>
-                                    We've sent a password reset link to <strong>{forgotEmail}</strong>.
+                                    We've sent a password reset link to <strong>{forgotMaskedEmail}</strong>.
                                     Please check your inbox and follow the instructions to reset your password.
                                 </p>
                                 <button
@@ -797,7 +803,7 @@ const LandingPage = () => {
                                         <h2>Reset Password</h2>
                                     </div>
                                     <p className="landing-modal__forgot-subtitle">
-                                        Enter the email address associated with your account and we'll send you a link to reset your password.
+                                        We'll send a password reset link to the email associated with your {modal?.role === 'instructor' ? 'Instructor' : 'Student'} ID.
                                     </p>
                                 </div>
 
@@ -813,45 +819,34 @@ const LandingPage = () => {
                                     onSubmit={async (e) => {
                                         e.preventDefault();
                                         setForgotError('');
-                                        if (!forgotEmail.trim()) {
-                                            setForgotError('Please enter your email address.');
+                                        const currentId = modal?.role === 'instructor' ? instructorId : studentId;
+                                        if (!currentId || !currentId.trim()) {
+                                            setForgotError(`Please enter your ${modal?.role === 'instructor' ? 'Instructor' : 'Student'} ID.`);
                                             return;
                                         }
                                         setForgotLoading(true);
                                         try {
-                                            const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
-                                                redirectTo: `${window.location.origin}/`,
-                                            });
-                                            if (error) {
-                                                const waitMatch = error.message?.match(/(\d+) second/);
-                                                const waitSec = waitMatch ? parseInt(waitMatch[1]) : null;
-                                                setForgotError(
-                                                    waitSec
-                                                        ? `Please wait ${waitSec}s before requesting another reset email.`
-                                                        : (error.message || 'Failed to send reset email. Try again.')
-                                                );
-                                                return;
-                                            }
+                                            const result = await authAPI.forgotPassword(currentId.trim());
+                                            setForgotMaskedEmail(result.masked_email || 'your registered email');
                                             setForgotSuccess(true);
                                         } catch (err) {
                                             console.error('Password reset failed:', err);
-                                            setForgotError('Failed to send reset email. Please try again.');
+                                            setForgotError(err.message || 'Failed to send reset email. Please try again.');
                                         } finally {
                                             setForgotLoading(false);
                                         }
                                     }}
                                 >
                                     <label className="landing-modal__field">
-                                        <span className="landing-modal__label">Email Address</span>
+                                        <span className="landing-modal__label">{modal?.role === 'instructor' ? 'Instructor' : 'Student'} ID</span>
                                         <div className="landing-modal__input">
-                                            <Mail />
+                                            <User />
                                             <input
-                                                type="email"
+                                                type="text"
                                                 required
-                                                placeholder="yourname@email.com"
-                                                value={forgotEmail}
-                                                onChange={(e) => setForgotEmail(e.target.value)}
-                                                autoFocus
+                                                placeholder={`Your ${modal?.role === 'instructor' ? 'Instructor' : 'Student'} ID`}
+                                                value={modal?.role === 'instructor' ? instructorId : studentId}
+                                                readOnly
                                             />
                                         </div>
                                     </label>

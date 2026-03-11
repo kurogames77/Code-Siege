@@ -142,6 +142,13 @@ export const authAPI = {
     },
 
     isAuthenticated: () => !!getToken(),
+
+    forgotPassword: async (student_id) => {
+        return apiRequest('/auth/forgot-password', {
+            method: 'POST',
+            body: JSON.stringify({ student_id }),
+        });
+    },
 };
 
 import supabase from '../lib/supabase';

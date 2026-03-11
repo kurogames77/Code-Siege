@@ -485,4 +485,69 @@ router.post('/heartbeat', async (req, res) => {
     }
 });
 
+/**
+ * POST /api/auth/forgot-password
+ * Look up user by student_id/instructor_id, then send reset email
+ */
+router.post('/forgot-password', async (req, res) => {
+    console.log('[Auth] POST /forgot-password request received');
+    try {
+        let { student_id } = req.body;
+
+        if (!student_id || !student_id.trim()) {
+            return res.status(400).json({ error: 'Student ID or Instructor ID is required' });
+        }
+
+        student_id = student_id.trim();
+
+        // Look up the user's email from the users table
+        const { data: userProfile, error: lookupError } = await supabaseService
+            .from('users')
+            .select('email, student_id')
+            .eq('student_id', student_id)
+            .single();
+
+        if (lookupError || !userProfile) {
+            // Don't reveal whether the ID exists or not for security
+            return res.status(200).json({
+                message: 'If an account with that ID exists, a password reset email has been sent.'
+            });
+        }
+
+        // Send password reset email via Supabase
+        const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(userProfile.email, {
+            redirectTo: `${CLIENT_URL}/`,
+        });
+
+        if (resetError) {
+            console.error('[Auth] Password reset email error:', resetError.message);
+            // Check for rate limiting
+            const waitMatch = resetError.message?.match(/(\d+) second/);
+            if (waitMatch) {
+                return res.status(429).json({
+                    error: `Please wait ${waitMatch[1]} seconds before requesting another reset email.`
+                });
+            }
+            return res.status(500).json({ error: 'Failed to send reset email. Please try again.' });
+        }
+
+        // Mask the email for the response (e.g. "j***@gmail.com")
+        const email = userProfile.email;
+        const [localPart, domain] = email.split('@');
+        const maskedLocal = localPart.charAt(0) + '***';
+        const maskedEmail = `${maskedLocal}@${domain}`;
+
+        logger.info('AUTH_SERVICE', `Password reset email sent for student_id: ${student_id}`);
+
+        res.status(200).json({
+            message: 'Password reset email has been sent.',
+            masked_email: maskedEmail
+        });
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 export default router;
