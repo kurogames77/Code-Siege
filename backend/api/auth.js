@@ -487,20 +487,24 @@ router.post('/heartbeat', async (req, res) => {
 
 /**
  * POST /api/auth/forgot-password
- * Look up user by student_id/instructor_id, then send reset email
+ * Verify student_id + email match, then send reset email
  */
 router.post('/forgot-password', async (req, res) => {
     console.log('[Auth] POST /forgot-password request received');
     try {
-        let { student_id } = req.body;
+        let { student_id, email } = req.body;
 
         if (!student_id || !student_id.trim()) {
             return res.status(400).json({ error: 'Student ID or Instructor ID is required' });
         }
+        if (!email || !email.trim()) {
+            return res.status(400).json({ error: 'Email address is required' });
+        }
 
         student_id = student_id.trim();
+        email = email.trim().toLowerCase();
 
-        // Look up the user's email from the users table
+        // Look up the user by student_id
         const { data: userProfile, error: lookupError } = await supabaseService
             .from('users')
             .select('email, student_id')
@@ -508,10 +512,12 @@ router.post('/forgot-password', async (req, res) => {
             .single();
 
         if (lookupError || !userProfile) {
-            // Don't reveal whether the ID exists or not for security
-            return res.status(200).json({
-                message: 'If an account with that ID exists, a password reset email has been sent.'
-            });
+            return res.status(400).json({ error: 'No account found with that ID and email combination.' });
+        }
+
+        // Verify the email matches
+        if (userProfile.email.toLowerCase() !== email) {
+            return res.status(400).json({ error: 'No account found with that ID and email combination.' });
         }
 
         // Send password reset email via Supabase
@@ -522,7 +528,6 @@ router.post('/forgot-password', async (req, res) => {
 
         if (resetError) {
             console.error('[Auth] Password reset email error:', resetError.message);
-            // Check for rate limiting
             const waitMatch = resetError.message?.match(/(\d+) second/);
             if (waitMatch) {
                 return res.status(429).json({
@@ -532,17 +537,10 @@ router.post('/forgot-password', async (req, res) => {
             return res.status(500).json({ error: 'Failed to send reset email. Please try again.' });
         }
 
-        // Mask the email for the response (e.g. "j***@gmail.com")
-        const email = userProfile.email;
-        const [localPart, domain] = email.split('@');
-        const maskedLocal = localPart.charAt(0) + '***';
-        const maskedEmail = `${maskedLocal}@${domain}`;
-
         logger.info('AUTH_SERVICE', `Password reset email sent for student_id: ${student_id}`);
 
         res.status(200).json({
-            message: 'Password reset email has been sent.',
-            masked_email: maskedEmail
+            message: 'Password reset email has been sent.'
         });
     } catch (error) {
         console.error('Forgot password error:', error);

@@ -143,10 +143,10 @@ export const authAPI = {
 
     isAuthenticated: () => !!getToken(),
 
-    forgotPassword: async (student_id) => {
+    forgotPassword: async (student_id, email) => {
         return apiRequest('/auth/forgot-password', {
             method: 'POST',
-            body: JSON.stringify({ student_id }),
+            body: JSON.stringify({ student_id, email }),
         });
     },
 };

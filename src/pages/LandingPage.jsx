@@ -36,6 +36,7 @@ const LandingPage = () => {
 
     // Forgot password state
     const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [forgotEmail, setForgotEmail] = useState('');
     const [forgotMaskedEmail, setForgotMaskedEmail] = useState('');
     const [forgotLoading, setForgotLoading] = useState(false);
     const [forgotSuccess, setForgotSuccess] = useState(false);
@@ -105,6 +106,7 @@ const LandingPage = () => {
         setError('');
         setShowPassword(false);
         setShowForgotPassword(false);
+        setForgotEmail('');
         setForgotMaskedEmail('');
         setForgotLoading(false);
         setForgotSuccess(false);
@@ -705,6 +707,7 @@ const LandingPage = () => {
                                             setShowForgotPassword(true);
                                             setForgotError('');
                                             setForgotSuccess(false);
+                                            setForgotEmail('');
                                             setForgotMaskedEmail('');
                                         }}
                                     >
@@ -803,7 +806,7 @@ const LandingPage = () => {
                                         <h2>Reset Password</h2>
                                     </div>
                                     <p className="landing-modal__forgot-subtitle">
-                                        We'll send a password reset link to the email associated with your {modal?.role === 'instructor' ? 'Instructor' : 'Student'} ID.
+                                        Enter the email address associated with your account and we'll send you a link to reset your password.
                                     </p>
                                 </div>
 
@@ -819,15 +822,15 @@ const LandingPage = () => {
                                     onSubmit={async (e) => {
                                         e.preventDefault();
                                         setForgotError('');
-                                        const currentId = modal?.role === 'instructor' ? instructorId : studentId;
-                                        if (!currentId || !currentId.trim()) {
-                                            setForgotError(`Please enter your ${modal?.role === 'instructor' ? 'Instructor' : 'Student'} ID.`);
+                                        if (!forgotEmail.trim()) {
+                                            setForgotError('Please enter your email address.');
                                             return;
                                         }
+                                        const currentId = modal?.role === 'instructor' ? instructorId : studentId;
                                         setForgotLoading(true);
                                         try {
-                                            const result = await authAPI.forgotPassword(currentId.trim());
-                                            setForgotMaskedEmail(result.masked_email || 'your registered email');
+                                            const result = await authAPI.forgotPassword(currentId.trim(), forgotEmail.trim());
+                                            setForgotMaskedEmail(forgotEmail.trim());
                                             setForgotSuccess(true);
                                         } catch (err) {
                                             console.error('Password reset failed:', err);
@@ -838,15 +841,16 @@ const LandingPage = () => {
                                     }}
                                 >
                                     <label className="landing-modal__field">
-                                        <span className="landing-modal__label">{modal?.role === 'instructor' ? 'Instructor' : 'Student'} ID</span>
+                                        <span className="landing-modal__label">Email Address</span>
                                         <div className="landing-modal__input">
-                                            <User />
+                                            <Mail />
                                             <input
-                                                type="text"
+                                                type="email"
                                                 required
-                                                placeholder={`Your ${modal?.role === 'instructor' ? 'Instructor' : 'Student'} ID`}
-                                                value={modal?.role === 'instructor' ? instructorId : studentId}
-                                                readOnly
+                                                placeholder="yourname@email.com"
+                                                value={forgotEmail}
+                                                onChange={(e) => setForgotEmail(e.target.value)}
+                                                autoFocus
                                             />
                                         </div>
                                     </label>
