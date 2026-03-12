@@ -794,13 +794,16 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                     ) : (
                                         <button
                                             onClick={handleFindMatch}
-                                            disabled={matchState === 'searching'}
-                                            className={`w-full h-11 rounded-xl border-2 flex items-center justify-center gap-2 transition-all text-xs font-black uppercase tracking-widest ${matchState === 'searching'
+                                            disabled={matchState === 'searching' || !!initialInviter}
+                                            className={`w-full h-11 rounded-xl border-2 flex items-center justify-center gap-2 transition-all text-xs font-black uppercase tracking-widest ${
+                                                !!initialInviter
+                                                ? 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'
+                                                : matchState === 'searching'
                                                 ? 'bg-slate-700 border-slate-500 text-slate-300'
                                                 : 'bg-gradient-to-b from-yellow-300 to-amber-500 border-yellow-200/50 shadow-[0_0_20px_rgba(245,158,11,0.4)] text-black hover:scale-105'
                                                 }`}
                                         >
-                                            {matchState === 'searching' ? 'Searching...' : 'Find Match'}
+                                            {!!initialInviter ? 'Waiting for Host...' : matchState === 'searching' ? 'Searching...' : 'Find Match'}
                                         </button>
                                     )}
                                 </div>
