@@ -80,6 +80,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     const [invitedFriendId, setInvitedFriendId] = useState(null);
     const [successInviteIds, setSuccessInviteIds] = useState(new Set());
     const [lobbyId, setLobbyId] = useState(null);
+    const [battleRecordId, setBattleRecordId] = useState(null); // Host generated battle id
 
     // Refs to avoid stale closures in broadcast handlers
     const matchStateRef = React.useRef(matchState);
@@ -383,7 +384,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             })
             .on('broadcast', { event: 'game-start' }, ({ payload }) => {
                 if (payload.targetId === user.id && matchStateRef.current !== 'starting') {
-                    console.log('[DuelLobby] Received game-start broadcast, starting countdown');
+                    console.log('[DuelLobby] Received game-start broadcast, starting countdown. BattleRecordId:', payload.battleRecordId);
+                    setBattleRecordId(payload.battleRecordId);
                     setMatchState('starting');
                     setStartCountdown(5);
                 }
@@ -444,20 +446,34 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 setTimer((prev) => prev - 1);
             }, 1000);
         } else if (matchState === 'lobby' && timer === 0 && opponentRef.current && opponent) {
-            // SAFETY: only auto-start if the opponent state AND ref BOTH confirm opponent is present
-            console.log('[DuelLobby] Timer expired, auto-starting game');
-            if (lobbyChannelRef.current) {
-                lobbyChannelRef.current.send({
-                    type: 'broadcast',
-                    event: 'game-start',
-                    payload: {
-                        targetId: opponentRef.current?.id,
-                        startedBy: user.id
+            // SAFETY: Timer expired. If we are the Host (we didn't receive initialOpponent), we auto-start.
+            if (!initialOpponent) {
+                console.log('[DuelLobby] Timer expired, auto-starting game as host');
+                const triggerGameStart = async () => {
+                    let newBattleId = null;
+                    try {
+                        const battleRecord = await battlesAPI.create('duel', opponentRef.current.id);
+                        newBattleId = battleRecord?.battle?.id || battleRecord?.id || null;
+                        setBattleRecordId(newBattleId);
+                    } catch (err) {
+                        console.error('[DuelLobby] Failed to create battle record on timeout:', err);
                     }
-                });
+                    if (lobbyChannelRef.current) {
+                        lobbyChannelRef.current.send({
+                            type: 'broadcast',
+                            event: 'game-start',
+                            payload: {
+                                targetId: opponentRef.current?.id,
+                                startedBy: user.id,
+                                battleRecordId: newBattleId
+                            }
+                        });
+                    }
+                    setMatchState('starting');
+                    setStartCountdown(5);
+                };
+                triggerGameStart();
             }
-            setMatchState('starting');
-            setStartCountdown(5);
         }
         return () => clearInterval(interval);
     }, [matchState, timer, opponent]);
@@ -478,17 +494,10 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 setTimer(0);
                 return;
             }
-            // Create battle record then navigate
-            const launchBattle = async () => {
-                let battleRecordId = null;
-                try {
-                    const battleRecord = await battlesAPI.create('duel', opponentRef.current.id);
-                    battleRecordId = battleRecord?.battle?.id || battleRecord?.id || null;
-                    console.log('[DuelLobby] Battle record created:', battleRecordId);
-                } catch (err) {
-                    console.error('[DuelLobby] Failed to create battle record:', err);
-                }
-                navigate(`/arena-battle/b-${battleRecordId || Math.floor(Math.random() * 9000) + 1000}`, {
+            // Ensure we use the shared battleRecordId or generate a random one if something failed
+            const navigateToBattle = () => {
+                const finalBattleId = battleRecordId || Math.floor(Math.random() * 9000) + 1000;
+                navigate(`/arena-battle/b-${finalBattleId}`, {
                     state: {
                         opponent: opponent.name,
                         opponentAvatar: opponent.avatar,
@@ -499,14 +508,14 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                         wager: selectedWager,
                         difficulty: selectedDifficulty,
                         lobbyId: lobbyId,
-                        battleRecordId
+                        battleRecordId: finalBattleId
                     }
                 });
             };
-            launchBattle();
+            navigateToBattle();
         }
         return () => clearInterval(interval);
-    }, [matchState, startCountdown, navigate, opponent, selectedLanguage, selectedWager]);
+    }, [matchState, startCountdown, navigate, opponent, selectedLanguage, selectedWager, battleRecordId, lobbyId, selectedDifficulty, selectedMode]);
 
     // --- LOGIC ---
 
@@ -579,22 +588,37 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
 
     // Auto-Start when BOTH are ready
     useEffect(() => {
-        if (matchState === 'lobby' && isUserReady && isOpponentReady) {
-            // Broadcast game-start to the opponent so both start the countdown together
-            if (lobbyChannelRef.current) {
-                lobbyChannelRef.current.send({
-                    type: 'broadcast',
-                    event: 'game-start',
-                    payload: {
-                        targetId: opponent?.id,
-                        startedBy: user.id
-                    }
-                });
-            }
-            setMatchState('starting');
-            setStartCountdown(5);
+        if (matchState === 'lobby' && isUserReady && isOpponentReady && !initialOpponent) {
+            // ONLY the Host triggers this when both are ready
+            const triggerGameStart = async () => {
+                let newBattleId = null;
+                try {
+                    const battleRecord = await battlesAPI.create('duel', opponent?.id);
+                    newBattleId = battleRecord?.battle?.id || battleRecord?.id || null;
+                    setBattleRecordId(newBattleId);
+                } catch (err) {
+                    console.error('[DuelLobby] Failed to create battle record:', err);
+                }
+
+                // Broadcast game-start to the opponent so both start the countdown together
+                if (lobbyChannelRef.current) {
+                    lobbyChannelRef.current.send({
+                        type: 'broadcast',
+                        event: 'game-start',
+                        payload: {
+                            targetId: opponent?.id,
+                            startedBy: user.id,
+                            battleRecordId: newBattleId
+                        }
+                    });
+                }
+                setMatchState('starting');
+                setStartCountdown(5);
+            };
+            
+            triggerGameStart();
         }
-    }, [matchState, isUserReady, isOpponentReady]);
+    }, [matchState, isUserReady, isOpponentReady, initialOpponent, opponent, user]);
 
     // --- AUDIO CONTROL ---
     useEffect(() => {
