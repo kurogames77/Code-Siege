@@ -592,9 +592,10 @@ const LandingPage = () => {
                                                     I have read and agree to the{' '}
                                                     <button
                                                         type="button"
-                                                        className="text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors focus:outline-none"
+                                                        className="text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors focus:outline-none relative z-10 inline-block"
                                                         onClick={(e) => {
                                                             e.preventDefault();
+                                                            e.stopPropagation();
                                                             setShowPolicyModal(true);
                                                         }}
                                                     >
