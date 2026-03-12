@@ -1076,3 +1076,159 @@ body {
   color: #fff;
   text-shadow: 0 0 10px rgba(138, 95, 240, 0.6);
 }
+
+/* --- Sleek Document Policy Modal --- */
+.landing-modal--policy .landing-modal__panel--policy {
+  max-width: 650px;
+  background: #ffffff; /* Clean white document background */
+  color: #1a1a1a;      /* Dark text for legibility */
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}
+
+.landing-modal__policy-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.landing-modal__policy-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #111827;
+}
+
+.landing-modal__policy-content {
+  padding: 40px;
+  overflow-y: auto;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.policy-main-title {
+  font-size: 28px;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 24px;
+  color: #111827;
+  letter-spacing: -0.02em;
+}
+
+.policy-intro {
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #4b5563;
+  max-width: 90%;
+  margin: 0 auto 32px;
+}
+
+.policy-divider {
+  border: none;
+  border-top: 1px solid #f3f4f6;
+  margin: 0 0 32px 0;
+}
+
+.policy-section {
+  padding-left: 20px;
+}
+
+.policy-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.policy-icon {
+  color: #10b981; /* Emerald green like the reference */
+  background: rgba(16, 185, 129, 0.1);
+  padding: 6px;
+  border-radius: 8px;
+  box-sizing: content-box;
+}
+
+.policy-section h3 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.policy-section h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 24px 0 12px 0;
+}
+
+.policy-section p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #4b5563;
+  margin-bottom: 16px;
+}
+
+.policy-section ul {
+  list-style-type: disc;
+  padding-left: 24px;
+  margin-bottom: 24px;
+}
+
+.policy-section li {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #4b5563;
+  margin-bottom: 8px;
+}
+
+.policy-section li strong {
+  color: #111827;
+}
+
+.landing-modal__policy-footer {
+  padding: 24px 40px;
+  background: #f9fafb;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.policy-accept-btn {
+  background: #8a63ff;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(138, 95, 240, 0.3);
+}
+
+.policy-accept-btn:hover {
+  background: #7544ff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(138, 95, 240, 0.4);
+}
+
+.policy-accept-btn:active {
+  transform: translateY(1px);
+}

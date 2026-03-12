@@ -1096,7 +1096,76 @@ const LandingPage = () => {
                     </div>
                 </div>
             )}
-        </div >
+            {/* Policy Modal */}
+            {showPolicyModal && (
+                <div className="landing-modal landing-modal--policy" role="dialog" aria-modal="true" aria-labelledby="policy-title">
+                    <div className="landing-modal__panel landing-modal__panel--policy">
+                        <button
+                            className="landing-modal__policy-close"
+                            type="button"
+                            onClick={() => setShowPolicyModal(false)}
+                        >
+                            <X size={20} />
+                        </button>
+                        
+                        <div className="landing-modal__policy-content">
+                            <h2 id="policy-title" className="policy-main-title">Terms of Service & Privacy Policy</h2>
+                            <p className="policy-intro">
+                                Welcome to Code Siege. We are committed to protecting your data and respecting your privacy while you conquer the abstract realms. This policy outlines how we collect and use your information.
+                            </p>
+
+                            <hr className="policy-divider" />
+
+                            <div className="policy-section">
+                                <div className="policy-section-header">
+                                    <Shield className="policy-icon" size={24} />
+                                    <h3>Our role in your privacy</h3>
+                                </div>
+                                <p>
+                                    If you are a student or instructor registering for Code Siege, this policy applies to you. We act as the data controller for the information you provide during registration and gameplay.
+                                </p>
+
+                                <h4>Data Collection</h4>
+                                <p>
+                                    To provide you with a seamless gaming and educational experience, we collect:
+                                </p>
+                                <ul>
+                                    <li><strong>Account Credentials:</strong> Your Full Name, Email, and Password.</li>
+                                    <li><strong>Institutional Data:</strong> Your Student ID, Instructor ID, and Course information.</li>
+                                    <li><strong>Game Progression:</strong> Your code submissions, battle histories, and rankings.</li>
+                                </ul>
+
+                                <h4>Your responsibilities</h4>
+                                <ul>
+                                    <li>Read this Privacy Policy and our Terms of Service.</li>
+                                    <li>Ensure the institutional ID and email you provide belong to you.</li>
+                                    <li>Keep your account credentials secure and do not share them with others.</li>
+                                    <li>By submitting your information during registration, you authorize us to process it to manage your account and track your academic progress within the game.</li>
+                                </ul>
+
+                                <h4>Data Security & Usage</h4>
+                                <p>
+                                    We do not sell your personal data. Your information is strictly used to authenticate your identity, save your game progress, and generate analytics for your instructors regarding your performance in the towers.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="landing-modal__policy-footer">
+                            <button
+                                type="button"
+                                className="policy-accept-btn"
+                                onClick={() => {
+                                    setAcceptPolicy(true);
+                                    setShowPolicyModal(false);
+                                }}
+                            >
+                                I understand and agree
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 };
 
