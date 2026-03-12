@@ -1080,12 +1080,14 @@ body {
 /* --- Sleek Document Policy Modal --- */
 .landing-modal--policy .landing-modal__panel--policy {
   max-width: 650px;
-  background: #ffffff; /* Clean white document background */
-  color: #1a1a1a;      /* Dark text for legibility */
+  background: rgba(16, 2, 38, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: #e2e8f0;
   padding: 0;
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(138, 95, 240, 0.2);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1096,7 +1098,7 @@ body {
   position: absolute;
   top: 16px;
   right: 16px;
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.05);
   border: none;
   width: 32px;
   height: 32px;
@@ -1104,15 +1106,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: rgba(205, 187, 255, 0.6);
   cursor: pointer;
   transition: all 0.2s ease;
   z-index: 10;
 }
 
 .landing-modal__policy-close:hover {
-  background: rgba(0, 0, 0, 0.1);
-  color: #111827;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
 }
 
 .landing-modal__policy-content {
@@ -1121,12 +1123,31 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+/* Custom Scrollbar for Modal Content */
+.landing-modal__policy-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.landing-modal__policy-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.landing-modal__policy-content::-webkit-scrollbar-thumb {
+  background: rgba(138, 95, 240, 0.3);
+  border-radius: 4px;
+}
+
+.landing-modal__policy-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(138, 95, 240, 0.6);
+}
+
 .policy-main-title {
   font-size: 28px;
   font-weight: 800;
   text-align: center;
   margin-bottom: 24px;
-  color: #111827;
+  color: #fff;
   letter-spacing: -0.02em;
 }
 
@@ -1134,14 +1155,14 @@ body {
   text-align: center;
   font-size: 15px;
   line-height: 1.6;
-  color: #4b5563;
+  color: rgba(205, 187, 255, 0.8);
   max-width: 90%;
   margin: 0 auto 32px;
 }
 
 .policy-divider {
   border: none;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid rgba(138, 95, 240, 0.2);
   margin: 0 0 32px 0;
 }
 
@@ -1158,7 +1179,7 @@ body {
 
 .policy-icon {
   color: #10b981; /* Emerald green like the reference */
-  background: rgba(16, 185, 129, 0.1);
+  background: rgba(16, 185, 129, 0.15);
   padding: 6px;
   border-radius: 8px;
   box-sizing: content-box;
@@ -1167,21 +1188,21 @@ body {
 .policy-section h3 {
   font-size: 22px;
   font-weight: 700;
-  color: #111827;
+  color: #fff;
   margin: 0;
 }
 
 .policy-section h4 {
   font-size: 18px;
   font-weight: 600;
-  color: #111827;
+  color: #e2e8f0;
   margin: 24px 0 12px 0;
 }
 
 .policy-section p {
   font-size: 15px;
   line-height: 1.6;
-  color: #4b5563;
+  color: rgba(205, 187, 255, 0.8);
   margin-bottom: 16px;
 }
 
@@ -1194,18 +1215,18 @@ body {
 .policy-section li {
   font-size: 15px;
   line-height: 1.6;
-  color: #4b5563;
+  color: rgba(205, 187, 255, 0.8);
   margin-bottom: 8px;
 }
 
 .policy-section li strong {
-  color: #111827;
+  color: #fff;
 }
 
 .landing-modal__policy-footer {
   padding: 24px 40px;
-  background: #f9fafb;
-  border-top: 1px solid #f3f4f6;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(138, 95, 240, 0.2);
   display: flex;
   justify-content: flex-end;
 }
