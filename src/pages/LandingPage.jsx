@@ -42,10 +42,15 @@ const LandingPage = () => {
     const [forgotSuccess, setForgotSuccess] = useState(false);
     const [forgotError, setForgotError] = useState('');
 
+    // Policy state
+    const [acceptPolicy, setAcceptPolicy] = useState(false);
+    const [showPolicyModal, setShowPolicyModal] = useState(false);
+
     const openSignup = (role = 'student') => {
         setModal({ type: 'signup', role });
         setSignupSuccess(false);
         resetForm();
+        setAcceptPolicy(false); // Reset policy acceptance
     };
 
     useEffect(() => {
@@ -92,6 +97,7 @@ const LandingPage = () => {
         setCourse('');
         setInstructorCode('');
         setSignupSuccess(false);
+        setAcceptPolicy(false); // Reset policy acceptance on role change
         setModal((prev) => (prev ? { ...prev, role } : prev));
     };
 
@@ -105,6 +111,7 @@ const LandingPage = () => {
         setInstructorCode('');
         setError('');
         setShowPassword(false);
+        setAcceptPolicy(false); // Reset policy acceptance
         setShowForgotPassword(false);
         setForgotEmail('');
         setForgotMaskedEmail('');
@@ -216,6 +223,9 @@ const LandingPage = () => {
                 if (password.length < 6) {
                     throw new Error('Password must be at least 6 characters');
                 }
+                if (!acceptPolicy) {
+                    throw new Error('You must accept the Terms of Service & Privacy Policy.');
+                }
 
                 const response = await register(email.trim(), password, fullName, {
                     student_id: (modal?.role === 'student' ? studentId : instructorId).trim(),
@@ -317,6 +327,8 @@ const LandingPage = () => {
         }).join(' ');
         setFullName(capitalized);
     };
+
+    const isLogin = modal?.type === 'login';
 
     return (
         <div className="landing-page">
@@ -562,7 +574,42 @@ const LandingPage = () => {
                                         </div>
                                     </label>
 
-                                    <button className="landing-modal__submit" type="submit" disabled={loading}>
+                                        {/* Policy Checkbox (Only for Registration) */}
+                                        {!isLogin && (
+                                            <label className="landing-modal__policy-field mt-4 flex items-start gap-3 cursor-pointer group">
+                                                <div className="relative flex items-center justify-center mt-1">
+                                                    <input
+                                                        type="checkbox"
+                                                        className="peer sr-only"
+                                                        checked={acceptPolicy}
+                                                        onChange={(e) => setAcceptPolicy(e.target.checked)}
+                                                    />
+                                                    <div className="w-5 h-5 border-2 rounded border-slate-600 bg-slate-900/50 peer-checked:bg-purple-500 peer-checked:border-purple-500 transition-colors flex items-center justify-center group-hover:border-purple-400">
+                                                        <CheckCircle2 className={`w-3.5 h-3.5 text-white transition-transform duration-200 ${acceptPolicy ? 'scale-100' : 'scale-0'}`} />
+                                                    </div>
+                                                </div>
+                                                <span className="text-xs text-slate-400 leading-tight">
+                                                    I have read and agree to the{' '}
+                                                    <button
+                                                        type="button"
+                                                        className="text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors focus:outline-none"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            setShowPolicyModal(true);
+                                                        }}
+                                                    >
+                                                        Terms of Service & Privacy Policy
+                                                    </button>
+                                                    , and I consent to the collection and use of my ID, Name, and Email.
+                                                </span>
+                                            </label>
+                                        )}
+
+                                        <button
+                                            className="landing-modal__submit"
+                                            type="submit"
+                                            disabled={loading || (!isLogin && !acceptPolicy)}
+                                        >
                                         {loading ? (
                                             <>
                                                 <Loader2 className="animate-spin" size={18} />

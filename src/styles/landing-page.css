@@ -999,3 +999,77 @@ body {
 .landing-modal__forgot-success .landing-modal__submit {
   width: 100%;
 }
+
+/* --- Policy Checkbox & Modal --- */
+.landing-modal__policy-field {
+  margin-top: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  padding: 8px 0;
+}
+
+.landing-modal__policy-field input[type="checkbox"] {
+  display: none;
+}
+
+.landing-modal__policy-field .checkbox-custom {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(138, 95, 240, 0.5);
+  border-radius: 6px;
+  background: rgba(16, 2, 38, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  margin-top: 2px;
+}
+
+.landing-modal__policy-field:hover .checkbox-custom {
+  border-color: rgba(138, 95, 240, 0.8);
+  background: rgba(138, 95, 240, 0.1);
+}
+
+.landing-modal__policy-field input[type="checkbox"]:checked + .checkbox-custom {
+  background: #8a63ff;
+  border-color: #8a63ff;
+}
+
+.landing-modal__policy-field .checkbox-icon {
+  width: 12px;
+  height: 12px;
+  color: white;
+  transform: scale(0);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.landing-modal__policy-field input[type="checkbox"]:checked + .checkbox-custom .checkbox-icon {
+  transform: scale(1);
+}
+
+.landing-modal__policy-text {
+  flex: 1;
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(205, 187, 255, 0.6);
+}
+
+.landing-modal__policy-text button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #d4b1ff;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.landing-modal__policy-text button:hover {
+  color: #fff;
+  text-shadow: 0 0 10px rgba(138, 95, 240, 0.6);
+}
