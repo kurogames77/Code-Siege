@@ -225,6 +225,20 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                 
                 setMatchmakingQueue(activePlayers);
             })
+            .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+                console.log('[Matchmaking] Player left presence:', key);
+                // Remove player from our party UI if they leave presence
+                setPlayers(prev => {
+                    // Don't remove ourselves accidentally
+                    if (key === user.id) return prev;
+                    
+                    const filtered = prev.filter(p => p.id !== key);
+                    if (filtered.length !== prev.length) {
+                        return filtered;
+                    }
+                    return prev;
+                });
+            })
             .on('broadcast', { event: 'match_found' }, (payload) => {
                 // If we are part of the match group broadcasted by the host
                 if (payload.payload.playerIds.includes(user.id) && matchState === 'searching') {
