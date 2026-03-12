@@ -576,8 +576,8 @@ const LandingPage = () => {
 
                                         {/* Policy Checkbox (Only for Registration) */}
                                         {!isLogin && (
-                                            <label className="landing-modal__policy-field mt-4 flex items-start gap-3 cursor-pointer group">
-                                                <div className="relative flex items-center justify-center mt-1">
+                                            <div className="landing-modal__policy-field mt-4 flex items-start gap-3 group">
+                                                <label className="relative flex items-center justify-center mt-1 cursor-pointer">
                                                     <input
                                                         type="checkbox"
                                                         className="peer sr-only"
@@ -587,8 +587,8 @@ const LandingPage = () => {
                                                     <div className="w-5 h-5 border-2 rounded border-slate-600 bg-slate-900/50 peer-checked:bg-purple-500 peer-checked:border-purple-500 transition-colors flex items-center justify-center group-hover:border-purple-400">
                                                         <CheckCircle2 className={`w-3.5 h-3.5 text-white transition-transform duration-200 ${acceptPolicy ? 'scale-100' : 'scale-0'}`} />
                                                     </div>
-                                                </div>
-                                                <span className="text-xs text-slate-400 leading-tight">
+                                                </label>
+                                                <div className="text-xs text-slate-400 leading-tight">
                                                     I have read and agree to the{' '}
                                                     <button
                                                         type="button"
@@ -602,8 +602,8 @@ const LandingPage = () => {
                                                         Terms of Service & Privacy Policy
                                                     </button>
                                                     , and I consent to the collection and use of my ID, Name, and Email.
-                                                </span>
-                                            </label>
+                                                </div>
+                                            </div>
                                         )}
 
                                         <button
@@ -756,6 +756,38 @@ const LandingPage = () => {
                                         </button>
                                     </div>
                                 </label>
+
+                                        {/* Policy Checkbox (Only for Registration) */}
+                                        {!isLogin && (
+                                            <div className="landing-modal__policy-field mt-4 flex items-start gap-3 group">
+                                                <label className="relative flex items-center justify-center mt-1 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        className="peer sr-only"
+                                                        checked={acceptPolicy}
+                                                        onChange={(e) => setAcceptPolicy(e.target.checked)}
+                                                    />
+                                                    <div className="w-5 h-5 border-2 rounded border-slate-600 bg-slate-900/50 peer-checked:bg-cyan-500 peer-checked:border-cyan-500 transition-colors flex items-center justify-center group-hover:border-cyan-400">
+                                                        <CheckCircle2 className={`w-3.5 h-3.5 text-white transition-transform duration-200 ${acceptPolicy ? 'scale-100' : 'scale-0'}`} />
+                                                    </div>
+                                                </label>
+                                                <div className="text-xs text-slate-400 leading-tight">
+                                                    I have read and agree to the{' '}
+                                                    <button
+                                                        type="button"
+                                                        className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors focus:outline-none relative z-10 inline-block"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            setShowPolicyModal(true);
+                                                        }}
+                                                    >
+                                                        Terms of Service & Privacy Policy
+                                                    </button>
+                                                    , and I consent to the collection and use of my ID, Name, and Email.
+                                                </div>
+                                            </div>
+                                        )}
 
                                 <div className="landing-modal__forgot">
                                     <button
