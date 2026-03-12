@@ -67,6 +67,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     // Modals & Notifications
     const [showExitModal, setShowExitModal] = useState(false);
     const [inviteError, setInviteError] = useState(null);
+    const [searchError, setSearchError] = useState(null);
     const [isMuted, setIsMuted] = useState(() => {
         // Load mute state from localStorage
         const saved = localStorage.getItem('lobbyMusic_muted');
@@ -161,12 +162,19 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     // Auto-Transition: Search Timeout
     useEffect(() => {
         if (matchState === 'searching' && timer === 0) {
-            // Search failed or infinite search? User said "1minute countdown"... usually retries or asks.
-            // For now, let's keep searching but maybe reset timer? Or stop? 
-            // User: "when finding match it will set the time to 1minute countdown... then after showing... change to Ready... time will restart to 1minute"
-            // If search ends implies we didn't find enough? Let's just reset for now or stay 0.
+            console.log('[Matchmaking] Search timed out. Resetting to idle.');
+            setMatchState('idle');
+            setTimer(0);
+            
+            // Only keep the players who were already explicitly invited/were with us before search
+            // If we just want to reset to our "base" group, we can just keep everyone who isn't a random match.
+            // But right now we only add friends or ourselves to `players` before a match is found. 
+            // So just keep the current `players` array since it represents our party, OR reset to party:
+            setSearchError('No players found. Try again.');
+            playCancel(); // Play a sound indicating failure
+            setTimeout(() => setSearchError(null), 5000);
         }
-    }, [matchState, timer]);
+    }, [matchState, timer, playCancel]);
 
     // Auto-Transition: Ready Check Timeout
     useEffect(() => {
@@ -780,6 +788,11 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                             {inviteError}
                                         </div>
                                     )}
+                                    {searchError && (
+                                        <div className="mb-2 bg-rose-500/20 border border-rose-500 text-rose-200 px-3 py-2 rounded-lg text-xs font-bold text-center">
+                                            {searchError}
+                                        </div>
+                                    )}
                                     {matchState === 'ready_check' ? (
                                         <button
                                             onClick={handleReadyClick}
@@ -848,13 +861,13 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                                     >
                                                         {player ? (
                                                             <div className={`flex flex-col items-center h-full relative ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
-                                                                {/* Hero Image — fills center-bottom, no cutoff */}
-                                                                <div className="absolute inset-0 z-0 pointer-events-none flex items-end justify-center overflow-hidden pb-12">
+                                                                {/* Hero Image — strict bounds to prevent uneven heights */}
+                                                                <div className="absolute inset-0 z-0 pointer-events-none flex items-end justify-center overflow-hidden pb-14">
                                                                     <motion.img
                                                                         initial={{ scale: 1.0 }}
                                                                         animate={{ scale: isGrey ? 0.9 : 1.0 }}
                                                                         src={player.heroImage || player.avatar}
-                                                                        className={`w-full h-[85%] object-contain object-bottom transition-all duration-700 ${isGrey ? 'brightness-50 grayscale' : 'drop-shadow-[0_20px_50px_rgba(34,211,238,0.4)] brightness-110'}`}
+                                                                        className={`w-full h-[95%] object-contain object-bottom transition-all duration-700 ${isGrey ? 'brightness-50 grayscale' : 'drop-shadow-[0_20px_50px_rgba(34,211,238,0.4)] brightness-110'}`}
                                                                         alt="Hero"
                                                                     />
                                                                     <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/80 to-transparent" />
