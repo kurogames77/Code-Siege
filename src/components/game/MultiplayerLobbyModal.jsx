@@ -865,9 +865,9 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                                                 <div className="absolute inset-0 z-0 pointer-events-none flex items-end justify-center overflow-hidden pb-14">
                                                                     <motion.img
                                                                         initial={{ scale: 1.0 }}
-                                                                        animate={{ scale: isGrey ? 0.9 : 1.0 }}
+                                                                        animate={{ scale: isGrey ? 0.95 : 1.05 }}
                                                                         src={player.heroImage || player.avatar}
-                                                                        className={`w-full h-[95%] object-contain object-bottom transition-all duration-700 ${isGrey ? 'brightness-50 grayscale' : 'drop-shadow-[0_20px_50px_rgba(34,211,238,0.4)] brightness-110'}`}
+                                                                        className={`w-full h-[100%] object-cover object-bottom transition-all duration-700 ${isGrey ? 'brightness-50 grayscale' : 'drop-shadow-[0_20px_50px_rgba(34,211,238,0.4)] brightness-110'}`}
                                                                         alt="Hero"
                                                                     />
                                                                     <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/80 to-transparent" />
