@@ -43,6 +43,21 @@ const queryClient = new QueryClient({
 import { QuestProvider } from './contexts/QuestContext';
 import useInactivityTimeout from './hooks/useInactivityTimeout';
 
+// Component for safely redirecting to an external URL
+const ExternalRedirect = ({ to }) => {
+  React.useEffect(() => {
+    window.location.href = to;
+  }, [to]);
+  return (
+    <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
+        <p className="text-cyan-500 font-mono text-xs uppercase tracking-widest animate-pulse">Redirecting to Secure Admin Portal...</p>
+      </div>
+    </div>
+  );
+};
+
 // Wrapper component to activate inactivity timeout globally
 const InactivityGuard = ({ children }) => {
   useInactivityTimeout();
@@ -78,12 +93,7 @@ function App() {
                       <Route path="/reset-password" element={<ResetPasswordPage />} />
                       <Route 
                         path="/admin" 
-                        element={
-                          (() => {
-                            window.location.href = "https://code-siege-admin.vercel.app";
-                            return null;
-                          })()
-                        } 
+                        element={<ExternalRedirect to="https://code-siege-admin.vercel.app" />} 
                       />
                       <Route path="/tower-prytody" element={<TowerPrytodyView />} />
                       <Route path="/gamecode-prytody/:floor/:towerId" element={<GameCodePrytody />} />
