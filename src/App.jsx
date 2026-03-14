@@ -16,7 +16,6 @@ import GameCodeAeterd from './pages/GameCodeAeterd';
 import ArenaBattle from './pages/ArenaBattle';
 import GrandArena from './pages/GrandArena';
 import InstructorPage from './pages/InstructorPage';
-import AdminPage from './pages/AdminPage';
 import ConfirmationPage from './pages/ConfirmationPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import PaymentCallbackPage from './pages/PaymentCallbackPage';
@@ -77,7 +76,15 @@ function App() {
                       <Route path="/instructor" element={<InstructorPage />} />
                       <Route path="/ConfirmationPage" element={<ConfirmationPage />} />
                       <Route path="/reset-password" element={<ResetPasswordPage />} />
-                      <Route path="/admin" element={<AdminPage />} />
+                      <Route 
+                        path="/admin" 
+                        element={
+                          (() => {
+                            window.location.href = "https://code-siege-admin.vercel.app";
+                            return null;
+                          })()
+                        } 
+                      />
                       <Route path="/tower-prytody" element={<TowerPrytodyView />} />
                       <Route path="/gamecode-prytody/:floor/:towerId" element={<GameCodePrytody />} />
                       <Route path="/tower-abyss" element={<TowerAbyssView />} />
