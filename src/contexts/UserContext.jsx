@@ -76,20 +76,16 @@ export const UserProvider = ({ children }) => {
     const checkAuth = async () => {
         // Prevent concurrent calls — on F5, mount + SIGNED_IN fire almost simultaneously
         if (checkAuthInProgress.current) {
-            console.log('[Auth] checkAuth already in progress, skipping...');
             return;
         }
         // Don't re-check if login or logout is actively in progress
         if (loginInProgress.current || logoutInProgress.current) {
-            console.log('[Auth] Skipping checkAuth — login/logout in progress');
             return;
         }
         checkAuthInProgress.current = true;
-        console.log('[Auth] Starting checkAuth...');
         try {
             // 0. GUARD: If user explicitly logged out, block any session restoration
             if (localStorage.getItem('code_siege_logged_out') === 'true') {
-                console.log('[Auth] Logged-out flag detected — force-clearing session');
                 localStorage.removeItem('auth_token');
                 // Kill any Supabase-cached session silently
                 try { await supabase.auth.signOut({ scope: 'local' }); } catch (_) { }
@@ -105,14 +101,12 @@ export const UserProvider = ({ children }) => {
 
             // 1. GUARD: If user is resetting password, don't interfere with the recovery session
             if (localStorage.getItem('code_siege_resetting_password') === 'true') {
-                console.log('[Auth] Password reset in progress — skipping checkAuth');
                 return;
             }
 
             // 1. Proactively check Supabase session (important for social redirects)
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
-                console.log('[Auth] Supabase session found, syncing token...');
                 localStorage.setItem('auth_token', session.access_token);
             }
 
@@ -123,7 +117,6 @@ export const UserProvider = ({ children }) => {
                     new Promise((_, reject) => setTimeout(() => reject(new Error('Auth check timed out')), 10000))
                 ]);
                 const { user: authUser, profile } = await getMeWithTimeout;
-                console.log('[Auth] getMe results:', !!authUser, !!profile);
                 if (authUser) {
                     setUser(formatUser(profile, authUser));
                     setIsAuthenticated(true);
@@ -159,9 +152,7 @@ export const UserProvider = ({ children }) => {
 
     // 2. Stable Auth State Listener (Social Logins)
     useEffect(() => {
-        console.log('[Auth] Subscribing to onAuthStateChange');
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('[Auth] State change event:', event, 'Session active:', !!session);
 
             // Skip INITIAL_SESSION event — we already handle this via checkAuth on mount
             if (event === 'INITIAL_SESSION') return;
@@ -169,27 +160,25 @@ export const UserProvider = ({ children }) => {
             if ((event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') && session) {
                 // GUARD: Ignore Supabase auto-restore if user explicitly logged out
                 if (localStorage.getItem('code_siege_logged_out') === 'true') {
-                    console.log('[Auth] Ignoring', event, '— user is logged out');
                     try { await supabase.auth.signOut({ scope: 'local' }); } catch (_) { }
                     return;
                 }
                 // GUARD: Skip if login/logout is actively in progress — they handle state themselves
                 if (loginInProgress.current || logoutInProgress.current) {
-                    console.log('[Auth] Ignoring', event, '— login/logout in progress');
                     return;
                 }
-                console.log('[Auth] Auth event detected, syncing token...');
+
                 localStorage.setItem('auth_token', session.access_token);
                 if (event !== 'TOKEN_REFRESHED') {
                     // Only re-check if the initial mount check is done to avoid racing
                     if (initialCheckDone.current) {
                         await checkAuth();
                     } else {
-                        console.log('[Auth] Skipping redundant checkAuth — initial check still in progress');
+
                     }
                 }
             } else if (event === 'SIGNED_OUT') {
-                console.log('[Auth] SIGNED_OUT detected');
+
                 setUser(null);
                 setIsAuthenticated(false);
                 localStorage.removeItem('auth_token');
@@ -197,7 +186,6 @@ export const UserProvider = ({ children }) => {
         });
 
         return () => {
-            console.log('[Auth] Unsubscribing from onAuthStateChange');
             if (subscription) subscription.unsubscribe();
         };
     }, []);
@@ -225,7 +213,7 @@ export const UserProvider = ({ children }) => {
                     'postgres_changes',
                     { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${user.id}` },
                     (payload) => {
-                        console.log('[Realtime] Profile updated:', payload.new);
+
                         setUser(prev => ({ ...prev, ...formatUser(payload.new, user) }));
                     }
                 )
@@ -244,28 +232,26 @@ export const UserProvider = ({ children }) => {
                 .on('presence', { event: 'sync' }, () => {
                     const state = globalPresenceChannel.presenceState();
                     const onlineIds = new Set(Object.keys(state).map(id => String(id)));
-                    console.log('[Presence] Synced. Online IDs:', Array.from(onlineIds));
+
                     setOnlineUserIds(onlineIds);
                 })
                 .on('presence', { event: 'join' }, ({ key, newPresences }) => {
                     const state = globalPresenceChannel.presenceState();
-                    console.log('[Presence] Join:', { key, newPresences });
                     setOnlineUserIds(new Set(Object.keys(state).map(id => String(id))));
                 })
                 .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
                     const state = globalPresenceChannel.presenceState();
-                    console.log('[Presence] Leave:', { key, leftPresences });
                     setOnlineUserIds(new Set(Object.keys(state).map(id => String(id))));
                 })
                 .subscribe(async (status) => {
-                    console.log('[Presence] Subscription status:', status);
+
                     if (status === 'SUBSCRIBED') {
                         const tracked = await globalPresenceChannel.track({
                             id: user.id,
                             name: user.name,
                             online_at: new Date().toISOString(),
                         });
-                        console.log('[Presence] Tracked status:', tracked);
+
                     }
                 });
         }

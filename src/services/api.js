@@ -36,40 +36,21 @@ const apiRequest = async (endpoint, options = {}, _isRetry = false) => {
         },
     };
 
-    let safeBody = options.body;
-    if (options.body && typeof options.body === 'string') {
-        try {
-            const parsed = JSON.parse(options.body);
-            if (parsed.password) {
-                // Ensure we only modify a copy for logging, not the actual request body
-                safeBody = { ...parsed, password: '***CENSORED***' };
-            } else {
-                safeBody = parsed;
-            }
-        } catch (e) {
-            // Keep original string if not JSON
-        }
-    }
-
-    console.log(`[API] Request: ${options.method || 'GET'} ${endpoint}`, safeBody);
     const response = await fetch(`${API_BASE}${endpoint}`, config);
-    console.log(`[API] Response: ${response.status} ${endpoint}`);
 
     // Auto-refresh token on 401 and retry once.
     // DO NOT trigger this for login/register endpoints, as 401 there means authentication failed, not token expired.
     const isAuthEndpoint = endpoint.startsWith('/auth/login') || endpoint.startsWith('/auth/register');
     if (response.status === 401 && !_isRetry && !isAuthEndpoint) {
-        console.log('[API] 401 received, attempting token refresh...');
         try {
             const { default: supabase } = await import('../lib/supabase');
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.access_token) {
-                console.log('[API] Token refreshed, retrying request...');
                 setToken(session.access_token);
                 return apiRequest(endpoint, options, true);
             }
         } catch (refreshErr) {
-            console.error('[API] Token refresh failed:', refreshErr);
+            // Token refresh failed silently
         }
     }
 
