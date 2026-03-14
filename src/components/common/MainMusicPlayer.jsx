@@ -30,7 +30,7 @@ const MainMusicPlayer = () => {
         if (shouldPlay) {
             // Only call play if paused to avoid promise errors
             if (audio.paused) {
-                audio.play().catch(err => console.log('Global music play failed:', err));
+                audio.play().catch(() => {});
             }
         } else {
             audio.pause();

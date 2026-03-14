@@ -86,7 +86,6 @@ const TopUpModal = ({ isOpen, onClose }) => {
 
             // Unified Checkout Flow for all methods (GCash, Maya, etc.)
             // This ensures we use the robust PayMongo Checkout page which we confirmed works.
-            console.log(`[TRACE] Initiating Checkout Session for ${selectedMethod}: ${amountInCentavos} centavos`);
 
             // Map 'maya' to 'paymaya' for API consistency if needed, though backend handles it
             const apiMethod = selectedMethod === 'maya' ? 'paymaya' : selectedMethod;
@@ -141,7 +140,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
             if (success) {
                 success('Top-up Successful! Gems Added.');
             } else {
-                console.log('Top-up Successful! Gems Added.');
+
             }
 
             setStep('success');
@@ -492,7 +491,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                                             });
                                                         }}
                                                         onCancel={(data) => {
-                                                            console.log("PayPal Cancelled:", data);
+
                                                             playCancel();
                                                             setError("Payment was cancelled.");
                                                             info('Transaction Cancelled');

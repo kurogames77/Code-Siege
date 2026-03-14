@@ -37,25 +37,22 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     useEffect(() => {
         const fetchCourses = async () => {
             try {
-                console.log('[DuelLobby] Fetching courses from Supabase...');
-                console.log('[DuelLobby] Supabase URL:', supabase.supabaseUrl);
+
 
                 const { data, error, status } = await supabase
                     .from('courses')
                     .select('*')
                     .order('name', { ascending: true });
 
-                console.log('[DuelLobby] Fetch Response Status:', status);
 
                 if (error) {
                     console.error('[DuelLobby] Supabase Error:', error.message, error.details, error.hint);
                     return;
                 }
 
-                console.log('[DuelLobby] Received data:', data);
 
                 if (data && data.length > 0) {
-                    console.log('[DuelLobby] Setting courses state:', data.length, 'items');
+
                     setCourses(data);
                     if (!selectedLanguage) {
                         setSelectedLanguage(data[0].name);
@@ -124,7 +121,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     useEffect(() => {
         if (isOpen && initialOpponent) {
             if (!opponent) {
-                console.log('[DuelLobby] Setting initial opponent from invite:', initialOpponent.name);
+
                 setOpponent(initialOpponent);
                 setMatchState('lobby');
                 setTimer(60);
@@ -167,7 +164,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     // --- FETCH FRIENDS ---
     const fetchFriends = React.useCallback(async () => {
         if (!user) return;
-        console.log('[DuelLobby] Fetching friends for user:', user.id);
+
         try {
             const result = await userAPI.getFriends();
             if (result?.friends) {
@@ -184,7 +181,6 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                     };
                 });
                 setFriends(friendsList);
-                console.log('[DuelLobby] Friends fetched:', friendsList.length, friendsList.map(f => f.name));
             } else {
                 setFriends([]);
             }
@@ -220,7 +216,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                     // Re-fetch friends when a friend_request gets accepted
                     if (payload.new.type === 'friend_request' && payload.new.action_status === 'accepted') {
                         if (payload.new.sender_id === user.id || payload.new.receiver_id === user.id) {
-                            console.log('[DuelLobby] Friend request accepted in real-time, refreshing friends list.');
+
                             setFriendRefreshTrigger(prev => prev + 1);
                         }
                     }
@@ -287,7 +283,6 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                         .flat()
                         .some(u => String(u.id) === String(currentOpponent.id));
                     if (!opponentStillPresent) {
-                        console.log('[DuelLobby] Opponent left (detected via sync). Resetting lobby.');
                         setOpponent(null);
                         setMatchState('idle');
                         setIsUserReady(false);
@@ -303,7 +298,6 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                     const opponentLeft = leftPresences.some(p => String(p.id) === String(currentOpponent.id)) ||
                         String(key) === String(currentOpponent.id);
                     if (opponentLeft) {
-                        console.log('[DuelLobby] Opponent left (detected via leave event):', currentOpponent.name);
                         setOpponent(null);
                         setMatchState('idle');
                         setIsUserReady(false);
@@ -317,7 +311,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 // Explicit leave broadcast: ALWAYS reset lobby — no state guard
                 const currentOpponent = opponentRef.current;
                 if (currentOpponent && String(payload.playerId) === String(currentOpponent.id)) {
-                    console.log('[DuelLobby] Opponent sent player-leave broadcast:', currentOpponent.name);
+
                     setOpponent(null);
                     setMatchState('idle');
                     setIsUserReady(false);
@@ -328,13 +322,13 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             })
             .on('broadcast', { event: 'duel-invite' }, ({ payload }) => {
                 if (payload.targetId === user.id) {
-                    console.log('Received duel invite from:', payload.senderName);
+
                     // No longer auto-accepting. NotificationModal handles the UI.
                 }
             })
             .on('broadcast', { event: 'duel-accept' }, ({ payload }) => {
                 // If we are the sender (host) and the recipient (guest) accepted
-                console.log('[DuelLobby] Received duel-accept broadcast:', payload, 'current matchState:', matchStateRef.current);
+
                 if (payload.targetId === user.id) {
                     // Always accept — remove idle guard so re-accepts work even if state wasn't reset
                     playSuccess();
@@ -367,7 +361,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             .on('broadcast', { event: 'sync-settings' }, ({ payload }) => {
                 // Guest receives the host's match settings
                 if (payload.targetId === user.id) {
-                    console.log('[DuelLobby] Received sync-settings from host:', payload);
+
                     setSelectedLanguage(payload.language);
                     setSelectedDifficulty(payload.difficulty);
                     setSelectedMode(payload.mode);
@@ -377,14 +371,14 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             .on('broadcast', { event: 'player-ready' }, ({ payload }) => {
                 // Use ref to check opponent to avoid stale closure
                 const currentOpponent = opponentRef.current;
-                console.log('[DuelLobby] Received player-ready broadcast:', payload, 'currentOpponent:', currentOpponent?.id);
+
                 if (currentOpponent && payload.playerId === currentOpponent.id) {
                     setIsOpponentReady(payload.isReady);
                 }
             })
             .on('broadcast', { event: 'game-start' }, ({ payload }) => {
                 if (payload.targetId === user.id && matchStateRef.current !== 'starting') {
-                    console.log('[DuelLobby] Received game-start broadcast, starting countdown. BattleRecordId:', payload.battleRecordId);
+
                     setBattleRecordId(payload.battleRecordId);
                     setMatchState('starting');
                     setStartCountdown(5);
@@ -404,7 +398,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                     // If we're the invited player, send duel-accept to the host
                     if (initialOpponent && !acceptSentRef.current) {
                         acceptSentRef.current = true;
-                        console.log('[DuelLobby] Sending duel-accept broadcast to host:', initialOpponent.id);
+
                         await channel.send({
                             type: 'broadcast',
                             event: 'duel-accept',
@@ -448,7 +442,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         } else if (matchState === 'lobby' && timer === 0 && opponentRef.current && opponent) {
             // SAFETY: Timer expired. If we are the Host (we didn't receive initialOpponent), we auto-start.
             if (!initialOpponent) {
-                console.log('[DuelLobby] Timer expired, auto-starting game as host');
+
                 const triggerGameStart = async () => {
                     let newBattleId = null;
                     try {
@@ -626,7 +620,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         if (!audio) return;
 
         if (isOpen && !isMuted && matchState !== 'starting') {
-            audio.play().catch(err => console.log('Duel lobby music play failed:', err));
+            audio.play().catch(() => {});
         } else {
             audio.pause();
         }
@@ -647,10 +641,9 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             const lastActive = new Date(f.lastActiveAt).getTime();
             const now = Date.now();
             const diff = now - lastActive;
-            console.log(`[DuelLobby] isOnline check for ${f.name}: inPresence=${inPresence}, lastActiveAt=${f.lastActiveAt}, diff=${Math.round(diff / 1000)}s, onlineUserIds=[${Array.from(onlineUserIds).join(',')}]`);
             return diff < 180000; // 3 minutes
         }
-        console.log(`[DuelLobby] isOnline check for ${f.name}: inPresence=${inPresence}, no lastActiveAt`);
+
         return false;
     };
     const onlineFriends = friends.filter(isOnline);
@@ -1302,7 +1295,7 @@ const AddFriendModal = ({ isOpen, onClose, mode }) => {
         setSearchError('');
         setFoundUser(null);
 
-        console.log(`[Search] Searching for: "${query}"...`);
+
         const startTime = Date.now();
 
         try {
@@ -1310,7 +1303,6 @@ const AddFriendModal = ({ isOpen, onClose, mode }) => {
             const result = await userAPI.searchUser(query);
 
             const duration = Date.now() - startTime;
-            console.log(`[Search] Query took ${duration}ms. Result:`, result);
 
             if (!result || !result.user) {
                 setSearchError('No other player found with that name or ID');

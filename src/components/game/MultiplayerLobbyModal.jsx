@@ -162,7 +162,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     // Auto-Transition: Search Timeout
     useEffect(() => {
         if (matchState === 'searching' && timer === 0) {
-            console.log('[Matchmaking] Search timed out. Resetting to idle.');
+
             setMatchState('idle');
             setTimer(0);
             
@@ -226,7 +226,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                 setMatchmakingQueue(activePlayers);
             })
             .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-                console.log('[Matchmaking] Player left presence:', key);
+
                 // Remove player from our party UI if they leave presence
                 setPlayers(prev => {
                     // Don't remove ourselves accidentally
@@ -242,7 +242,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             .on('broadcast', { event: 'match_found' }, (payload) => {
                 // If we are part of the match group broadcasted by the host
                 if (payload.payload.playerIds.includes(user.id) && matchState === 'searching') {
-                    console.log('[Matchmaking] Received match broadcast!', payload.payload);
+
                     setPlayers(payload.payload.players);
                     startReadyPhase();
                 }
@@ -257,8 +257,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             .on('broadcast', { event: 'multi-invite-accept' }, (payload) => {
                 // If we are the host who invited them
                 if (payload.payload.targetId === user.id) {
-                    console.log('[Multiplayer] Friend accepted invite:', payload.payload.senderName);
-                    
+
                     // Add them to our party UI
                     setPlayers(prev => {
                         if (prev.some(p => p.id === payload.payload.senderId)) return prev;
@@ -285,7 +284,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                         setTimeout(() => {
                             if (channelRef.current) {
                                 const playerIds = updatedPlayers.map(p => p.id);
-                                console.log('[Multiplayer] Broadcasting party-sync to all members:', playerIds);
+
                                 channelRef.current.send({
                                     type: 'broadcast',
                                     event: 'party-sync',
@@ -308,7 +307,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                 // All party members receive the full updated player list from the host
                 const { playerIds, players: syncedPlayers } = payload.payload;
                 if (playerIds.includes(user.id)) {
-                    console.log('[Multiplayer] Received party-sync, updating players:', playerIds);
+
                     setPlayers(syncedPlayers);
                 }
             })
@@ -325,7 +324,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
 
                     // If we joined via an invite, tell the host we are here!
                     if (initialInviter && initialInviter.id) {
-                        console.log('[Multiplayer] Sending invite-accept broadcast to host:', initialInviter.name);
+
                         await channel.send({
                             type: 'broadcast',
                             event: 'multi-invite-accept',
@@ -371,7 +370,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
         if (!audio) return;
 
         if (isOpen && !isMuted && matchState !== 'starting') {
-            audio.play().catch(err => console.log('Lobby music play failed:', err));
+            audio.play().catch(() => {});
         } else {
             audio.pause();
         }
@@ -394,7 +393,6 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
 
     const fetchFriends = React.useCallback(async () => {
         if (!user?.id) return;
-        console.log('[MultiplayerLobby] fetchFriends called. User:', user.id, user.name);
 
         try {
             const result = await userAPI.getFriends();
@@ -412,7 +410,6 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                     };
                 });
                 setAllFriends(friendsList);
-                console.log('[MultiplayerLobby] Friends fetched:', friendsList.length, friendsList.map(f => f.name));
             } else {
                 setAllFriends([]);
             }
@@ -447,7 +444,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                 (payload) => {
                     if (payload.new.type === 'friend_request' && payload.new.action_status === 'accepted') {
                         if (payload.new.sender_id === user.id || payload.new.receiver_id === user.id) {
-                            console.log('[MultiplayerLobby] Friend request accepted in real-time, refreshing friends list.');
+
                             setFriendRefreshTrigger(prev => prev + 1);
                         }
                     }
@@ -487,8 +484,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
 
                     // Am I the host? (First ID alphabetically)
                     if (candidateIds[0] === user.id) {
-                        console.log(`[Matchmaking] I am the host out of ${candidateIds.length} candidates. Calling Algorithm...`);
-                        
+
                         try {
                             // Call K-Means Backend
                             // We ask for k=1 initially if low pop, but the algorithm auto-handles k limits
@@ -496,8 +492,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                             const result = await algorithmAPI.matchmaking(user.id, 2, candidateIds);
                             
                             if (result.status === 'success' && result.suggested_opponents.length > 0) {
-                                console.log('[Matchmaking] K-Means found a cluster!', result);
-                                
+
                                 // Build the final player list from the cluster
                                 const clusterPlayerIds = [user.id, ...result.suggested_opponents.map(o => o.player_id || o.id)];
                                 

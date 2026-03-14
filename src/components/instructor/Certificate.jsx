@@ -56,7 +56,7 @@ const Certificate = ({ theme }) => {
         setShowNotification(true);
         setTimeout(() => setShowNotification(false), 3000);
         // In a real application, you would generate and download the PDF here.
-        console.log('Downloading certificate:', certificate);
+
     };
 
     const handleViewCertificate = (certificate) => {
@@ -64,7 +64,7 @@ const Certificate = ({ theme }) => {
         setShowNotification(true);
         setTimeout(() => setShowNotification(false), 3000);
         // In a real application, you would open a preview modal or page here.
-        console.log('Viewing certificate:', certificate);
+
     };
 
     const handleTemplateUpload = (event) => {

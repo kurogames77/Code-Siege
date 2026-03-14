@@ -79,7 +79,6 @@ const PaymentCallbackPage = () => {
                 const totalGems = paymentData.gems + (paymentData.bonus || 0) + (paymentData.prevBonus || 0);
                 await userAPI.updateGems(user.id, totalGems);
 
-                console.log("Gems Credited Successfully:", totalGems);
 
                 if (refreshUser) await refreshUser();
 

@@ -107,7 +107,6 @@ const ArenaBattle = () => {
         if (!user || !lobbyId) return;
 
         const channelName = `duel-arena-${lobbyId}`;
-        console.log('[ArenaBattle] Subscribing to channel:', channelName);
 
         const channel = supabase.channel(channelName, {
             config: { broadcast: { ack: true, self: false } }
@@ -116,7 +115,7 @@ const ArenaBattle = () => {
 
         channel
             .on('broadcast', { event: 'duel-withdraw' }, ({ payload }) => {
-                console.log('[ArenaBattle] Opponent withdrew:', payload);
+
                 if (payload.withdrawnBy !== user.id) {
                     // Opponent withdrew — this player wins!
                     setOpponentWithdrew(true);
@@ -125,7 +124,7 @@ const ArenaBattle = () => {
                 }
             })
             .on('broadcast', { event: 'duel-complete' }, ({ payload }) => {
-                console.log('[ArenaBattle] Opponent completed the puzzle:', payload);
+
                 if (payload.winnerId !== user.id) {
                     // Opponent solved it first — this player loses
                     setBattleOutcome('lose');
@@ -137,7 +136,7 @@ const ArenaBattle = () => {
                 }
             })
             .subscribe((status) => {
-                console.log('[ArenaBattle] Channel status:', status);
+
             });
 
         return () => {

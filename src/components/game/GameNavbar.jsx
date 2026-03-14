@@ -105,7 +105,6 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                 // Only react to invitations for THIS user
                 if (newNotif?.receiver_id === user.id &&
                     (newNotif.type === 'duel_invite' || newNotif.type === 'multiplayer_invite')) {
-                    console.log('[Auth] Incoming invitation:', newNotif.type, 'from:', newNotif.sender_id);
 
                     // Fetch sender details via backend API (by ID)
                     let sender = null;

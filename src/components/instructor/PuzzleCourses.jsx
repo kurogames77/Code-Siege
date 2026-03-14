@@ -296,7 +296,7 @@ const PuzzleCourses = ({ theme }) => {
                 [selectedCourse.id]: prev[selectedCourse.id].filter(l => !selectedLevels.includes(l.id))
             }));
         }
-        console.log('Override submitted:', selectedCourse.name, formData, 'Deleted levels:', selectedLevels);
+
         handleCloseModal();
     };
 

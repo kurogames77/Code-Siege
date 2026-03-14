@@ -28,7 +28,7 @@ const DailyRewardsModal = ({ isOpen, onClose }) => {
             if (duplicates.length > 0) {
                 console.error("Duplicate Quest IDs found:", duplicates);
             }
-            console.log("DailyRewardsModal Tasks:", tasks);
+
         }
     }, [tasks]);
 

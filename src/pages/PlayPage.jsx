@@ -191,7 +191,7 @@ const PlayPage = () => {
 
     // Check for auth redirect (e.g. email confirmation)
     useEffect(() => {
-        console.log("PlayPage: Checking hash", location.hash);
+
         if (location.hash && (location.hash.includes('access_token') || location.hash.includes('type=signup'))) {
             navigate('/verify-email');
         }
