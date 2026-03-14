@@ -334,8 +334,8 @@ router.post('/login', async (req, res) => {
             }
             loginEmail = userProfile.email;
 
-            // STRICT SESSION ENFORCEMENT
-            if (userProfile.last_active_at) {
+            // STRICT SESSION ENFORCEMENT (STUDENTS ONLY)
+            if (userProfile.last_active_at && userProfile.role !== 'admin' && userProfile.role !== 'instructor') {
                 const lastActive = new Date(userProfile.last_active_at).getTime();
                 const now = new Date().getTime();
                 const diffSeconds = (now - lastActive) / 1000;
