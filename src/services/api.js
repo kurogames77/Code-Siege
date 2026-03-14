@@ -36,16 +36,18 @@ const apiRequest = async (endpoint, options = {}, _isRetry = false) => {
         },
     };
 
-    let safeBody = '';
-    if (options.body) {
+    let safeBody = options.body;
+    if (options.body && typeof options.body === 'string') {
         try {
             const parsed = JSON.parse(options.body);
             if (parsed.password) {
-                parsed.password = '***CENSORED***';
+                // Ensure we only modify a copy for logging, not the actual request body
+                safeBody = { ...parsed, password: '***CENSORED***' };
+            } else {
+                safeBody = parsed;
             }
-            safeBody = parsed;
         } catch (e) {
-            safeBody = options.body;
+            // Keep original string if not JSON
         }
     }
 
