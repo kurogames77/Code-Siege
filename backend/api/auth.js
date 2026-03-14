@@ -305,16 +305,31 @@ router.post('/login', async (req, res) => {
             // STRICT LOGIN TAB ENFORCEMENT
             if (expected_role) {
                 const isStudentTab = expected_role === 'student';
-                const isStudentAccount = userProfile.role === 'user' || userProfile.role === 'student';
-                const isInstructorAccount = userProfile.role === 'instructor' || userProfile.role === 'admin';
+                const isInstructorTab = expected_role === 'instructor';
+                const isAdminPortal = expected_role === 'admin';
 
-                if (isStudentTab && isInstructorAccount) {
-                    logger.warn('AUTH_SERVICE', `Login blocked: Instructor used student tab to log in (${loginEmail})`);
-                    return res.status(401).json({ error: 'This is an instructor account. Please use the Instructor login tab.' });
+                const isStudentAccount = userProfile.role === 'user' || userProfile.role === 'student';
+                const isInstructorAccount = userProfile.role === 'instructor';
+                const isAdminAccount = userProfile.role === 'admin';
+
+                if (isStudentTab && !isStudentAccount) {
+                    logger.warn('AUTH_SERVICE', `Login blocked: Non-student used student tab to log in (${loginEmail})`);
+                    return res.status(401).json({ error: 'This is an instructor/admin account. Please use the appropriate login.' });
                 }
-                if (!isStudentTab && isStudentAccount) {
+                
+                if (isInstructorTab && isStudentAccount) {
                     logger.warn('AUTH_SERVICE', `Login blocked: Student used instructor tab to log in (${loginEmail})`);
                     return res.status(401).json({ error: 'This is a student account. Please use the Student login tab.' });
+                }
+
+                if (isInstructorTab && isAdminAccount) {
+                    logger.warn('AUTH_SERVICE', `Login blocked: Admin used instructor tab to log in (${loginEmail})`);
+                    return res.status(401).json({ error: 'System Admins must use the dedicated Admin Portal to log in.' });
+                }
+
+                if (isAdminPortal && !isAdminAccount) {
+                    logger.warn('AUTH_SERVICE', `Login blocked: Non-admin used admin portal to log in (${loginEmail})`);
+                    return res.status(401).json({ error: 'Unauthorized access. Valid Admin credentials required.' });
                 }
             }
             loginEmail = userProfile.email;
