@@ -84,30 +84,40 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     const channelRef = React.useRef(null);
     const matchmakingIntervalRef = React.useRef(null);
 
-    // Add inviter to players when opened via invite
+    // Add inviter to players when opened via invite, and reset on close
     useEffect(() => {
-        if (isOpen && initialInviter && initialInviter.id) {
-            setPlayers(prev => {
-                // Don't add duplicates
-                if (prev.some(p => p.id === initialInviter.id)) return prev;
-                const inviterPlayer = {
-                    id: initialInviter.id,
-                    name: initialInviter.name || 'Player',
-                    level: 1,
-                    status: 'ready',
-                    avatar: initialInviter.avatar || heroAsset,
-                    heroImage: hero2Static,
-                    rankName: initialInviter.rankName || '',
-                    rankIcon: initialInviter.rankIcon || '',
-                    rankId: null,
-                    achievements: 0,
-                    ms: '—',
-                    logo: ccsLogo,
-                    isReady: true
-                };
-                return [...prev, inviterPlayer];
-            });
+        if (isOpen) {
+            if (initialInviter && initialInviter.id) {
+                setPlayers(prev => {
+                    // Don't add duplicates
+                    if (prev.some(p => p.id === initialInviter.id)) return prev;
+                    const inviterPlayer = {
+                        id: initialInviter.id,
+                        name: initialInviter.name || 'Player',
+                        level: 1,
+                        status: 'ready',
+                        avatar: initialInviter.avatar || heroAsset,
+                        heroImage: hero2Static,
+                        rankName: initialInviter.rankName || '',
+                        rankIcon: initialInviter.rankIcon || '',
+                        rankId: null,
+                        achievements: 0,
+                        ms: '—',
+                        logo: ccsLogo,
+                        isReady: true
+                    };
+                    return [...prev, inviterPlayer];
+                });
+            }
+        } else {
+            // Reset state when closed
+            setPlayers([{ ...currentUser, isReady: true }]);
+            setMatchState('idle');
+            setTimer(0);
+            setSearchError(null);
+            setInviteError(null);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, initialInviter]);
 
     // Sync other players' full visual data from presence once it's available
