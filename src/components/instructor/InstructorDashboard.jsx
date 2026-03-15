@@ -7,7 +7,7 @@ import {
     Zap,
     Clock,
     TrendingUp,
-    MousePointer2
+    BookOpen
 } from 'lucide-react';
 import {
     ResponsiveContainer,
@@ -17,10 +17,7 @@ import {
     YAxis,
     Tooltip,
     LineChart,
-    Line,
-    PieChart,
-    Pie,
-    Cell
+    Line
 } from 'recharts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import supabase from '../../lib/supabase';
@@ -40,6 +37,14 @@ const InstructorDashboard = ({ theme }) => {
         queryKey: ['instructorStats'],
         queryFn: () => instructorAPI.getStats(),
     });
+
+    // Fetch instructor's own courses to determine if they have any
+    const { data: instructorCourses = [], isLoading: coursesLoading } = useQuery({
+        queryKey: ['instructorCourses'],
+        queryFn: () => instructorAPI.getCourses(),
+    });
+
+    const hasNoCourses = !coursesLoading && instructorCourses.length === 0;
 
     // Real-time updates: invalidated cache when database changes
     useEffect(() => {
@@ -93,16 +98,6 @@ const InstructorDashboard = ({ theme }) => {
         { label: 'Student Completion Rate', value: `${completionRate}%`, trend: 'Avg. Progress', icon: Zap, color: 'amber' },
     ];
 
-    // Minimal graph data reflecting "just started" state
-    const studentData = [
-        { month: 'Jan', count: 0 },
-        { month: 'Feb', count: 0 },
-        { month: 'Mar', count: 0 },
-        { month: 'Apr', count: 0 },
-        { month: 'May', count: 0 },
-        { month: 'Jun', count: statsData.totalStudents }, // Show current total for latest month
-    ];
-
     const certificateData = [
         { month: 'Jan', issued: 0 },
         { month: 'Feb', issued: 0 },
@@ -112,11 +107,6 @@ const InstructorDashboard = ({ theme }) => {
         { month: 'Jun', issued: statsData.totalCertificates },
     ];
 
-    const battleDistribution = [
-        { name: '1v1 Duels', value: statsData.totalBattles, color: '#F43F5E' },
-        { name: 'Multiplayer', value: 0, color: '#A855F7' }, // Assuming mostly duels for now or 0
-    ];
-
     const chartColors = {
         text: theme === 'dark' ? '#94a3b8' : '#64748b',
         grid: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
@@ -124,8 +114,46 @@ const InstructorDashboard = ({ theme }) => {
         tooltipBorder: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
     };
 
-    if (isLoading) {
+    if (isLoading || coursesLoading) {
         return <div className="p-8 text-center text-slate-500">Loading dashboard data...</div>;
+    }
+
+    // If instructor has no courses, show empty state
+    if (hasNoCourses) {
+        return (
+            <div className="space-y-8 pb-10">
+                {/* Header Area */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className={`text-3xl font-black uppercase italic tracking-wider font-galsb transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Overview</h2>
+                        <p className={`text-xs font-bold uppercase tracking-[0.2em] mt-1 transition-colors ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>Real-time status of the Code Siege ecosystem</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <div className={`px-6 py-3 border rounded-2xl flex items-center gap-3 transition-all duration-500 ${theme === 'dark' ? 'bg-slate-900 border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
+                            <Clock className="w-4 h-4 text-cyan-500" />
+                            <span className={`text-xs font-black uppercase tracking-widest transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                                {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Empty State */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`p-12 border rounded-[2.5rem] text-center transition-all duration-500 ${theme === 'dark' ? 'bg-slate-900/40 border-white/5' : 'bg-white border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.02)]'}`}
+                >
+                    <div className={`w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center ${theme === 'dark' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-cyan-50 text-cyan-600'}`}>
+                        <BookOpen className="w-8 h-8" />
+                    </div>
+                    <h3 className={`text-xl font-black italic mb-3 transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>No Courses Yet</h3>
+                    <p className={`text-sm font-medium max-w-md mx-auto transition-colors ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                        You haven't created any courses yet. Head over to <span className={`font-bold ${theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600'}`}>Puzzle Courses</span> to create your first course and start tracking student progress.
+                    </p>
+                </motion.div>
+            </div>
+        );
     }
 
     return (
@@ -187,49 +215,7 @@ const InstructorDashboard = ({ theme }) => {
 
             {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* 1. Total Students Bar Chart */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className={`p-8 border rounded-[2.5rem] relative overflow-hidden transition-all duration-500 ${theme === 'dark' ? 'bg-slate-900/40 border-white/5' : 'bg-white border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.02)]'
-                        }`}
-                >
-                    <div className="flex items-center justify-between mb-8">
-                        <div>
-                            <h3 className={`text-xs font-black uppercase tracking-[0.3em] transition-colors ${theme === 'dark' ? 'text-slate-400' : 'text-slate-400'}`}>Student Growth</h3>
-                            <p className={`text-lg font-black italic mt-1 transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Monthly Registrations</p>
-                        </div>
-                        <div className={`p-2 rounded-lg transition-colors ${theme === 'dark' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-cyan-50 text-cyan-600'}`}>
-                            <TrendingUp className="w-4 h-4" />
-                        </div>
-                    </div>
-                    <div className="h-[200px] w-full">
-                        <ResponsiveContainer width="99%" height="100%">
-                            <BarChart data={studentData}>
-                                <Tooltip
-                                    cursor={{ fill: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }}
-                                    contentStyle={{
-                                        background: chartColors.tooltipBg,
-                                        border: `1px solid ${chartColors.tooltipBorder}`,
-                                        borderRadius: '12px',
-                                        fontSize: '10px',
-                                        color: theme === 'dark' ? '#FFF' : '#000',
-                                        boxShadow: '0 10px 20px rgba(0,0,0,0.05)'
-                                    }}
-                                />
-                                <Bar
-                                    dataKey="count"
-                                    fill={theme === 'dark' ? '#06B6D4' : '#0891B2'}
-                                    radius={[4, 4, 0, 0]}
-                                    className={theme === 'dark' ? "drop-shadow-[0_0_8px_rgba(6,182,212,0.3)]" : ""}
-                                />
-                                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: chartColors.text, fontSize: 10 }} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </motion.div>
-
-                {/* 2. Active Instructors Line Chart */}
+                {/* 1. Certification Flow Line Chart */}
                 <motion.div
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -274,63 +260,11 @@ const InstructorDashboard = ({ theme }) => {
                     </div>
                 </motion.div>
 
-                {/* 3. Arena Battles Pie Chart */}
+                {/* 2. Course Metrics Bar Chart */}
                 <motion.div
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.2 }}
-                    className={`p-8 border rounded-[2.5rem] relative overflow-hidden transition-all duration-500 ${theme === 'dark' ? 'bg-slate-900/40 border-white/5' : 'bg-white border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.02)]'
-                        }`}
-                >
-                    <div className="flex items-center justify-between mb-8">
-                        <div>
-                            <h3 className={`text-xs font-black uppercase tracking-[0.3em] transition-colors ${theme === 'dark' ? 'text-slate-400' : 'text-slate-400'}`}>Arena Distribution</h3>
-                            <p className={`text-lg font-black italic mt-1 transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Match Types</p>
-                        </div>
-                        <div className={`p-2 rounded-lg transition-colors ${theme === 'dark' ? 'bg-rose-500/10 text-rose-400' : 'bg-rose-50 text-rose-600'}`}>
-                            <MousePointer2 className="w-4 h-4" />
-                        </div>
-                    </div>
-                    <div className="h-[240px] w-full flex items-center">
-                        <div className="w-1/2 h-full">
-                            <ResponsiveContainer width="99%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={battleDistribution}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={60}
-                                        outerRadius={80}
-                                        paddingAngle={5}
-                                        dataKey="value"
-                                        stroke="none"
-                                    >
-                                        {battleDistribution.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.color} />
-                                        ))}
-                                    </Pie>
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className="w-1/2 space-y-4 pr-4">
-                            {battleDistribution.map((item) => (
-                                <div key={item.name} className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${theme === 'dark' ? 'text-slate-600' : 'text-slate-500'}`}>{item.name}</span>
-                                    </div>
-                                    <span className={`text-xs font-black italic transition-colors ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>{item.value}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </motion.div>
-
-                {/* 4. Course Metrics Bar Chart */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3 }}
                     className={`p-8 border rounded-[2.5rem] relative overflow-hidden transition-all duration-500 ${theme === 'dark' ? 'bg-slate-900/40 border-white/5' : 'bg-white border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.02)]'
                         }`}
                 >

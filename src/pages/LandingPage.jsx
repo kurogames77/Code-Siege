@@ -242,8 +242,7 @@ const LandingPage = () => {
                     toast.success('Application submitted! Please wait for the admin to send verification through gmail.');
                     closeModal(); // Close immediately for instructors
                 } else {
-                    setSignupSuccess(true); // Show 'Check Your Email' only for students
-                    toast.popup('Account created! Please check your email.');
+                    setSignupSuccess(true); // Show 'Check Your Email' panel for students
                 }
             } else {
                 // Login
