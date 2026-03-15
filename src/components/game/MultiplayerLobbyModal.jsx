@@ -57,8 +57,9 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     const [matchState, setMatchState] = useState('idle'); // idle, searching, ready_check, starting
     const [timer, setTimer] = useState(0); // Unified timer state
 
-    // Language & Wager Selection
+    // Language, Mode & Wager Selection
     const [selectedLanguage, setSelectedLanguage] = useState('JavaScript');
+    const [selectedMode, setSelectedMode] = useState('Puzzle Blocks');
     const [selectedWager, setSelectedWager] = useState(100);
 
     const languages = ['Python', 'C#', 'C++', 'JavaScript', 'PHP', 'MySQL'];
@@ -328,6 +329,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                         id: user.id,
                         status: 'idle',
                         language: selectedLanguage,
+                        mode: selectedMode,
                         wager: selectedWager,
                         playerData: currentUser // Send our visual data so others can see us
                     });
@@ -368,11 +370,12 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                 id: user.id,
                 status: matchState,
                 language: selectedLanguage,
+                mode: selectedMode,
                 wager: selectedWager,
                 playerData: currentUser
             });
         }
-    }, [matchState, selectedLanguage, selectedWager]);
+    }, [matchState, selectedLanguage, selectedMode, selectedWager]);
 
     // Lobby music control
     useEffect(() => {
@@ -484,6 +487,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                 const validCandidates = Object.values(matchmakingQueue).filter(p => 
                     p.status === 'searching' && 
                     p.language === selectedLanguage && 
+                    p.mode === selectedMode &&
                     p.wager === selectedWager
                 );
 
@@ -539,7 +543,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
 
             return () => clearInterval(matchmakingIntervalRef.current);
         }
-    }, [matchState, matchmakingQueue, selectedLanguage, selectedWager, user]);
+    }, [matchState, matchmakingQueue, selectedLanguage, selectedMode, selectedWager, user]);
 
     // 2. Auto-Start if ALL ready
     useEffect(() => {
@@ -768,6 +772,30 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                         </div>
                                     </div>
 
+                                    {/* Mode */}
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Mode</label>
+                                        <div className="relative group">
+                                            {!settingsLocked && <div className="absolute inset-0 bg-violet-500/20 blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />}
+                                            {settingsLocked ? (
+                                                <div className="w-full bg-[#0B1221] border border-white/10 text-white/50 font-bold text-xs px-3 py-2 rounded-lg cursor-not-allowed">
+                                                    {selectedMode || 'N/A'}
+                                                </div>
+                                            ) : (
+                                                <select
+                                                    value={selectedMode}
+                                                    onChange={(e) => { playSelect(); setSelectedMode(e.target.value); }}
+                                                    className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-xs px-3 py-2 rounded-lg appearance-none relative z-10 focus:border-violet-500 focus:outline-none transition-colors cursor-pointer"
+                                                >
+                                                    <option>Puzzle Blocks</option>
+                                                    <option>Blocks</option>
+                                                    <option>Hardcode</option>
+                                                </select>
+                                            )}
+                                            {!settingsLocked && <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 z-20 pointer-events-none" />}
+                                        </div>
+                                    </div>
+
 
                                     {/* Wager */}
                                     <div className="space-y-1">
@@ -893,7 +921,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                                             </div>
 
                                                             {/* Bottom Dark Gradient for Rank readability */}
-                                                            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/90 to-transparent z-10 pointer-events-none rounded-b-xl" />
+                                                            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent z-10 pointer-events-none rounded-b-xl" />
 
                                                             {/* UI Elements (Avatar, Name, Rank) */}
                                                             <div className={`absolute inset-0 z-20 flex flex-col items-center h-full pointer-events-none ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
