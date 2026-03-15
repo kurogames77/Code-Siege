@@ -42,6 +42,7 @@ const queryClient = new QueryClient({
 
 import { QuestProvider } from './contexts/QuestContext';
 import useInactivityTimeout from './hooks/useInactivityTimeout';
+import SingleTabEnforcer from './components/common/SingleTabEnforcer';
 
 // Component for safely redirecting to an external URL
 const ExternalRedirect = ({ to }) => {
@@ -66,7 +67,8 @@ const InactivityGuard = ({ children }) => {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <SingleTabEnforcer>
+      <QueryClientProvider client={queryClient}>
       <Router>
         <MusicProvider>
           <ToastProvider>
@@ -112,6 +114,7 @@ function App() {
         </MusicProvider>
       </Router>
     </QueryClientProvider>
+    </SingleTabEnforcer>
   );
 }
 
