@@ -13,6 +13,8 @@ import hero4Static from '../../assets/hero4.png';
 import gameMapBg from '../../assets/gamemapbg.png';
 import useSound from '../../hooks/useSound';
 import { useTheme } from '../../contexts/ThemeContext'; // Import ThemeContext
+import { useUser } from '../../contexts/UserContext';
+import { getRankFromExp } from '../../utils/rankSystem';
 
 // Import Rank Badges
 import heroesIcon from '../../assets/heroes.png';
@@ -29,7 +31,12 @@ import rank10 from '../../assets/rankbadges/rank10.png';
 import rank11 from '../../assets/rankbadges/rank11.png';
 import rank12 from '../../assets/rankbadges/rank12.png';
 
-const HeroesModal = ({ isOpen, onClose, userLevel = 24 }) => {
+const HeroesModal = ({ isOpen, onClose }) => {
+    const { user } = useUser();
+    const userExp = user?.exp || (user?.level * 2000) || 0;
+    const currentRank = getRankFromExp(userExp);
+    const currentRankId = currentRank.id;
+
     const [selectedCategory, setSelectedCategory] = useState('ALL');
     const [searchQuery, setSearchQuery] = useState('');
     const [detailedHero, setDetailedHero] = useState(null);
@@ -76,9 +83,7 @@ const HeroesModal = ({ isOpen, onClose, userLevel = 24 }) => {
             ],
             image: heroAsset4,
             staticImage: hero3Static,
-            rarity: 5,
-            level: 30,
-            reqLevel: 30
+            rarity: 5
         },
         {
             id: 2,
@@ -95,9 +100,7 @@ const HeroesModal = ({ isOpen, onClose, userLevel = 24 }) => {
             ],
             image: heroAsset5,
             staticImage: hero4Static,
-            rarity: 5,
-            level: 25,
-            reqLevel: 25
+            rarity: 5
         },
         {
             id: 3,
@@ -114,9 +117,7 @@ const HeroesModal = ({ isOpen, onClose, userLevel = 24 }) => {
             ],
             image: heroAsset3,
             staticImage: hero1aStatic,
-            rarity: 4,
-            level: 1,
-            reqLevel: 0
+            rarity: 4
         },
         {
             id: 4,
@@ -133,16 +134,14 @@ const HeroesModal = ({ isOpen, onClose, userLevel = 24 }) => {
             ],
             image: heroAsset2,
             staticImage: hero2Static,
-            rarity: 5,
-            level: 1,
-            reqLevel: 0
+            rarity: 5
         }
     ];
 
     const filteredHeroes = heroes.filter(h => {
         const matchCategory = selectedCategory === 'ALL' || h.category === selectedCategory;
         const matchSearch = h.name.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchOwned = !showOwnedOnly || userLevel >= h.reqLevel;
+        const matchOwned = !showOwnedOnly || currentRankId >= h.rankLevel;
         return matchCategory && matchSearch && matchOwned;
     });
 
@@ -294,7 +293,7 @@ const HeroesModal = ({ isOpen, onClose, userLevel = 24 }) => {
                                             <HeroCard
                                                 key={hero.id}
                                                 hero={hero}
-                                                userLevel={userLevel}
+                                                currentRankId={currentRankId}
                                                 rankBadge={getRankInfo(hero.rankLevel).badge}
                                                 rankName={getRankInfo(hero.rankLevel).name}
                                                 onClick={() => {
@@ -415,13 +414,13 @@ const HeroesModal = ({ isOpen, onClose, userLevel = 24 }) => {
                                                 localStorage.setItem('selectedHeroImage', heroImageMap[detailedHero.id]);
                                                 playClick();
                                             }}
-                                            disabled={userLevel < detailedHero.reqLevel}
-                                            className={`w-full h-16 rounded-xl transition-all relative overflow-hidden group ${userLevel < detailedHero.reqLevel ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
+                                            disabled={currentRankId < detailedHero.rankLevel}
+                                            className={`w-full h-16 rounded-xl transition-all relative overflow-hidden group ${currentRankId < detailedHero.rankLevel ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
                                         >
                                             <div className={`absolute inset-0 bg-${currentTheme.colors.primary}-600 group-hover:bg-${currentTheme.colors.primary}-500 transition-colors`} />
                                             <div className="relative z-10 flex items-center justify-center h-full">
                                                 <span className="text-xl font-black text-white uppercase italic tracking-[0.2em]">
-                                                    {userLevel < detailedHero.reqLevel ? 'HERO LOCKED' : 'EQUIP HERO'}
+                                                    {currentRankId < detailedHero.rankLevel ? 'RANK TOO LOW' : 'EQUIP HERO'}
                                                 </span>
                                             </div>
                                         </button>
@@ -437,8 +436,8 @@ const HeroesModal = ({ isOpen, onClose, userLevel = 24 }) => {
 };
 
 // Memoized Hero Card Component
-const HeroCard = React.memo(({ hero, userLevel, rankBadge, rankName, onClick }) => {
-    const isLocked = userLevel < hero.reqLevel;
+const HeroCard = React.memo(({ hero, currentRankId, rankBadge, rankName, onClick }) => {
+    const isLocked = currentRankId < hero.rankLevel;
 
     return (
         <motion.div
@@ -452,7 +451,7 @@ const HeroCard = React.memo(({ hero, userLevel, rankBadge, rankName, onClick }) 
             }}
             whileHover={!isLocked ? { y: -5, zIndex: 10 } : {}}
             onClick={() => !isLocked && onClick()}
-            className={`relative aspect-[3/4.2] group perspective-1000 ${isLocked ? 'grayscale-70 opacity-80 cursor-not-allowed' : 'cursor-pointer'}`}
+            className={`relative aspect-[3/4.2] group perspective-1000 ${isLocked ? 'grayscale-[0.5] opacity-90 cursor-not-allowed' : 'cursor-pointer'}`}
         >
             <div className="absolute inset-0 bg-[#0a0f1a] rounded-[1.5rem] overflow-hidden border border-white/10 group-hover:border-cyan-500/50 transition-all duration-300 shadow-xl">
                 <img
@@ -463,8 +462,6 @@ const HeroCard = React.memo(({ hero, userLevel, rankBadge, rankName, onClick }) 
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#02040a] via-[#02040a]/10 to-transparent opacity-80" />
                 <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black to-transparent" />
-
-                {/* Removed rank badge */}
 
                 <div className="absolute top-4 left-4 w-8 h-8 rounded-xl bg-black/60 border border-white/10 flex items-center justify-center backdrop-blur-sm z-20">
                     <div className="text-cyan-400">
@@ -485,10 +482,11 @@ const HeroCard = React.memo(({ hero, userLevel, rankBadge, rankName, onClick }) 
                 </div>
 
                 {isLocked && (
-                    <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-30 backdrop-blur-sm">
-                        <Shield className="w-10 h-10 text-slate-500 mb-2" />
+                    <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-30 backdrop-blur-md">
+                        <img src={rankBadge} alt={rankName} className="w-16 h-16 drop-shadow-[0_0_12px_rgba(255,255,255,0.2)] mb-2" />
+                        <span className="text-[9px] font-black tracking-[0.3em] font-galsb text-slate-400 mb-1">REQ RANK</span>
                         <div className="px-4 py-1.5 bg-slate-900 border border-white/10 rounded-lg">
-                            <span className="text-[9px] font-black text-white uppercase tracking-[0.2em]">Lvl {hero.reqLevel}</span>
+                            <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">{rankName}</span>
                         </div>
                     </div>
                 )}
