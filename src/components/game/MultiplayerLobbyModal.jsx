@@ -909,13 +909,12 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
 
                                                     {player ? (
                                                         <>
-                                                            {/* Hero Image — detached from clipPath so weapons/staffs can pop out uncropped */}
                                                             <div className={`absolute inset-x-[-20%] bottom-14 top-20 z-10 pointer-events-none flex items-end justify-center ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
                                                                 <motion.img
                                                                     initial={{ scale: 1.0 }}
                                                                     animate={{ scale: isGrey ? 0.90 : 0.95 }}
                                                                     src={player.heroImage || player.avatar}
-                                                                    className={`w-full max-h-[95%] object-contain object-bottom transition-all duration-700 drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] ${isGrey ? 'brightness-50 grayscale' : 'brightness-110'}`}
+                                                                    className={`w-full max-h-[95%] object-contain object-bottom transition-all duration-700 ${isGrey ? 'brightness-50 grayscale' : 'brightness-110'}`}
                                                                     alt="Hero"
                                                                 />
                                                             </div>
