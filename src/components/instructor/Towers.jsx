@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Castle, Plus, Edit2, Trash2 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
-import '../../styles/instructor/puzzle-courses.css'; // Re-use puzzle courses styling for now
 
 const Towers = ({ theme }) => {
     const toast = useToast();
