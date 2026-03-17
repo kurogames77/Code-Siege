@@ -18,6 +18,9 @@ const StudentCodesManager = ({ theme }) => {
     const [isAutoGenerating, setIsAutoGenerating] = useState(false);
     const [autoGenProgress, setAutoGenProgress] = useState(0);
     const [numToGenerate, setNumToGenerate] = useState(10);
+    const [codePrefix, setCodePrefix] = useState('IT');
+
+    const CODE_PREFIXES = ['IT', 'CS', 'IS', 'CS-IS-IT'];
 
     const fetchCodes = async () => {
         try {
@@ -114,9 +117,13 @@ const StudentCodesManager = ({ theme }) => {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             const generatedCodes = [];
             for (let i = 0; i < numToGenerate; i++) {
-                let code = 'SIEGE-';
-                for (let j = 0; j < 8; j++) {
-                    code += chars.charAt(Math.floor(Math.random() * chars.length));
+                let code = `${codePrefix}-`;
+                // Generate two groups of 4 characters
+                for (let g = 0; g < 2; g++) {
+                    for (let j = 0; j < 4; j++) {
+                        code += chars.charAt(Math.floor(Math.random() * chars.length));
+                    }
+                    if (g === 0) code += '-';
                 }
                 generatedCodes.push(code);
             }
@@ -275,10 +282,21 @@ const StudentCodesManager = ({ theme }) => {
                                 className={`w-14 h-full bg-transparent font-bold text-sm outline-none text-center ${theme === 'dark' ? 'text-white' : 'text-slate-900'} relative z-10`}
                                 placeholder="Qty"
                             />
+                            {/* Prefix Selector */}
+                            <select
+                                value={codePrefix}
+                                onChange={(e) => setCodePrefix(e.target.value)}
+                                className={`h-[34px] px-2 rounded-lg border text-xs font-bold uppercase tracking-wider outline-none cursor-pointer transition-colors relative z-10 ${theme === 'dark' ? 'bg-slate-900 border-white/10 text-cyan-400' : 'bg-slate-100 border-slate-200 text-slate-700'}`}
+                                title="Code prefix type"
+                            >
+                                {CODE_PREFIXES.map(p => (
+                                    <option key={p} value={p}>{p}</option>
+                                ))}
+                            </select>
                             <button
                                 onClick={handleAutoGen}
                                 disabled={isAutoGenerating || typeof numToGenerate !== 'number' || numToGenerate < 1}
-                                className="shrink-0 h-[34px] px-4 rounded-lg bg-purple-500 hover:bg-purple-400 text-white font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-50 flex items-center justify-center whitespace-nowrap relative z-10 w-full"
+                                className="shrink-0 h-[34px] px-4 rounded-lg bg-purple-500 hover:bg-purple-400 text-white font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-50 flex items-center justify-center whitespace-nowrap relative z-10"
                             >
                                 {isAutoGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Auto-Gen'}
                             </button>
