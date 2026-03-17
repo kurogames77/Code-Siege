@@ -17,7 +17,8 @@ import {
     BarChart3,
     Award,
     UserCircle,
-    Crown
+    Crown,
+    Castle
 } from 'lucide-react';
 import gameIcon from '../../assets/icongame.png';
 import rankingIcon from '../../assets/ranking.png';
@@ -46,6 +47,7 @@ const InstructorSidebar = ({ activeTab, setActiveTab, isCollapsed, setIsCollapse
     const menuItems = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'courses', label: 'Puzzle Courses', icon: BookOpen },
+        { id: 'towers', label: 'Towers', icon: Castle },
         { id: 'certificate', label: 'Certificate', icon: Award },
     ];
 

@@ -6,6 +6,7 @@ import InstructorSidebar from '../components/instructor/InstructorSidebar';
 import InstructorDashboard from '../components/instructor/InstructorDashboard';
 import PuzzleCourses from '../components/instructor/PuzzleCourses';
 import Certificate from '../components/instructor/Certificate';
+import Towers from '../components/instructor/Towers';
 import { Search, Bell, User, Sun, Moon } from 'lucide-react';
 
 const InstructorPage = () => {
@@ -34,7 +35,8 @@ const InstructorPage = () => {
                 return <InstructorDashboard theme={theme} />;
             case 'courses':
                 return <PuzzleCourses theme={theme} />;
-
+            case 'towers':
+                return <Towers theme={theme} />;
             case 'certificate':
                 return <Certificate theme={theme} />;
             default:
