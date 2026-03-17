@@ -1000,7 +1000,7 @@ const PuzzleCourses = ({ theme }) => {
                                                     <p className={`text-xs font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>No levels found in database</p>
                                                 </div>
                                             ) : (
-                                                courseLevels[selectedCourse.id]?.map((level) => {
+                                                courseLevels[selectedCourse.id]?.map((level, idx) => {
                                                     const isSelected = selectedLevels.includes(level.id);
                                                     return (
                                                         <motion.div
@@ -1022,7 +1022,7 @@ const PuzzleCourses = ({ theme }) => {
                                                                     ? 'bg-rose-500 text-white'
                                                                     : theme === 'dark' ? 'bg-slate-800 text-slate-400 group-hover/level:text-white' : 'bg-slate-200 text-slate-500 group-hover/level:text-slate-800'
                                                                     }`}>
-                                                                    {level.id}
+                                                                    {level.level_order || idx + 1}
                                                                 </div>
                                                                 <div className="space-y-0.5">
                                                                     <span className={`text-sm font-bold block transition-colors ${isSelected ? 'text-rose-500' : theme === 'dark' ? 'text-slate-200' : 'text-slate-900'

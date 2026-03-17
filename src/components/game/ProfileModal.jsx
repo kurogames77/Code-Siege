@@ -8,6 +8,7 @@ import { useUser } from '../../contexts/UserContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { userAPI, battlesAPI } from '../../services/api';
+import { RANKS, getRankFromExp } from '../../utils/rankSystem';
 import supabase from '../../lib/supabase';
 import heroAsset from '../../assets/hero1.png';
 import hero1aStatic from '../../assets/hero1a.png';
@@ -33,6 +34,11 @@ const ProfileModal = ({ isOpen, onClose }) => {
     const [friendsLoading, setFriendsLoading] = useState(false);
     const [changingPassword, setChangingPassword] = useState(false);
     const [stats, setStats] = useState({ winnings: 0, losses: 0, winRate: '0%' });
+    
+    // Friend Viewer
+    const [selectedFriend, setSelectedFriend] = useState(null);
+    const [isFriendViewerOpen, setIsFriendViewerOpen] = useState(false);
+    const [isFriendLoading, setIsFriendLoading] = useState(false);
 
     // Fetch battle stats on mount
     useEffect(() => {
@@ -188,8 +194,10 @@ const ProfileModal = ({ isOpen, onClose }) => {
                             {user.name}
                         </h2>
                     </div>
-                    <p className="text-cyan-400/80 font-black uppercase text-xs tracking-widest mb-4">
-                        ID: {user.studentId}
+                    <p className="text-cyan-400/80 font-black uppercase text-xs tracking-widest mb-4 flex items-center gap-2">
+                        <span>ID: {user.studentId}</span>
+                        <span className={`w-1.5 h-1.5 rounded-full bg-${currentTheme.colors.primary}-400/50`}></span>
+                        <span>Lvl: {getRankFromExp(user.exp || 0)?.id || 1}</span>
                     </p>
                     <div className="flex flex-col gap-4 items-start">
                         <div className="flex gap-4">
@@ -280,6 +288,21 @@ const ProfileModal = ({ isOpen, onClose }) => {
         const getFriendAvatar = (f) =>
             f.avatar_url || f.avatar || f.profilePicture || null;
 
+        const handleViewFriendProfile = async (friendId) => {
+            setIsFriendLoading(true);
+            setIsFriendViewerOpen(true);
+            try {
+                const data = await userAPI.getUserProfile(friendId);
+                setSelectedFriend(data);
+            } catch (error) {
+                console.error('Failed to load friend profile', error);
+                toast.error('Could not load friend profile.');
+                setIsFriendViewerOpen(false);
+            } finally {
+                setIsFriendLoading(false);
+            }
+        };
+
         const onlineFriends = friendsList.filter(f => onlineUserIds.has(String(f.id)) || onlineUserIds.has(f.id));
         const offlineFriends = friendsList.filter(f => !onlineUserIds.has(String(f.id)) && !onlineUserIds.has(f.id));
         return (
@@ -320,7 +343,15 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                             <p className="text-sm font-black text-white truncate">{getFriendName(friend)}</p>
                                             <p className={`text-[10px] font-bold text-${currentTheme.colors.primary}-400 uppercase tracking-widest`}>{friend.rankName || 'Siege Novice'}</p>
                                         </div>
-                                        <span className="text-[10px] font-bold text-emerald-400 uppercase">Online</span>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-[10px] font-bold text-emerald-400 uppercase hidden sm:block">Online</span>
+                                            <button 
+                                                onClick={() => handleViewFriendProfile(friend.id)}
+                                                className="p-2 rounded-xl bg-slate-800 hover:bg-cyan-500/20 text-slate-400 hover:text-cyan-400 border border-white/5 transition-colors"
+                                            >
+                                                <Info className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </>
@@ -344,7 +375,15 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                             <p className="text-sm font-black text-slate-400 truncate">{getFriendName(friend)}</p>
                                             <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{friend.rankName || 'Siege Novice'}</p>
                                         </div>
-                                        <span className="text-[10px] font-bold text-slate-600 uppercase">Offline</span>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-[10px] font-bold text-slate-600 uppercase hidden sm:block">Offline</span>
+                                            <button 
+                                                onClick={() => handleViewFriendProfile(friend.id)}
+                                                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-500 hover:text-slate-300 border border-white/5 transition-colors"
+                                            >
+                                                <Info className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </>
@@ -617,7 +656,6 @@ const ProfileModal = ({ isOpen, onClose }) => {
             <div className="space-y-6">
                 {[
                     { label: 'Profile Privacy', icon: <Lock className="w-4 h-4" />, status: 'Public' },
-                    { label: 'College', icon: <Globe className="w-4 h-4" />, status: user.college || 'Not Set' },
                 ].map((setting, i) => (
                     <div key={i} className="flex items-center justify-between p-6 bg-slate-900/40 border border-white/5 rounded-3xl hover:bg-white/5 transition-colors cursor-pointer group">
                         <div className="flex items-center gap-4">
@@ -813,48 +851,20 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                                 </div>
                                             </div>
 
-                                            {/* School */}
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">School</label>
-                                                <input
-                                                    type="text"
-                                                    value={editForm.school || ''}
-                                                    onChange={(e) => setEditForm(prev => ({ ...prev, school: e.target.value }))}
-                                                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white font-bold focus:border-cyan-400 focus:outline-none transition-colors"
-                                                />
-                                            </div>
-
-                                            {/* College */}
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">College</label>
-                                                <input
-                                                    type="text"
-                                                    value={editForm.college || ''}
-                                                    onChange={(e) => setEditForm(prev => ({ ...prev, college: e.target.value }))}
-                                                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white font-bold focus:border-cyan-400 focus:outline-none transition-colors"
-                                                />
-                                            </div>
-
-                                            {/* Course */}
+                                            {/* Course (Read Only) */}
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Course</label>
-                                                <input
-                                                    type="text"
-                                                    value={editForm.course || ''}
-                                                    onChange={(e) => setEditForm(prev => ({ ...prev, course: e.target.value }))}
-                                                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white font-bold focus:border-cyan-400 focus:outline-none transition-colors"
-                                                />
+                                                <div className="w-full bg-slate-900/50 border border-white/5 rounded-xl px-4 py-3 text-slate-500 font-bold cursor-not-allowed">
+                                                    {user.course || 'Not Set'}
+                                                </div>
                                             </div>
 
-                                            {/* Email */}
+                                            {/* Email (Read Only) */}
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Email</label>
-                                                <input
-                                                    type="email"
-                                                    value={editForm.email || ''}
-                                                    onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                                                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white font-bold focus:border-cyan-400 focus:outline-none transition-colors"
-                                                />
+                                                <div className="w-full bg-slate-900/50 border border-white/5 rounded-xl px-4 py-3 text-slate-500 font-bold cursor-not-allowed">
+                                                    {user.email || 'Not Set'}
+                                                </div>
                                             </div>
                                         </div>
 
@@ -877,6 +887,76 @@ const ProfileModal = ({ isOpen, onClose }) => {
                             )}
                         </AnimatePresence>
 
+                        {/* FRIEND PROFILE OVERLAY */}
+                        <AnimatePresence>
+                            {isFriendViewerOpen && (
+                                <div className="absolute inset-0 z-[70] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-8">
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        className="w-full max-w-lg bg-[#0B0F1A] border border-cyan-500/20 rounded-[2rem] p-8 shadow-2xl relative overflow-hidden"
+                                    >
+                                        <button
+                                            onClick={() => setIsFriendViewerOpen(false)}
+                                            className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors z-20"
+                                        >
+                                            <X className="w-5 h-5" />
+                                        </button>
+                                        
+                                        {isFriendLoading ? (
+                                            <div className="flex flex-col items-center justify-center py-20 gap-4">
+                                                <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+                                                <p className="text-cyan-400/80 font-black uppercase tracking-widest text-xs">Loading Profile...</p>
+                                            </div>
+                                        ) : selectedFriend ? (
+                                            <div className="flex flex-col items-center relative z-10 font-galsb">
+                                                <div className="relative mb-6">
+                                                    <div className="w-32 h-32 rounded-3xl overflow-hidden border-2 border-cyan-400 shadow-[0_0_30px_rgba(34,211,238,0.2)]">
+                                                        {selectedFriend.profile_picture_url || selectedFriend.avatar ? (
+                                                            <img src={selectedFriend.profile_picture_url || selectedFriend.avatar} className="w-full h-full object-cover" alt="Avatar" />
+                                                        ) : (
+                                                            <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+                                                                <User className="w-16 h-16 text-slate-500" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="absolute -bottom-3 -right-3 w-10 h-10 bg-slate-900 border border-cyan-500/30 rounded-xl flex items-center justify-center shadow-lg">
+                                                        <span className="text-cyan-400 font-black text-sm">{getRankFromExp(selectedFriend.exp || 0)?.id || 1}</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-1 relative z-10 text-center">
+                                                    {selectedFriend.username || selectedFriend.name || 'Unknown User'}
+                                                </h3>
+                                                <div className="flex items-center gap-3 mb-8">
+                                                    <span className="px-3 py-1 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[9px] font-black uppercase tracking-widest">
+                                                        {getRankFromExp(selectedFriend.exp || 0)?.name || 'Siege Novice'}
+                                                    </span>
+                                                </div>
+
+                                                <div className="w-full grid grid-cols-2 gap-4">
+                                                    <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 text-center">
+                                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Exp</p>
+                                                        <p className="text-xl font-black text-purple-400">{selectedFriend.exp || 0}</p>
+                                                    </div>
+                                                    <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 text-center">
+                                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Win Rate</p>
+                                                        <p className="text-xl font-black text-emerald-400">
+                                                            {selectedFriend.win_rate || '0%'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="py-20 text-center text-rose-400 font-bold uppercase tracking-widest text-xs">
+                                                User Not Found
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                </div>
+                            )}
+                        </AnimatePresence>
                     </motion.div>
                 </div>
             )}

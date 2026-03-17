@@ -226,7 +226,12 @@ const ShopModal = ({ isOpen, onClose }) => {
                                             <div className={`h-px bg-gradient-to-r from-${currentTheme.colors.primary}-500/30 to-transparent flex-1`} />
                                         </div>
 
-                                        {(items[activeTab] || []).length === 0 ? (
+                                        {(() => {
+                                            const currentItems = (items[activeTab] || []).filter(item => 
+                                                item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                                (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
+                                            );
+                                            return currentItems.length === 0 ? (
                                             <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
                                                 <Package className="w-16 h-16 text-slate-700 mb-4" />
                                                 <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">No items available</p>
@@ -234,7 +239,7 @@ const ShopModal = ({ isOpen, onClose }) => {
                                             </div>
                                         ) : (
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
-                                                {(items[activeTab] || []).map((item) => (
+                                                {currentItems.map((item) => (
                                                     <motion.div
                                                         key={item.id}
                                                         variants={itemVariants}
@@ -325,7 +330,8 @@ const ShopModal = ({ isOpen, onClose }) => {
                                                     </motion.div>
                                                 ))}
                                             </div>
-                                        )}
+                                        );
+                                        })()}
                                     </div>
                                 </motion.div>
                             </div>

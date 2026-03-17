@@ -14,7 +14,7 @@ import gameMapBg from '../../assets/gamemapbg.png';
 import useSound from '../../hooks/useSound';
 import { useTheme } from '../../contexts/ThemeContext'; // Import ThemeContext
 import { useUser } from '../../contexts/UserContext';
-import { getRankFromExp } from '../../utils/rankSystem';
+import { RANKS, getRankFromExp } from '../../utils/rankSystem';
 
 // Import Rank Badges
 import heroesIcon from '../../assets/heroes.png';
@@ -62,10 +62,6 @@ const HeroesModal = ({ isOpen, onClose }) => {
     ];
 
     const rankBadges = [rank1, rank2, rank3, rank4, rank5, rank6, rank7, rank8, rank9, rank10, rank11, rank12];
-    const rankNames = [
-        "Warrior", "Elite", "Master", "Grandmaster", "Epic", "Legend",
-        "Mythic", "Mythical Glory", "Immortal", "Radiant", "Sovereign", "Code Celestial"
-    ];
 
     const heroes = [
         {
@@ -164,7 +160,7 @@ const HeroesModal = ({ isOpen, onClose }) => {
     const getRankInfo = (level) => {
         const index = Math.max(0, Math.min(11, level - 1));
         return {
-            name: rankNames[index],
+            name: RANKS[index]?.name || "Unknown",
             badge: rankBadges[index]
         };
     };
@@ -485,8 +481,9 @@ const HeroCard = React.memo(({ hero, currentRankId, rankBadge, rankName, onClick
                     <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-30 backdrop-blur-md">
                         <img src={rankBadge} alt={rankName} className="w-16 h-16 drop-shadow-[0_0_12px_rgba(255,255,255,0.2)] mb-2" />
                         <span className="text-[9px] font-black tracking-[0.3em] font-galsb text-slate-400 mb-1">REQ RANK</span>
-                        <div className="px-4 py-1.5 bg-slate-900 border border-white/10 rounded-lg">
+                        <div className="px-4 py-1.5 bg-slate-900 border border-white/10 rounded-lg flex flex-col items-center gap-1">
                             <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">{rankName}</span>
+                            <span className="text-[8px] font-black text-cyan-400 uppercase tracking-[0.2em]">LVL {hero.rankLevel}</span>
                         </div>
                     </div>
                 )}

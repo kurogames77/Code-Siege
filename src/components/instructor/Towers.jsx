@@ -43,21 +43,31 @@ const Towers = ({ theme }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Filter Towers Based on Instructor's Enrolled Language
-    const instructorLang = (user?.course || '').toLowerCase();
+    const instructorLang = (user?.enrolled_language || user?.course || '').toLowerCase().trim();
+    const instructorTowersRaw = (user?.handled_towers || '').toLowerCase().trim();
     
-    // Admin bypass or filter by specific language (also supporting full spelling variations)
-    // Sometimes Instructors might have "C++" vs "cpp" or "C#" vs "csharp", but the array uses literal Display Names.
     const filteredTowers = GAME_TOWERS.filter(tower => {
-        if (!instructorLang) return false; // STRICT: Show nothing if no language assigned
-        if (instructorLang.includes('all')) return true; // Admin bypass
+        if (!instructorLang && !instructorTowersRaw && user?.role !== 'admin') {
+            // If strictly no language/towers set, fallback to showing all towers so they aren't blocked completely
+            return true;
+        }
+        
+        // Admin or "all" bypass
+        if (user?.role === 'admin' || instructorLang.includes('all')) return true;
         
         const tLang = tower.language.toLowerCase();
+        const tName = tower.name.toLowerCase();
         
-        // Exact match bounds
-        if (instructorLang === tLang) return true;
+        // Check if tower's name is in handled_towers
+        if (instructorTowersRaw && (instructorTowersRaw.includes(tName) || tName.includes(instructorTowersRaw))) {
+            return true;
+        }
         
-        // Loose Contains bounds for edge cases
-        if (tLang.includes(instructorLang) || instructorLang.includes(tLang)) return true;
+        // Check language match
+        if (instructorLang) {
+            if (instructorLang === tLang) return true;
+            if (tLang.includes(instructorLang) || instructorLang.includes(tLang)) return true;
+        }
         
         return false;
     });

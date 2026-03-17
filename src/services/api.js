@@ -496,6 +496,14 @@ export const instructorAPI = {
         });
     },
 
+    bulkDeleteStudentCodes: async (codeIds) => {
+        return Promise.all(codeIds.map(id => 
+            apiRequest(`/instructor/student-codes/${id}`, {
+                method: 'DELETE',
+            })
+        ));
+    },
+
     // Application Management
     getApplications: async (status = 'pending') => {
         return apiRequest(`/instructor/applications?status=${status}`);

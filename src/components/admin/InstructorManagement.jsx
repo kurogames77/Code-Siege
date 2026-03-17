@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, CheckCircle, XCircle, MoreVertical, FileText, Mail, User, Calendar, Ban, Edit2, Shield } from 'lucide-react';
+import { Search, CheckCircle, XCircle, MoreVertical, FileText, Mail, User, Calendar, Ban, Edit2, Shield, Trash2, Info, BookOpen, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { instructorAPI } from '../../services/api';
 
@@ -7,51 +7,83 @@ const InstructorManagement = ({ theme = 'dark' }) => {
     // Mock Data for Applications
     const [applications, setApplications] = useState([]);
 
-    // Live Data for Active Instructors
+    // Live Data for Users
     const [instructors, setInstructors] = useState([]);
+    const [students, setStudents] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
+    
+    // Search states
+    const [instructorSearch, setInstructorSearch] = useState('');
+    const [studentSearch, setStudentSearch] = useState('');
+
+    // Modals
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingInstructor, setEditingInstructor] = useState(null);
+    
+    // Student Info/Edit Modal
+    const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
+    const [editingStudent, setEditingStudent] = useState(null);
+    const [studentModalMode, setStudentModalMode] = useState('info'); // 'info' or 'edit'
 
-    const fetchInstructors = async () => {
+    const fetchUsers = async () => {
         setIsLoading(true);
         try {
-            const response = await instructorAPI.getUsers(1, 100);
+            // Fetch applications
+            const appsResponse = await instructorAPI.getApplications();
+            if (appsResponse.applications) {
+                setApplications(appsResponse.applications);
+            }
+
+            // Fetch users (instructors & students) - assuming we fetch a big chunk or all
+            const response = await instructorAPI.getUsers(1, 1000);
             if (response.users) {
-                // Filter for instructors and format
-                const filtered = response.users
+                const filteredInstructors = response.users
                     .filter(u => u.role === 'instructor' || u.role === 'admin')
                     .map(u => ({
                         id: u.id,
                         name: u.username,
                         email: u.email,
                         instructorId: u.student_id || 'N/A',
-                        department: u.college || 'N/A',
+                        languages: u.enrolled_language || '',
+                        towers: u.handled_towers || '',
                         status: u.is_banned ? 'inactive' : 'active',
                         avatar: u.avatar_url
                     }));
-                setInstructors(filtered);
+                setInstructors(filteredInstructors);
+
+                const filteredStudents = response.users
+                    .filter(u => u.role === 'user' || u.role === 'student')
+                    .map(u => ({
+                        id: u.id,
+                        name: u.username,
+                        email: u.email,
+                        studentId: u.student_id || 'N/A',
+                        status: u.is_banned ? 'inactive' : 'active',
+                        avatar: u.avatar_url,
+                        level: u.level || 1,
+                        xp: u.xp || 0
+                    }));
+                setStudents(filteredStudents);
             }
         } catch (error) {
-            console.error('Failed to fetch instructors:', error);
+            console.error('Failed to fetch data:', error);
         } finally {
             setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchInstructors();
+        fetchUsers();
     }, []);
 
-    const handleDeactivateInstructor = async (id, currentStatus) => {
+    const handleDeactivateUser = async (id, currentStatus, type) => {
         const isBanned = currentStatus === 'active';
         const action = isBanned ? 'deactivate' : 'reactivate';
 
-        if (confirm(`Are you sure you want to ${action} this instructor account?`)) {
+        if (window.confirm(`Are you sure you want to ${action} this ${type} account?`)) {
             try {
                 await instructorAPI.banUser(id, isBanned);
-                setInstructors(prev => prev.map(i => i.id === id ? { ...i, status: isBanned ? 'inactive' : 'active' } : i));
+                fetchUsers(); // Refresh list
             } catch (error) {
                 console.error('Failed to update ban status:', error);
                 alert('Failed to update account status');
@@ -59,31 +91,96 @@ const InstructorManagement = ({ theme = 'dark' }) => {
         }
     };
 
+    const handleDeleteUser = async (id, type) => {
+        if (window.confirm(`Are you sure you want to PERMANENTLY delete this ${type} account? This cannot be undone.`)) {
+            try {
+                await instructorAPI.deleteUser(id);
+                fetchUsers(); // Refresh list
+            } catch (error) {
+                console.error('Failed to delete user:', error);
+                alert(`Failed to delete ${type} account`);
+            }
+        }
+    };
+
+    // --- Application Actions ---
+    const handleApprove = async (app) => {
+        try {
+            await instructorAPI.approveApplication(app.id);
+            fetchUsers();
+        } catch (error) {
+            console.error('Failed to approve application', error);
+        }
+    };
+    
+    const handleReject = async (id) => {
+        if(window.confirm('Are you sure you want to reject this application?')) {
+            try {
+                await instructorAPI.rejectApplication(id, 'Rejected by admin');
+                fetchUsers();
+            } catch (error) {
+                console.error('Failed to reject application', error);
+            }
+        }
+    };
+
+    // --- Instructor Handlers ---
     const handleUpdateInstructor = (instructor) => {
         setEditingInstructor(instructor);
         setIsEditModalOpen(true);
     };
 
-    const handleSaveUpdate = async (e) => {
+    const handleSaveInstructorUpdate = async (e) => {
         e.preventDefault();
         try {
             await instructorAPI.updateUser(editingInstructor.id, {
                 username: editingInstructor.name,
                 student_id: editingInstructor.instructorId,
-                college: editingInstructor.department
+                enrolled_language: editingInstructor.languages,
+                handled_towers: editingInstructor.towers
             });
             setIsEditModalOpen(false);
-            fetchInstructors(); // Refresh list
+            fetchUsers(); 
         } catch (error) {
             console.error('Failed to update user:', error);
             alert('Failed to update instructor details');
         }
     };
 
+    // --- Student Handlers ---
+    const handleOpenStudentModal = (student, mode) => {
+        setEditingStudent(student);
+        setStudentModalMode(mode);
+        setIsStudentModalOpen(true);
+    };
+
+    const handleSaveStudentUpdate = async (e) => {
+        e.preventDefault();
+        try {
+            await instructorAPI.updateUser(editingStudent.id, {
+                username: editingStudent.name,
+                student_id: editingStudent.studentId,
+                email: editingStudent.email
+            });
+            setIsStudentModalOpen(false);
+            fetchUsers();
+        } catch (error) {
+            console.error('Failed to update student:', error);
+            alert('Failed to update student details');
+        }
+    };
+
+    // Filtrations
     const filteredInstructors = instructors.filter(i =>
-        i.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        i.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        i.instructorId.toLowerCase().includes(searchQuery.toLowerCase())
+        i.name.toLowerCase().includes(instructorSearch.toLowerCase()) ||
+        i.email.toLowerCase().includes(instructorSearch.toLowerCase()) ||
+        i.instructorId.toLowerCase().includes(instructorSearch.toLowerCase())
+    );
+
+    const filteredStudents = students.filter(s =>
+        s.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
+        s.email.toLowerCase().includes(studentSearch.toLowerCase()) ||
+        s.studentId.toLowerCase().includes(studentSearch.toLowerCase())
     );
 
     const getStatusColor = (status) => {
@@ -96,238 +193,478 @@ const InstructorManagement = ({ theme = 'dark' }) => {
         }
     };
 
+    const scrollbarStyles = `
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.3); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.5); }
+    `;
+
     return (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 h-full overflow-hidden">
+        <div className="flex flex-col h-full gap-8 overflow-y-auto overflow-x-hidden custom-scrollbar pb-10 pr-2">
+            <style>{scrollbarStyles}</style>
+            
+            {/* TOP ROW: Applications & Instructors */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 shrink-0 min-h-[400px]">
+                
+                {/* LEFT COLUMN: APPLICATIONS */}
+                <div className={`flex flex-col h-[500px] border rounded-2xl p-6 transition-colors duration-500 ${theme === 'dark' ? 'bg-[#0B1224] border-cyan-500/20' : 'bg-white border-slate-200'}`}>
+                    <div className="mb-6 flex-none">
+                        <h2 className={`text-xl font-black uppercase italic tracking-tighter flex items-center gap-2 mb-4 transition-colors duration-500 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                            Instructor <span className="text-cyan-500">Applications</span>
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full not-italic tracking-normal transition-colors duration-500 ${theme === 'dark' ? 'text-slate-500 bg-slate-800' : 'text-slate-400 bg-slate-100'}`}>{applications.filter(a => a.status === 'pending').length} Pending</span>
+                        </h2>
+                    </div>
 
-            {/* LEFT COLUMN: APPLICATIONS */}
-            <div className={`flex flex-col h-full border-r pr-6 overflow-hidden transition-colors duration-500 ${theme === 'dark' ? 'bg-[#0B1224]/30 border-cyan-500/10' : 'bg-transparent border-slate-100'}`}>
-                <div className="mb-6 flex-none">
-                    <h2 className={`text-xl font-black uppercase italic tracking-tighter flex items-center gap-2 mb-4 transition-colors duration-500 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                        Instructor <span className="text-cyan-500">Applications</span>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full not-italic tracking-normal transition-colors duration-500 ${theme === 'dark' ? 'text-slate-500 bg-slate-800' : 'text-slate-400 bg-slate-100'}`}>{applications.filter(a => a.status === 'pending').length} Pending</span>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
+                        <AnimatePresence mode="popLayout">
+                            {applications.map((app) => (
+                                <motion.div
+                                    key={app.id}
+                                    layout
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    className={`p-4 rounded-xl border transition-all relative overflow-hidden group ${app.status === 'pending'
+                                        ? (theme === 'dark' ? 'bg-[#0B1224]/60 border-white/5 hover:border-cyan-500/30' : 'bg-white border-slate-200 shadow-sm hover:border-cyan-500/50')
+                                        : 'opacity-60 grayscale bg-slate-100/10 border-transparent'
+                                        }`}
+                                >
+                                    <div className="flex items-start justify-between relative z-10">
+                                        <div className="flex gap-4">
+                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold uppercase flex-shrink-0 ${getStatusColor(app.status)}`}>
+                                                {app.username?.charAt(0) || 'A'}
+                                            </div>
+                                            <div>
+                                                <h3 className={`font-bold text-base flex items-center gap-2 transition-colors duration-500 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                                                    {app.username || 'Unknown Applicant'}
+                                                    <span className={`text-[9px] uppercase px-1.5 py-0.5 rounded border ${getStatusColor(app.status)}`}>{app.status}</span>
+                                                </h3>
+                                                <div className="flex flex-col gap-1 text-[11px] text-slate-400 mt-1 font-medium">
+                                                    <span className="flex items-center gap-1.5"><Mail className="w-3 h-3 text-slate-500" /> {app.email}</span>
+                                                    <span className="flex items-center gap-1.5"><Calendar className="w-3 h-3 text-slate-500" /> Applied: {new Date(app.created_at).toLocaleDateString()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Actions */}
+                                        {app.status === 'pending' && (
+                                            <div className="flex flex-col gap-2">
+                                                <button
+                                                    onClick={() => handleApprove(app)}
+                                                    className="p-1.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-colors"
+                                                    title="Approve"
+                                                >
+                                                    <CheckCircle className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleReject(app.id)}
+                                                    className="p-1.5 rounded bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-colors"
+                                                    title="Reject"
+                                                >
+                                                    <XCircle className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            ))}
+                            {applications.length === 0 && (
+                                <div className={`p-12 text-center rounded-2xl border border-dashed transition-all duration-500 ${theme === 'dark' ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
+                                    <FileText className="w-8 h-8 mx-auto mb-3 opacity-20" />
+                                    <p className="text-sm font-bold uppercase tracking-widest">No pending applications</p>
+                                </div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </div>
+
+                {/* RIGHT COLUMN: ACTIVE INSTRUCTORS */}
+                <div className={`flex flex-col h-[500px] border rounded-2xl p-6 transition-colors duration-500 ${theme === 'dark' ? 'bg-[#0B1224] border-cyan-500/20' : 'bg-white border-slate-200'}`}>
+                    <div className="mb-6 flex-none">
+                        <h2 className={`text-xl font-black uppercase italic tracking-tighter flex items-center gap-2 mb-4 transition-colors duration-500 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                            Instructor <span className="text-cyan-500">Management</span>
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full not-italic tracking-normal transition-colors duration-500 ${theme === 'dark' ? 'text-slate-500 bg-slate-800' : 'text-slate-400 bg-slate-100'}`}>{instructors.filter(i => i.status === 'active').length} Active</span>
+                        </h2>
+                        <div className="relative">
+                            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <input
+                                type="text"
+                                placeholder="Search instructors..."
+                                value={instructorSearch}
+                                onChange={(e) => setInstructorSearch(e.target.value)}
+                                className={`w-full border rounded-lg pl-9 pr-4 py-3 text-sm focus:border-cyan-500/50 outline-none transition-all duration-500 ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-white' : 'bg-white border-slate-200 text-slate-900 shadow-sm'}`}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
+                        <AnimatePresence mode="popLayout">
+                            {filteredInstructors.map((instructor) => (
+                                <motion.div
+                                    key={instructor.id}
+                                    layout
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className={`p-4 rounded-xl border transition-all duration-500 group ${instructor.status === 'active'
+                                        ? (theme === 'dark' ? 'bg-[#0B1224]/60 border-white/5 hover:border-cyan-500/30' : 'bg-white border-slate-200 shadow-sm hover:border-cyan-500/50')
+                                        : 'opacity-60 grayscale bg-slate-100/10 border-transparent'
+                                        }`}
+                                >
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center border overflow-hidden ${getStatusColor(instructor.status)}`}>
+                                                    {instructor.avatar ? (
+                                                        <img src={instructor.avatar} alt={instructor.name} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <User className="w-5 h-5" />
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <h3 className={`font-bold text-base flex items-center gap-2 transition-colors duration-500 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                                                        {instructor.name}
+                                                        <span className={`text-[9px] uppercase px-1.5 py-0.5 rounded border ${getStatusColor(instructor.status)}`}>{instructor.status}</span>
+                                                    </h3>
+                                                    <div className="flex items-center gap-4 text-[11px] text-slate-400 mt-1 font-medium">
+                                                        <span className="flex items-center gap-1.5 truncate max-w-[120px]" title={instructor.email}><Mail className="w-3 h-3 text-slate-500" /> {instructor.email}</span>
+                                                        <span className="flex items-center gap-1.5 shrink-0"><Shield className="w-3 h-3 text-slate-500" /> {instructor.instructorId}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Management Actions */}
+                                            <div className="flex items-center gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => handleUpdateInstructor(instructor)}
+                                                    className="p-2 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500 hover:text-white transition-colors"
+                                                    title="Edit Account"
+                                                >
+                                                    <Edit2 className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeactivateUser(instructor.id, instructor.status, 'instructor')}
+                                                    className={`p-2 rounded-lg border transition-colors ${instructor.status === 'active'
+                                                        ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500 hover:text-white'
+                                                        : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500 hover:text-white'
+                                                        }`}
+                                                    title={instructor.status === 'active' ? "Disable Account" : "Enable Account"}
+                                                >
+                                                    <Ban className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteUser(instructor.id, 'instructor')}
+                                                    className="p-2 rounded-lg bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-colors"
+                                                    title="Delete Account"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    </div>
+                </div>
+            </div>
+
+            {/* BOTTOM SECTION: STUDENT MANAGEMENT */}
+            <div className={`flex flex-col h-[500px] border rounded-2xl p-6 shrink-0 transition-colors duration-500 ${theme === 'dark' ? 'bg-[#0B1224] border-cyan-500/20' : 'bg-white border-slate-200'}`}>
+                <div className="mb-6 flex-none flex flex-wrap gap-4 items-center justify-between">
+                    <h2 className={`text-xl font-black uppercase italic tracking-tighter flex items-center gap-2 transition-colors duration-500 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                        Student <span className="text-cyan-500">Management</span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full not-italic tracking-normal transition-colors duration-500 ${theme === 'dark' ? 'text-slate-500 bg-slate-800' : 'text-slate-400 bg-slate-100'}`}>{students.length} Total</span>
                     </h2>
-                    <div className="relative">
+                    <div className="relative w-full max-w-sm">
                         <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                         <input
                             type="text"
-                            placeholder="Search applicants..."
-                            className={`w-full border rounded-lg pl-9 pr-4 py-3 text-sm focus:border-cyan-500/50 outline-none transition-all duration-500 ${theme === 'dark' ? 'bg-slate-950/50 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900 shadow-sm'}`}
+                            placeholder="Search students..."
+                            value={studentSearch}
+                            onChange={(e) => setStudentSearch(e.target.value)}
+                            className={`w-full border rounded-lg pl-9 pr-4 py-2.5 text-sm focus:border-cyan-500/50 outline-none transition-all duration-500 ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-white' : 'bg-white border-slate-200 text-slate-900 shadow-sm'}`}
                         />
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2 pb-6">
-                    <AnimatePresence mode="popLayout">
-                        {applications.map((app) => (
-                            <motion.div
-                                key={app.id}
-                                layout
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                className={`p-4 rounded-xl border transition-all relative overflow-hidden group ${app.status === 'pending'
-                                    ? (theme === 'dark' ? 'bg-[#0B1224]/60 border-white/5 hover:border-cyan-500/30' : 'bg-white border-slate-200 shadow-sm hover:border-cyan-500/50')
-                                    : 'opacity-60 grayscale bg-slate-100/10 border-transparent'
-                                    }`}
-                            >
-                                <div className="flex items-start justify-between relative z-10">
-                                    <div className="flex gap-4">
-                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold uppercase flex-shrink-0 ${getStatusColor(app.status)}`}>
-                                            {app.name.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <h3 className={`font-bold text-base flex items-center gap-2 transition-colors duration-500 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                                                {app.name}
-                                                <span className={`text-[9px] uppercase px-1.5 py-0.5 rounded border ${getStatusColor(app.status)}`}>{app.status}</span>
-                                            </h3>
-                                            <div className="flex flex-col gap-1 text-[11px] text-slate-400 mt-1 font-medium">
-                                                <span className="flex items-center gap-1.5"><Mail className="w-3 h-3 text-slate-500" /> {app.email}</span>
-                                                <span className="flex items-center gap-1.5"><Calendar className="w-3 h-3 text-slate-500" /> Applied: {app.date}</span>
+                {/* Students Table */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar border rounded-xl overflow-hidden bg-slate-950/20 border-white/5">
+                    <table className="w-full text-left border-collapse">
+                        <thead className={`sticky top-0 z-10 text-xs font-bold uppercase tracking-widest ${theme === 'dark' ? 'bg-slate-900 text-slate-500 border-white/5' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                            <tr>
+                                <th className="p-4 border-b">Student</th>
+                                <th className="p-4 border-b">ID Number</th>
+                                <th className="p-4 border-b hidden md:table-cell">Email</th>
+                                <th className="p-4 border-b text-center">Status</th>
+                                <th className="p-4 border-b text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {isLoading ? (
+                                <tr>
+                                    <td colSpan="5" className="p-8 text-center text-cyan-500">Loading students...</td>
+                                </tr>
+                            ) : filteredStudents.length === 0 ? (
+                                <tr>
+                                    <td colSpan="5" className="p-8 text-center text-slate-500">No students found</td>
+                                </tr>
+                            ) : (
+                                filteredStudents.map((student) => (
+                                    <tr key={student.id} className={`border-b transition-colors group ${theme === 'dark' ? 'border-white/5 hover:bg-slate-800/30' : 'border-slate-100 hover:bg-slate-50'}`}>
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center border overflow-hidden ${theme === 'dark' ? 'border-white/10 bg-slate-800' : 'border-slate-200 bg-white'}`}>
+                                                    {student.avatar ? (
+                                                        <img src={student.avatar} alt={student.name} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <User className="w-4 h-4 text-slate-400" />
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <div className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{student.name}</div>
+                                                    <div className="text-[10px] text-cyan-500 font-bold uppercase tracking-widest">LVL {student.level}</div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Actions */}
-                                    {app.status === 'pending' && (
-                                        <div className="flex flex-col gap-2">
-                                            <button
-                                                onClick={() => handleApprove(app)}
-                                                className="p-1.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-colors"
-                                                title="Approve"
-                                            >
-                                                <CheckCircle className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleReject(app.id)}
-                                                className="p-1.5 rounded bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-colors"
-                                                title="Reject"
-                                            >
-                                                <XCircle className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </motion.div>
-                        ))}
-                        {applications.length === 0 && (
-                            <div className={`p-12 text-center rounded-2xl border border-dashed transition-all duration-500 ${theme === 'dark' ? 'border-white/10 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
-                                <Search className="w-8 h-8 mx-auto mb-3 opacity-20" />
-                                <p className="text-sm font-bold uppercase tracking-widest">No pending applications</p>
-                            </div>
-                        )}
-                    </AnimatePresence>
+                                        </td>
+                                        <td className={`p-4 font-mono text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+                                            {student.studentId}
+                                        </td>
+                                        <td className={`p-4 text-sm hidden md:table-cell ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                            {student.email}
+                                        </td>
+                                        <td className="p-4 text-center">
+                                            <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded-full border ${getStatusColor(student.status)}`}>
+                                                {student.status}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 text-right">
+                                            <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => handleOpenStudentModal(student, 'info')}
+                                                    className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500 hover:text-white transition-colors"
+                                                    title="View Progress & Info"
+                                                >
+                                                    <Info className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleOpenStudentModal(student, 'edit')}
+                                                    className="p-2 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500 hover:text-white transition-colors"
+                                                    title="Edit Account"
+                                                >
+                                                    <Edit2 className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeactivateUser(student.id, student.status, 'student')}
+                                                    className={`p-2 rounded-lg border transition-colors ${student.status === 'active'
+                                                        ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500 hover:text-white'
+                                                        : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500 hover:text-white'
+                                                        }`}
+                                                    title={student.status === 'active' ? "Disable Account" : "Enable Account"}
+                                                >
+                                                    <Ban className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteUser(student.id, 'student')}
+                                                    className="p-2 rounded-lg bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-colors"
+                                                    title="Delete Account"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            {/* RIGHT COLUMN: ACTIVE INSTRUCTORS */}
-            <div className="flex flex-col h-full pl-2 overflow-hidden">
-                <div className="mb-6 flex-none">
-                    <h2 className={`text-xl font-black uppercase italic tracking-tighter flex items-center gap-2 mb-4 transition-colors duration-500 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                        Active <span className="text-cyan-500">Instructors</span>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full not-italic tracking-normal transition-colors duration-500 ${theme === 'dark' ? 'text-slate-500 bg-slate-800' : 'text-slate-400 bg-slate-100'}`}>{instructors.filter(i => i.status === 'active').length} Active</span>
-                    </h2>
-                    <div className="relative">
-                        <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input
-                            type="text"
-                            placeholder="Search active instructors..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className={`w-full border rounded-lg pl-9 pr-4 py-3 text-sm focus:border-cyan-500/50 outline-none transition-all duration-500 ${theme === 'dark' ? 'bg-slate-950/50 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900 shadow-sm'}`}
-                        />
-                    </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2 pb-6">
-                    <AnimatePresence mode="popLayout">
-                        {filteredInstructors.map((instructor) => (
-                            <motion.div
-                                key={instructor.id}
-                                layout
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                className={`p-4 rounded-xl border transition-all duration-500 group ${instructor.status === 'active'
-                                    ? (theme === 'dark' ? 'bg-[#0B1224]/60 border-white/5 hover:border-cyan-500/30' : 'bg-white border-slate-200 shadow-sm hover:border-cyan-500/50')
-                                    : 'opacity-60 grayscale bg-slate-100/10 border-transparent'
-                                    }`}
-                            >
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center border overflow-hidden ${getStatusColor(instructor.status)}`}>
-                                            {instructor.avatar ? (
-                                                <img src={instructor.avatar} alt={instructor.name} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <User className="w-5 h-5" />
-                                            )}
-                                        </div>
-                                        <div>
-                                            <h3 className={`font-bold text-base flex items-center gap-2 transition-colors duration-500 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                                                {instructor.name}
-                                                <span className={`text-[9px] uppercase px-1.5 py-0.5 rounded border ${getStatusColor(instructor.status)}`}>{instructor.status}</span>
-                                            </h3>
-                                            <div className="flex items-center gap-4 text-[11px] text-slate-400 mt-1 font-medium">
-                                                <span className="flex items-center gap-1.5"><Mail className="w-3 h-3 text-slate-500" /> {instructor.email}</span>
-                                                <span className="flex items-center gap-1.5"><Shield className="w-3 h-3 text-slate-500" /> {instructor.instructorId}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Management Actions */}
-                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                            onClick={() => handleUpdateInstructor(instructor)}
-                                            className="p-2 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500 hover:text-white transition-colors"
-                                            title="Edit Account"
-                                        >
-                                            <Edit2 className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDeactivateInstructor(instructor.id, instructor.status)}
-                                            className={`p-2 rounded-lg border transition-colors ${instructor.status === 'active'
-                                                ? 'bg-rose-500/10 text-rose-500 border-rose-500/20 hover:bg-rose-500 hover:text-white'
-                                                : 'bg-slate-700/50 text-slate-500 border-slate-600 hover:bg-emerald-500 hover:text-white hover:border-emerald-500'
-                                                }`}
-                                            title={instructor.status === 'active' ? "Deactivate Account" : "Reactivate Account"}
-                                        >
-                                            <Ban className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                </div>
-            </div>
-
-            {/* Edit Modal */}
+            {/* INSTRUCTOR Edit Modal */}
             <AnimatePresence>
-                {isEditModalOpen && (
+                {isEditModalOpen && editingInstructor && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
                             onClick={() => setIsEditModalOpen(false)}
                         />
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
                             className={`relative w-full max-w-lg rounded-[2rem] border p-8 shadow-2xl ${theme === 'dark' ? 'bg-[#0B1224] border-white/10' : 'bg-white border-slate-200'}`}
                         >
-                            <h2 className="text-2xl font-black uppercase italic italic mb-6 tracking-tighter">Edit <span className="text-cyan-500">Instructor</span></h2>
-
-                            <form onSubmit={handleSaveUpdate} className="space-y-4">
+                            <h2 className="text-2xl font-black uppercase italic mb-6 tracking-tighter">Edit <span className="text-cyan-500">Instructor</span></h2>
+                            <form onSubmit={handleSaveInstructorUpdate} className="space-y-4">
                                 <div>
                                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Full Name</label>
                                     <input
                                         type="text"
-                                        value={editingInstructor?.name || ''}
+                                        value={editingInstructor.name}
                                         onChange={(e) => setEditingInstructor({ ...editingInstructor, name: e.target.value })}
                                         className={`w-full border rounded-xl px-4 py-3 text-sm focus:border-cyan-500 outline-none transition-all ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
                                     />
                                 </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Instructor ID</label>
+                                        <input
+                                            type="text"
+                                            value={editingInstructor.instructorId}
+                                            onChange={(e) => setEditingInstructor({ ...editingInstructor, instructorId: e.target.value })}
+                                            className={`w-full border rounded-xl px-4 py-3 text-sm focus:border-cyan-500 outline-none transition-all ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Languages Handled</label>
+                                        <input
+                                            type="text"
+                                            value={editingInstructor.languages}
+                                            onChange={(e) => setEditingInstructor({ ...editingInstructor, languages: e.target.value })}
+                                            placeholder="e.g. Python, Java"
+                                            className={`w-full border rounded-xl px-4 py-3 text-sm focus:border-cyan-500 outline-none transition-all ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                                        />
+                                    </div>
+                                </div>
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Instructor ID</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Towers Handled</label>
                                     <input
                                         type="text"
-                                        value={editingInstructor?.instructorId || ''}
-                                        onChange={(e) => setEditingInstructor({ ...editingInstructor, instructorId: e.target.value })}
+                                        value={editingInstructor.towers}
+                                        onChange={(e) => setEditingInstructor({ ...editingInstructor, towers: e.target.value })}
+                                        placeholder="e.g. Eldoria, Mechanica"
                                         className={`w-full border rounded-xl px-4 py-3 text-sm focus:border-cyan-500 outline-none transition-all ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">College/Department</label>
-                                    <input
-                                        type="text"
-                                        value={editingInstructor?.department || ''}
-                                        onChange={(e) => setEditingInstructor({ ...editingInstructor, department: e.target.value })}
-                                        className={`w-full border rounded-xl px-4 py-3 text-sm focus:border-cyan-500 outline-none transition-all ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
-                                    />
-                                </div>
-
                                 <div className="flex gap-3 pt-4">
                                     <button
-                                        type="button"
-                                        onClick={() => setIsEditModalOpen(false)}
+                                        type="button" onClick={() => setIsEditModalOpen(false)}
                                         className="flex-1 py-3 rounded-xl border border-white/5 text-xs font-bold uppercase tracking-widest hover:bg-white/5 transition-all text-slate-400"
-                                    >
-                                        Cancel
-                                    </button>
+                                    >Cancel</button>
                                     <button
                                         type="submit"
                                         className="flex-1 py-3 rounded-xl bg-cyan-600/20 border border-cyan-500/30 text-cyan-400 text-xs font-bold uppercase tracking-widest hover:bg-cyan-500 hover:text-white transition-all shadow-[0_0_15px_rgba(6,182,212,0.1)]"
-                                    >
-                                        Save Changes
-                                    </button>
+                                    >Save Changes</button>
                                 </div>
                             </form>
                         </motion.div>
                     </div>
                 )}
             </AnimatePresence>
+
+            {/* STUDENT Modal (Edit or Info) */}
+            <AnimatePresence>
+                {isStudentModalOpen && editingStudent && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+                            onClick={() => setIsStudentModalOpen(false)}
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className={`relative w-full max-w-lg rounded-[2rem] border p-8 shadow-2xl ${theme === 'dark' ? 'bg-[#0B1224] border-white/10' : 'bg-white border-slate-200'}`}
+                        >
+                            <h2 className="text-2xl font-black uppercase italic mb-6 tracking-tighter">
+                                {studentModalMode === 'edit' ? 'Edit ' : 'Student '}
+                                <span className={studentModalMode === 'edit' ? 'text-blue-500' : 'text-cyan-500'}>
+                                    {studentModalMode === 'edit' ? 'Student' : 'Profile'}
+                                </span>
+                            </h2>
+                            
+                            {studentModalMode === 'edit' ? (
+                                <form onSubmit={handleSaveStudentUpdate} className="space-y-4">
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Username</label>
+                                        <input
+                                            type="text"
+                                            value={editingStudent.name}
+                                            onChange={(e) => setEditingStudent({ ...editingStudent, name: e.target.value })}
+                                            className={`w-full border rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none transition-all ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Student ID</label>
+                                            <input
+                                                type="text"
+                                                value={editingStudent.studentId}
+                                                onChange={(e) => setEditingStudent({ ...editingStudent, studentId: e.target.value })}
+                                                className={`w-full border rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none transition-all ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Email</label>
+                                            <input
+                                                type="email"
+                                                value={editingStudent.email}
+                                                onChange={(e) => setEditingStudent({ ...editingStudent, email: e.target.value })}
+                                                className={`w-full border rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none transition-all ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3 pt-4">
+                                        <button
+                                            type="button" onClick={() => setIsStudentModalOpen(false)}
+                                            className="flex-1 py-3 rounded-xl border border-white/5 text-xs font-bold uppercase tracking-widest hover:bg-white/5 transition-all text-slate-400"
+                                        >Cancel</button>
+                                        <button
+                                            type="submit"
+                                            className="flex-1 py-3 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 text-xs font-bold uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all shadow-[0_0_15px_rgba(59,130,246,0.1)]"
+                                        >Save Changes</button>
+                                    </div>
+                                </form>
+                            ) : (
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-6">
+                                        <div className={`w-20 h-20 rounded-2xl border flex items-center justify-center overflow-hidden ${theme === 'dark' ? 'bg-slate-900 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
+                                            {editingStudent.avatar ? (
+                                                <img src={editingStudent.avatar} alt={editingStudent.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <User className="w-10 h-10 text-slate-400" />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{editingStudent.name}</h3>
+                                            <p className="text-slate-500 text-sm mb-2">{editingStudent.email}</p>
+                                            <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded-md border ${getStatusColor(editingStudent.status)}`}>
+                                                {editingStudent.status} User
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className={`p-4 rounded-xl border ${theme === 'dark' ? 'bg-slate-900/50 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Level</p>
+                                            <p className={`text-2xl font-black text-cyan-500`}>{editingStudent.level}</p>
+                                        </div>
+                                        <div className={`p-4 rounded-xl border ${theme === 'dark' ? 'bg-slate-900/50 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Total XP</p>
+                                            <p className={`text-2xl font-black text-purple-500`}>{editingStudent.xp.toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className={`p-4 rounded-xl border flex flex-col gap-3 ${theme === 'dark' ? 'bg-slate-900/50 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm font-bold text-slate-400">Student ID:</span>
+                                            <span className={`text-sm font-mono ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{editingStudent.studentId}</span>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => setIsStudentModalOpen(false)}
+                                        className="w-full py-4 rounded-xl border border-white/10 text-slate-400 text-xs font-bold uppercase tracking-widest hover:bg-white/5 transition-all mt-4"
+                                    >
+                                        Close Info
+                                    </button>
+                                </div>
+                            )}
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
         </div>
     );
 };

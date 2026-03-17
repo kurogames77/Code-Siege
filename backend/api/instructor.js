@@ -470,7 +470,7 @@ router.patch('/users/:id/role', requireAdmin, async (req, res) => {
 router.patch('/users/:id', requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
-        const { username, email, student_id, college, avatar_url } = req.body;
+        const { username, email, student_id, college, avatar_url, enrolled_language, handled_towers } = req.body;
 
         const updates = {};
         if (username !== undefined) updates.username = username;
@@ -478,6 +478,8 @@ router.patch('/users/:id', requireAdmin, async (req, res) => {
         if (student_id !== undefined) updates.student_id = student_id;
         if (college !== undefined) updates.college = college;
         if (avatar_url !== undefined) updates.avatar_url = avatar_url;
+        if (enrolled_language !== undefined) updates.enrolled_language = enrolled_language;
+        if (handled_towers !== undefined) updates.handled_towers = handled_towers;
 
         const { data: user, error } = await supabase
             .from('users')
