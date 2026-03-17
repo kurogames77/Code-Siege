@@ -199,7 +199,8 @@ const StudentCodesManager = ({ theme }) => {
                     cursor: pointer;
                 }
             `}</style>
-            <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6">
+            {/* Header */}
+            <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
                 <div>
                     <h2 className={`text-3xl font-black uppercase italic tracking-widest ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                         Student Codes
@@ -208,10 +209,12 @@ const StudentCodesManager = ({ theme }) => {
                         Manage single-use registration codes for students
                     </p>
                 </div>
+            </div>
 
-                {/* Search & Upload moved upwards */}
-                <div className="flex flex-wrap items-center gap-4 w-full xl:w-auto">
-                    {/* Manual Paste & Upload */}
+            {/* Main Actions Container — paste/upload/search + auto-gen + mass select */}
+            <div className={`p-6 rounded-2xl border flex flex-col gap-5 transition-colors ${theme === 'dark' ? 'bg-[#0B1224] border-cyan-500/20' : 'bg-white border-slate-200'}`}>
+                {/* Row 1: Paste code + Upload + Search */}
+                <div className="flex flex-wrap items-center gap-4 w-full">
                     <div className="flex-1 min-w-[250px] flex items-center gap-2">
                         <input
                             type="text"
@@ -219,7 +222,7 @@ const StudentCodesManager = ({ theme }) => {
                             onChange={(e) => setCodesInput(e.target.value)}
                             placeholder="Paste codes here (comma/space separated)..."
                             className={`w-full p-2.5 rounded-xl border transition-colors outline-none focus:border-cyan-500 font-mono text-sm ${theme === 'dark'
-                                ? 'bg-[#0B1224] border-white/5 text-white placeholder-slate-600'
+                                ? 'bg-slate-950/50 border-white/5 text-white placeholder-slate-600'
                                 : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'
                                 }`}
                         />
@@ -232,8 +235,6 @@ const StudentCodesManager = ({ theme }) => {
                             Upload
                         </button>
                     </div>
-
-                    {/* Search */}
                     <div className="w-[200px] shrink-0">
                         <div className="relative">
                             <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
@@ -243,20 +244,18 @@ const StudentCodesManager = ({ theme }) => {
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 className={`w-full pl-9 pr-3 py-2.5 rounded-xl border transition-colors outline-none focus:border-cyan-500 font-mono text-sm tracking-wider ${theme === 'dark'
-                                    ? 'bg-[#0B1224] border-white/5 text-white placeholder-slate-600'
+                                    ? 'bg-slate-950/50 border-white/5 text-white placeholder-slate-600'
                                     : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'
                                     }`}
                             />
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Actions Bar (Auto-gen and Delete) */}
-            <div className={`p-6 rounded-2xl border flex flex-col gap-5 transition-colors ${theme === 'dark' ? 'bg-[#0B1224] border-cyan-500/20' : 'bg-white border-slate-200'}`}>
-                <div className="flex items-end gap-6 w-full">
+                {/* Row 2: Auto Gen + Mass Select */}
+                <div className="flex items-end gap-4 w-full">
                     {/* Auto Gen */}
-                    <div className="flex flex-col gap-1 w-[220px]">
+                    <div className="flex flex-col gap-1">
                         <div className="flex justify-between items-center px-1 h-[14px]">
                             {isAutoGenerating && (
                                 <>
@@ -282,7 +281,6 @@ const StudentCodesManager = ({ theme }) => {
                                 className={`w-14 h-full bg-transparent font-bold text-sm outline-none text-center ${theme === 'dark' ? 'text-white' : 'text-slate-900'} relative z-10`}
                                 placeholder="Qty"
                             />
-                            {/* Prefix Selector */}
                             <select
                                 value={codePrefix}
                                 onChange={(e) => setCodePrefix(e.target.value)}
@@ -303,7 +301,7 @@ const StudentCodesManager = ({ theme }) => {
                         </div>
                     </div>
 
-                    {/* Mass Delete */}
+                    {/* Mass Select / Delete */}
                     <button
                         onClick={handleBulkDelete}
                         disabled={selectedCodes.size === 0}
@@ -314,8 +312,8 @@ const StudentCodesManager = ({ theme }) => {
                         }`}
                         title={selectedCodes.size > 0 ? `Delete ${selectedCodes.size} selected codes` : "Select codes from the table to enable mass deletion"}
                     >
-                        <Trash2 className="w-4 h-4" />
-                        Mass Delete {selectedCodes.size > 0 && `(${selectedCodes.size})`}
+                        <CheckCircle className="w-4 h-4" />
+                        Delete Selected {selectedCodes.size > 0 && `(${selectedCodes.size})`}
                     </button>
                 </div>
             </div>

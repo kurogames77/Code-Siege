@@ -35,6 +35,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
     const [terminalLogs, setTerminalLogs] = useState([]);
     const [codeValue, setCodeValue] = useState(''); // For 'code' mode
     const [showHintConfirm, setShowHintConfirm] = useState(false);
+    const [glowingBlocks, setGlowingBlocks] = useState([]); // Block IDs that should glow (Hint tier 2)
 
     // Use config mode if available, fallback to level-based for legacy
     const getActiveMode = () => {
@@ -82,6 +83,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             setSubmitAttempts(0);
             startTimeRef.current = Date.now();
             setHintLevel(0);
+            setGlowingBlocks([]);
             setCurrentReward(puzzle.rewards?.exp || 100);
             setTerminalLogs([
                 "> System initialized...",
@@ -427,13 +429,15 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
     };
 
     const handleBuyHint = () => {
-        if (!puzzle.hints || hintLevel >= puzzle.hints.length) return;
+        // Tiered hint costs: 50, 100, 150
+        const HINT_COSTS = [50, 100, 150];
+        if (hintLevel >= 3) return;
 
-        const nextHint = puzzle.hints[hintLevel];
+        const cost = HINT_COSTS[hintLevel];
 
         // Check availability (deduct from User's Global EXP)
-        if (!user || user.exp < nextHint.cost) {
-            setTerminalLogs(prev => [...prev, `> ERROR: Insufficient Global EXP for Hint (-${nextHint.cost} EXP required)`]);
+        if (!user || (user.exp || 0) < cost) {
+            setTerminalLogs(prev => [...prev, `> ERROR: Insufficient Global EXP for Hint (-${cost} EXP required)`]);
             return;
         }
 
@@ -442,19 +446,55 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
     };
 
     const confirmBuyHint = () => {
-        const nextHint = puzzle.hints[hintLevel];
+        const HINT_COSTS = [50, 100, 150];
+        const cost = HINT_COSTS[hintLevel];
         setShowHintConfirm(false);
 
         // Deduct cost from GLOBAL EXP
-        updateExp(-nextHint.cost).then(() => {
+        updateExp(-cost).then(() => {
             playClick?.();
 
-            // Show hint in console
-            setTerminalLogs(prev => [
-                ...prev,
-                `> HINT_REQ_ACK... -${nextHint.cost} EXP (User Balance)`,
-                `> SYSTEM_MSG: "${nextHint.text}"`
-            ]);
+            if (hintLevel === 0) {
+                // Tier 1: Text indicator hint
+                const hintText = puzzle.hints?.[0]?.text || puzzle.description || 'Arrange the blocks in the correct order to form the solution.';
+                setTerminalLogs(prev => [
+                    ...prev,
+                    `> HINT_REQ_ACK... -${cost} EXP`,
+                    `> TIER 1 HINT: "${hintText}"`
+                ]);
+            } else if (hintLevel === 1) {
+                // Tier 2: Puzzle blocks glow — highlight the correct sequence blocks
+                const correctIds = puzzle.correctSequence || [];
+                setGlowingBlocks(correctIds);
+                setTerminalLogs(prev => [
+                    ...prev,
+                    `> HINT_REQ_ACK... -${cost} EXP`,
+                    `> TIER 2 HINT: Correct blocks are now highlighted!`
+                ]);
+            } else if (hintLevel === 2) {
+                // Tier 3: Auto-connect — snap puzzle blocks into the correct order
+                const correctIds = puzzle.correctSequence || [];
+                const BLOCK_WIDTH = 140;
+                const startX = 100;
+                const startY = 200;
+                setBlocks(prev => {
+                    return prev.map(block => {
+                        const idx = correctIds.indexOf(block.id);
+                        if (idx !== -1) {
+                            return {
+                                ...block,
+                                position: { x: startX + idx * BLOCK_WIDTH, y: startY }
+                            };
+                        }
+                        return block;
+                    });
+                });
+                setTerminalLogs(prev => [
+                    ...prev,
+                    `> HINT_REQ_ACK... -${cost} EXP`,
+                    `> TIER 3 HINT: Blocks auto-connected! Submit to verify.`
+                ]);
+            }
 
             // Advance level
             setHintLevel(prev => prev + 1);
@@ -558,7 +598,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
 
                                     <button
                                         onClick={handleBuyHint}
-                                        disabled={hintLevel >= 3 || (user?.exp || 0) < (puzzle.hints?.[hintLevel]?.cost || 999)}
+                                        disabled={hintLevel >= 3 || (user?.exp || 0) < ([50, 100, 150][hintLevel] || 999)}
                                         className={`relative flex items-center gap-2 font-bold px-4 py-2 border rounded-lg transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed
                                             ${hintLevel >= 3
                                                 ? 'bg-red-400/5 border-red-400/20 text-red-400'
@@ -573,7 +613,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                             <span className="text-sm tracking-widest font-galsb whitespace-nowrap">
                                                 {hintLevel >= 3
                                                     ? 'MAX LEVEL'
-                                                    : `-${puzzle.hints?.[hintLevel]?.cost || 0} EXP`
+                                                    : `-${[50, 100, 150][hintLevel] || 0} EXP`
                                                 }
                                             </span>
                                         </div>
@@ -633,7 +673,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                             {/* Zoom Controls */}
                                             <div className="absolute bottom-4 right-4 z-50 flex gap-2">
                                                 <button 
-                                                    onClick={() => setCanvasScale(s => Math.max(0.3, s - 0.1))} 
+                                                    onClick={() => setCanvasScale(s => Math.max(0.5, s - 0.1))} 
                                                     className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg"
                                                 >
                                                     <ZoomOut className="w-5 h-5" />
@@ -659,7 +699,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                             >
                                                 <div className="relative w-full h-full p-8">
                                                     {blocks.map((block) => (
-                                                        <PuzzleBlock key={block.id} {...block} variant={mode} />
+                                                        <PuzzleBlock key={block.id} {...block} variant={mode} isGlowing={glowingBlocks.includes(block.id)} />
                                                     ))}
                                                 </div>
                                             </div>
@@ -767,7 +807,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                     </h3>
                                     <p className="text-slate-300 mb-6 font-mono text-sm leading-relaxed">
                                         Are you sure you want to request a hint? <br />
-                                        This will cost <span className="text-yellow-400 font-bold">{puzzle.hints?.[hintLevel]?.cost || 0} EXP</span> from your <span className="text-cyan-400 font-bold">TOTAL EXP ({user?.exp || 0})</span>.
+                                        This will cost <span className="text-yellow-400 font-bold">{[50, 100, 150][hintLevel] || 0} EXP</span> from your <span className="text-cyan-400 font-bold">TOTAL EXP ({user?.exp || 0})</span>.
                                     </p>
                                     <div className="flex gap-4">
                                         <button

@@ -182,7 +182,7 @@ const LandingPage = () => {
         if (isAuthenticated && user) {
             // Check for incomplete profile (social login) — only for students
             // Instructors/admins don't need studentId to proceed
-            if (user.role !== 'instructor' && user.role !== 'admin' && !user.studentId) {
+            if (user.role !== 'instructor' && user.role !== 'admin' && user.role !== 'guest' && !user.studentId) {
                 if (modal?.type !== 'complete_profile') {
                     setModal({ type: 'complete_profile', role: (user.role === 'user' || !user.role) ? 'student' : user.role });
                     // Initialize fullName from user metadata/current name so they can fix it if "wrong"
@@ -201,6 +201,7 @@ const LandingPage = () => {
             } else if (user.role === 'instructor') {
                 navigate('/instructor');
             } else {
+                // 'student', 'user', 'guest' all go to /play
                 navigate('/play');
             }
         }
@@ -227,10 +228,11 @@ const LandingPage = () => {
                     throw new Error('You must accept the Terms of Service & Privacy Policy.');
                 }
 
+                const isGuest = modal?.role === 'guest';
                 const response = await register(email.trim(), password, fullName, {
-                    student_id: (modal?.role === 'student' ? studentId : instructorId).trim(),
-                    course: course,
-                    role: modal?.role,
+                    student_id: isGuest ? `GUEST-${Date.now()}` : (modal?.role === 'student' ? studentId : instructorId).trim(),
+                    course: isGuest ? 'GUEST' : course,
+                    role: isGuest ? 'guest' : modal?.role,
                     student_code: modal?.role === 'student' ? instructorCode.trim() : undefined
                 });
 
@@ -246,11 +248,12 @@ const LandingPage = () => {
                 }
             } else {
                 // Login
+                const isGuestLogin = modal?.role === 'guest';
                 const isStudentTab = modal?.role === 'student';
-                const idToSubmit = isStudentTab ? studentId.trim() : instructorId.trim();
+                const idToSubmit = isGuestLogin ? email.trim() : (isStudentTab ? studentId.trim() : instructorId.trim());
 
                 if (!idToSubmit) {
-                    throw new Error(`Please enter your ${isStudentTab ? 'Student' : 'Instructor'} ID`);
+                    throw new Error(isGuestLogin ? 'Please enter your email' : `Please enter your ${isStudentTab ? 'Student' : 'Instructor'} ID`);
                 }
                 if (!password.trim()) {
                     throw new Error('Please enter your password');
@@ -258,7 +261,8 @@ const LandingPage = () => {
 
                 // Call login with the provided ID and the expected role (the current tab)
                 const expectedRole = modal?.role || 'student';
-                const response = await login(idToSubmit, password, true, expectedRole);
+                const useStudentIdFlag = !isGuestLogin; // Guests login with email, not student_id
+                const response = await login(idToSubmit, password, useStudentIdFlag, expectedRole);
                 toast.success('Welcome back!');
                 closeModal();
 
@@ -367,6 +371,9 @@ const LandingPage = () => {
                         <button className="hero-btn" type="button" onClick={() => openSignup('student')}>
                             I'm a Student
                         </button>
+                        <button className="hero-btn" type="button" onClick={() => openSignup('guest')} style={{ opacity: 0.85 }}>
+                            Play as Guest
+                        </button>
                     </div>
                 </div>
             </section>
@@ -466,6 +473,14 @@ const LandingPage = () => {
                                         <User />
                                         Instructor
                                     </button>
+                                    <button
+                                        type="button"
+                                        className={`landing-modal__role ${modal.role === 'guest' ? 'is-active' : ''}`}
+                                        onClick={() => updateRole('guest')}
+                                    >
+                                        <Shield />
+                                        Guest
+                                    </button>
                                 </div>
 
                                 {error && (
@@ -476,18 +491,20 @@ const LandingPage = () => {
                                 )}
 
                                 <form className="landing-modal__form" onSubmit={handleSubmit}>
-                                    <label className="landing-modal__field">
-                                        <span className="landing-modal__label">{modal.role === 'student' ? 'Student ID' : 'Instructor ID'}</span>
-                                        <div className="landing-modal__input">
-                                            <User />
-                                            <input
-                                                type="text"
-                                                placeholder={modal.role === 'student' ? 'Enter your student ID' : 'Enter your instructor ID'}
-                                                value={modal.role === 'student' ? studentId : instructorId}
-                                                onChange={(e) => modal.role === 'student' ? setStudentId(e.target.value) : setInstructorId(e.target.value)}
-                                            />
-                                        </div>
-                                    </label>
+                                    {modal.role !== 'guest' && (
+                                        <label className="landing-modal__field">
+                                            <span className="landing-modal__label">{modal.role === 'student' ? 'Student ID' : 'Instructor ID'}</span>
+                                            <div className="landing-modal__input">
+                                                <User />
+                                                <input
+                                                    type="text"
+                                                    placeholder={modal.role === 'student' ? 'Enter your student ID' : 'Enter your instructor ID'}
+                                                    value={modal.role === 'student' ? studentId : instructorId}
+                                                    onChange={(e) => modal.role === 'student' ? setStudentId(e.target.value) : setInstructorId(e.target.value)}
+                                                />
+                                            </div>
+                                        </label>
+                                    )}
 
                                     <label className="landing-modal__field">
                                         <span className="landing-modal__label">Full Name</span>
@@ -695,6 +712,14 @@ const LandingPage = () => {
                                     <User />
                                     Instructor
                                 </button>
+                                <button
+                                    type="button"
+                                    className={`landing-modal__role ${modal.role === 'guest' ? 'is-active' : ''}`}
+                                    onClick={() => updateRole('guest')}
+                                >
+                                    <Shield />
+                                    Guest
+                                </button>
                             </div>
 
                             {error && (
@@ -705,7 +730,21 @@ const LandingPage = () => {
                             )}
 
                             <form className="landing-modal__form" onSubmit={handleSubmit}>
-                                {modal.role === 'student' ? (
+                                {modal.role === 'guest' ? (
+                                    <label className="landing-modal__field">
+                                        <span className="landing-modal__label">Email</span>
+                                        <div className="landing-modal__input">
+                                            <Mail />
+                                            <input
+                                                type="email"
+                                                required
+                                                placeholder="Enter your email"
+                                                value={email}
+                                                onChange={(e) => setEmail(e.target.value)}
+                                            />
+                                        </div>
+                                    </label>
+                                ) : modal.role === 'student' ? (
                                     <label className="landing-modal__field">
                                         <span className="landing-modal__label">Student ID</span>
                                         <div className="landing-modal__input">

@@ -309,13 +309,80 @@ const InstructorManagement = ({ theme = 'dark' }) => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Languages Handled</label>
-                                        {renderTagsInput(editingInstructor.languages, (newVal) => setEditingInstructor({ ...editingInstructor, languages: newVal }), "e.g. Python, Java")}
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Status</label>
+                                        <div className={`w-full border rounded-xl px-4 py-3 text-sm ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-cyan-400' : 'bg-slate-50 border-slate-200 text-cyan-600'} font-bold uppercase`}>
+                                            {editingInstructor.status || 'active'}
+                                        </div>
                                     </div>
                                 </div>
+                                {/* Tower → Language Pairs */}
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Towers Handled</label>
-                                    {renderTagsInput(editingInstructor.towers, (newVal) => setEditingInstructor({ ...editingInstructor, towers: newVal }), "e.g. Eldoria, Mechanica")}
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Towers & Languages Handled</label>
+                                    <div className="space-y-2">
+                                        {(() => {
+                                            const towers = editingInstructor.towers ? editingInstructor.towers.split(',').map(t => t.trim()).filter(t => t) : [];
+                                            const languages = editingInstructor.languages ? editingInstructor.languages.split(',').map(l => l.trim()).filter(l => l) : [];
+                                            const pairs = towers.map((t, i) => ({ tower: t, language: languages[i] || '' }));
+                                            // Ensure at least one empty row if no pairs exist
+                                            if (pairs.length === 0) pairs.push({ tower: '', language: '' });
+                                            
+                                            const updatePairs = (newPairs) => {
+                                                setEditingInstructor({
+                                                    ...editingInstructor,
+                                                    towers: newPairs.map(p => p.tower).filter(t => t).join(', '),
+                                                    languages: newPairs.map(p => p.language).filter(l => l).join(', ')
+                                                });
+                                            };
+
+                                            return (
+                                                <>
+                                                    {pairs.map((pair, idx) => (
+                                                        <div key={idx} className="flex items-center gap-2">
+                                                            <input
+                                                                type="text"
+                                                                value={pair.tower}
+                                                                onChange={(e) => {
+                                                                    const newPairs = [...pairs];
+                                                                    newPairs[idx] = { ...newPairs[idx], tower: e.target.value };
+                                                                    updatePairs(newPairs);
+                                                                }}
+                                                                placeholder="Tower name..."
+                                                                className={`flex-1 border rounded-lg px-3 py-2 text-xs focus:border-cyan-500 outline-none transition-all ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                                                            />
+                                                            <span className="text-cyan-500 text-xs font-black">→</span>
+                                                            <input
+                                                                type="text"
+                                                                value={pair.language}
+                                                                onChange={(e) => {
+                                                                    const newPairs = [...pairs];
+                                                                    newPairs[idx] = { ...newPairs[idx], language: e.target.value };
+                                                                    updatePairs(newPairs);
+                                                                }}
+                                                                placeholder="Language..."
+                                                                className={`flex-1 border rounded-lg px-3 py-2 text-xs focus:border-cyan-500 outline-none transition-all ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                                                            />
+                                                            {pairs.length > 1 && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => updatePairs(pairs.filter((_, i) => i !== idx))}
+                                                                    className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors"
+                                                                >
+                                                                    <X className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => updatePairs([...pairs, { tower: '', language: '' }])}
+                                                        className="w-full py-2 rounded-lg border border-dashed border-cyan-500/30 text-cyan-500 text-[10px] font-black uppercase tracking-widest hover:bg-cyan-500/5 transition-colors"
+                                                    >
+                                                        + Add Tower-Language Pair
+                                                    </button>
+                                                </>
+                                            );
+                                        })()}
+                                    </div>
                                 </div>
                                 <div className="flex gap-3 pt-4">
                                     <button

@@ -913,8 +913,8 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                             <div className="flex flex-col items-center relative z-10 font-galsb">
                                                 <div className="relative mb-6">
                                                     <div className="w-32 h-32 rounded-3xl overflow-hidden border-2 border-cyan-400 shadow-[0_0_30px_rgba(34,211,238,0.2)]">
-                                                        {selectedFriend.profile_picture_url || selectedFriend.avatar ? (
-                                                            <img src={selectedFriend.profile_picture_url || selectedFriend.avatar} className="w-full h-full object-cover" alt="Avatar" />
+                                                        {selectedFriend.profile_picture_url || selectedFriend.avatar || selectedFriend.avatar_url ? (
+                                                            <img src={selectedFriend.profile_picture_url || selectedFriend.avatar || selectedFriend.avatar_url} className="w-full h-full object-cover" alt="Avatar" />
                                                         ) : (
                                                             <div className="w-full h-full bg-slate-800 flex items-center justify-center">
                                                                 <User className="w-16 h-16 text-slate-500" />
@@ -922,29 +922,65 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                                         )}
                                                     </div>
                                                     <div className="absolute -bottom-3 -right-3 w-10 h-10 bg-slate-900 border border-cyan-500/30 rounded-xl flex items-center justify-center shadow-lg">
-                                                        <span className="text-cyan-400 font-black text-sm">{getRankFromExp(selectedFriend.exp || 0)?.id || 1}</span>
+                                                        <span className="text-cyan-400 font-black text-sm">{getRankFromExp(selectedFriend.exp || selectedFriend.xp || 0)?.id || 1}</span>
                                                     </div>
                                                 </div>
                                                 
                                                 <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-1 relative z-10 text-center">
-                                                    {selectedFriend.username || selectedFriend.name || 'Unknown User'}
+                                                    {selectedFriend.username || selectedFriend.name || selectedFriend.full_name || selectedFriend.display_name || selectedFriend.user_name || 'Unknown User'}
                                                 </h3>
-                                                <div className="flex items-center gap-3 mb-8">
+                                                <div className="flex items-center gap-3 mb-6">
                                                     <span className="px-3 py-1 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[9px] font-black uppercase tracking-widest">
-                                                        {getRankFromExp(selectedFriend.exp || 0)?.name || 'Siege Novice'}
+                                                        {selectedFriend.rank_name || getRankFromExp(selectedFriend.exp || selectedFriend.xp || 0)?.name || 'Siege Novice'}
                                                     </span>
                                                 </div>
 
-                                                <div className="w-full grid grid-cols-2 gap-4">
+                                                {/* Core Stats */}
+                                                <div className="w-full grid grid-cols-2 gap-3 mb-3">
                                                     <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 text-center">
                                                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Exp</p>
-                                                        <p className="text-xl font-black text-purple-400">{selectedFriend.exp || 0}</p>
+                                                        <p className="text-xl font-black text-purple-400">{(selectedFriend.exp || selectedFriend.xp || 0).toLocaleString()}</p>
                                                     </div>
                                                     <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 text-center">
                                                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Win Rate</p>
                                                         <p className="text-xl font-black text-emerald-400">
                                                             {selectedFriend.win_rate || '0%'}
                                                         </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Achievements & Certificates */}
+                                                <div className="w-full grid grid-cols-2 gap-3 mb-3">
+                                                    <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 text-center">
+                                                        <Trophy className="w-4 h-4 text-amber-500 mx-auto mb-1" />
+                                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Achievements</p>
+                                                        <p className="text-lg font-black text-amber-400">{selectedFriend.achievements || 0}</p>
+                                                    </div>
+                                                    <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 text-center">
+                                                        <Award className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
+                                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Certificates</p>
+                                                        <p className="text-lg font-black text-emerald-400">{selectedFriend.certificates || 0}</p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Battle Stats */}
+                                                <div className="w-full bg-slate-900/60 border border-white/5 rounded-2xl p-4">
+                                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 text-center flex items-center justify-center gap-2">
+                                                        <Swords className="w-3 h-3 text-rose-400" /> Battle Record
+                                                    </p>
+                                                    <div className="grid grid-cols-3 gap-3 text-center">
+                                                        <div>
+                                                            <p className="text-lg font-black text-emerald-400">{selectedFriend.battle_wins || 0}</p>
+                                                            <p className="text-[9px] uppercase text-slate-500 font-bold">Wins</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-lg font-black text-rose-400">{selectedFriend.battle_losses || 0}</p>
+                                                            <p className="text-[9px] uppercase text-slate-500 font-bold">Losses</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-lg font-black text-slate-300">{(selectedFriend.battle_wins || 0) + (selectedFriend.battle_losses || 0)}</p>
+                                                            <p className="text-[9px] uppercase text-slate-500 font-bold">Total</p>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

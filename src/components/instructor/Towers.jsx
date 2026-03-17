@@ -47,29 +47,34 @@ const Towers = ({ theme }) => {
     const instructorTowersRaw = (user?.handled_towers || '').toLowerCase().trim();
     
     const filteredTowers = GAME_TOWERS.filter(tower => {
-        if (!instructorLang && !instructorTowersRaw && user?.role !== 'admin') {
-            // If strictly no language/towers set, fallback to showing all towers so they aren't blocked completely
-            return true;
+        // Admin bypass
+        if (user?.role === 'admin') return true;
+        
+        // Parse handled_towers as a comma-separated list of tower names
+        const handledTowersList = instructorTowersRaw
+            ? instructorTowersRaw.split(',').map(t => t.trim().toLowerCase()).filter(t => t)
+            : [];
+        
+        // Parse enrolled languages as a comma-separated list
+        const instructorLangs = instructorLang
+            ? instructorLang.split(',').map(l => l.trim().toLowerCase()).filter(l => l)
+            : [];
+        
+        // If the instructor has specific towers assigned, only show those
+        if (handledTowersList.length > 0) {
+            const tName = tower.name.toLowerCase();
+            return handledTowersList.some(ht => tName.includes(ht) || ht.includes(tName));
         }
         
-        // Admin or "all" bypass
-        if (user?.role === 'admin' || instructorLang.includes('all')) return true;
-        
-        const tLang = tower.language.toLowerCase();
-        const tName = tower.name.toLowerCase();
-        
-        // Check if tower's name is in handled_towers
-        if (instructorTowersRaw && (instructorTowersRaw.includes(tName) || tName.includes(instructorTowersRaw))) {
-            return true;
+        // If instructor has languages assigned, match by language
+        if (instructorLangs.length > 0) {
+            const tLang = tower.language.toLowerCase();
+            if (instructorLangs.includes('all')) return true;
+            return instructorLangs.some(lang => tLang === lang || tLang.includes(lang) || lang.includes(tLang));
         }
         
-        // Check language match
-        if (instructorLang) {
-            if (instructorLang === tLang) return true;
-            if (tLang.includes(instructorLang) || instructorLang.includes(tLang)) return true;
-        }
-        
-        return false;
+        // If no towers or languages assigned, show all as fallback
+        return true;
     });
 
     const openModal = (tower, mode) => {
@@ -153,10 +158,7 @@ const Towers = ({ theme }) => {
                                 : 'bg-slate-50 border-slate-200 hover:border-cyan-500/50 hover:shadow-md'
                         }`}>
                             <div className="flex items-center gap-8">
-                                <div className={`w-24 h-24 rounded-2xl flex items-center justify-center p-2 relative overflow-hidden shrink-0 ${
-                                    theme === 'dark' ? 'bg-black/40 border border-white/10' : 'bg-white border border-slate-200 shadow-sm'
-                                }`}>
-                                    <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/20 to-transparent opacity-50 pointer-events-none" />
+                                <div className="w-24 h-24 rounded-2xl flex items-center justify-center p-2 relative overflow-hidden shrink-0">
                                     <img src={tower.towerImg} alt={tower.name} className="w-full h-full object-contain filter drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)] z-10" />
                                 </div>
                                 

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 
-const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connectors: propConnectors }) => {
+const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connectors: propConnectors, isGlowing = false }) => {
     const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
 
     // Determinstic random configuration for connectors
@@ -62,22 +62,31 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
         transform: `translate3d(${position?.x || 0}px, ${position?.y || 0}px, 0)`,
     };
 
-    const getTypeColor = (type) => {
-        switch (type) {
-            case 'function': return { from: '#f43f5e', to: '#e11d48' }; // Rose 500-600
-            case 'string': return { from: '#a855f7', to: '#9333ea' }; // Purple 500-600
-            case 'keyword': return { from: '#22d3ee', to: '#0891b2' }; // Cyan 400-600
-            case 'value': return { from: '#10b981', to: '#059669' }; // Emerald 500-600
-            case 'variable': return { from: '#3b82f6', to: '#2563eb' }; // Blue 500-600
-            case 'print': return { from: '#f59e0b', to: '#d97706' }; // Amber 500-600
-            case 'operator': return { from: '#ec4899', to: '#db2777' }; // Pink 500-600
-            case 'loop': return { from: '#8b5cf6', to: '#7c3aed' }; // Violet 500-600
-            case 'condition': return { from: '#14b8a6', to: '#0d9488' }; // Teal 500-600
-            default: return { from: '#475569', to: '#334155' }; // Slate 500-600
+    // Randomized block colors based on block ID (seeded so consistent per block)
+    const blockColors = useMemo(() => {
+        const COLOR_PALETTE = [
+            { from: '#f43f5e', to: '#e11d48' }, // Rose
+            { from: '#a855f7', to: '#9333ea' }, // Purple
+            { from: '#22d3ee', to: '#0891b2' }, // Cyan
+            { from: '#10b981', to: '#059669' }, // Emerald
+            { from: '#3b82f6', to: '#2563eb' }, // Blue
+            { from: '#f59e0b', to: '#d97706' }, // Amber
+            { from: '#ec4899', to: '#db2777' }, // Pink
+            { from: '#8b5cf6', to: '#7c3aed' }, // Violet
+            { from: '#14b8a6', to: '#0d9488' }, // Teal
+            { from: '#ef4444', to: '#dc2626' }, // Red
+            { from: '#06b6d4', to: '#0284c7' }, // Sky
+            { from: '#84cc16', to: '#65a30d' }, // Lime
+        ];
+        // Use seeded index from the block id
+        let hash = 0;
+        const seed = id + content;
+        for (let i = 0; i < seed.length; i++) {
+            hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
         }
-    };
-
-    const blockColors = getTypeColor(type);
+        const idx = Math.abs(hash) % COLOR_PALETTE.length;
+        return COLOR_PALETTE[idx];
+    }, [id, content]);
     const width = 140;
     const height = 48;
     const tabRadius = 10;
@@ -154,7 +163,8 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
                 width={width + tabDepth * 2}
                 height={height + tabDepth * 2}
                 viewBox={`-${tabDepth} -${tabDepth} ${width + tabDepth * 2} ${height + tabDepth * 2}`}
-                className="drop-shadow-lg group-hover:drop-shadow-2xl transition-all duration-300"
+            className="drop-shadow-lg group-hover:drop-shadow-2xl transition-all duration-300"
+                style={isGlowing ? { filter: 'drop-shadow(0 0 12px rgba(34,211,238,0.8)) drop-shadow(0 0 24px rgba(34,211,238,0.4))' } : {}}
             >
                 <defs>
                     <linearGradient id={`grad-${id}`} x1="0%" y1="0%" x2="0%" y2="100%">

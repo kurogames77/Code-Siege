@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, User, Ban, Edit2, Trash2, Info, BookOpen } from 'lucide-react';
+import { Search, User, Ban, Edit2, Trash2, Info, BookOpen, Trophy, Swords, Award, Gem, Shield, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { instructorAPI } from '../../services/api';
 
@@ -28,7 +28,15 @@ const StudentManagement = ({ theme = 'dark' }) => {
                         status: u.is_banned ? 'inactive' : 'active',
                         avatar: u.avatar_url,
                         level: u.level || 1,
-                        xp: u.xp || 0
+                        xp: u.xp || 0,
+                        gems: u.gems || 0,
+                        rankName: u.rank_name || 'Siege Novice',
+                        achievements: u.achievements || 0,
+                        certificates: u.certificates || 0,
+                        towersCompleted: u.towers_completed || 0,
+                        battleWins: u.battle_wins || 0,
+                        battleLosses: u.battle_losses || 0,
+                        totalBattles: (u.battle_wins || 0) + (u.battle_losses || 0)
                     }));
                 setStudents(filteredStudents);
             }
@@ -305,20 +313,71 @@ const StudentManagement = ({ theme = 'dark' }) => {
                                         <div>
                                             <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{editingStudent.name}</h3>
                                             <p className="text-slate-500 text-sm mb-2">{editingStudent.email}</p>
-                                            <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded-md border ${getStatusColor(editingStudent.status)}`}>
-                                                {editingStudent.status} User
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded-md border ${getStatusColor(editingStudent.status)}`}>
+                                                    {editingStudent.status} User
+                                                </span>
+                                                <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded-md border border-purple-500/20 bg-purple-500/10 text-purple-400">
+                                                    {editingStudent.rankName}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                     
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className={`p-4 rounded-xl border ${theme === 'dark' ? 'bg-slate-900/50 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                                    {/* Core Stats */}
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div className={`p-4 rounded-xl border text-center ${theme === 'dark' ? 'bg-slate-900/50 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
                                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Level</p>
-                                            <p className={`text-2xl font-black text-cyan-500`}>{editingStudent.level}</p>
+                                            <p className="text-2xl font-black text-cyan-500">{editingStudent.level}</p>
                                         </div>
-                                        <div className={`p-4 rounded-xl border ${theme === 'dark' ? 'bg-slate-900/50 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                                        <div className={`p-4 rounded-xl border text-center ${theme === 'dark' ? 'bg-slate-900/50 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
                                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Total XP</p>
-                                            <p className={`text-2xl font-black text-purple-500`}>{editingStudent.xp.toLocaleString()}</p>
+                                            <p className="text-2xl font-black text-purple-500">{(editingStudent.xp || 0).toLocaleString()}</p>
+                                        </div>
+                                        <div className={`p-4 rounded-xl border text-center ${theme === 'dark' ? 'bg-slate-900/50 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Gems</p>
+                                            <p className="text-2xl font-black text-amber-400">{(editingStudent.gems || 0).toLocaleString()}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Achievements & Certificates */}
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div className={`p-4 rounded-xl border text-center ${theme === 'dark' ? 'bg-slate-900/50 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                                            <Trophy className="w-5 h-5 text-amber-500 mx-auto mb-1" />
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Achievements</p>
+                                            <p className="text-xl font-black text-amber-400">{editingStudent.achievements}</p>
+                                        </div>
+                                        <div className={`p-4 rounded-xl border text-center ${theme === 'dark' ? 'bg-slate-900/50 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                                            <Award className="w-5 h-5 text-emerald-400 mx-auto mb-1" />
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Certificates</p>
+                                            <p className="text-xl font-black text-emerald-400">{editingStudent.certificates}</p>
+                                        </div>
+                                        <div className={`p-4 rounded-xl border text-center ${theme === 'dark' ? 'bg-slate-900/50 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                                            <Shield className="w-5 h-5 text-cyan-400 mx-auto mb-1" />
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Towers Done</p>
+                                            <p className="text-xl font-black text-cyan-400">{editingStudent.towersCompleted}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Battle Stats */}
+                                    <div className={`p-4 rounded-xl border ${theme === 'dark' ? 'bg-slate-900/50 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Swords className="w-4 h-4 text-rose-400" />
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Battle Record</p>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-3 text-center">
+                                            <div>
+                                                <p className="text-lg font-black text-emerald-400">{editingStudent.battleWins}</p>
+                                                <p className="text-[9px] uppercase text-slate-500 font-bold">Wins</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-lg font-black text-rose-400">{editingStudent.battleLosses}</p>
+                                                <p className="text-[9px] uppercase text-slate-500 font-bold">Losses</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-lg font-black text-slate-300">{editingStudent.totalBattles}</p>
+                                                <p className="text-[9px] uppercase text-slate-500 font-bold">Total</p>
+                                            </div>
                                         </div>
                                     </div>
                                     
