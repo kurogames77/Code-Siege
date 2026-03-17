@@ -48,8 +48,8 @@ const Towers = ({ theme }) => {
     // Admin bypass or filter by specific language (also supporting full spelling variations)
     // Sometimes Instructors might have "C++" vs "cpp" or "C#" vs "csharp", but the array uses literal Display Names.
     const filteredTowers = GAME_TOWERS.filter(tower => {
-        if (!instructorLang) return true; // Show all if no language specified (or admin)
-        if (instructorLang.includes('all')) return true;
+        if (!instructorLang) return false; // STRICT: Show nothing if no language assigned
+        if (instructorLang.includes('all')) return true; // Admin bypass
         
         const tLang = tower.language.toLowerCase();
         
