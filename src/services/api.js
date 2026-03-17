@@ -436,8 +436,8 @@ export const algorithmAPI = {
 };
 
 export const instructorAPI = {
-    updateStudentTowerProgress: async (studentId, towerId, floorsCompleted) => {
-        return apiRequest(`/users/${studentId}/tower-progress`, {
+    updateGlobalTowerProgress: async (towerId, floorsCompleted) => {
+        return apiRequest(`/users/global/tower-progress`, {
             method: 'PATCH',
             body: JSON.stringify({ towerId, floorsCompleted })
         });

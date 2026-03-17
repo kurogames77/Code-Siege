@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Castle, CheckCircle2, Unlock, Settings2, Search, X, Loader2 } from 'lucide-react';
+import { Castle, CheckCircle2, Unlock, Settings2, Users, X, Loader2 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { instructorAPI } from '../../services/api';
 
@@ -37,12 +37,6 @@ const Towers = ({ theme }) => {
     const [selectedTower, setSelectedTower] = useState(null);
     const [unlockMode, setUnlockMode] = useState('all'); // 'all' or 'custom'
     const [customFloors, setCustomFloors] = useState('');
-    
-    // Search State
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState([]);
-    const [isSearching, setIsSearching] = useState(false);
-    const [selectedStudent, setSelectedStudent] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const openModal = (tower, mode) => {
@@ -52,43 +46,17 @@ const Towers = ({ theme }) => {
         else setCustomFloors('');
         
         setIsModalOpen(true);
-        setSearchQuery('');
-        setSearchResults([]);
-        setSelectedStudent(null);
     };
 
     const closeModal = () => {
         setIsModalOpen(false);
         setTimeout(() => {
             setSelectedTower(null);
-            setSelectedStudent(null);
         }, 200);
     };
 
-    const handleSearch = async (e) => {
-        const query = e.target.value;
-        setSearchQuery(query);
-        
-        if (!query.trim()) {
-            setSearchResults([]);
-            return;
-        }
-
-        setIsSearching(true);
-        try {
-            // Re-using the general instructor search API which searches users
-            const data = await instructorAPI.getUsers(1, 10, query);
-            // Filter to only show students
-            setSearchResults((data.users || []).filter(u => u.role === 'student'));
-        } catch (error) {
-            console.error('Search failed:', error);
-        } finally {
-            setIsSearching(false);
-        }
-    };
-
     const handleUnlock = async () => {
-        if (!selectedStudent || !selectedTower) return;
+        if (!selectedTower) return;
         
         const floorsToUnlock = parseInt(customFloors);
         if (isNaN(floorsToUnlock) || floorsToUnlock < 0 || floorsToUnlock > selectedTower.floors) {
@@ -98,15 +66,14 @@ const Towers = ({ theme }) => {
 
         try {
             setIsSubmitting(true);
-            await instructorAPI.updateStudentTowerProgress(
-                selectedStudent.id, 
+            const res = await instructorAPI.updateGlobalTowerProgress(
                 selectedTower.id, 
                 floorsToUnlock
             );
-            toast.success(`Successfully unlocked ${floorsToUnlock} floors in ${selectedTower.name} for ${selectedStudent.username}`);
+            toast.success(res.message || `Globally unlocked ${floorsToUnlock} floors in ${selectedTower.name}`);
             closeModal();
         } catch (error) {
-            toast.error(error.message || 'Failed to unlock tower progress');
+            toast.error(error.message || 'Failed to unlock tower progress globally');
         } finally {
             setIsSubmitting(false);
         }
@@ -184,7 +151,7 @@ const Towers = ({ theme }) => {
                                                 ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500 hover:text-black' 
                                                 : 'bg-cyan-50 border-cyan-200 text-cyan-600 hover:bg-cyan-600 hover:text-white hover:border-transparent'
                                         }`}
-                                        title="Unlock All Levels"
+                                        title="Unlock All Levels for Every Student"
                                     >
                                         <Unlock className="w-5 h-5 mb-0.5" />
                                         <span className="text-[8px] font-black tracking-tighter uppercase">ALL</span>
@@ -197,7 +164,7 @@ const Towers = ({ theme }) => {
                                                 ? 'bg-purple-500/10 border-purple-500/30 text-purple-400 hover:bg-purple-500 hover:text-white' 
                                                 : 'bg-purple-50 border-purple-200 text-purple-600 hover:bg-purple-600 hover:text-white hover:border-transparent'
                                         }`}
-                                        title="Custom Unlock"
+                                        title="Custom Unlock for Every Student"
                                     >
                                         <Settings2 className="w-5 h-5 mb-0.5" />
                                         <span className="text-[8px] font-black tracking-tighter uppercase">CUSTOM</span>
@@ -209,7 +176,7 @@ const Towers = ({ theme }) => {
                 </div>
             </div>
 
-            {/* Unlock Student Selection Modal */}
+            {/* Global Unlock Modal */}
             <AnimatePresence>
                 {isModalOpen && selectedTower && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -224,123 +191,47 @@ const Towers = ({ theme }) => {
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className={`relative w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border ${
+                            className={`relative w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border ${
                                 theme === 'dark' ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
                             }`}
                         >
                             <div className={`p-6 border-b ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'}`}>
                                 <div className="flex items-center justify-between mb-2">
-                                    <h3 className={`text-xl font-black italic tracking-tighter ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                                        {unlockMode === 'all' ? 'Unlock All Levels' : 'Custom Unlock'}
+                                    <h3 className={`text-xl font-black italic tracking-tighter flex items-center gap-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                                        <Users className="w-5 h-5 text-cyan-500" />
+                                        {unlockMode === 'all' ? 'Globally Unlock All Levels' : 'Global Custom Unlock'}
                                     </h3>
                                     <button onClick={closeModal} className={`p-2 rounded-full transition-colors ${theme === 'dark' ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
                                         <X className="w-5 h-5" />
                                     </button>
                                 </div>
                                 <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                    Select a student to grant progress in <span className={`font-bold ${theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600'}`}>{selectedTower.name}</span>.
+                                    You are about to modify progress for <span className="font-bold text-red-400">EVERY STUDENT</span> in the database for <span className={`font-bold ${theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600'}`}>{selectedTower.name}</span>.
                                 </p>
                             </div>
 
-                            <div className="p-6 space-y-6">
-                                {/* Search Input */}
-                                <div className="relative">
-                                    <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
-                                    <input
-                                        type="text"
-                                        placeholder="Search by student ID or username..."
-                                        value={searchQuery}
-                                        onChange={handleSearch}
-                                        className={`w-full pl-12 pr-4 py-3 rounded-xl border outline-none transition-all ${
-                                            theme === 'dark' 
-                                                ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-500 focus:border-cyan-500' 
-                                                : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-cyan-500'
-                                        }`}
-                                    />
-                                    {isSearching && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-cyan-500" />}
-                                </div>
-
-                                {/* Search Results */}
-                                {searchQuery && !selectedStudent && (
-                                    <div className={`max-h-48 overflow-y-auto rounded-xl border ${theme === 'dark' ? 'border-slate-800' : 'border-slate-200'}`}>
-                                        {searchResults.length > 0 ? (
-                                            searchResults.map(user => (
-                                                <button
-                                                    key={user.id}
-                                                    onClick={() => setSelectedStudent(user)}
-                                                    className={`w-full flex items-center gap-4 p-3 text-left transition-colors border-b last:border-0 ${
-                                                        theme === 'dark' 
-                                                            ? 'hover:bg-slate-800 border-slate-800/50' 
-                                                            : 'hover:bg-slate-50 border-slate-100'
-                                                    }`}
-                                                >
-                                                    <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden shrink-0">
-                                                        {user.avatar_url ? (
-                                                            <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center bg-cyan-500 text-white font-bold">
-                                                                {user.username?.[0]?.toUpperCase()}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div>
-                                                        <div className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{user.username}</div>
-                                                        <div className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{user.student_id || 'No ID'}</div>
-                                                    </div>
-                                                </button>
-                                            ))
-                                        ) : !isSearching && (
-                                            <div className={`p-4 text-center text-sm ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                                                No students found.
-                                            </div>
-                                        )}
+                            <div className="p-6">
+                                {unlockMode === 'all' ? (
+                                    <div className={`p-4 rounded-xl border text-center ${theme === 'dark' ? 'bg-red-500/10 border-red-500/20 text-red-200' : 'bg-red-50 border-red-200 text-red-800'}`}>
+                                        <p className="text-sm font-bold">This will grant {selectedTower.floors} floors to ALL students instantly.</p>
+                                        <p className="text-xs mt-1 opacity-80">There is no undo button. Please confirm this action.</p>
                                     </div>
-                                )}
-
-                                {/* Selected Student Info */}
-                                {selectedStudent && (
-                                    <div className={`p-4 rounded-xl border flex items-center justify-between ${theme === 'dark' ? 'bg-cyan-500/10 border-cyan-500/30' : 'bg-cyan-50 border-cyan-200'}`}>
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden shrink-0">
-                                                {selectedStudent.avatar_url ? (
-                                                    <img src={selectedStudent.avatar_url} alt="" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center bg-cyan-500 text-white font-bold">
-                                                        {selectedStudent.username?.[0]?.toUpperCase()}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <div className={`text-xs font-bold tracking-widest uppercase ${theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600'}`}>Target Student</div>
-                                                <div className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{selectedStudent.username}</div>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            onClick={() => setSelectedStudent(null)}
-                                            className="text-xs font-bold underline text-slate-500 hover:text-slate-400 transition-colors"
-                                        >
-                                            Change
-                                        </button>
-                                    </div>
-                                )}
-
-                                {/* Floor Configuration (Visible mainly if Custom mode, or disabled visually if All mode) */}
-                                {selectedStudent && (
-                                    <div className="space-y-2">
-                                        <label className={`text-xs font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                            Floors to Unlock (Max {selectedTower.floors})
+                                ) : (
+                                    <div className="space-y-4">
+                                        <label className={`block text-xs font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                            Floors to Unlock for Everyone (Max {selectedTower.floors})
                                         </label>
                                         <input
                                             type="number"
                                             value={customFloors}
                                             onChange={(e) => setCustomFloors(e.target.value)}
-                                            disabled={unlockMode === 'all'}
                                             min="0"
                                             max={selectedTower.floors}
-                                            className={`w-full px-4 py-3 rounded-xl border outline-none transition-all font-bold ${
+                                            autoFocus
+                                            className={`w-full px-4 py-3 rounded-xl border outline-none transition-all font-bold text-lg text-center ${
                                                 theme === 'dark' 
-                                                    ? 'bg-slate-800/50 border-slate-700 text-white disabled:opacity-50' 
-                                                    : 'bg-slate-50 border-slate-200 text-slate-900 disabled:opacity-50'
+                                                    ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-500 focus:border-cyan-500' 
+                                                    : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-cyan-500'
                                             }`}
                                         />
                                     </div>
@@ -358,11 +249,11 @@ const Towers = ({ theme }) => {
                                 </button>
                                 <button
                                     onClick={handleUnlock}
-                                    disabled={!selectedStudent || !customFloors || isSubmitting}
+                                    disabled={!customFloors || isSubmitting}
                                     className="px-6 py-2.5 rounded-xl font-bold text-sm bg-cyan-500 hover:bg-cyan-400 text-black shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                 >
                                     {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                                    Confirm Unlock
+                                    Confirm Action
                                 </button>
                             </div>
                         </motion.div>

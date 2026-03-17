@@ -520,16 +520,13 @@ router.patch('/:id', authenticateUser, async (req, res) => {
 });
 
 /**
- * PATCH /api/users/:targetUserId/tower-progress
- * Modify another user's tower progress (Instructor Only)
+ * PATCH /api/users/global/tower-progress
+ * Modify ALL students' tower progress globally (Instructor Only)
  */
-router.patch('/:targetUserId/tower-progress', authenticateUser, async (req, res) => {
+router.patch('/global/tower-progress', authenticateUser, async (req, res) => {
     try {
-        const { targetUserId } = req.params;
         const { towerId, floorsCompleted } = req.body;
 
-        // Check if the executing user is an instructor or admin
-        // Note: authenticateUser middleware gives us 'req.user' but the role needs verifying securely
         const db = supabaseService || supabase;
 
         // Get the executing user's role to verify permission
@@ -547,36 +544,43 @@ router.patch('/:targetUserId/tower-progress', authenticateUser, async (req, res)
             return res.status(400).json({ error: 'Missing required fields: towerId and floorsCompleted.' });
         }
 
-        // Fetch the target user's current progress
-        const { data: targetUser, error: fetchError } = await db
+        // Fetch ALL student current progress
+        const { data: students, error: fetchError } = await db
             .from('users')
-            .select('tower_progress')
-            .eq('id', targetUserId)
-            .single();
+            .select('id, tower_progress')
+            .eq('role', 'student');
 
-        if (fetchError || !targetUser) {
-            return res.status(404).json({ error: 'Student not found.' });
+        if (fetchError) {
+            return res.status(500).json({ error: 'Failed to fetch students for bulk update.' });
         }
 
-        const currentProgress = targetUser.tower_progress || {};
+        if (!students || students.length === 0) {
+            return res.status(404).json({ error: 'No students found to update.' });
+        }
 
-        // Merge the new progress
-        currentProgress[towerId.toString()] = parseInt(floorsCompleted);
+        const updates = students.map(student => {
+            const currentProgress = student.tower_progress || {};
+            currentProgress[towerId.toString()] = parseInt(floorsCompleted);
+            
+            return {
+                id: student.id,
+                tower_progress: currentProgress
+            };
+        });
 
-        // Save back to user record
+        // Bulk update the students using upsert
         const { error: updateError } = await db
             .from('users')
-            .update({ tower_progress: currentProgress })
-            .eq('id', targetUserId);
+            .upsert(updates, { onConflict: 'id' });
 
         if (updateError) {
             return res.status(400).json({ error: updateError.message });
         }
 
-        res.json({ message: 'Tower progress unlocked successfully.', progress: currentProgress });
+        res.json({ message: `Successfully unlocked ${floorsCompleted} floors for ${students.length} students globally.` });
     } catch (error) {
-        console.error('Instructor tower unlock error:', error);
-        res.status(500).json({ error: 'Failed to update tower progress' });
+        console.error('Instructor global tower unlock error:', error);
+        res.status(500).json({ error: 'Failed to globally update tower progress.' });
     }
 });
 
