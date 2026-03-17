@@ -157,6 +157,33 @@ router.delete('/student-codes/:id', requireAdmin, async (req, res) => {
     }
 });
 
+/**
+ * POST /api/instructor/student-codes/bulk-delete
+ * Bulk delete student codes
+ */
+router.post('/student-codes/bulk-delete', requireAdmin, async (req, res) => {
+    try {
+        const { codeIds } = req.body;
+        if (!Array.isArray(codeIds) || codeIds.length === 0) {
+            return res.status(400).json({ error: 'Please provide an array of code IDs to delete.' });
+        }
+
+        const { error } = await supabaseService
+            .from('student_codes')
+            .delete()
+            .in('id', codeIds);
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json({ message: `Successfully deleted ${codeIds.length} codes` });
+    } catch (error) {
+        console.error('Bulk delete codes error:', error);
+        res.status(500).json({ error: 'Failed to bulk delete student codes' });
+    }
+});
+
 // ============================================
 // INSTRUCTOR APPLICATION MANAGEMENT
 // ============================================
