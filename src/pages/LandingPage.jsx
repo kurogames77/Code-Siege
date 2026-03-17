@@ -611,10 +611,10 @@ const LandingPage = () => {
                                             disabled={loading || (!isLogin && !acceptPolicy)}
                                         >
                                         {loading ? (
-                                            <>
+                                            <div className="flex items-center justify-center gap-2">
                                                 <Loader2 className="animate-spin" size={18} />
                                                 Creating Account...
-                                            </>
+                                            </div>
                                         ) : (
                                             'Create Account'
                                         )}
@@ -812,10 +812,10 @@ const LandingPage = () => {
 
                                 <button className="landing-modal__submit" type="submit" disabled={loading}>
                                     {loading ? (
-                                        <>
+                                        <div className="flex items-center justify-center gap-2">
                                             <Loader2 className="animate-spin" size={18} />
-                                            Logging in...
-                                        </>
+                                            Authenticating...
+                                        </div>
                                     ) : (
                                         'Login'
                                     )}
@@ -952,10 +952,10 @@ const LandingPage = () => {
 
                                     <button className="landing-modal__submit" type="submit" disabled={forgotLoading}>
                                         {forgotLoading ? (
-                                            <>
+                                            <div className="flex items-center justify-center gap-2">
                                                 <Loader2 className="animate-spin" size={18} />
                                                 Sending...
-                                            </>
+                                            </div>
                                         ) : (
                                             'Send Reset Link'
                                         )}
@@ -1078,10 +1078,10 @@ const LandingPage = () => {
 
                             <button className="landing-modal__submit" type="submit" disabled={loading}>
                                 {loading ? (
-                                    <>
+                                    <div className="flex items-center justify-center gap-2">
                                         <Loader2 className="animate-spin" size={18} />
                                         Saving Profile...
-                                    </>
+                                    </div>
                                 ) : (
                                     'Complete Registration'
                                 )}
