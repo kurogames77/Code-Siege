@@ -10,6 +10,7 @@ import InstructorManagement from '../components/admin/InstructorManagement';
 import InstructorApplications from '../components/admin/InstructorApplications';
 import SystemLogs from '../components/admin/SystemLogs';
 import StudentCodesManager from '../components/admin/StudentCodesManager';
+import StudentManagement from '../components/admin/StudentManagement';
 
 const AdminPage = () => {
     const { user, isAuthenticated, loading } = useUser();
@@ -47,6 +48,8 @@ const AdminPage = () => {
                 return <AdminDashboard theme={theme} />;
             case 'instructors':
                 return <InstructorManagement theme={theme} />;
+            case 'students':
+                return <StudentManagement theme={theme} />;
             case 'applications':
                 return <InstructorApplications theme={theme} />;
             case 'codes':

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ShieldAlert, Users, Database, LogOut, Activity, AlertTriangle, X, ClipboardList, Key } from 'lucide-react';
+import { ShieldAlert, Users, Database, LogOut, Activity, AlertTriangle, X, ClipboardList, Key, GraduationCap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,6 +20,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, theme = 'dark' }) => {
     const menuItems = [
         { id: 'overview', label: 'Overview', icon: Activity },
         { id: 'instructors', label: 'Instructor Management', icon: Users },
+        { id: 'students', label: 'Student Management', icon: GraduationCap },
         { id: 'applications', label: 'Applications', icon: ClipboardList },
         { id: 'codes', label: 'Student Codes', icon: Key },
         { id: 'logs', label: 'System Logs', icon: Database },
