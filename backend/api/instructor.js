@@ -64,7 +64,7 @@ router.get('/student-codes', requireAdmin, async (req, res) => {
             .range(offset, offset + limit - 1);
 
         if (search) {
-            query = query.ilike('code', `%${search}%`);
+            query = query.or(`code.ilike.%${search}%`);
         }
 
         const { data: codes, count, error } = await query;
