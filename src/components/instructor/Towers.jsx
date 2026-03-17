@@ -4,6 +4,8 @@ import { Castle, CheckCircle2, Unlock, Settings2, Users, X, Loader2 } from 'luci
 import { useToast } from '../../contexts/ToastContext';
 import { instructorAPI } from '../../services/api';
 
+import { useUser } from '../../contexts/UserContext';
+
 // Game Map Towers
 import tower11 from '../../assets/tower11.png';
 import tower22 from '../../assets/tower22.png';
@@ -31,6 +33,7 @@ const GAME_TOWERS = [
 
 const Towers = ({ theme }) => {
     const toast = useToast();
+    const { user } = useUser();
     
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,6 +41,26 @@ const Towers = ({ theme }) => {
     const [unlockMode, setUnlockMode] = useState('all'); // 'all' or 'custom'
     const [customFloors, setCustomFloors] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Filter Towers Based on Instructor's Enrolled Language
+    const instructorLang = (user?.course || '').toLowerCase();
+    
+    // Admin bypass or filter by specific language (also supporting full spelling variations)
+    // Sometimes Instructors might have "C++" vs "cpp" or "C#" vs "csharp", but the array uses literal Display Names.
+    const filteredTowers = GAME_TOWERS.filter(tower => {
+        if (!instructorLang) return true; // Show all if no language specified (or admin)
+        if (instructorLang.includes('all')) return true;
+        
+        const tLang = tower.language.toLowerCase();
+        
+        // Exact match bounds
+        if (instructorLang === tLang) return true;
+        
+        // Loose Contains bounds for edge cases
+        if (tLang.includes(instructorLang) || instructorLang.includes(tLang)) return true;
+        
+        return false;
+    });
 
     const openModal = (tower, mode) => {
         setSelectedTower(tower);
@@ -95,7 +118,18 @@ const Towers = ({ theme }) => {
 
             <div className={`flex-1 rounded-2xl border transition-colors overflow-hidden ${theme === 'dark' ? 'bg-[#0B1224]/50 border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
                 <div className="p-8 grid gap-6">
-                    {GAME_TOWERS.map((tower, idx) => (
+                    {filteredTowers.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center p-12 text-center h-64 border-2 border-dashed border-slate-700/50 rounded-2xl">
+                            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                                <Settings2 className={`w-8 h-8 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
+                            </div>
+                            <h3 className={`text-xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>No Active Towers Found</h3>
+                            <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                You are currently assigned to teach <strong>{user?.course || 'Unknown'}</strong>. There are no game map towers associated with this language.
+                            </p>
+                        </div>
+                    ) : (
+                        filteredTowers.map((tower, idx) => (
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -172,7 +206,7 @@ const Towers = ({ theme }) => {
                                 </div>
                             </div>
                         </motion.div>
-                    ))}
+                    )))}
                 </div>
             </div>
 
