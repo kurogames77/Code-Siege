@@ -192,7 +192,7 @@ const StudentCodesManager = ({ theme }) => {
                     cursor: pointer;
                 }
             `}</style>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6">
                 <div>
                     <h2 className={`text-3xl font-black uppercase italic tracking-widest ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                         Student Codes
@@ -201,30 +201,10 @@ const StudentCodesManager = ({ theme }) => {
                         Manage single-use registration codes for students
                     </p>
                 </div>
-            </div>
 
-            {/* Progress Bar (Visible during generation) */}
-            {isAutoGenerating && (
-                <div className="w-full flex justify-center mt-4">
-                    <div className="w-full max-w-xs flex flex-col items-center">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-cyan-500 mb-1">Generating... {autoGenProgress}%</span>
-                        <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                            <div 
-                                className="h-full bg-cyan-500 transition-all duration-300" 
-                                style={{ width: `${autoGenProgress}%` }}
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Actions Bar */}
-            <div className={`p-6 rounded-2xl border flex flex-col gap-5 transition-colors ${theme === 'dark' ? 'bg-[#0B1224] border-cyan-500/20' : 'bg-white border-slate-200'}`}>
-                
-                {/* Gen, Upload and Search in one row level */}
-                <div className="flex flex-wrap items-center gap-4 w-full">
-                    
-                    {/* Manual Paste */}
+                {/* Search & Upload moved upwards */}
+                <div className="flex flex-wrap items-center gap-4 w-full xl:w-auto">
+                    {/* Manual Paste & Upload */}
                     <div className="flex-1 min-w-[250px] flex items-center gap-2">
                         <input
                             type="text"
@@ -232,8 +212,8 @@ const StudentCodesManager = ({ theme }) => {
                             onChange={(e) => setCodesInput(e.target.value)}
                             placeholder="Paste codes here (comma/space separated)..."
                             className={`w-full p-2.5 rounded-xl border transition-colors outline-none focus:border-cyan-500 font-mono text-sm ${theme === 'dark'
-                                ? 'bg-slate-900/50 border-white/5 text-white placeholder-slate-600'
-                                : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                                ? 'bg-[#0B1224] border-white/5 text-white placeholder-slate-600'
+                                : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'
                                 }`}
                         />
                         <button
@@ -246,54 +226,79 @@ const StudentCodesManager = ({ theme }) => {
                         </button>
                     </div>
 
-                    {/* Auto Gen */}
-                    <div className="flex items-center gap-2 shadow-sm rounded-xl px-2 py-1 border border-purple-500/20 bg-purple-500/5">
-                        <input 
-                            type="number" 
-                            min="1" 
-                            max="100" 
-                            value={numToGenerate}
-                            onChange={(e) => setNumToGenerate(parseInt(e.target.value) || '')}
-                            title="Number of codes to generate"
-                            className={`w-16 px-2 py-2 rounded-lg border font-bold text-sm outline-none text-center focus:border-purple-500 ${theme === 'dark' ? 'bg-slate-900 border-white/5 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
-                            placeholder="Qty"
-                        />
-                        <button
-                            onClick={handleAutoGen}
-                            disabled={isAutoGenerating || typeof numToGenerate !== 'number' || numToGenerate < 1}
-                            className="shrink-0 px-4 py-2 rounded-lg bg-purple-500 hover:bg-purple-400 text-white font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-50 flex items-center justify-center whitespace-nowrap"
-                        >
-                            {isAutoGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Auto-Gen'}
-                        </button>
-                    </div>
-
-                    {/* Delete Selected (Beside auto gen) */}
-                    {selectedCodes.size > 0 && (
-                        <button
-                            onClick={handleBulkDelete}
-                            className="shrink-0 px-4 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-sm uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                            Multi-Delete ({selectedCodes.size})
-                        </button>
-                    )}
-
                     {/* Search */}
                     <div className="w-[200px] shrink-0">
                         <div className="relative">
                             <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
                             <input
                                 type="text"
-                                placeholder="SEARCH..."
+                                placeholder="SEARCH CODES..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 className={`w-full pl-9 pr-3 py-2.5 rounded-xl border transition-colors outline-none focus:border-cyan-500 font-mono text-sm tracking-wider ${theme === 'dark'
-                                    ? 'bg-slate-900/50 border-white/5 text-white placeholder-slate-600'
-                                    : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                                    ? 'bg-[#0B1224] border-white/5 text-white placeholder-slate-600'
+                                    : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'
                                     }`}
                             />
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {/* Actions Bar (Auto-gen and Delete) */}
+            <div className={`p-6 rounded-2xl border flex flex-col gap-5 transition-colors ${theme === 'dark' ? 'bg-[#0B1224] border-cyan-500/20' : 'bg-white border-slate-200'}`}>
+                <div className="flex items-end gap-6 w-full">
+                    {/* Auto Gen */}
+                    <div className="flex flex-col gap-1 w-[220px]">
+                        <div className="flex justify-between items-center px-1 h-[14px]">
+                            {isAutoGenerating && (
+                                <>
+                                    <span className="text-[10px] font-black uppercase text-cyan-500 tracking-widest leading-none">Generating...</span>
+                                    <span className="text-[10px] font-black text-cyan-500 leading-none">{autoGenProgress}%</span>
+                                </>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2 shadow-sm rounded-xl px-2 py-1 border border-purple-500/20 bg-purple-500/5 relative overflow-hidden h-[46px]">
+                            {isAutoGenerating && (
+                                <div 
+                                    className="absolute bottom-0 left-0 h-1 bg-cyan-500 transition-all duration-300" 
+                                    style={{ width: `${autoGenProgress}%` }}
+                                />
+                            )}
+                            <input 
+                                type="number" 
+                                min="1" 
+                                max="100" 
+                                value={numToGenerate}
+                                onChange={(e) => setNumToGenerate(parseInt(e.target.value) || '')}
+                                title="Number of codes to generate"
+                                className={`w-14 h-full bg-transparent font-bold text-sm outline-none text-center ${theme === 'dark' ? 'text-white' : 'text-slate-900'} relative z-10`}
+                                placeholder="Qty"
+                            />
+                            <button
+                                onClick={handleAutoGen}
+                                disabled={isAutoGenerating || typeof numToGenerate !== 'number' || numToGenerate < 1}
+                                className="shrink-0 h-[34px] px-4 rounded-lg bg-purple-500 hover:bg-purple-400 text-white font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-50 flex items-center justify-center whitespace-nowrap relative z-10 w-full"
+                            >
+                                {isAutoGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Auto-Gen'}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Mass Delete */}
+                    <button
+                        onClick={handleBulkDelete}
+                        disabled={selectedCodes.size === 0}
+                        className={`h-[46px] px-6 rounded-xl font-bold text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-2 
+                        ${selectedCodes.size > 0 
+                            ? 'bg-rose-500 hover:bg-rose-400 text-white shadow-lg cursor-pointer border border-rose-500' 
+                            : 'bg-rose-500/10 text-rose-500/50 border border-rose-500/20 cursor-not-allowed'
+                        }`}
+                        title={selectedCodes.size > 0 ? `Delete ${selectedCodes.size} selected codes` : "Select codes from the table to enable mass deletion"}
+                    >
+                        <Trash2 className="w-4 h-4" />
+                        Mass Delete {selectedCodes.size > 0 && `(${selectedCodes.size})`}
+                    </button>
                 </div>
             </div>
 

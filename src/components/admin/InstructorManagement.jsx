@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, CheckCircle, XCircle, MoreVertical, FileText, Mail, User, Calendar, Ban, Edit2, Shield, Trash2, Info, BookOpen, Layers } from 'lucide-react';
+import { Search, CheckCircle, XCircle, MoreVertical, FileText, Mail, User, Calendar, Ban, Edit2, Shield, Trash2, Info, BookOpen, Layers, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { instructorAPI } from '../../services/api';
 
@@ -147,6 +147,40 @@ const InstructorManagement = ({ theme = 'dark' }) => {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.3); border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.5); }
     `;
+
+    const renderTagsInput = (valueString, onChange, placeholder) => {
+        const tags = valueString ? valueString.split(',').map(t => t.trim()).filter(t => t) : [];
+        const handleAdd = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const val = e.target.value.trim();
+                if (val && !tags.includes(val)) {
+                    onChange([...tags, val].join(', '));
+                }
+                e.target.value = '';
+            }
+        };
+        const handleRemove = (tagToRemove) => {
+            onChange(tags.filter(t => t !== tagToRemove).join(', '));
+        };
+
+        return (
+            <div className={`w-full border rounded-xl p-2 text-sm focus-within:border-cyan-500 transition-all ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'} flex flex-wrap gap-2 items-center min-h-[46px]`}>
+                {tags.map((tag, idx) => (
+                    <span key={idx} className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1">
+                        {tag}
+                        <button type="button" onClick={() => handleRemove(tag)} className="hover:text-red-400 focus:outline-none"><X className="w-3 h-3" /></button>
+                    </span>
+                ))}
+                <input
+                    type="text"
+                    placeholder={tags.length === 0 ? placeholder : "Type and press Enter..."}
+                    onKeyDown={handleAdd}
+                    className="bg-transparent outline-none flex-1 min-w-[100px] text-sm"
+                />
+            </div>
+        );
+    };
 
     return (
         <div className="flex flex-col h-full gap-8 overflow-y-auto overflow-x-hidden custom-scrollbar pb-10 pr-2">
@@ -354,24 +388,12 @@ const InstructorManagement = ({ theme = 'dark' }) => {
                                     </div>
                                     <div>
                                         <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Languages Handled</label>
-                                        <input
-                                            type="text"
-                                            value={editingInstructor.languages}
-                                            onChange={(e) => setEditingInstructor({ ...editingInstructor, languages: e.target.value })}
-                                            placeholder="e.g. Python, Java"
-                                            className={`w-full border rounded-xl px-4 py-3 text-sm focus:border-cyan-500 outline-none transition-all ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
-                                        />
+                                        {renderTagsInput(editingInstructor.languages, (newVal) => setEditingInstructor({ ...editingInstructor, languages: newVal }), "e.g. Python, Java")}
                                     </div>
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Towers Handled</label>
-                                    <input
-                                        type="text"
-                                        value={editingInstructor.towers}
-                                        onChange={(e) => setEditingInstructor({ ...editingInstructor, towers: e.target.value })}
-                                        placeholder="e.g. Eldoria, Mechanica"
-                                        className={`w-full border rounded-xl px-4 py-3 text-sm focus:border-cyan-500 outline-none transition-all ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
-                                    />
+                                    {renderTagsInput(editingInstructor.towers, (newVal) => setEditingInstructor({ ...editingInstructor, towers: newVal }), "e.g. Eldoria, Mechanica")}
                                 </div>
                                 <div className="flex gap-3 pt-4">
                                     <button
