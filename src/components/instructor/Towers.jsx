@@ -204,6 +204,19 @@ const Towers = ({ theme }) => {
                                     </button>
                                     
                                     <button
+                                        onClick={() => openModal(tower, 'custom')}
+                                        className={`flex flex-col items-center justify-center p-3 w-14 h-14 rounded-xl border transition-all ${
+                                            theme === 'dark' 
+                                                ? 'bg-purple-500/10 border-purple-500/30 text-purple-400 hover:bg-purple-500 hover:text-white' 
+                                                : 'bg-purple-50 border-purple-200 text-purple-600 hover:bg-purple-600 hover:text-white hover:border-transparent'
+                                        }`}
+                                        title="Custom Unlock for Every Student"
+                                    >
+                                        <Settings2 className="w-5 h-5 mb-0.5" />
+                                        <span className="text-[8px] font-black tracking-tighter uppercase">CUSTOM</span>
+                                    </button>
+                                    
+                                    <button
                                         onClick={() => openModal(tower, 'undo')}
                                         className={`flex flex-col items-center justify-center p-3 w-14 h-14 rounded-xl border transition-all ${
                                             theme === 'dark' 
