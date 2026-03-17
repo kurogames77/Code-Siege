@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Castle, CheckCircle2, Unlock, Settings2, Users, X, Loader2 } from 'lucide-react';
+import { Castle, CheckCircle2, Unlock, Lock, Settings2, Users, X, Loader2 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { instructorAPI } from '../../services/api';
 
@@ -38,7 +38,7 @@ const Towers = ({ theme }) => {
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTower, setSelectedTower] = useState(null);
-    const [unlockMode, setUnlockMode] = useState('all'); // 'all' or 'custom'
+    const [unlockMode, setUnlockMode] = useState('all'); // 'all', 'custom', 'undo'
     const [customFloors, setCustomFloors] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -76,6 +76,7 @@ const Towers = ({ theme }) => {
         setSelectedTower(tower);
         setUnlockMode(mode);
         if (mode === 'all') setCustomFloors(tower.floors.toString());
+        else if (mode === 'undo') setCustomFloors('0');
         else setCustomFloors('');
         
         setIsModalOpen(true);
@@ -103,10 +104,11 @@ const Towers = ({ theme }) => {
                 selectedTower.id, 
                 floorsToUnlock
             );
-            toast.success(res.message || `Globally unlocked ${floorsToUnlock} floors in ${selectedTower.name}`);
+            const actionMsg = unlockMode === 'undo' ? `Locked all floors globally in ${selectedTower.name}` : `Globally unlocked ${floorsToUnlock} floors in ${selectedTower.name}`;
+            toast.success(res.message || actionMsg);
             closeModal();
         } catch (error) {
-            toast.error(error.message || 'Failed to unlock tower progress globally');
+            toast.error(error.message || 'Failed to update tower progress globally');
         } finally {
             setIsSubmitting(false);
         }
@@ -202,16 +204,16 @@ const Towers = ({ theme }) => {
                                     </button>
                                     
                                     <button
-                                        onClick={() => openModal(tower, 'custom')}
+                                        onClick={() => openModal(tower, 'undo')}
                                         className={`flex flex-col items-center justify-center p-3 w-14 h-14 rounded-xl border transition-all ${
                                             theme === 'dark' 
-                                                ? 'bg-purple-500/10 border-purple-500/30 text-purple-400 hover:bg-purple-500 hover:text-white' 
-                                                : 'bg-purple-50 border-purple-200 text-purple-600 hover:bg-purple-600 hover:text-white hover:border-transparent'
+                                                ? 'bg-rose-500/10 border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white' 
+                                                : 'bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-600 hover:text-white hover:border-transparent'
                                         }`}
-                                        title="Custom Unlock for Every Student"
+                                        title="Undo Unlock / Lock Tower"
                                     >
-                                        <Settings2 className="w-5 h-5 mb-0.5" />
-                                        <span className="text-[8px] font-black tracking-tighter uppercase">CUSTOM</span>
+                                        <Lock className="w-5 h-5 mb-0.5" />
+                                        <span className="text-[8px] font-black tracking-tighter uppercase">UNDO</span>
                                     </button>
                                 </div>
                             </div>
@@ -243,7 +245,7 @@ const Towers = ({ theme }) => {
                                 <div className="flex items-center justify-between mb-2">
                                     <h3 className={`text-xl font-black italic tracking-tighter flex items-center gap-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                                         <Users className="w-5 h-5 text-cyan-500" />
-                                        {unlockMode === 'all' ? 'Globally Unlock All Levels' : 'Global Custom Unlock'}
+                                        {unlockMode === 'all' ? 'Globally Unlock All Levels' : unlockMode === 'undo' ? 'Globally Lock Tower' : 'Global Custom Unlock'}
                                     </h3>
                                     <button onClick={closeModal} className={`p-2 rounded-full transition-colors ${theme === 'dark' ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
                                         <X className="w-5 h-5" />
@@ -258,6 +260,11 @@ const Towers = ({ theme }) => {
                                 {unlockMode === 'all' ? (
                                     <div className={`p-4 rounded-xl border text-center ${theme === 'dark' ? 'bg-red-500/10 border-red-500/20 text-red-200' : 'bg-red-50 border-red-200 text-red-800'}`}>
                                         <p className="text-sm font-bold">This will grant {selectedTower.floors} floors to ALL students instantly.</p>
+                                        <p className="text-xs mt-1 opacity-80">There is no undo button. Please confirm this action.</p>
+                                    </div>
+                                ) : unlockMode === 'undo' ? (
+                                    <div className={`p-4 rounded-xl border text-center ${theme === 'dark' ? 'bg-rose-500/10 border-rose-500/20 text-rose-200' : 'bg-rose-50 border-rose-200 text-rose-800'}`}>
+                                        <p className="text-sm font-bold">This will reset progress constraints back to default, locking all non-earned floors for ALL students.</p>
                                         <p className="text-xs mt-1 opacity-80">There is no undo button. Please confirm this action.</p>
                                     </div>
                                 ) : (
