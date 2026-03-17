@@ -125,12 +125,20 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             if (index === -1) return currentBlocks;
 
             const newBlocks = [...currentBlocks];
+            let newX = newBlocks[index].position.x + (delta.x / canvasScale);
+            let newY = newBlocks[index].position.y + (delta.y / canvasScale);
+
+            // Clamp positions to reasonable bounds so they don't get lost when zoomed out
+            const padding = 20;
+            const maxWidth = containerRef.current ? (containerRef.current.clientWidth / canvasScale) - 150 : 2000;
+            const maxHeight = containerRef.current ? (containerRef.current.clientHeight / canvasScale) - 80 : 1500;
+            
+            newX = Math.max(padding, Math.min(newX, maxWidth));
+            newY = Math.max(padding, Math.min(newY, maxHeight));
+
             const updatedBlock = {
                 ...newBlocks[index],
-                position: {
-                    x: newBlocks[index].position.x + (delta.x / canvasScale),
-                    y: newBlocks[index].position.y + (delta.y / canvasScale)
-                }
+                position: { x: newX, y: newY }
             };
 
             // GENERALIZED SNAPPING LOGIC

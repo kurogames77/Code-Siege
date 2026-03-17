@@ -293,7 +293,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
             setIsFriendViewerOpen(true);
             try {
                 const data = await userAPI.getUserProfile(friendId);
-                setSelectedFriend(data);
+                setSelectedFriend(data?.profile || data?.user || data);
             } catch (error) {
                 console.error('Failed to load friend profile', error);
                 toast.error('Could not load friend profile.');
