@@ -155,7 +155,7 @@ router.post('/register', async (req, res) => {
             student_id: student_id || null,
             course: course || null,
             student_code: student_code || null,
-            role: 'user',
+            role: role || 'student',
             level: 1,
             xp: 0,
             gems: 0,
