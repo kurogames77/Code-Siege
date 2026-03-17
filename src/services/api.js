@@ -435,10 +435,14 @@ export const algorithmAPI = {
     },
 };
 
-// INSTRUCTOR API
-// ============================================
-
 export const instructorAPI = {
+    updateStudentTowerProgress: async (studentId, towerId, floorsCompleted) => {
+        return apiRequest(`/users/${studentId}/tower-progress`, {
+            method: 'PATCH',
+            body: JSON.stringify({ towerId, floorsCompleted })
+        });
+    },
+
     getStats: async () => {
         return apiRequest('/instructor/stats');
     },

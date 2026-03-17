@@ -520,6 +520,67 @@ router.patch('/:id', authenticateUser, async (req, res) => {
 });
 
 /**
+ * PATCH /api/users/:targetUserId/tower-progress
+ * Modify another user's tower progress (Instructor Only)
+ */
+router.patch('/:targetUserId/tower-progress', authenticateUser, async (req, res) => {
+    try {
+        const { targetUserId } = req.params;
+        const { towerId, floorsCompleted } = req.body;
+
+        // Check if the executing user is an instructor or admin
+        // Note: authenticateUser middleware gives us 'req.user' but the role needs verifying securely
+        const db = supabaseService || supabase;
+
+        // Get the executing user's role to verify permission
+        const { data: executor } = await db
+            .from('users')
+            .select('role')
+            .eq('id', req.user.id)
+            .single();
+
+        if (executor?.role !== 'instructor' && executor?.role !== 'admin') {
+            return res.status(403).json({ error: 'Only Instructors can override student Tower Progress.' });
+        }
+
+        if (!towerId || floorsCompleted === undefined) {
+            return res.status(400).json({ error: 'Missing required fields: towerId and floorsCompleted.' });
+        }
+
+        // Fetch the target user's current progress
+        const { data: targetUser, error: fetchError } = await db
+            .from('users')
+            .select('tower_progress')
+            .eq('id', targetUserId)
+            .single();
+
+        if (fetchError || !targetUser) {
+            return res.status(404).json({ error: 'Student not found.' });
+        }
+
+        const currentProgress = targetUser.tower_progress || {};
+
+        // Merge the new progress
+        currentProgress[towerId.toString()] = parseInt(floorsCompleted);
+
+        // Save back to user record
+        const { error: updateError } = await db
+            .from('users')
+            .update({ tower_progress: currentProgress })
+            .eq('id', targetUserId);
+
+        if (updateError) {
+            return res.status(400).json({ error: updateError.message });
+        }
+
+        res.json({ message: 'Tower progress unlocked successfully.', progress: currentProgress });
+    } catch (error) {
+        console.error('Instructor tower unlock error:', error);
+        res.status(500).json({ error: 'Failed to update tower progress' });
+    }
+});
+
+/**
  * PATCH /api/users/:id/avatar
  * Update user avatar
  */
