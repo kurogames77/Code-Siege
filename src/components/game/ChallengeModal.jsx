@@ -125,6 +125,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             if (index === -1) return currentBlocks;
 
             const newBlocks = [...currentBlocks];
+            // Convert screen-space delta to canvas-space by dividing by scale
             let newX = newBlocks[index].position.x + (delta.x / canvasScale);
             let newY = newBlocks[index].position.y + (delta.y / canvasScale);
 
@@ -142,9 +143,8 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             };
 
             // GENERALIZED SNAPPING LOGIC
-            // Scale threshold inversely with zoom so snapping feels consistent at any zoom level
-            const BASE_SNAP_THRESHOLD = 30;
-            const SNAP_THRESHOLD = Math.min(BASE_SNAP_THRESHOLD / canvasScale, 80);
+            // Fixed canvas-space threshold — not scaled by zoom to prevent giant thresholds at low zoom
+            const SNAP_THRESHOLD = 40;
             const BLOCK_WIDTH = 140;
             const BLOCK_HEIGHT = 48;
 
@@ -159,7 +159,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                 // Horizontal Snap (Current Right to Other Left)
                 if (Math.abs(dx - BLOCK_WIDTH) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
                     updatedBlock.position = { x: other.position.x + BLOCK_WIDTH, y: other.position.y };
-                    playConnect(); // Play snap sound
+                    playConnect();
                     snappedWithId = other.id;
                     break;
                 }
@@ -167,7 +167,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                 // Horizontal Snap (Current Left to Other Right)
                 if (Math.abs(dx + BLOCK_WIDTH) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
                     updatedBlock.position = { x: other.position.x - BLOCK_WIDTH, y: other.position.y };
-                    playConnect(); // Play snap sound
+                    playConnect();
                     snappedWithId = other.id;
                     break;
                 }
@@ -175,7 +175,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                 // Vertical Snap (Current Bottom to Other Top)
                 if (Math.abs(dy - BLOCK_HEIGHT) < SNAP_THRESHOLD && Math.abs(dx) < SNAP_THRESHOLD) {
                     updatedBlock.position = { x: other.position.x, y: other.position.y + BLOCK_HEIGHT };
-                    playConnect(); // Play snap sound
+                    playConnect();
                     snappedWithId = other.id;
                     break;
                 }
@@ -183,7 +183,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                 // Vertical Snap (Current Top to Other Bottom)
                 if (Math.abs(dy + BLOCK_HEIGHT) < SNAP_THRESHOLD && Math.abs(dx) < SNAP_THRESHOLD) {
                     updatedBlock.position = { x: other.position.x, y: other.position.y - BLOCK_HEIGHT };
-                    playConnect(); // Play snap sound
+                    playConnect();
                     snappedWithId = other.id;
                     break;
                 }
@@ -193,7 +193,6 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             if (snappedWithId && glowingBlocks.length > 0) {
                 const correctIds = puzzle?.correctSequence || [];
                 const draggedId = active.id;
-                // If both snapped blocks are in the correct sequence, remove their glow
                 if (correctIds.includes(draggedId) && correctIds.includes(snappedWithId)) {
                     setGlowingBlocks(prev => prev.filter(id => id !== draggedId && id !== snappedWithId));
                 }
@@ -204,21 +203,12 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
         });
     };
 
-    const customModifier = ({ transform, activeNodeRect }) => {
-        let value = { 
-            ...transform,
-            x: transform.x / canvasScale,
-            y: transform.y / canvasScale
-        };
-
-        if (containerRef.current && activeNodeRect) {
-            const containerRect = containerRef.current.getBoundingClientRect();
-            // Optional: apply bounded restrictions, but since the transform is scaled, 
-            // bounds check is tricky. We'll stick to basic scale modification to prevent cursor displacement.
-        }
-
-        return value;
-    };
+    // Modifier: compensate for CSS scale on the container so the block follows the cursor during drag
+    const customModifier = ({ transform }) => ({
+        ...transform,
+        x: transform.x / canvasScale,
+        y: transform.y / canvasScale
+    });
 
     const getRandomWittyError = () => {
         const errors = [
