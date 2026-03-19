@@ -433,7 +433,7 @@ router.patch('/users/:id/ban', async (req, res) => {
             return res.status(403).json({ error: 'Only admin can ban instructors' });
         }
 
-        const { data: user, error } = await supabase
+        const { data: user, error } = await supabaseService
             .from('users')
             .update({ is_banned })
             .eq('id', id)
@@ -472,7 +472,7 @@ router.patch('/users/:id/role', requireAdmin, async (req, res) => {
             return res.status(400).json({ error: 'Cannot change your own role' });
         }
 
-        const { data: user, error } = await supabase
+        const { data: user, error } = await supabaseService
             .from('users')
             .update({ role })
             .eq('id', id)
@@ -508,7 +508,7 @@ router.patch('/users/:id', requireAdmin, async (req, res) => {
         if (enrolled_language !== undefined) updates.enrolled_language = enrolled_language;
         if (handled_towers !== undefined) updates.handled_towers = handled_towers;
 
-        const { data: user, error } = await supabase
+        const { data: user, error } = await supabaseService
             .from('users')
             .update(updates)
             .eq('id', id)
@@ -539,7 +539,7 @@ router.delete('/users/:id', requireAdmin, async (req, res) => {
         }
 
         // Delete user (cascade will handle related data)
-        const { error } = await supabase
+        const { error } = await supabaseService
             .from('users')
             .delete()
             .eq('id', id);
