@@ -63,13 +63,12 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
     const { playConnect, playCountdownVoice, playClick } = useSound();
     const { user, updateExp } = useUser();
 
-    // Calculate initial scale based on block count
+    // Calculate initial scale based on block count (clamped to 60%-100%)
     const getScaleForBlockCount = (count) => {
         if (count <= 3) return 1;
         if (count <= 5) return 0.85;
         if (count <= 8) return 0.7;
-        if (count <= 12) return 0.55;
-        return 0.4;
+        return 0.6;
     };
 
     const [canvasScale, setCanvasScale] = useState(1);
@@ -143,8 +142,8 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             };
 
             // GENERALIZED SNAPPING LOGIC
-            // Fixed canvas-space threshold — not scaled by zoom to prevent giant thresholds at low zoom
-            const SNAP_THRESHOLD = 40;
+            // Fixed canvas-space threshold for consistent snapping
+            const SNAP_THRESHOLD = 50;
             const BLOCK_WIDTH = 140;
             const BLOCK_HEIGHT = 48;
 
@@ -690,8 +689,8 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                             {/* Zoom Controls */}
                                             <div className="absolute bottom-4 right-4 z-50 flex items-center gap-2">
                                                 <button 
-                                                    onClick={() => setCanvasScale(s => Math.max(0.3, +(s - 0.1).toFixed(1)))} 
-                                                    disabled={canvasScale <= 0.3}
+                                                    onClick={() => setCanvasScale(s => Math.max(0.6, +(s - 0.1).toFixed(1)))} 
+                                                    disabled={canvasScale <= 0.6}
                                                     className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
                                                 >
                                                     <ZoomOut className="w-5 h-5" />
@@ -703,8 +702,8 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                     <Maximize className="w-5 h-5" />
                                                 </button>
                                                 <button 
-                                                    onClick={() => setCanvasScale(s => Math.min(2, +(s + 0.1).toFixed(1)))} 
-                                                    disabled={canvasScale >= 2}
+                                                    onClick={() => setCanvasScale(s => Math.min(1, +(s + 0.1).toFixed(1)))} 
+                                                    disabled={canvasScale >= 1}
                                                     className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
                                                 >
                                                     <ZoomIn className="w-5 h-5" />
