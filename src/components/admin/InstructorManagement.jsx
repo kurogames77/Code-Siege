@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, CheckCircle, XCircle, MoreVertical, FileText, Mail, User, Calendar, Ban, Edit2, Shield, Trash2, Info, BookOpen, Layers, X } from 'lucide-react';
+import { Search, CheckCircle, XCircle, MoreVertical, FileText, Mail, User, Calendar, Ban, Edit2, Shield, Trash2, Info, BookOpen, Layers, X, Code2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { instructorAPI } from '../../services/api';
 
@@ -10,6 +10,9 @@ const InstructorManagement = ({ theme = 'dark' }) => {
     // Live Data for Users
     const [instructors, setInstructors] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+
+    // Courses data (towers & languages)
+    const [courses, setCourses] = useState([]);
     
     const [instructorSearch, setInstructorSearch] = useState('');
 
@@ -26,6 +29,14 @@ const InstructorManagement = ({ theme = 'dark' }) => {
                 setApplications(appsResponse.applications);
             }
 
+            // Fetch courses (towers & languages)
+            try {
+                const coursesData = await instructorAPI.getCourses();
+                setCourses(coursesData || []);
+            } catch (err) {
+                console.error('Failed to fetch courses:', err);
+            }
+
             // Fetch users (instructors & students) - assuming we fetch a big chunk or all
             const response = await instructorAPI.getUsers(1, 1000);
             if (response.users) {
@@ -36,8 +47,6 @@ const InstructorManagement = ({ theme = 'dark' }) => {
                         name: u.username,
                         email: u.email,
                         instructorId: u.student_id || 'N/A',
-                        languages: u.enrolled_language || '',
-                        towers: u.handled_towers || '',
                         status: u.is_banned ? 'inactive' : 'active',
                         avatar: u.avatar_url
                     }));
@@ -113,9 +122,7 @@ const InstructorManagement = ({ theme = 'dark' }) => {
         try {
             await instructorAPI.updateUser(editingInstructor.id, {
                 username: editingInstructor.name,
-                student_id: editingInstructor.instructorId,
-                enrolled_language: editingInstructor.languages,
-                handled_towers: editingInstructor.towers
+                student_id: editingInstructor.instructorId
             });
             setIsEditModalOpen(false);
             fetchUsers(); 
@@ -123,6 +130,11 @@ const InstructorManagement = ({ theme = 'dark' }) => {
             console.error('Failed to update user:', error);
             alert('Failed to update instructor details');
         }
+    };
+
+    // Get courses handled by a specific instructor
+    const getInstructorCourses = (instructorId) => {
+        return courses.filter(c => c.instructor_id === instructorId);
     };
 
     const filteredInstructors = instructors.filter(i =>
@@ -146,38 +158,15 @@ const InstructorManagement = ({ theme = 'dark' }) => {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.5); }
     `;
 
-    const renderTagsInput = (valueString, onChange, placeholder) => {
-        const tags = valueString ? valueString.split(',').map(t => t.trim()).filter(t => t) : [];
-        const handleAdd = (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const val = e.target.value.trim();
-                if (val && !tags.includes(val)) {
-                    onChange([...tags, val].join(', '));
-                }
-                e.target.value = '';
-            }
-        };
-        const handleRemove = (tagToRemove) => {
-            onChange(tags.filter(t => t !== tagToRemove).join(', '));
-        };
-
-        return (
-            <div className={`w-full border rounded-xl p-2 text-sm focus-within:border-cyan-500 transition-all ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'} flex flex-wrap gap-2 items-center min-h-[46px]`}>
-                {tags.map((tag, idx) => (
-                    <span key={idx} className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1">
-                        {tag}
-                        <button type="button" onClick={() => handleRemove(tag)} className="hover:text-red-400 focus:outline-none"><X className="w-3 h-3" /></button>
-                    </span>
-                ))}
-                <input
-                    type="text"
-                    placeholder={tags.length === 0 ? placeholder : "Type and press Enter..."}
-                    onKeyDown={handleAdd}
-                    className="bg-transparent outline-none flex-1 min-w-[100px] text-sm"
-                />
-            </div>
-        );
+    // Color map for course badges
+    const courseColorMap = {
+        blue: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+        red: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+        green: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+        yellow: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+        purple: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+        orange: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+        cyan: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
     };
 
     return (
@@ -235,6 +224,18 @@ const InstructorManagement = ({ theme = 'dark' }) => {
                                                 <div className="flex items-center gap-4 text-[11px] text-slate-400 mt-1 font-medium">
                                                     <span className="flex items-center gap-1.5 truncate max-w-[120px]" title={instructor.email}><Mail className="w-3 h-3 text-slate-500" /> {instructor.email}</span>
                                                     <span className="flex items-center gap-1.5 shrink-0"><Shield className="w-3 h-3 text-slate-500" /> {instructor.instructorId}</span>
+                                                </div>
+                                                {/* Tower/Language badges */}
+                                                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                                    {getInstructorCourses(instructor.id).map(course => (
+                                                        <span
+                                                            key={course.id}
+                                                            className={`text-[9px] uppercase px-2 py-0.5 rounded-md border font-bold flex items-center gap-1 ${courseColorMap[course.color] || courseColorMap.cyan}`}
+                                                        >
+                                                            <Code2 className="w-2.5 h-2.5" />
+                                                            {course.id} → {course.name}
+                                                        </span>
+                                                    ))}
                                                 </div>
                                             </div>
                                         </div>
@@ -315,74 +316,50 @@ const InstructorManagement = ({ theme = 'dark' }) => {
                                         </div>
                                     </div>
                                 </div>
-                                {/* Tower → Language Pairs */}
+                                {/* Tower → Language Pairs (Read-only from courses table) */}
                                 <div>
                                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">Towers & Languages Handled</label>
-                                    <div className="space-y-2">
+                                    <div className={`w-full border rounded-xl p-3 ${theme === 'dark' ? 'bg-slate-950/50 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
                                         {(() => {
-                                            const towers = editingInstructor.towers ? editingInstructor.towers.split(',').map(t => t.trim()).filter(t => t) : [];
-                                            const languages = editingInstructor.languages ? editingInstructor.languages.split(',').map(l => l.trim()).filter(l => l) : [];
-                                            const pairs = towers.map((t, i) => ({ tower: t, language: languages[i] || '' }));
-                                            // Ensure at least one empty row if no pairs exist
-                                            if (pairs.length === 0) pairs.push({ tower: '', language: '' });
-                                            
-                                            const updatePairs = (newPairs) => {
-                                                setEditingInstructor({
-                                                    ...editingInstructor,
-                                                    towers: newPairs.map(p => p.tower).filter(t => t).join(', '),
-                                                    languages: newPairs.map(p => p.language).filter(l => l).join(', ')
-                                                });
-                                            };
-
+                                            const instructorCourses = getInstructorCourses(editingInstructor.id);
+                                            if (instructorCourses.length === 0) {
+                                                return (
+                                                    <p className="text-xs text-slate-500 italic text-center py-2">No towers assigned to this instructor</p>
+                                                );
+                                            }
                                             return (
-                                                <>
-                                                    {pairs.map((pair, idx) => (
-                                                        <div key={idx} className="flex items-center gap-2">
-                                                            <input
-                                                                type="text"
-                                                                value={pair.tower}
-                                                                onChange={(e) => {
-                                                                    const newPairs = [...pairs];
-                                                                    newPairs[idx] = { ...newPairs[idx], tower: e.target.value };
-                                                                    updatePairs(newPairs);
-                                                                }}
-                                                                placeholder="Tower name..."
-                                                                className={`flex-1 border rounded-lg px-3 py-2 text-xs focus:border-cyan-500 outline-none transition-all ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
-                                                            />
-                                                            <span className="text-cyan-500 text-xs font-black">→</span>
-                                                            <input
-                                                                type="text"
-                                                                value={pair.language}
-                                                                onChange={(e) => {
-                                                                    const newPairs = [...pairs];
-                                                                    newPairs[idx] = { ...newPairs[idx], language: e.target.value };
-                                                                    updatePairs(newPairs);
-                                                                }}
-                                                                placeholder="Language..."
-                                                                className={`flex-1 border rounded-lg px-3 py-2 text-xs focus:border-cyan-500 outline-none transition-all ${theme === 'dark' ? 'bg-slate-950/50 border-white/5 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
-                                                            />
-                                                            {pairs.length > 1 && (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => updatePairs(pairs.filter((_, i) => i !== idx))}
-                                                                    className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors"
-                                                                >
-                                                                    <X className="w-3.5 h-3.5" />
-                                                                </button>
-                                                            )}
+                                                <div className="space-y-2">
+                                                    {instructorCourses.map(course => (
+                                                        <div
+                                                            key={course.id}
+                                                            className={`flex items-center gap-3 p-2.5 rounded-lg border transition-all ${theme === 'dark' ? 'bg-slate-900/50 border-white/5' : 'bg-white border-slate-200'}`}
+                                                        >
+                                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${courseColorMap[course.color] || courseColorMap.cyan}`}>
+                                                                <Code2 className="w-4 h-4" />
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className={`text-xs font-bold uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                                                                        {course.id}
+                                                                    </span>
+                                                                    <span className="text-cyan-500 text-xs font-black">→</span>
+                                                                    <span className={`text-xs font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                                                        {course.name}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <span className={`text-[9px] uppercase px-2 py-0.5 rounded-md border font-bold ${courseColorMap[course.color] || courseColorMap.cyan}`}>
+                                                                {course.color || 'default'}
+                                                            </span>
                                                         </div>
                                                     ))}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => updatePairs([...pairs, { tower: '', language: '' }])}
-                                                        className="w-full py-2 rounded-lg border border-dashed border-cyan-500/30 text-cyan-500 text-[10px] font-black uppercase tracking-widest hover:bg-cyan-500/5 transition-colors"
-                                                    >
-                                                        + Add Tower-Language Pair
-                                                    </button>
-                                                </>
+                                                </div>
                                             );
                                         })()}
                                     </div>
+                                    <p className={`text-[10px] mt-1.5 ml-1 ${theme === 'dark' ? 'text-slate-600' : 'text-slate-400'}`}>
+                                        Tower assignments are managed from the Courses section
+                                    </p>
                                 </div>
                                 <div className="flex gap-3 pt-4">
                                     <button
