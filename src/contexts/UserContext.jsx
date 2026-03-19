@@ -62,7 +62,9 @@ export const UserProvider = ({ children }) => {
                 leaderboardRank: 0
             },
             towerProgress: profile?.tower_progress || {},
-            isBanned: profile?.is_banned || false
+            isBanned: profile?.is_banned || false,
+            enrolled_language: profile?.enrolled_language || '',
+            handled_towers: profile?.handled_towers || ''
         };
     };
 

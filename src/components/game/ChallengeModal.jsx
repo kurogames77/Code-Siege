@@ -142,9 +142,13 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             };
 
             // GENERALIZED SNAPPING LOGIC
-            const SNAP_THRESHOLD = 30;
+            // Scale threshold inversely with zoom so snapping feels consistent at any zoom level
+            const BASE_SNAP_THRESHOLD = 30;
+            const SNAP_THRESHOLD = Math.min(BASE_SNAP_THRESHOLD / canvasScale, 80);
             const BLOCK_WIDTH = 140;
             const BLOCK_HEIGHT = 48;
+
+            let snappedWithId = null;
 
             for (const other of newBlocks) {
                 if (other.id === active.id) continue;
@@ -156,6 +160,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                 if (Math.abs(dx - BLOCK_WIDTH) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
                     updatedBlock.position = { x: other.position.x + BLOCK_WIDTH, y: other.position.y };
                     playConnect(); // Play snap sound
+                    snappedWithId = other.id;
                     break;
                 }
 
@@ -163,6 +168,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                 if (Math.abs(dx + BLOCK_WIDTH) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
                     updatedBlock.position = { x: other.position.x - BLOCK_WIDTH, y: other.position.y };
                     playConnect(); // Play snap sound
+                    snappedWithId = other.id;
                     break;
                 }
 
@@ -170,6 +176,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                 if (Math.abs(dy - BLOCK_HEIGHT) < SNAP_THRESHOLD && Math.abs(dx) < SNAP_THRESHOLD) {
                     updatedBlock.position = { x: other.position.x, y: other.position.y + BLOCK_HEIGHT };
                     playConnect(); // Play snap sound
+                    snappedWithId = other.id;
                     break;
                 }
 
@@ -177,7 +184,18 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                 if (Math.abs(dy + BLOCK_HEIGHT) < SNAP_THRESHOLD && Math.abs(dx) < SNAP_THRESHOLD) {
                     updatedBlock.position = { x: other.position.x, y: other.position.y - BLOCK_HEIGHT };
                     playConnect(); // Play snap sound
+                    snappedWithId = other.id;
                     break;
+                }
+            }
+
+            // Clear hint glow from blocks that were just correctly snapped together
+            if (snappedWithId && glowingBlocks.length > 0) {
+                const correctIds = puzzle?.correctSequence || [];
+                const draggedId = active.id;
+                // If both snapped blocks are in the correct sequence, remove their glow
+                if (correctIds.includes(draggedId) && correctIds.includes(snappedWithId)) {
+                    setGlowingBlocks(prev => prev.filter(id => id !== draggedId && id !== snappedWithId));
                 }
             }
 
@@ -272,11 +290,12 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             const dy = b2.position.y - b1.position.y;
             const BLOCK_WIDTH = 140;
             const BLOCK_HEIGHT = 48;
+            const TOLERANCE = 15; // Widened from 10 for more forgiving validation
 
             // Horizontal connection
-            const isHoriz = Math.abs(dx - BLOCK_WIDTH) < 10 && Math.abs(dy) < 10;
+            const isHoriz = Math.abs(dx - BLOCK_WIDTH) < TOLERANCE && Math.abs(dy) < TOLERANCE;
             // Vertical connection
-            const isVert = Math.abs(dy - BLOCK_HEIGHT) < 10 && Math.abs(dx) < 10;
+            const isVert = Math.abs(dy - BLOCK_HEIGHT) < TOLERANCE && Math.abs(dx) < TOLERANCE;
 
             return isHoriz || isVert;
         };
@@ -679,10 +698,11 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                     >
                                         <div className="relative w-full flex-1 overflow-hidden">
                                             {/* Zoom Controls */}
-                                            <div className="absolute bottom-4 right-4 z-50 flex gap-2">
+                                            <div className="absolute bottom-4 right-4 z-50 flex items-center gap-2">
                                                 <button 
-                                                    onClick={() => setCanvasScale(s => Math.max(0.5, s - 0.1))} 
-                                                    className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg"
+                                                    onClick={() => setCanvasScale(s => Math.max(0.3, +(s - 0.1).toFixed(1)))} 
+                                                    disabled={canvasScale <= 0.3}
+                                                    className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
                                                 >
                                                     <ZoomOut className="w-5 h-5" />
                                                 </button>
@@ -693,11 +713,16 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                     <Maximize className="w-5 h-5" />
                                                 </button>
                                                 <button 
-                                                    onClick={() => setCanvasScale(s => Math.min(2, s + 0.1))} 
-                                                    className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg"
+                                                    onClick={() => setCanvasScale(s => Math.min(2, +(s + 0.1).toFixed(1)))} 
+                                                    disabled={canvasScale >= 2}
+                                                    className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
                                                 >
                                                     <ZoomIn className="w-5 h-5" />
                                                 </button>
+                                                {/* Zoom Percentage Indicator */}
+                                                <div className="px-3 py-1.5 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 rounded-lg shadow-lg">
+                                                    <span className="text-cyan-400 font-mono text-xs font-bold tracking-wider">{Math.round(canvasScale * 100)}%</span>
+                                                </div>
                                             </div>
 
                                             {/* Scaled blocks container */}

@@ -311,8 +311,9 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                             {/* Replaced 'Level 24' with Rank Name and Icon below it */}
                             {/* Replaced 'Level 24' with Rank Name and Icon below it */}
                             <div className="flex flex-col items-start gap-0.5">
-                                <span className="text-xs text-cyan-400 font-galsb font-bold uppercase tracking-tight">
+                                <span className="text-xs text-cyan-400 font-galsb font-bold uppercase tracking-tight flex items-center gap-2">
                                     {user.rankName}
+                                    <span className="text-[10px] text-slate-400 font-mono tracking-wider">Lvl {user.level}</span>
                                 </span>
                                 <div className="w-6 h-6 flex items-center justify-center -ml-1">
                                     <img src={user.rankIcon} alt="Rank" className="w-full h-full object-contain filter drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
