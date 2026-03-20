@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Castle, CheckCircle2, Unlock, Lock, Settings2, Users, X, Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useToast } from '../../contexts/ToastContext';
 import { instructorAPI } from '../../services/api';
 
@@ -42,39 +43,27 @@ const Towers = ({ theme }) => {
     const [customFloors, setCustomFloors] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Filter Towers Based on Instructor's Enrolled Language
-    const instructorLang = (user?.enrolled_language || user?.course || '').toLowerCase().trim();
-    const instructorTowersRaw = (user?.handled_towers || '').toLowerCase().trim();
-    
+    // Fetch instructor's assigned courses from the courses table
+    const { data: instructorCourses = [], isLoading: coursesLoading } = useQuery({
+        queryKey: ['instructorTowerCourses'],
+        queryFn: () => instructorAPI.getCourses(),
+    });
+
+    // Filter Towers based on the instructor's assigned courses
     const filteredTowers = GAME_TOWERS.filter(tower => {
-        // Admin bypass
+        // Admin bypass — admins see all towers
         if (user?.role === 'admin') return true;
-        
-        // Parse handled_towers as a comma-separated list of tower names
-        const handledTowersList = instructorTowersRaw
-            ? instructorTowersRaw.split(',').map(t => t.trim().toLowerCase()).filter(t => t)
-            : [];
-        
-        // Parse enrolled languages as a comma-separated list
-        const instructorLangs = instructorLang
-            ? instructorLang.split(',').map(l => l.trim().toLowerCase()).filter(l => l)
-            : [];
-        
-        // If the instructor has specific towers assigned, only show those
-        if (handledTowersList.length > 0) {
-            const tName = tower.name.toLowerCase();
-            return handledTowersList.some(ht => tName.includes(ht) || ht.includes(tName));
-        }
-        
-        // If instructor has languages assigned, match by language
-        if (instructorLangs.length > 0) {
-            const tLang = tower.language.toLowerCase();
-            if (instructorLangs.includes('all')) return true;
-            return instructorLangs.some(lang => tLang === lang || tLang.includes(lang) || lang.includes(tLang));
-        }
-        
-        // If no towers or languages assigned, show all as fallback
-        return true;
+
+        // Still loading courses, show nothing yet
+        if (coursesLoading) return false;
+
+        // If instructor has no courses assigned, show none
+        if (instructorCourses.length === 0) return false;
+
+        // Match tower language against the instructor's course names (case-insensitive)
+        const assignedLanguages = instructorCourses.map(c => c.name?.toLowerCase().trim()).filter(Boolean);
+        const towerLang = tower.language.toLowerCase().trim();
+        return assignedLanguages.some(lang => towerLang === lang || towerLang.includes(lang) || lang.includes(towerLang));
     });
 
     const openModal = (tower, mode) => {
@@ -135,14 +124,19 @@ const Towers = ({ theme }) => {
 
             <div className={`flex-1 rounded-2xl border transition-colors overflow-hidden ${theme === 'dark' ? 'bg-[#0B1224]/50 border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
                 <div className="p-8 grid gap-6">
-                    {filteredTowers.length === 0 ? (
+                    {coursesLoading ? (
+                        <div className="flex flex-col items-center justify-center p-12 text-center h-64">
+                            <Loader2 className={`w-8 h-8 animate-spin mb-4 ${theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600'}`} />
+                            <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Loading your assigned towers...</p>
+                        </div>
+                    ) : filteredTowers.length === 0 ? (
                         <div className="flex flex-col items-center justify-center p-12 text-center h-64 border-2 border-dashed border-slate-700/50 rounded-2xl">
                             <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}>
                                 <Settings2 className={`w-8 h-8 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
                             </div>
                             <h3 className={`text-xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>No Active Towers Found</h3>
                             <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                You are currently assigned to teach <strong>{user?.course || 'Unknown'}</strong>. There are no game map towers associated with this language.
+                                You have no courses assigned yet. Please create a course in <strong>Puzzle Courses</strong> to manage its corresponding tower.
                             </p>
                         </div>
                     ) : (
