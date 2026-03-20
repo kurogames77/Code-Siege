@@ -149,6 +149,11 @@ export const UserProvider = ({ children }) => {
 
     // 1. Initial Auth Check on mount
     useEffect(() => {
+        // If returning from an OAuth redirect, we are logging in!
+        // Clear the logged_out flag so checkAuth doesn't immediately kill the new session.
+        if (window.location.hash && (window.location.hash.includes('access_token=') || window.location.hash.includes('error='))) {
+            localStorage.removeItem('code_siege_logged_out');
+        }
         checkAuth();
     }, []);
 
