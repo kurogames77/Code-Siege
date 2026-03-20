@@ -120,6 +120,16 @@ const LandingPage = () => {
         setForgotError('');
     };
 
+    // Interceptor for Google Login to save intended role
+    const handleGoogleLogin = () => {
+        if (modal?.role === 'guest') {
+            localStorage.setItem('code_siege_intended_role', 'guest');
+        } else {
+            localStorage.removeItem('code_siege_intended_role');
+        }
+        loginWithGoogle();
+    };
+
     useEffect(() => {
         if (location.state?.openLogin) {
             openLogin();
@@ -180,8 +190,36 @@ const LandingPage = () => {
 
         // Redirect if already authenticated — but NOT right after a logout
         if (isAuthenticated && user) {
-            // Check for incomplete profile (social login) — only for students
-            // Instructors/admins don't need studentId to proceed
+            
+            // 1. Check for intended guest Google login
+            const intendedRole = localStorage.getItem('code_siege_intended_role');
+            if (intendedRole === 'guest' && user.role !== 'guest' && !user.studentId) {
+                // They just logged in with Google intending to be a guest
+                const completeAsGuest = async () => {
+                    setLoading(true);
+                    try {
+                        await updateProfile({
+                            name: user.name || user.username || 'Guest',
+                            student_id: `GUEST-${Date.now()}`,
+                            course: 'GUEST',
+                            role: 'guest'
+                        });
+                        localStorage.removeItem('code_siege_intended_role');
+                        toast.success('Joined as Guest!');
+                        // State update will trigger re-render and navigate to /play
+                    } catch (err) {
+                        console.error('Failed to setup guest profile:', err);
+                        toast.error('Failed to setup guest account.');
+                        setLoading(false);
+                    }
+                };
+                
+                completeAsGuest();
+                return; // Wait for profile update to finish
+            }
+
+            // 2. Normal Complete Profile Check (social login for students missing studentId)
+            // Instructors/admins/guests don't need to complete profile
             if (user.role !== 'instructor' && user.role !== 'admin' && user.role !== 'guest' && !user.studentId) {
                 if (modal?.type !== 'complete_profile') {
                     setModal({ type: 'complete_profile', role: (user.role === 'user' || !user.role) ? 'student' : user.role });
@@ -644,7 +682,7 @@ const LandingPage = () => {
                                     <button
                                         type="button"
                                         className="landing-modal__google"
-                                        onClick={loginWithGoogle}
+                                        onClick={handleGoogleLogin}
                                         disabled={loading}
                                     >
                                         <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -867,7 +905,7 @@ const LandingPage = () => {
                                 <button
                                     type="button"
                                     className="landing-modal__google"
-                                    onClick={loginWithGoogle}
+                                    onClick={handleGoogleLogin}
                                     disabled={loading}
                                 >
                                     <svg className="w-5 h-5" viewBox="0 0 24 24">
