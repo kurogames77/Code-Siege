@@ -201,8 +201,8 @@ const ArenaBattle = () => {
                         withdrawnName: user.name
                     }
                 });
-                // Wait for the broadcast to be delivered before navigating
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                // Give a tiny buffer for the socket flush before unmount (100ms instead of 1.5s freeze)
+                await new Promise(resolve => setTimeout(resolve, 100));
             } catch (err) {
                 console.error('[ArenaBattle] Failed to send withdraw broadcast:', err);
             }
