@@ -153,6 +153,12 @@ export const UserProvider = ({ children }) => {
         // Clear the logged_out flag so checkAuth doesn't immediately kill the new session.
         if (window.location.hash && (window.location.hash.includes('access_token=') || window.location.hash.includes('error='))) {
             localStorage.removeItem('code_siege_logged_out');
+            
+            // Clear the access_token from the URL bar for security and aesthetics,
+            // but give the Supabase client library a moment to parse it first.
+            setTimeout(() => {
+                window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
+            }, 500);
         }
         checkAuth();
     }, []);

@@ -95,7 +95,7 @@ const InstructorSidebar = ({ activeTab, setActiveTab, isCollapsed, setIsCollapse
                         )}
 
                         <div className="relative shrink-0">
-                            <img src={gameIcon} alt="Logo" className="w-10 h-10 object-contain" />
+                            <img src={gameIcon} alt="Logo" className="w-10 h-10 object-contain scale-[1.8]" />
                         </div>
 
                         {!isCollapsed && (
