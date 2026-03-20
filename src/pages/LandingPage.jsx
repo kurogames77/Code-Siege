@@ -194,28 +194,12 @@ const LandingPage = () => {
             // 1. Check for intended guest Google login
             const intendedRole = localStorage.getItem('code_siege_intended_role');
             if (intendedRole === 'guest' && user.role !== 'guest' && !user.studentId) {
-                // They just logged in with Google intending to be a guest
-                const completeAsGuest = async () => {
-                    setLoading(true);
-                    try {
-                        await updateProfile({
-                            name: user.name || user.username || 'Guest',
-                            student_id: `GUEST-${Date.now()}`,
-                            course: 'GUEST',
-                            role: 'guest'
-                        });
-                        localStorage.removeItem('code_siege_intended_role');
-                        toast.success('Joined as Guest!');
-                        // State update will trigger re-render and navigate to /play
-                    } catch (err) {
-                        console.error('Failed to setup guest profile:', err);
-                        toast.error('Failed to setup guest account.');
-                        setLoading(false);
-                    }
-                };
-                
-                completeAsGuest();
-                return; // Wait for profile update to finish
+                // Show the complete profile modal locked to the guest role
+                if (modal?.type !== 'complete_profile') {
+                    setModal({ type: 'complete_profile', role: 'guest', isGuestLocked: true });
+                    setFullName(user.name || user.username || '');
+                }
+                return; // Wait for user to complete the form
             }
 
             // 2. Normal Complete Profile Check (social login for students missing studentId)
@@ -1071,32 +1055,34 @@ const LandingPage = () => {
                             </p>
                         </div>
 
-                        <div className="landing-modal__roles" role="radiogroup" aria-label="Select role">
-                            <button
-                                type="button"
-                                className={`landing-modal__role ${modal.role === 'student' ? 'is-active' : ''}`}
-                                onClick={() => updateRole('student')}
-                            >
-                                <GraduationCap />
-                                Student
-                            </button>
-                            <button
-                                type="button"
-                                className={`landing-modal__role ${modal.role === 'instructor' ? 'is-active' : ''}`}
-                                onClick={() => updateRole('instructor')}
-                            >
-                                <User />
-                                Instructor
-                            </button>
-                            <button
-                                type="button"
-                                className={`landing-modal__role ${modal.role === 'guest' ? 'is-active' : ''}`}
-                                onClick={() => updateRole('guest')}
-                            >
-                                <Shield />
-                                Guest
-                            </button>
-                        </div>
+                        {!modal.isGuestLocked && (
+                            <div className="landing-modal__roles" role="radiogroup" aria-label="Select role">
+                                <button
+                                    type="button"
+                                    className={`landing-modal__role ${modal.role === 'student' ? 'is-active' : ''}`}
+                                    onClick={() => updateRole('student')}
+                                >
+                                    <GraduationCap />
+                                    Student
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`landing-modal__role ${modal.role === 'instructor' ? 'is-active' : ''}`}
+                                    onClick={() => updateRole('instructor')}
+                                >
+                                    <User />
+                                    Instructor
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`landing-modal__role ${modal.role === 'guest' ? 'is-active' : ''}`}
+                                    onClick={() => updateRole('guest')}
+                                >
+                                    <Shield />
+                                    Guest
+                                </button>
+                            </div>
+                        )}
 
                         {error && (
                             <div className="landing-modal__error">
