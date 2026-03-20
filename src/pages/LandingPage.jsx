@@ -330,9 +330,9 @@ const LandingPage = () => {
 
         try {
             const role = modal?.role || 'student';
-            const id = (role === 'student' ? studentId : instructorId).trim();
+            const id = role !== 'guest' ? (role === 'student' ? studentId : instructorId).trim() : '';
 
-            if (!id) {
+            if (!id && role !== 'guest') {
                 throw new Error(`Please enter your ${role === 'student' ? 'Student' : 'Instructor'} ID`);
             }
 
@@ -340,13 +340,21 @@ const LandingPage = () => {
                 throw new Error('Please select your course');
             }
 
-            await updateProfile({
-                student_id: id,
-                course: course,
+            const profileData = {
                 role: role,
                 username: fullName.trim(),
-                student_code: role === 'student' ? instructorCode.trim() : undefined
-            });
+            };
+
+            if (role === 'guest') {
+                profileData.student_id = `GUEST-${Date.now()}`;
+                profileData.course = 'GUEST';
+            } else {
+                profileData.student_id = id;
+                profileData.course = course;
+                profileData.student_code = role === 'student' ? instructorCode.trim() : undefined;
+            }
+
+            await updateProfile(profileData);
 
             toast.success('Profile completed! Welcome to Code Siege.');
             closeModal();
@@ -1080,6 +1088,14 @@ const LandingPage = () => {
                                 <User />
                                 Instructor
                             </button>
+                            <button
+                                type="button"
+                                className={`landing-modal__role ${modal.role === 'guest' ? 'is-active' : ''}`}
+                                onClick={() => updateRole('guest')}
+                            >
+                                <Shield />
+                                Guest
+                            </button>
                         </div>
 
                         {error && (
@@ -1104,19 +1120,21 @@ const LandingPage = () => {
                                 </div>
                             </label>
 
-                            <label className="landing-modal__field">
-                                <span className="landing-modal__label">{modal.role === 'student' ? 'Student ID' : 'Instructor ID'}</span>
-                                <div className="landing-modal__input">
-                                    <User />
-                                    <input
-                                        type="text"
-                                        required
-                                        placeholder={modal.role === 'student' ? 'Enter your student ID' : 'Enter your instructor ID'}
-                                        value={modal.role === 'student' ? studentId : instructorId}
-                                        onChange={(e) => modal.role === 'student' ? setStudentId(e.target.value) : setInstructorId(e.target.value)}
-                                    />
-                                </div>
-                            </label>
+                            {modal.role !== 'guest' && (
+                                <label className="landing-modal__field">
+                                    <span className="landing-modal__label">{modal.role === 'student' ? 'Student ID' : 'Instructor ID'}</span>
+                                    <div className="landing-modal__input">
+                                        <User />
+                                        <input
+                                            type="text"
+                                            required
+                                            placeholder={modal.role === 'student' ? 'Enter your student ID' : 'Enter your instructor ID'}
+                                            value={modal.role === 'student' ? studentId : instructorId}
+                                            onChange={(e) => modal.role === 'student' ? setStudentId(e.target.value) : setInstructorId(e.target.value)}
+                                        />
+                                    </div>
+                                </label>
+                            )}
 
                             {modal.role === 'student' && (
                                 <label className="landing-modal__field">
