@@ -501,7 +501,9 @@ router.patch('/:id', authenticateUser, async (req, res) => {
         if (gender !== undefined) updates.gender = gender;
         if (student_code !== undefined) updates.student_code = student_code;
 
-        const { data: profile, error } = await supabase
+        // Use service role to bypass RLS (authenticateUser already verified identity)
+        const db = supabaseService || supabase;
+        const { data: profile, error } = await db
             .from('users')
             .update(updates)
             .eq('id', id)
@@ -509,6 +511,21 @@ router.patch('/:id', authenticateUser, async (req, res) => {
             .single();
 
         if (error) {
+            // If update returned 0 rows (e.g. new OAuth user, trigger row not yet created),
+            // try an upsert as fallback
+            if (error.code === 'PGRST116' || error.message?.includes('JSON object')) {
+                console.log(`[Users] PATCH update returned no rows for ${id}, trying upsert fallback...`);
+                const { data: upserted, error: upsertErr } = await db
+                    .from('users')
+                    .upsert({ id, email: req.user.email, ...updates }, { onConflict: 'id' })
+                    .select()
+                    .single();
+                if (upsertErr) {
+                    console.error('[Users] Upsert fallback also failed:', upsertErr);
+                    return res.status(400).json({ error: upsertErr.message });
+                }
+                return res.json({ message: 'Profile created/updated', profile: upserted });
+            }
             return res.status(400).json({ error: error.message });
         }
 
