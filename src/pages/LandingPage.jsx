@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Shield, GraduationCap, User, Mail, Lock, BookOpen, ChevronLeft, Loader2, AlertCircle, Eye, EyeOff, Trophy, Swords, Users, Castle, X, CheckCircle, CheckCircle2 } from 'lucide-react';
+import { Shield, GraduationCap, User, Mail, Lock, BookOpen, ChevronLeft, Loader2, AlertCircle, Eye, EyeOff, Trophy, Swords, Users, Castle, X, CheckCircle, CheckCircle2, KeyRound } from 'lucide-react';
 import { useRef } from 'react';
 import '../styles/landing-page.css';
 import { authAPI } from '../services/api';
