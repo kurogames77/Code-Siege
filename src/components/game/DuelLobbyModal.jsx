@@ -259,6 +259,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 presence: {
                     key: user.id,
                 },
+                broadcast: { ack: true, self: false }
             },
         });
 
@@ -360,7 +361,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             })
             .on('broadcast', { event: 'sync-settings' }, ({ payload }) => {
                 // Guest receives the host's match settings
-                if (payload.targetId === user.id) {
+                if (payload.targetId === user.id || payload.targetId === '*') {
 
                     setSelectedLanguage(payload.language);
                     setSelectedDifficulty(payload.difficulty);
@@ -399,18 +400,20 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                     if (initialOpponent && !acceptSentRef.current) {
                         acceptSentRef.current = true;
 
-                        await channel.send({
-                            type: 'broadcast',
-                            event: 'duel-accept',
-                            payload: {
-                                targetId: initialOpponent.id,
-                                senderId: user.id,
-                                senderName: user.name,
-                                senderAvatar: user.avatar,
-                                senderRankName: user.rankName,
-                                senderRankIcon: user.rankIcon
-                            }
-                        });
+                        setTimeout(async () => {
+                            await channel.send({
+                                type: 'broadcast',
+                                event: 'duel-accept',
+                                payload: {
+                                    targetId: initialOpponent.id,
+                                    senderId: user.id,
+                                    senderName: user.name,
+                                    senderAvatar: user.avatar,
+                                    senderRankName: user.rankName,
+                                    senderRankIcon: user.rankIcon
+                                }
+                            });
+                        }, 500);
                     }
                 }
             });
@@ -614,6 +617,30 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         }
     }, [matchState, isUserReady, isOpponentReady, initialOpponent, opponent, user]);
 
+    // --- SETTINGS SYNC ---
+    const handleSettingChange = (settingType, value) => {
+        playSelect();
+        if (settingType === 'language') setSelectedLanguage(value);
+        if (settingType === 'difficulty') setSelectedDifficulty(value);
+        if (settingType === 'mode') setSelectedMode(value);
+        if (settingType === 'wager') setSelectedWager(value);
+
+        // Broadcast change immediately if host
+        if (lobbyChannelRef.current && !opponent) {
+            lobbyChannelRef.current.send({
+                type: 'broadcast',
+                event: 'sync-settings',
+                payload: {
+                    targetId: '*', // Broadcast to anyone in lobby
+                    language: settingType === 'language' ? value : selectedLanguageRef.current,
+                    difficulty: settingType === 'difficulty' ? value : selectedDifficultyRef.current,
+                    mode: settingType === 'mode' ? value : selectedModeRef.current,
+                    wager: settingType === 'wager' ? value : selectedWagerRef.current
+                }
+            });
+        }
+    };
+
     // --- AUDIO CONTROL ---
     useEffect(() => {
         const audio = audioRef.current;
@@ -745,7 +772,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                             ) : (
                                                 <select
                                                     value={selectedLanguage}
-                                                    onChange={(e) => { playSelect(); setSelectedLanguage(e.target.value); }}
+                                                    onChange={(e) => handleSettingChange('language', e.target.value)}
                                                     className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-cyan-500 focus:outline-none transition-colors cursor-pointer"
                                                 >
                                                     {courses.length > 0 ? (
@@ -773,7 +800,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                             ) : (
                                                 <select
                                                     value={selectedDifficulty}
-                                                    onChange={(e) => { playSelect(); setSelectedDifficulty(e.target.value); }}
+                                                    onChange={(e) => handleSettingChange('difficulty', e.target.value)}
                                                     className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-rose-500 focus:outline-none transition-colors cursor-pointer"
                                                 >
                                                     <option value="Easy">Easy</option>
@@ -796,7 +823,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                             ) : (
                                                 <select
                                                     value={selectedMode}
-                                                    onChange={(e) => { playSelect(); setSelectedMode(e.target.value); }}
+                                                    onChange={(e) => handleSettingChange('mode', e.target.value)}
                                                     className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-violet-500 focus:outline-none transition-colors cursor-pointer"
                                                 >
                                                     <option>Puzzle Blocks</option>
@@ -819,7 +846,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                             ) : (
                                                 <select
                                                     value={selectedWager}
-                                                    onChange={(e) => { playSelect(); setSelectedWager(e.target.value); }}
+                                                    onChange={(e) => handleSettingChange('wager', e.target.value)}
                                                     className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-sm px-4 py-3 rounded-xl appearance-none relative z-10 focus:border-amber-500 focus:outline-none transition-colors cursor-pointer"
                                                 >
                                                     <option value="50">50 EXP</option>
