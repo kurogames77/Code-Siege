@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { DndContext, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, X, Trophy } from 'lucide-react'; // Lightbulb removed
+import { Play, X, Trophy, ZoomIn, ZoomOut, Maximize } from 'lucide-react'; // Lightbulb removed
 import PuzzleBlock from '../components/game/PuzzleBlock';
 import CodeTimer from '../components/game/CodeTimer';
 import Button from '../components/ui/Button';
@@ -66,6 +66,21 @@ const ArenaBattle = () => {
     const containerRef = useRef(null);
     const { playConnect, playCountdownVoice, playClick } = useSound();
 
+    // Calculate initial scale based on block count
+    const getScaleForBlockCount = (count) => {
+        if (count <= 3) return 1;
+        if (count <= 5) return 0.85;
+        if (count <= 8) return 0.7;
+        return 0.6;
+    };
+    const [canvasScale, setCanvasScale] = useState(1);
+
+    const customModifier = ({ transform }) => ({
+        ...transform,
+        x: transform.x / canvasScale,
+        y: transform.y / canvasScale
+    });
+
     // Mock Puzzle data
     const puzzle = {
         description: "Arrange the blocks to calculate the total power output.",
@@ -82,6 +97,7 @@ const ArenaBattle = () => {
 
     useEffect(() => {
         if (puzzle && puzzle.initialBlocks) {
+            setCanvasScale(getScaleForBlockCount(puzzle.initialBlocks.length));
             const initialized = puzzle.initialBlocks.map((b, i) => ({
                 ...b,
                 position: {
@@ -300,14 +316,24 @@ const ArenaBattle = () => {
             if (index === -1) return currentBlocks;
 
             const newBlocks = [...currentBlocks];
+            
+            // Adjust delta based on canvas scale
+            let newX = newBlocks[index].position.x + (delta.x / canvasScale);
+            let newY = newBlocks[index].position.y + (delta.y / canvasScale);
+
+            // Clamp positions to reasonable bounds so they don't get lost when zoomed out
+            const padding = 20;
+            const maxWidth = containerRef.current ? (containerRef.current.clientWidth / canvasScale) - 150 : 2000;
+            const maxHeight = containerRef.current ? (containerRef.current.clientHeight / canvasScale) - 80 : 1500;
+            
+            newX = Math.max(padding, Math.min(newX, maxWidth));
+            newY = Math.max(padding, Math.min(newY, maxHeight));
+
             const updatedBlock = {
                 ...newBlocks[index],
-                position: {
-                    x: newBlocks[index].position.x + delta.x,
-                    y: newBlocks[index].position.y + delta.y
-                }
+                position: { x: newX, y: newY }
             };
-            const SNAP_THRESHOLD = 30;
+            const SNAP_THRESHOLD = 50; // Increased to 50 for consistent snapping
             const BLOCK_WIDTH = 140;
             const BLOCK_HEIGHT = 48;
             for (const other of newBlocks) {
@@ -545,11 +571,50 @@ const ArenaBattle = () => {
                                 </div>
                             </div>
 
-                            <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-                                <div className="relative w-full flex-1 p-12 overflow-y-auto custom-scrollbar">
-                                    {blocks.map((block) => (
-                                        <PuzzleBlock key={block.id} {...block} variant={mode} />
-                                    ))}
+                            <DndContext 
+                                sensors={sensors} 
+                                onDragEnd={handleDragEnd}
+                                modifiers={[customModifier]}
+                            >
+                                <div className="relative w-full flex-1 overflow-hidden">
+                                    {/* Zoom Controls */}
+                                    <div className="absolute bottom-4 right-4 z-50 flex items-center gap-2">
+                                        <button 
+                                            onClick={() => setCanvasScale(s => Math.max(0.6, +(s - 0.1).toFixed(1)))} 
+                                            disabled={canvasScale <= 0.6}
+                                            className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                                        >
+                                            <ZoomOut className="w-5 h-5" />
+                                        </button>
+                                        <button 
+                                            onClick={() => setCanvasScale(getScaleForBlockCount(blocks.length))} 
+                                            className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg"
+                                        >
+                                            <Maximize className="w-5 h-5" />
+                                        </button>
+                                        <button 
+                                            onClick={() => setCanvasScale(s => Math.min(1, +(s + 0.1).toFixed(1)))} 
+                                            disabled={canvasScale >= 1}
+                                            className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                                        >
+                                            <ZoomIn className="w-5 h-5" />
+                                        </button>
+                                        <div className="px-3 py-1.5 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 rounded-lg shadow-lg">
+                                            <span className="text-cyan-400 font-mono text-xs font-bold tracking-wider">{Math.round(canvasScale * 100)}%</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Scaled blocks container */}
+                                    <div 
+                                        className="w-full h-full origin-top-left"
+                                        style={{ transform: `scale(${canvasScale})`, width: `${100 / canvasScale}%`, height: `${100 / canvasScale}%` }}
+                                    >
+                                        <div className="relative w-full h-full p-8">
+                                            {blocks.map((block) => (
+                                                <PuzzleBlock key={block.id} {...block} variant={mode} />
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             </DndContext>
                         </div>
