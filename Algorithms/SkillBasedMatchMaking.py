@@ -7,7 +7,7 @@ stage and produces match scores that the multiplayer service uses.
 """
 
 import logging
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Any
 from KMeans_Cluster import squared_distance
 from IRT_Algo import StudentPerformanceAnalyzer
 from DDA_Algo import DifficultyAdjuster
@@ -77,7 +77,7 @@ def find_best_match(
     completed_achievements: int,
     success_count: int,
     fail_count: int
-) -> Dict[str, Optional[float]]:
+) -> Dict[str, Any]:
     """
     Given a player index plus cluster centroids, return the most compatible
     opponent using adaptive weights and IRT/DDA adjustments.
