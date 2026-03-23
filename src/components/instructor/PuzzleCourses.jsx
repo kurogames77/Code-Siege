@@ -10,15 +10,15 @@ import cppIcon from '../../assets/C++-Photoroom.png';
 import javascriptIcon from '../../assets/free-javascript-3d-icon-download-in-png-blend-fbx-gltf-file-formats--html-logo-vue-angular-coding-lang-pack-logos-icons-7577991-Photoroom.png';
 import mysqlIcon from '../../assets/free-mysql-9294870-7578013-Photoroom.png';
 import phpIcon from '../../assets/php_emblem-Photoroom.png';
-import javaIcon from '../../assets/java.jpg';
-import rubyIcon from '../../assets/ruby.jpg';
-import goIcon from '../../assets/Go.jpg';
-import swiftIcon from '../../assets/swift.jpg';
-import kotlinIcon from '../../assets/kotlin.jpg';
-import rustIcon from '../../assets/rust.jpg';
-import tsIcon from '../../assets/typescript.jpg';
-import htmlIcon from '../../assets/html.jpg';
-import cssIcon from '../../assets/css.jpg';
+import javaIcon from '../../assets/java.png';
+import rubyIcon from '../../assets/ruby.png';
+import goIcon from '../../assets/Go.png';
+import swiftIcon from '../../assets/swift.png';
+import kotlinIcon from '../../assets/kotlin.png';
+import rustIcon from '../../assets/rust.png';
+import tsIcon from '../../assets/typescript.png';
+import htmlIcon from '../../assets/html.png';
+import cssIcon from '../../assets/css.png';
 
 // Master list of all supported languages
 const SUPPORTED_LANGUAGES = [
