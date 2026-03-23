@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Shield, GraduationCap, User, Mail, Lock, BookOpen, ChevronLeft, Loader2, AlertCircle, Eye, EyeOff, Trophy, Swords, Users, Castle, X, CheckCircle, CheckCircle2, KeyRound } from 'lucide-react';
-import { useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
 import '../styles/landing-page.css';
 import { authAPI } from '../services/api';
 import nameImage from '../assets/name.png';
@@ -408,50 +408,8 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* Features Section (About) */}
-            < section id="about" className="landing-features" >
-                <div className="features-content">
-                    <div className="features-header reveal">
-                        <span className="hero-eyebrow">GAME FEATURES</span>
-                        <h2 className="features-title">UNLEASH YOUR <span className="accent">POTENTIAL</span></h2>
-                        <p className="features-subtitle">Master the art of coding through immersive gameplay, strategic battles, and a global ranking system.</p>
-                    </div>
-
-                    <div className="features-grid">
-                        <div className="feature-card reveal" style={{ '--index': 1 }}>
-                            <div className="feature-icon-wrapper">
-                                <img src={towerIcon} alt="Campaign" className="feature-icon-img" />
-                            </div>
-                            <h3>Immersive Campaign</h3>
-                            <p>Conquer 6 unique towers, from the novice fields of Eldoria to the abstract realms of Aeterd. Master algorithms to ascend.</p>
-                        </div>
-
-                        <div className="feature-card reveal" style={{ '--index': 2 }}>
-                            <div className="feature-icon-wrapper">
-                                <img src={heroesIcon} alt="Heroes" className="feature-icon-img" />
-                            </div>
-                            <h3>Diverse Heroes</h3>
-                            <p>Command a roster of warrior, mage, and rogue coders. Unlock powerful heroes like Valerius and Nyx, each with unique traits.</p>
-                        </div>
-
-                        <div className="feature-card reveal" style={{ '--index': 3 }}>
-                            <div className="feature-icon-wrapper">
-                                <img src={battleIcon} alt="Warfare" className="feature-icon-img" />
-                            </div>
-                            <h3>Global Warfare</h3>
-                            <p>Test your code in real-time. Dominate high-stakes 1v1 Duels or compete in massive Multiplayer battles for glory.</p>
-                        </div>
-
-                        <div className="feature-card reveal" style={{ '--index': 4 }}>
-                            <div className="feature-icon-wrapper">
-                                <img src={rankingIcon} alt="Ranking" className="feature-icon-img" />
-                            </div>
-                            <h3>Rank Hierarchy</h3>
-                            <p>Climb the ladder from a humble Siege Novice to the godlike status of Siege Deity. Your code determines your rank.</p>
-                        </div>
-                    </div>
-                </div>
-            </section >
+            {/* Features Section (About) — Animated */}
+            <AboutSection towerIcon={towerIcon} heroesIcon={heroesIcon} battleIcon={battleIcon} rankingIcon={rankingIcon} />
 
             {modal?.type === 'signup' && (
                 <div className="landing-modal" role="dialog" aria-modal="true" aria-labelledby="signup-title">
@@ -1246,6 +1204,153 @@ const LandingPage = () => {
                 </div>
             )}
         </div>
+    );
+};
+
+// ─── Animated About / Features Section ─────────────────────────────
+const featureData = [
+    {
+        title: 'Immersive Campaign',
+        description: 'Conquer 6 unique towers, from the novice fields of Eldoria to the abstract realms of Aeterd. Master algorithms to ascend.',
+        iconKey: 'towerIcon',
+        gradient: 'from-purple-500/20 to-indigo-500/20',
+        glowColor: 'rgba(139, 92, 246, 0.4)',
+    },
+    {
+        title: 'Diverse Heroes',
+        description: 'Command a roster of warrior, mage, and rogue coders. Unlock powerful heroes like Valerius and Nyx, each with unique traits.',
+        iconKey: 'heroesIcon',
+        gradient: 'from-cyan-500/20 to-blue-500/20',
+        glowColor: 'rgba(6, 182, 212, 0.4)',
+    },
+    {
+        title: 'Global Warfare',
+        description: 'Test your code in real-time. Dominate high-stakes 1v1 Duels or compete in massive Multiplayer battles for glory.',
+        iconKey: 'battleIcon',
+        gradient: 'from-orange-500/20 to-rose-500/20',
+        glowColor: 'rgba(249, 115, 22, 0.4)',
+    },
+    {
+        title: 'Rank Hierarchy',
+        description: 'Climb the ladder from a humble Siege Novice to the godlike status of Siege Deity. Your code determines your rank.',
+        iconKey: 'rankingIcon',
+        gradient: 'from-amber-500/20 to-yellow-500/20',
+        glowColor: 'rgba(245, 158, 11, 0.4)',
+    },
+];
+
+const cardVariants = {
+    hidden: { opacity: 0, y: 60, scale: 0.95 },
+    visible: (i) => ({
+        opacity: 1, y: 0, scale: 1,
+        transition: { delay: i * 0.15, duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+    })
+};
+
+const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon }) => {
+    const sectionRef = useRef(null);
+    const isInView = useInView(sectionRef, { once: true, amount: 0.2 });
+    const iconMap = { towerIcon, heroesIcon, battleIcon, rankingIcon };
+
+    return (
+        <section id="about" className="landing-features" ref={sectionRef}>
+            <div className="features-content">
+                {/* Header */}
+                <motion.div
+                    className="features-header"
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.7, ease: 'easeOut' }}
+                >
+                    <motion.span
+                        className="hero-eyebrow"
+                        initial={{ opacity: 0, letterSpacing: '0.5em' }}
+                        animate={isInView ? { opacity: 1, letterSpacing: '0.2em' } : {}}
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                    >
+                        GAME FEATURES
+                    </motion.span>
+                    <h2 className="features-title">
+                        UNLEASH YOUR <span className="accent">POTENTIAL</span>
+                    </h2>
+                    <motion.p
+                        className="features-subtitle"
+                        initial={{ opacity: 0 }}
+                        animate={isInView ? { opacity: 1 } : {}}
+                        transition={{ duration: 0.6, delay: 0.4 }}
+                    >
+                        Master the art of coding through immersive gameplay, strategic battles, and a global ranking system.
+                    </motion.p>
+                </motion.div>
+
+                {/* Feature Cards Grid */}
+                <div className="features-grid">
+                    {featureData.map((feature, i) => (
+                        <motion.div
+                            key={feature.title}
+                            className="feature-card"
+                            custom={i}
+                            variants={cardVariants}
+                            initial="hidden"
+                            animate={isInView ? 'visible' : 'hidden'}
+                            whileHover={{
+                                y: -8,
+                                scale: 1.03,
+                                boxShadow: `0 20px 60px ${feature.glowColor}, 0 0 0 1px rgba(138, 95, 240, 0.3)`,
+                                transition: { duration: 0.3, ease: 'easeOut' }
+                            }}
+                            style={{ cursor: 'default' }}
+                        >
+                            {/* Animated gradient shine on hover */}
+                            <motion.div
+                                style={{
+                                    position: 'absolute', inset: 0, borderRadius: 'inherit',
+                                    background: `linear-gradient(135deg, transparent 30%, ${feature.glowColor} 50%, transparent 70%)`,
+                                    opacity: 0, pointerEvents: 'none'
+                                }}
+                                whileHover={{ opacity: 0.15 }}
+                                transition={{ duration: 0.4 }}
+                            />
+
+                            {/* Icon with floating animation */}
+                            <motion.div
+                                className="feature-icon-wrapper"
+                                animate={isInView ? {
+                                    y: [0, -6, 0],
+                                } : {}}
+                                transition={{
+                                    duration: 3 + i * 0.5,
+                                    repeat: Infinity,
+                                    ease: 'easeInOut',
+                                    delay: i * 0.3
+                                }}
+                            >
+                                <img
+                                    src={iconMap[feature.iconKey]}
+                                    alt={feature.title}
+                                    className="feature-icon-img"
+                                />
+                            </motion.div>
+
+                            <h3>{feature.title}</h3>
+                            <p>{feature.description}</p>
+
+                            {/* Bottom accent line */}
+                            <motion.div
+                                style={{
+                                    position: 'absolute', bottom: 0, left: '50%', height: '2px',
+                                    background: `linear-gradient(90deg, transparent, ${feature.glowColor}, transparent)`,
+                                    borderRadius: '1px', transform: 'translateX(-50%)',
+                                }}
+                                initial={{ width: 0, opacity: 0 }}
+                                animate={isInView ? { width: '60%', opacity: 1 } : {}}
+                                transition={{ duration: 0.8, delay: 0.5 + i * 0.15 }}
+                            />
+                        </motion.div>
+                    ))}
+                </div>
+            </div>
+        </section>
     );
 };
 

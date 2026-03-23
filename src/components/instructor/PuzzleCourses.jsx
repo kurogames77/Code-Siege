@@ -10,17 +10,8 @@ import cppIcon from '../../assets/C++-Photoroom.png';
 import javascriptIcon from '../../assets/free-javascript-3d-icon-download-in-png-blend-fbx-gltf-file-formats--html-logo-vue-angular-coding-lang-pack-logos-icons-7577991-Photoroom.png';
 import mysqlIcon from '../../assets/free-mysql-9294870-7578013-Photoroom.png';
 import phpIcon from '../../assets/php_emblem-Photoroom.png';
-import javaIcon from '../../assets/java.png';
-import rubyIcon from '../../assets/ruby.png';
-import goIcon from '../../assets/Go.png';
-import swiftIcon from '../../assets/swift.png';
-import kotlinIcon from '../../assets/kotlin.png';
-import rustIcon from '../../assets/rust.png';
-import tsIcon from '../../assets/typescript.png';
-import htmlIcon from '../../assets/html.png';
-import cssIcon from '../../assets/css.png';
 
-// Master list of all supported languages
+// Master list of all supported languages (restricted to core curriculum)
 const SUPPORTED_LANGUAGES = [
     { id: 'py', name: 'Python', color: 'yellow' },
     { id: 'js', name: 'JavaScript', color: 'amber' },
@@ -28,15 +19,6 @@ const SUPPORTED_LANGUAGES = [
     { id: 'cs', name: 'C#', color: 'purple' },
     { id: 'mysql', name: 'MySQL', color: 'orange' },
     { id: 'php', name: 'PHP', color: 'indigo' },
-    { id: 'java', name: 'Java', color: 'red' },
-    { id: 'ruby', name: 'Ruby', color: 'rose' },
-    { id: 'go', name: 'Go', color: 'cyan' },
-    { id: 'swift', name: 'Swift', color: 'orange' },
-    { id: 'kotlin', name: 'Kotlin', color: 'violet' },
-    { id: 'rust', name: 'Rust', color: 'amber' },
-    { id: 'ts', name: 'TypeScript', color: 'blue' },
-    { id: 'html', name: 'HTML', color: 'orange' },
-    { id: 'css', name: 'CSS', color: 'blue' },
 ];
 
 const PuzzleCourses = ({ theme }) => {
@@ -99,7 +81,6 @@ const PuzzleCourses = ({ theme }) => {
     const toast = useToast();
 
     // Mapping for icons
-    // Mapping for icons
     const iconMap = {
         'py': pythonIcon,
         'python': pythonIcon,
@@ -111,17 +92,7 @@ const PuzzleCourses = ({ theme }) => {
         'javascript': javascriptIcon,
         'mysql': mysqlIcon,
         'sql': mysqlIcon,
-        'php': phpIcon,
-        'java': javaIcon,
-        'ruby': rubyIcon,
-        'go': goIcon,
-        'swift': swiftIcon,
-        'kotlin': kotlinIcon,
-        'rust': rustIcon,
-        'ts': tsIcon,
-        'typescript': tsIcon,
-        'html': htmlIcon,
-        'css': cssIcon
+        'php': phpIcon
     };
 
     // Fetch Courses

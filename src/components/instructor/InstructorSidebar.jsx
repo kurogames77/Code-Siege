@@ -20,7 +20,7 @@ import {
     Crown,
     Castle
 } from 'lucide-react';
-import gameIcon from '../../assets/icongame.png';
+import gameIcon from '../../assets/icongame_backup.png';
 import rankingIcon from '../../assets/ranking.png';
 import EditInstructorProfileModal from './EditInstructorProfileModal';
 import LogoutConfirmationModal from './LogoutConfirmationModal';
@@ -84,7 +84,7 @@ const InstructorSidebar = ({ activeTab, setActiveTab, isCollapsed, setIsCollapse
 
                 {/* Logo Section */}
                 <div className={`p-8 pb-10 flex flex-col ${isCollapsed ? 'items-center' : 'items-start'} transition-all duration-300`}>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                         {!isCollapsed && (
                             <motion.span
                                 initial={{ opacity: 1 }}
@@ -94,8 +94,8 @@ const InstructorSidebar = ({ activeTab, setActiveTab, isCollapsed, setIsCollapse
                             </motion.span>
                         )}
 
-                        <div className={`relative shrink-0 ${isCollapsed ? '' : 'mx-2'}`}>
-                            <img src={gameIcon} alt="Logo" className="w-10 h-10 object-contain scale-[1.4]" />
+                        <div className="relative shrink-0">
+                            <img src={gameIcon} alt="Logo" className="w-12 h-12 object-contain" />
                         </div>
 
                         {!isCollapsed && (

@@ -103,7 +103,7 @@ const HeroesModal = ({ isOpen, onClose }) => {
             name: 'Valerius',
             role: 'Striker',
             category: 'Warrior',
-            rankLevel: 1,
+            rankLevel: 3,
             tagline: "Your existence is merely a variable I have set to zero.",
             description: 'A master swordsman who calculates every strike with zero-latency precision.',
             stats: { power: 90, speed: 90, defense: 60, utility: 60 },
