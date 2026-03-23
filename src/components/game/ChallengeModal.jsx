@@ -157,7 +157,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
 
                 // Horizontal Snap (Current Right to Other Left)
                 if (Math.abs(dx - BLOCK_WIDTH) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
-                    updatedBlock.position = { x: other.position.x + BLOCK_WIDTH, y: other.position.y };
+                    updatedBlock.position = { x: Math.round(other.position.x + BLOCK_WIDTH), y: Math.round(other.position.y) };
                     playConnect();
                     snappedWithId = other.id;
                     break;
@@ -165,7 +165,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
 
                 // Horizontal Snap (Current Left to Other Right)
                 if (Math.abs(dx + BLOCK_WIDTH) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
-                    updatedBlock.position = { x: other.position.x - BLOCK_WIDTH, y: other.position.y };
+                    updatedBlock.position = { x: Math.round(other.position.x - BLOCK_WIDTH), y: Math.round(other.position.y) };
                     playConnect();
                     snappedWithId = other.id;
                     break;
@@ -173,7 +173,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
 
                 // Vertical Snap (Current Bottom to Other Top)
                 if (Math.abs(dy - BLOCK_HEIGHT) < SNAP_THRESHOLD && Math.abs(dx) < SNAP_THRESHOLD) {
-                    updatedBlock.position = { x: other.position.x, y: other.position.y + BLOCK_HEIGHT };
+                    updatedBlock.position = { x: Math.round(other.position.x), y: Math.round(other.position.y + BLOCK_HEIGHT) };
                     playConnect();
                     snappedWithId = other.id;
                     break;
@@ -181,7 +181,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
 
                 // Vertical Snap (Current Top to Other Bottom)
                 if (Math.abs(dy + BLOCK_HEIGHT) < SNAP_THRESHOLD && Math.abs(dx) < SNAP_THRESHOLD) {
-                    updatedBlock.position = { x: other.position.x, y: other.position.y - BLOCK_HEIGHT };
+                    updatedBlock.position = { x: Math.round(other.position.x), y: Math.round(other.position.y - BLOCK_HEIGHT) };
                     playConnect();
                     snappedWithId = other.id;
                     break;
@@ -279,7 +279,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             const dy = b2.position.y - b1.position.y;
             const BLOCK_WIDTH = 140;
             const BLOCK_HEIGHT = 48;
-            const TOLERANCE = 15; // Widened from 10 for more forgiving validation
+            const TOLERANCE = 20; // Wide enough to handle floating-point drift at lower zoom levels
 
             // Horizontal connection
             const isHoriz = Math.abs(dx - BLOCK_WIDTH) < TOLERANCE && Math.abs(dy) < TOLERANCE;

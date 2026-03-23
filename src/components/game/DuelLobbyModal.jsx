@@ -239,15 +239,19 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     useEffect(() => {
         if (!isOpen) {
             acceptSentRef.current = false;
-            // Broadcast leave if we were in an active lobby
+            // Broadcast leave if we were in an active lobby — await + delay to ensure delivery
             if (lobbyChannelRef.current && opponentRef.current) {
-                lobbyChannelRef.current.send({
+                const ch = lobbyChannelRef.current;
+                ch.send({
                     type: 'broadcast',
                     event: 'player-leave',
                     payload: { playerId: user?.id }
                 }).catch(() => { });
             }
-            resetLobbyState();
+            // Small delay to let the broadcast flush before full reset
+            setTimeout(() => {
+                resetLobbyState();
+            }, 150);
         }
     }, [isOpen, resetLobbyState]);
 
@@ -420,16 +424,17 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
 
         return () => {
             // Send leave broadcast then tear down the channel.
-            // Using a short timeout to give the async send time to go through
-            // before removeChannel destroys the connection.
+            // Add a delay before removeChannel to ensure the broadcast is flushed.
             const ch = channel;
             ch.send({
                 type: 'broadcast',
                 event: 'player-leave',
                 payload: { playerId: user.id }
-            }).finally(() => {
+            }).catch(() => { });
+            // Give the broadcast time to flush before destroying the channel
+            setTimeout(() => {
                 supabase.removeChannel(ch);
-            });
+            }, 300);
         };
     }, [isOpen, user, lobbyId]);
 
@@ -625,13 +630,14 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         if (settingType === 'mode') setSelectedMode(value);
         if (settingType === 'wager') setSelectedWager(value);
 
-        // Broadcast change immediately if host
-        if (lobbyChannelRef.current && !opponent) {
+        // Broadcast change immediately if we are the HOST (host = !initialOpponent)
+        // This ensures settings sync to guest both before and after they join
+        if (lobbyChannelRef.current && !initialOpponent) {
             lobbyChannelRef.current.send({
                 type: 'broadcast',
                 event: 'sync-settings',
                 payload: {
-                    targetId: '*', // Broadcast to anyone in lobby
+                    targetId: opponentRef.current?.id || '*',
                     language: settingType === 'language' ? value : selectedLanguageRef.current,
                     difficulty: settingType === 'difficulty' ? value : selectedDifficultyRef.current,
                     mode: settingType === 'mode' ? value : selectedModeRef.current,
@@ -1277,14 +1283,17 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                                     Continue
                                                 </button>
                                                 <button
-                                                    onClick={() => {
-                                                        // Broadcast leave before closing
+                                                    onClick={async () => {
+                                                        // Broadcast leave before closing — await + delay to ensure delivery
                                                         if (lobbyChannelRef.current) {
-                                                            lobbyChannelRef.current.send({
-                                                                type: 'broadcast',
-                                                                event: 'player-leave',
-                                                                payload: { playerId: user?.id }
-                                                            }).catch(() => { });
+                                                            try {
+                                                                await lobbyChannelRef.current.send({
+                                                                    type: 'broadcast',
+                                                                    event: 'player-leave',
+                                                                    payload: { playerId: user?.id }
+                                                                });
+                                                                await new Promise(resolve => setTimeout(resolve, 200));
+                                                            } catch (e) { /* best effort */ }
                                                         }
                                                         resetLobbyState();
                                                         onBack();

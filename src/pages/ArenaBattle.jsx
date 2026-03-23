@@ -238,8 +238,8 @@ const ArenaBattle = () => {
             const dy = b2.position.y - b1.position.y;
             const BLOCK_WIDTH = 140;
             const BLOCK_HEIGHT = 48;
-            const isHoriz = Math.abs(dx - BLOCK_WIDTH) < 10 && Math.abs(dy) < 10;
-            const isVert = Math.abs(dy - BLOCK_HEIGHT) < 10 && Math.abs(dx) < 10;
+            const isHoriz = Math.abs(dx - BLOCK_WIDTH) < 20 && Math.abs(dy) < 20;
+            const isVert = Math.abs(dy - BLOCK_HEIGHT) < 20 && Math.abs(dx) < 20;
             return isHoriz || isVert;
         };
 
@@ -341,22 +341,22 @@ const ArenaBattle = () => {
                 const dx = updatedBlock.position.x - other.position.x;
                 const dy = updatedBlock.position.y - other.position.y;
                 if (Math.abs(dx - BLOCK_WIDTH) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
-                    updatedBlock.position = { x: other.position.x + BLOCK_WIDTH, y: other.position.y };
+                    updatedBlock.position = { x: Math.round(other.position.x + BLOCK_WIDTH), y: Math.round(other.position.y) };
                     playConnect();
                     break;
                 }
                 if (Math.abs(dx + BLOCK_WIDTH) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
-                    updatedBlock.position = { x: other.position.x - BLOCK_WIDTH, y: other.position.y };
+                    updatedBlock.position = { x: Math.round(other.position.x - BLOCK_WIDTH), y: Math.round(other.position.y) };
                     playConnect();
                     break;
                 }
                 if (Math.abs(dy - BLOCK_HEIGHT) < SNAP_THRESHOLD && Math.abs(dx) < SNAP_THRESHOLD) {
-                    updatedBlock.position = { x: other.position.x, y: other.position.y + BLOCK_HEIGHT };
+                    updatedBlock.position = { x: Math.round(other.position.x), y: Math.round(other.position.y + BLOCK_HEIGHT) };
                     playConnect();
                     break;
                 }
                 if (Math.abs(dy + BLOCK_HEIGHT) < SNAP_THRESHOLD && Math.abs(dx) < SNAP_THRESHOLD) {
-                    updatedBlock.position = { x: other.position.x, y: other.position.y - BLOCK_HEIGHT };
+                    updatedBlock.position = { x: Math.round(other.position.x), y: Math.round(other.position.y - BLOCK_HEIGHT) };
                     playConnect();
                     break;
                 }

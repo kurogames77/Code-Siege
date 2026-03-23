@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DndContext, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
-import { Swords, Trophy, Clock, X, User, Shield, Zap, Play } from 'lucide-react';
+import { Swords, Trophy, Clock, X, User, Shield, Zap, Play, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 import PuzzleBlock from '../components/game/PuzzleBlock';
 import CodeTimer from '../components/game/CodeTimer';
 import Button from '../components/ui/Button';
@@ -82,6 +82,16 @@ const GrandArena = () => {
 
     const containerRef = useRef(null);
 
+    // Calculate initial scale based on block count (clamped to 60%-100%)
+    const getScaleForBlockCount = (count) => {
+        if (count <= 3) return 1;
+        if (count <= 5) return 0.85;
+        if (count <= 8) return 0.7;
+        return 0.6;
+    };
+
+    const [canvasScale, setCanvasScale] = useState(1);
+
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
@@ -112,6 +122,7 @@ const GrandArena = () => {
             }
         }));
         setBlocks(initialized);
+        setCanvasScale(getScaleForBlockCount(initialized.length));
     }, []);
 
     // Simulate Opponent Progress
@@ -161,17 +172,23 @@ const GrandArena = () => {
     const handleDragEnd = (event) => {
         const { active, delta } = event;
         setBlocks((prev) =>
-            prev.map((block) =>
-                block.id === active.id
-                    ? {
-                        ...block,
-                        position: {
-                            x: (block.position?.x || 0) + delta.x,
-                            y: (block.position?.y || 0) + delta.y
-                        }
+            prev.map((block) => {
+                if (block.id !== active.id) return block;
+                
+                // Convert screen-space delta to canvas-space by dividing by scale
+                const newX = (block.position?.x || 0) + (delta.x / canvasScale);
+                const newY = (block.position?.y || 0) + (delta.y / canvasScale);
+
+                // For a more complete snap implementation similar to ArenaBattle, 
+                // we'd do the full collision check. But for now we just apply the rounded position + scale.
+                return {
+                    ...block,
+                    position: {
+                        x: Math.round(newX),
+                        y: Math.round(newY)
                     }
-                    : block
-            )
+                };
+            })
         );
     };
 
@@ -220,6 +237,13 @@ const GrandArena = () => {
         updateExp(-wagerAmount);
         setTimeout(() => setShowPostScene(true), 1500);
     };
+
+    // Modifier: compensate for CSS scale on the container so the block follows the cursor during drag
+    const customModifier = ({ transform }) => ({
+        ...transform,
+        x: transform.x / canvasScale,
+        y: transform.y / canvasScale
+    });
 
     return (
         <div className="min-h-screen bg-[#020617] relative overflow-hidden font-inter text-slate-200"
@@ -361,11 +385,47 @@ const GrandArena = () => {
                                 </div>
                             </div>
 
-                            <DndContext id="grand-arena-dnd" sensors={sensors} onDragEnd={handleDragEnd}>
-                                <div className="p-8 w-full h-full">
-                                    {blocks.map((block) => (
-                                        <PuzzleBlock key={block.id} {...block} />
-                                    ))}
+                            <DndContext id="grand-arena-dnd" sensors={sensors} onDragEnd={handleDragEnd} modifiers={[customModifier]}>
+                                <div className="relative w-full h-full overflow-hidden">
+                                    {/* Zoom Controls */}
+                                    <div className="absolute bottom-4 right-4 z-50 flex items-center gap-2">
+                                        <button 
+                                            onClick={() => setCanvasScale(s => Math.max(0.6, +(s - 0.1).toFixed(1)))} 
+                                            disabled={canvasScale <= 0.6}
+                                            className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                                        >
+                                            <ZoomOut className="w-5 h-5" />
+                                        </button>
+                                        <button 
+                                            onClick={() => setCanvasScale(getScaleForBlockCount(blocks.length))} 
+                                            className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg"
+                                        >
+                                            <Maximize className="w-5 h-5" />
+                                        </button>
+                                        <button 
+                                            onClick={() => setCanvasScale(s => Math.min(1, +(s + 0.1).toFixed(1)))} 
+                                            disabled={canvasScale >= 1}
+                                            className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                                        >
+                                            <ZoomIn className="w-5 h-5" />
+                                        </button>
+                                        {/* Zoom Percentage Indicator */}
+                                        <div className="px-3 py-1.5 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 rounded-lg shadow-lg">
+                                            <span className="text-cyan-400 font-mono text-xs font-bold tracking-wider">{Math.round(canvasScale * 100)}%</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Scaled blocks container */}
+                                    <div 
+                                        className="w-full h-full origin-top-left"
+                                        style={{ transform: `scale(${canvasScale})`, width: `${100 / canvasScale}%`, height: `${100 / canvasScale}%` }}
+                                    >
+                                        <div className="relative w-full h-full p-8">
+                                            {blocks.map((block) => (
+                                                <PuzzleBlock key={block.id} {...block} />
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             </DndContext>
                         </div>

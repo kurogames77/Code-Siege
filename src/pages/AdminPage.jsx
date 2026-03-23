@@ -11,6 +11,7 @@ import InstructorApplications from '../components/admin/InstructorApplications';
 import SystemLogs from '../components/admin/SystemLogs';
 import StudentCodesManager from '../components/admin/StudentCodesManager';
 import StudentManagement from '../components/admin/StudentManagement';
+import GuestManagement from '../components/admin/GuestManagement';
 
 const AdminPage = () => {
     const { user, isAuthenticated, loading } = useUser();
@@ -54,6 +55,8 @@ const AdminPage = () => {
                 return <InstructorApplications theme={theme} />;
             case 'codes':
                 return <StudentCodesManager theme={theme} />;
+            case 'guests':
+                return <GuestManagement theme={theme} />;
             case 'logs':
                 return <SystemLogs theme={theme} />;
             case 'security':
