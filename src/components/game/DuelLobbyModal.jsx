@@ -298,6 +298,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             })
             .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
                 // Detect opponent leaving via presence leave event
+                if (matchStateRef.current === 'starting') return; // GUARD: Do not abort an active launch sequence
                 const currentOpponent = opponentRef.current;
                 if (currentOpponent) {
                     const opponentLeft = leftPresences.some(p => String(p.id) === String(currentOpponent.id)) ||
@@ -314,6 +315,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             })
             .on('broadcast', { event: 'player-leave' }, ({ payload }) => {
                 // Explicit leave broadcast: ALWAYS reset lobby — no state guard
+                if (matchStateRef.current === 'starting') return; // GUARD: Do not abort an active launch sequence
                 const currentOpponent = opponentRef.current;
                 if (currentOpponent && String(payload.playerId) === String(currentOpponent.id)) {
 

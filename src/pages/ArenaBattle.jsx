@@ -37,7 +37,7 @@ const ArenaBattle = () => {
     const [currentReward, setCurrentReward] = useState(parseInt(wager, 10) || 100);
     const [terminalLogs, setTerminalLogs] = useState([]);
 
-    // Unused state removed: codeValue
+    const [codeValue, setCodeValue] = useState(''); // Textarea content for Hardcode mode
     const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
     const { user, updateExp } = useUser();
 
@@ -186,6 +186,7 @@ const ArenaBattle = () => {
 
     const handleConfirmWithdraw = async () => {
         playClick();
+        setIsWithdrawModalOpen(false); // Instantly dismiss modal for responsive UI
         const wagerAmount = parseInt(wager, 10) || 100;
         updateExp(-wagerAmount);
 
@@ -227,53 +228,67 @@ const ArenaBattle = () => {
     const handleSubmit = () => {
         if (isFailed) return;
 
-        const expectedSequenceIDs = puzzle.correctSequence;
-        const expectedContent = expectedSequenceIDs.map(id => {
-            const block = puzzle.initialBlocks.find(b => b.id === id);
-            return block ? block.content : null;
-        });
+        let success = false;
 
-        const isConnected = (b1, b2) => {
-            const dx = b2.position.x - b1.position.x;
-            const dy = b2.position.y - b1.position.y;
-            const BLOCK_WIDTH = 140;
-            const BLOCK_HEIGHT = 48;
-            const isHoriz = Math.abs(dx - BLOCK_WIDTH) < 20 && Math.abs(dy) < 20;
-            const isVert = Math.abs(dy - BLOCK_HEIGHT) < 20 && Math.abs(dx) < 20;
-            return isHoriz || isVert;
-        };
+        if (mode === 'code') {
+            const expected = (puzzle?.expectedOutput || '').replace(/\s+/g, '').toLowerCase();
+            const current = codeValue.replace(/\s+/g, '').toLowerCase();
+            
+            // Client-side hardcode evaluation demo: check for output pattern or sufficient text blocks
+            if ((expected && current.includes(expected)) || codeValue.trim().length > 15) {
+                success = true;
+            } else {
+                setResult({ type: 'error', message: '> Compilation Error: Invalid syntax or output mismatch.' });
+                return;
+            }
+        } else {
+            const expectedSequenceIDs = puzzle.correctSequence;
+            const expectedContent = expectedSequenceIDs.map(id => {
+                const block = puzzle.initialBlocks.find(b => b.id === id);
+                return block ? block.content : null;
+            });
 
-        const visited = new Set();
-        const chains = [];
+            const isConnected = (b1, b2) => {
+                const dx = b2.position.x - b1.position.x;
+                const dy = b2.position.y - b1.position.y;
+                const BLOCK_WIDTH = 140;
+                const BLOCK_HEIGHT = 48;
+                const isHoriz = Math.abs(dx - BLOCK_WIDTH) < 20 && Math.abs(dy) < 20;
+                const isVert = Math.abs(dy - BLOCK_HEIGHT) < 20 && Math.abs(dx) < 20;
+                return isHoriz || isVert;
+            };
 
-        for (const block of blocks) {
-            if (visited.has(block.id)) continue;
-            const chain = [];
-            const queue = [block];
-            visited.add(block.id);
+            const visited = new Set();
+            const chains = [];
 
-            while (queue.length > 0) {
-                const current = queue.shift();
-                chain.push(current);
-                for (const potentialNeighbor of blocks) {
-                    if (!visited.has(potentialNeighbor.id)) {
-                        if (isConnected(current, potentialNeighbor) || isConnected(potentialNeighbor, current)) {
-                            visited.add(potentialNeighbor.id);
-                            queue.push(potentialNeighbor);
+            for (const block of blocks) {
+                if (visited.has(block.id)) continue;
+                const chain = [];
+                const queue = [block];
+                visited.add(block.id);
+
+                while (queue.length > 0) {
+                    const current = queue.shift();
+                    chain.push(current);
+                    for (const potentialNeighbor of blocks) {
+                        if (!visited.has(potentialNeighbor.id)) {
+                            if (isConnected(current, potentialNeighbor) || isConnected(potentialNeighbor, current)) {
+                                visited.add(potentialNeighbor.id);
+                                queue.push(potentialNeighbor);
+                            }
                         }
                     }
                 }
+                chains.push(chain);
             }
-            chains.push(chain);
-        }
 
-        let success = false;
-        for (const chain of chains) {
-            chain.sort((a, b) => a.position.x - b.position.x);
-            const chainContent = chain.map(b => b.content);
-            if (chainContent.length === expectedContent.length) {
-                const isMatch = chainContent.every((content, index) => content === expectedContent[index]);
-                if (isMatch) success = true;
+            for (const chain of chains) {
+                chain.sort((a, b) => a.position.x - b.position.x);
+                const chainContent = chain.map(b => b.content);
+                if (chainContent.length === expectedContent.length) {
+                    const isMatch = chainContent.every((content, index) => content === expectedContent[index]);
+                    if (isMatch) success = true;
+                }
             }
         }
 
@@ -570,53 +585,72 @@ const ArenaBattle = () => {
                                     <p className="text-cyan-100 text-lg font-medium leading-relaxed font-mono">{puzzle?.description}</p>
                                 </div>
                             </div>
-
-                            <DndContext 
-                                sensors={sensors} 
-                                onDragEnd={handleDragEnd}
-                                modifiers={[customModifier]}
-                            >
+                            {mode === 'code' ? (
                                 <div className="relative w-full flex-1 overflow-hidden">
-                                    {/* Zoom Controls */}
-                                    <div className="absolute bottom-4 right-4 z-50 flex items-center gap-2">
-                                        <button 
-                                            onClick={() => setCanvasScale(s => Math.max(0.6, +(s - 0.1).toFixed(1)))} 
-                                            disabled={canvasScale <= 0.6}
-                                            className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
-                                        >
-                                            <ZoomOut className="w-5 h-5" />
-                                        </button>
-                                        <button 
-                                            onClick={() => setCanvasScale(getScaleForBlockCount(blocks.length))} 
-                                            className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg"
-                                        >
-                                            <Maximize className="w-5 h-5" />
-                                        </button>
-                                        <button 
-                                            onClick={() => setCanvasScale(s => Math.min(1, +(s + 0.1).toFixed(1)))} 
-                                            disabled={canvasScale >= 1}
-                                            className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
-                                        >
-                                            <ZoomIn className="w-5 h-5" />
-                                        </button>
-                                        <div className="px-3 py-1.5 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 rounded-lg shadow-lg">
-                                            <span className="text-cyan-400 font-mono text-xs font-bold tracking-wider">{Math.round(canvasScale * 100)}%</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Scaled blocks container */}
-                                    <div 
-                                        className="w-full h-full origin-top-left"
-                                        style={{ transform: `scale(${canvasScale})`, width: `${100 / canvasScale}%`, height: `${100 / canvasScale}%` }}
-                                    >
-                                        <div className="relative w-full h-full p-8">
-                                            {blocks.map((block) => (
-                                                <PuzzleBlock key={block.id} {...block} variant={mode} />
-                                            ))}
+                                    <div className="w-full h-full p-6 font-mono flex flex-col items-center justify-center">
+                                        <div className="w-full max-w-4xl h-full flex flex-col shadow-[0_0_30px_rgba(6,182,212,0.1)]">
+                                            <div className="bg-slate-900/90 backdrop-blur-md border border-cyan-500/50 rounded-t-lg p-4 text-cyan-400 font-bold uppercase tracking-widest text-sm flex items-center justify-between">
+                                                <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />IDE Terminal</span>
+                                                <span className="text-xs text-cyan-500 font-mono px-3 py-1 bg-cyan-950/50 rounded-md border border-cyan-500/30">{language}</span>
+                                            </div>
+                                            <textarea
+                                                value={codeValue}
+                                                onChange={(e) => setCodeValue(e.target.value)}
+                                                className="w-full flex-1 bg-[#060913]/90 backdrop-blur-sm border-x border-b border-cyan-500/30 rounded-b-lg p-6 text-cyan-100 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500 placeholder-cyan-800/60 resize-none custom-scrollbar focus:placeholder-transparent text-lg font-mono leading-relaxed"
+                                                placeholder={`// Write your ${language} code sequence here...\n// Ensure syntax is strictly formatted based on the objective.\n\nfunction executeTask() {\n  \n}\n`}
+                                                spellCheck={false}
+                                            />
                                         </div>
                                     </div>
                                 </div>
-                            </DndContext>
+                            ) : (
+                                <DndContext 
+                                    sensors={sensors} 
+                                    onDragEnd={handleDragEnd} 
+                                    modifiers={[customModifier]}
+                                >
+                                    <div className="relative w-full flex-1 overflow-hidden">
+                                        {/* Zoom Controls */}
+                                        <div className="absolute bottom-4 right-4 z-50 flex items-center gap-2">
+                                            <button 
+                                                onClick={() => setCanvasScale(s => Math.max(0.6, +(s - 0.1).toFixed(1)))} 
+                                                disabled={canvasScale <= 0.6}
+                                                className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                                            >
+                                                <ZoomOut className="w-5 h-5" />
+                                            </button>
+                                            <button 
+                                                onClick={() => setCanvasScale(getScaleForBlockCount(blocks.length))} 
+                                                className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg"
+                                            >
+                                                <Maximize className="w-5 h-5" />
+                                            </button>
+                                            <button 
+                                                onClick={() => setCanvasScale(s => Math.min(1, +(s + 0.1).toFixed(1)))} 
+                                                disabled={canvasScale >= 1}
+                                                className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                                            >
+                                                <ZoomIn className="w-5 h-5" />
+                                            </button>
+                                            <div className="px-3 py-1.5 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 rounded-lg shadow-lg">
+                                                <span className="text-cyan-400 font-mono text-xs font-bold tracking-wider">{Math.round(canvasScale * 100)}%</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Scaled blocks container */}
+                                        <div 
+                                            className="w-full h-full origin-top-left"
+                                            style={{ transform: `scale(${canvasScale})`, width: `${100 / canvasScale}%`, height: `${100 / canvasScale}%` }}
+                                        >
+                                            <div className="relative w-full h-full p-8">
+                                                {blocks.map((block) => (
+                                                    <PuzzleBlock key={block.id} {...block} variant={mode} />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </DndContext>
+                            )}
                         </div>
 
                         {/* Control Console */}
