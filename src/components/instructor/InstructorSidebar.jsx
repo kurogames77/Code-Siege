@@ -21,6 +21,7 @@ import {
     Castle
 } from 'lucide-react';
 import gameIcon from '../../assets/icongame_backup.png';
+import nameLogo from '../../assets/name.png';
 import rankingIcon from '../../assets/ranking.png';
 import EditInstructorProfileModal from './EditInstructorProfileModal';
 import LogoutConfirmationModal from './LogoutConfirmationModal';
@@ -84,27 +85,11 @@ const InstructorSidebar = ({ activeTab, setActiveTab, isCollapsed, setIsCollapse
 
                 {/* Logo Section */}
                 <div className={`p-8 pb-10 flex flex-col ${isCollapsed ? 'items-center' : 'items-start'} transition-all duration-300`}>
-                    <div className="flex items-center gap-2">
-                        {!isCollapsed && (
-                            <motion.span
-                                initial={{ opacity: 1 }}
-                                className={`text-2xl font-black uppercase italic tracking-tighter font-galsb transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}
-                            >
-                                CODE
-                            </motion.span>
-                        )}
-
-                        <div className="relative shrink-0">
+                    <div className="flex items-center">
+                        {isCollapsed ? (
                             <img src={gameIcon} alt="Logo" className="w-12 h-12 object-contain" />
-                        </div>
-
-                        {!isCollapsed && (
-                            <motion.span
-                                initial={{ opacity: 1 }}
-                                className="text-2xl font-black text-[#A855F7] uppercase italic tracking-tighter font-galsb"
-                            >
-                                SIEGE
-                            </motion.span>
+                        ) : (
+                            <img src={nameLogo} alt="Code Siege" className="w-[180px] object-contain drop-shadow-[0_0_15px_rgba(0,0,0,0.5)]" />
                         )}
                     </div>
 
