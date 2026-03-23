@@ -42,7 +42,7 @@ export const UserProvider = ({ children }) => {
             school: profile?.school || '',
             college: profile?.college || '',
             avatar: profile?.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture,
-            level: currentRank.id,
+            level: profile?.level || Math.floor(exp / 100) + 1,
             exp: exp,
             gems: profile?.gems || 0,
             role: profile?.role || 'student',
