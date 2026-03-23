@@ -1206,10 +1206,9 @@ const PuzzleCourses = ({ theme }) => {
                         <motion.div
                             initial={{ scale: 0.95, y: 20 }}
                             animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.95, y: 20 }}
-                            className={`w-full max-w-lg border rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 ${theme === 'dark' ? 'bg-[#0B1224] border-white/10' : 'bg-white border-slate-200'}`}
+                            className={`w-full max-w-lg border rounded-3xl shadow-2xl transition-all duration-500 ${theme === 'dark' ? 'bg-[#0B1224] border-white/10' : 'bg-white border-slate-200'}`}
                         >
-                            <div className={`p-6 border-b flex items-center justify-between transition-colors ${theme === 'dark' ? 'bg-gradient-to-r from-cyan-500/10 to-transparent border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                            <div className={`p-6 border-b rounded-t-3xl flex items-center justify-between transition-colors ${theme === 'dark' ? 'bg-gradient-to-r from-cyan-500/10 to-transparent border-white/5' : 'bg-slate-50 border-slate-200'}`}>
                                 <div className="flex items-center gap-4">
                                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center border transition-colors ${theme === 'dark' ? 'bg-cyan-500/20 border-cyan-500/30 text-cyan-500' : 'bg-white border-cyan-200 text-cyan-600'}`}>
                                         <Code2 className="w-5 h-5" />
