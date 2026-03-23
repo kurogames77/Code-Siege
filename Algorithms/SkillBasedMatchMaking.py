@@ -9,8 +9,8 @@ stage and produces match scores that the multiplayer service uses.
 import logging
 from typing import List, Dict, Optional, Tuple
 from KMeans_Cluster import squared_distance
-from IRT_Algo import irt_probability
-from DDA_Algo import DDASystem
+from IRT_Algo import StudentPerformanceAnalyzer
+from DDA_Algo import DifficultyAdjuster
 
 
 # ---------------------------------------------------------------------------
@@ -64,8 +64,9 @@ def assign_clusters(data_points: List[List[float]], centroids: List[List[float]]
                 nearest = c_idx
         cluster_map[nearest].append(idx)
     return cluster_map
-# Shared DDA instance so momentum carries between matchmaking requests.
-_dda_instance = DDASystem(stability_threshold=0.05, momentum_factor=0.6)
+# Shared instances so state carries between matchmaking requests.
+_irt_analyzer = StudentPerformanceAnalyzer()
+_dda_adjuster = DifficultyAdjuster()
 
 
 def find_best_match(
@@ -91,25 +92,26 @@ def find_best_match(
         }
     theta, beta_old = data_points[player_index]
     # Recompute student skill using IRT so we capture latest stats.
-    irt_result = irt_probability(
-        theta=theta,
-        beta=beta_old,
-        rank_name=rank_name,
-        completed_achievements=completed_achievements,
-        success_count=success_count,
-        fail_count=fail_count
+    irt_result = _irt_analyzer.analyze(
+        user_id=f"player_{player_index}",
+        time_consumed=0,
+        error_count=fail_count,
+        hints_used=0
     )
 
-    # Run DDA to see how the player’s beta should shift based on history.
-    dda_result = _dda_instance.adjust_difficulty(
-        beta_old=beta_old,
-        irt_output=irt_result,
-        success_count=success_count,
-        fail_count=fail_count
+    # Run DDA to see how the player's difficulty should shift based on history.
+    dda_result = _dda_adjuster.adjust(
+        irt_status=irt_result["status"],
+        current_difficulty="Medium",
+        metrics={"time": 0, "errors": fail_count, "hints": 0},
+        history={"trend": "stable", "recentCount": success_count + fail_count}
     )
 
-    adjusted_theta = irt_result["adjusted_theta"]
-    adjusted_beta = dda_result["beta_new"]
+    # Use original theta since IRT analyzer returns status, not adjusted values
+    adjusted_theta = theta
+    # Map difficulty to a numeric beta value for scoring
+    difficulty_map = {"Easy": 0.3, "Medium": 0.5, "Hard": 0.8}
+    adjusted_beta = difficulty_map.get(dda_result["new_difficulty"], beta_old)
     clusters = assign_clusters(data_points, centroids)
     player_point = data_points[player_index]
     min_dist = float('inf')
