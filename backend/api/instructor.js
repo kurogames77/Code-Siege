@@ -377,7 +377,7 @@ router.get('/users', async (req, res) => {
 
         let query = supabaseService
             .from('users')
-            .select('id, username, email, role, student_id, college, is_banned, avatar_url, created_at', { count: 'exact' })
+            .select('id, username, email, role, student_id, college, is_banned, avatar_url, created_at, xp, level, gems', { count: 'exact' })
             .order('created_at', { ascending: false })
             .range(offset, offset + limit - 1);
 
