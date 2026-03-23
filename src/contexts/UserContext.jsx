@@ -42,7 +42,7 @@ export const UserProvider = ({ children }) => {
             school: profile?.school || '',
             college: profile?.college || '',
             avatar: profile?.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture,
-            level: profile?.level || Math.floor(exp / 100) + 1,
+            level: currentRank.id,
             exp: exp,
             gems: profile?.gems || 0,
             role: profile?.role || 'student',
@@ -461,7 +461,7 @@ export const UserProvider = ({ children }) => {
                 setUser(prev => ({
                     ...prev,
                     exp: response.xp,
-                    level: response.level ?? prev.level,
+                    level: serverRank.id,
                     rankName: serverRank?.name || prev.rankName,
                     rankIcon: serverRank?.icon || prev.rankIcon,
                 }));
