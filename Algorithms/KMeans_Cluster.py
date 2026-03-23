@@ -152,6 +152,7 @@ def kmeans_from_irt(irt_data, k=3, max_iter=100, tol=1e-4, verbose=False):
 
     # Standard k-means loop with early stopping when centroids barely move.
     assignments = []
+    iteration = 0
     for iteration in range(max_iter):
         clusters = [[] for _ in range(k)]
         

@@ -90,7 +90,9 @@ def find_best_match(
             "match_score": 0.0,
             "cluster": None
         }
-    theta, beta_old = data_points[player_index]
+    # data_points may have 2+ dimensions; theta is [0], beta is [1]
+    theta = data_points[player_index][0]
+    beta_old = data_points[player_index][1] if len(data_points[player_index]) > 1 else 0.0
     # Recompute student skill using IRT so we capture latest stats.
     irt_result = _irt_analyzer.analyze(
         user_id=f"player_{player_index}",
@@ -151,7 +153,8 @@ def find_best_match(
     w_theta, w_beta = adaptive_weights(consistency)
     best_match, best_score = None, -1.0
     for idx in candidates:
-        c_theta, c_beta = data_points[idx]
+        c_theta = data_points[idx][0]
+        c_beta = data_points[idx][1] if len(data_points[idx]) > 1 else 0.0
         score = calculate_match_score(adjusted_theta, c_theta, adjusted_beta, c_beta, w_theta, w_beta)
         if score > best_score:
             best_match, best_score = idx, score
