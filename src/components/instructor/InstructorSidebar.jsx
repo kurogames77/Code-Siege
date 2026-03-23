@@ -84,7 +84,7 @@ const InstructorSidebar = ({ activeTab, setActiveTab, isCollapsed, setIsCollapse
 
                 {/* Logo Section */}
                 <div className={`p-8 pb-10 flex flex-col ${isCollapsed ? 'items-center' : 'items-start'} transition-all duration-300`}>
-                    <div className="flex items-center justify-center">
+                    <div className="flex items-center gap-1">
                         {!isCollapsed && (
                             <motion.span
                                 initial={{ opacity: 1 }}
@@ -94,8 +94,8 @@ const InstructorSidebar = ({ activeTab, setActiveTab, isCollapsed, setIsCollapse
                             </motion.span>
                         )}
 
-                        <div className={`relative shrink-0 ${isCollapsed ? '' : 'mx-4'}`}>
-                            <img src={gameIcon} alt="Logo" className="w-10 h-10 object-contain scale-[1.8]" />
+                        <div className={`relative shrink-0 ${isCollapsed ? '' : 'mx-2'}`}>
+                            <img src={gameIcon} alt="Logo" className="w-10 h-10 object-contain scale-[1.4]" />
                         </div>
 
                         {!isCollapsed && (
