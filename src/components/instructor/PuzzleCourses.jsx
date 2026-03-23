@@ -10,6 +10,15 @@ import cppIcon from '../../assets/C++-Photoroom.png';
 import javascriptIcon from '../../assets/free-javascript-3d-icon-download-in-png-blend-fbx-gltf-file-formats--html-logo-vue-angular-coding-lang-pack-logos-icons-7577991-Photoroom.png';
 import mysqlIcon from '../../assets/free-mysql-9294870-7578013-Photoroom.png';
 import phpIcon from '../../assets/php_emblem-Photoroom.png';
+import javaIcon from '../../assets/java.jpg';
+import rubyIcon from '../../assets/ruby.jpg';
+import goIcon from '../../assets/Go.jpg';
+import swiftIcon from '../../assets/swift.jpg';
+import kotlinIcon from '../../assets/kotlin.jpg';
+import rustIcon from '../../assets/rust.jpg';
+import tsIcon from '../../assets/typescript.jpg';
+import htmlIcon from '../../assets/html.jpg';
+import cssIcon from '../../assets/css.jpg';
 
 // Master list of all supported languages
 const SUPPORTED_LANGUAGES = [
@@ -26,9 +35,8 @@ const SUPPORTED_LANGUAGES = [
     { id: 'kotlin', name: 'Kotlin', color: 'violet' },
     { id: 'rust', name: 'Rust', color: 'amber' },
     { id: 'ts', name: 'TypeScript', color: 'blue' },
-    { id: 'html', name: 'HTML/CSS', color: 'orange' },
-    { id: 'r', name: 'R', color: 'blue' },
-    { id: 'dart', name: 'Dart', color: 'cyan' },
+    { id: 'html', name: 'HTML', color: 'orange' },
+    { id: 'css', name: 'CSS', color: 'blue' },
 ];
 
 const PuzzleCourses = ({ theme }) => {
@@ -103,7 +111,17 @@ const PuzzleCourses = ({ theme }) => {
         'javascript': javascriptIcon,
         'mysql': mysqlIcon,
         'sql': mysqlIcon,
-        'php': phpIcon
+        'php': phpIcon,
+        'java': javaIcon,
+        'ruby': rubyIcon,
+        'go': goIcon,
+        'swift': swiftIcon,
+        'kotlin': kotlinIcon,
+        'rust': rustIcon,
+        'ts': tsIcon,
+        'typescript': tsIcon,
+        'html': htmlIcon,
+        'css': cssIcon
     };
 
     // Fetch Courses
