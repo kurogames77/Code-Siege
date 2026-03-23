@@ -37,6 +37,7 @@ const PuzzleCourses = ({ theme }) => {
     const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
     const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
     const [isAddLanguageModalOpen, setIsAddLanguageModalOpen] = useState(false);
+    const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
     const [newLangData, setNewLangData] = useState({ name: '', id: '', color: 'cyan' });
 
     const [formData, setFormData] = useState({
@@ -1209,18 +1210,40 @@ const PuzzleCourses = ({ theme }) => {
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Select Language</label>
                                         {availableLanguages.length > 0 ? (
-                                            <div className="relative">
-                                                <select
-                                                    value={newLangData.name}
-                                                    onChange={(e) => setNewLangData({ ...newLangData, name: e.target.value })}
-                                                    className={`w-full border rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all appearance-none cursor-pointer ${theme === 'dark' ? 'bg-slate-900 border-white/10 text-white focus:border-cyan-500/50 hover:bg-slate-900/80' : 'bg-white border-slate-200 text-slate-900 focus:border-cyan-500'}`}
+                                            <div className="relative w-full">
+                                                <div
+                                                    onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+                                                    className={`w-full border rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all cursor-pointer flex justify-between items-center ${theme === 'dark' ? 'bg-slate-900 border-white/10 text-white focus:border-cyan-500/50 hover:bg-slate-900/80' : 'bg-white border-slate-200 text-slate-900 focus:border-cyan-500'}`}
                                                 >
-                                                    <option value="" disabled className={theme === 'dark' ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>Choose a language...</option>
-                                                    {availableLanguages.map(lang => (
-                                                        <option key={lang.id} value={lang.name} className={theme === 'dark' ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>{lang.name}</option>
-                                                    ))}
-                                                </select>
-                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                                                    <span className={!newLangData.name ? 'text-slate-500' : ''}>{newLangData.name || 'Choose a language...'}</span>
+                                                    <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${isLangDropdownOpen ? 'rotate-180' : ''}`} />
+                                                </div>
+
+                                                <AnimatePresence>
+                                                    {isLangDropdownOpen && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: -10 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            exit={{ opacity: 0, y: -10 }}
+                                                            className={`absolute top-full left-0 w-full mt-2 border rounded-xl overflow-hidden z-[100] shadow-xl ${theme === 'dark' ? 'bg-[#0B1224] border-white/10' : 'bg-white border-slate-200'}`}
+                                                        >
+                                                            <div className="max-h-56 overflow-y-auto custom-scrollbar flex flex-col">
+                                                                {availableLanguages.map(lang => (
+                                                                    <div
+                                                                        key={lang.id}
+                                                                        onClick={() => {
+                                                                            setNewLangData({ ...newLangData, name: lang.name });
+                                                                            setIsLangDropdownOpen(false);
+                                                                        }}
+                                                                        className={`px-4 py-3 text-sm font-bold cursor-pointer transition-colors ${theme === 'dark' ? 'text-white hover:bg-cyan-500/20' : 'text-slate-900 hover:bg-cyan-50'}`}
+                                                                    >
+                                                                        {lang.name}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
                                             </div>
                                         ) : (
                                             <p className={`text-sm font-bold italic px-4 py-3 rounded-xl ${theme === 'dark' ? 'text-slate-500 bg-slate-900/50' : 'text-slate-400 bg-slate-50'}`}>
