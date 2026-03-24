@@ -17,7 +17,6 @@ import supabase from '../../lib/supabase';
 import { useUser } from '../../contexts/UserContext';
 
 import { getRankFromExp as getRankData } from '../../utils/rankSystem';
-import supabase from '../../lib/supabase';
 import { userAPI, algorithmAPI } from '../../services/api';
 
 const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
