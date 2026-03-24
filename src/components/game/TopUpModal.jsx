@@ -470,6 +470,13 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                                         <p className="text-[10px] text-slate-500">You will be redirected to PayPal Sandbox to complete this test transaction.</p>
                                                     </div>
 
+                                                    {!PAYPAL_CLIENT_ID ? (
+                                                        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-6 text-center">
+                                                            <Lock className="w-8 h-8 text-amber-400 mx-auto mb-3" />
+                                                            <p className="text-sm text-amber-200 font-bold mb-1">PayPal Not Configured</p>
+                                                            <p className="text-[10px] text-slate-400">PayPal payments are not available at the moment. Please use GCash or Maya instead.</p>
+                                                        </div>
+                                                    ) : (
                                                     <PayPalButtons
                                                         style={{ layout: "vertical", shape: "rect", borderRadius: 10 }}
                                                         createOrder={(data, actions) => {
@@ -503,6 +510,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                                             toastError('PayPal Connection Failed');
                                                         }}
                                                     />
+                                                    )}
                                                 </div>
                                             ) : (
                                                 <div className="space-y-6">

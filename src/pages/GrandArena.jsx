@@ -175,12 +175,17 @@ const GrandArena = () => {
             prev.map((block) => {
                 if (block.id !== active.id) return block;
                 
-                // Convert screen-space delta to canvas-space by dividing by scale
-                const newX = (block.position?.x || 0) + (delta.x / canvasScale);
-                const newY = (block.position?.y || 0) + (delta.y / canvasScale);
+                // Delta is already scale-compensated by customModifier, use it directly
+                let newX = (block.position?.x || 0) + delta.x;
+                let newY = (block.position?.y || 0) + delta.y;
 
-                // For a more complete snap implementation similar to ArenaBattle, 
-                // we'd do the full collision check. But for now we just apply the rounded position + scale.
+                // Clamp within container bounds
+                const padding = 20;
+                const containerW = containerRef.current ? containerRef.current.clientWidth / canvasScale : 2000;
+                const containerH = containerRef.current ? containerRef.current.clientHeight / canvasScale : 1500;
+                newX = Math.max(padding, Math.min(newX, containerW - 160));
+                newY = Math.max(padding, Math.min(newY, containerH - 80));
+
                 return {
                     ...block,
                     position: {

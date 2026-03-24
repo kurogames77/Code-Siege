@@ -339,7 +339,12 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                     event: 'party-sync',
                                     payload: {
                                         playerIds,
-                                        players: updatedPlayers
+                                        players: updatedPlayers,
+                                        settings: {
+                                            language: selectedLanguage,
+                                            mode: selectedMode,
+                                            wager: selectedWager
+                                        }
                                     }
                                 });
                             }
@@ -353,11 +358,17 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                 }
             })
             .on('broadcast', { event: 'party-sync' }, (payload) => {
-                // All party members receive the full updated player list from the host
-                const { playerIds, players: syncedPlayers } = payload.payload;
+                // All party members receive the full updated player list + settings from the host
+                const { playerIds, players: syncedPlayers, settings } = payload.payload;
                 if (playerIds.includes(user.id)) {
 
                     setPlayers(syncedPlayers);
+                    // Sync match settings from host
+                    if (settings) {
+                        setSelectedLanguage(settings.language);
+                        setSelectedMode(settings.mode);
+                        setSelectedWager(settings.wager);
+                    }
                 }
             })
             .subscribe(async (status) => {
@@ -745,13 +756,13 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                         className="w-full h-full max-w-[1700px] relative z-10 flex flex-col pointer-events-auto"
                     >
                         {/* HEADER */}
-                        <div className="h-16 flex items-center justify-between px-8 relative z-20">
+                        <div className="h-14 sm:h-16 flex items-center justify-between px-4 sm:px-8 relative z-20">
                             {/* Left: Back & Title */}
                             <div className="flex items-center gap-4">
                                 <button onClick={handleBackClick} className="w-9 h-9 flex items-center justify-center rounded-full border border-slate-600 hover:border-red-500 hover:bg-red-500/20 transition-all duration-300 group">
                                     <X className="w-5 h-5 text-slate-400 group-hover:text-red-400 transition-transform duration-300 group-hover:rotate-90" />
                                 </button>
-                                <h1 className="text-2xl font-bold text-slate-200 tracking-wide">LOBBY MODE</h1>
+                                <h1 className="text-lg sm:text-2xl font-bold text-slate-200 tracking-wide">LOBBY MODE</h1>
                             </div>
 
                             {/* Center: Lobby Timer */}
@@ -774,10 +785,10 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                         </div>
 
                         {/* CONTENT AREA */}
-                        <div className="flex-1 flex overflow-hidden">
+                        <div className="flex-1 flex flex-col sm:flex-row overflow-hidden">
 
                             {/* LEFT SIDEBAR: MATCH SETTINGS */}
-                            <div className="w-40 md:w-56 bg-black/60 border-r border-white/5 flex flex-col p-3 md:p-4 backdrop-blur-md shrink-0" onClick={(e) => e.stopPropagation()}>
+                            <div className="w-full sm:w-40 md:w-56 bg-black/60 border-b sm:border-b-0 sm:border-r border-white/5 flex flex-row sm:flex-col p-2 sm:p-3 md:p-4 backdrop-blur-md shrink-0 overflow-x-auto sm:overflow-x-visible" onClick={(e) => e.stopPropagation()}>
                                 <h3 className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Match Settings</h3>
                                 {settingsLocked && (
                                     <div className="mb-3 px-2 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center gap-1.5">
@@ -939,7 +950,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                             const isGrey = matchState === 'ready_check' && !player?.isReady;
 
                                             return (
-                                                <div key={i} className="relative group w-28 md:w-44 h-[350px] md:h-[560px] shrink-0 overflow-hidden rounded-[16px] md:rounded-[24px]">
+                                                <div key={i} className="relative group w-32 sm:w-36 md:w-48 h-[400px] sm:h-[450px] md:h-[600px] shrink-0 overflow-visible rounded-[16px] md:rounded-[24px]">
                                                     {/* Background Banner Shape */}
                                                     <div
                                                         className={`absolute inset-0 transition-all duration-300 ${player
@@ -951,12 +962,12 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
 
                                                     {player ? (
                                                         <>
-                                                            <div className={`absolute inset-x-[-10%] bottom-0 top-16 md:top-14 z-10 pointer-events-none flex items-end justify-center ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
+                                                            <div className={`absolute inset-x-[-5%] bottom-[10%] top-20 md:top-16 z-10 pointer-events-none flex items-end justify-center ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
                                                                 <motion.img
                                                                     initial={{ scale: 1.05 }}
-                                                                    animate={{ scale: isGrey ? 1.0 : 1.15 }}
+                                                                    animate={{ scale: isGrey ? 1.0 : 1.1 }}
                                                                     src={player.heroImage || player.avatar}
-                                                                    className={`w-full max-h-full object-contain object-bottom transition-all duration-700 origin-bottom ${isGrey ? 'brightness-50 grayscale' : 'brightness-110'}`}
+                                                                    className={`w-[90%] max-h-full object-contain object-bottom transition-all duration-700 origin-bottom ${isGrey ? 'brightness-50 grayscale' : 'brightness-110'}`}
                                                                     alt="Hero"
                                                                 />
                                                             </div>

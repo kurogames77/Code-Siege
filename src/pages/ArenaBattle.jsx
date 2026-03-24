@@ -81,9 +81,11 @@ const ArenaBattle = () => {
         y: transform.y / canvasScale
     });
 
-    // Mock Puzzle data
+    // Mock Puzzle data — mode-aware descriptions
     const puzzle = {
-        description: "Arrange the blocks to calculate the total power output.",
+        description: mode === 'code'
+            ? "Write the code to produce the expected output below."
+            : "Arrange the blocks to calculate the total power output.",
         expectedOutput: "Total Power: 500",
         initialBlocks: [
             { id: 'b1', content: 'var power = 100;', type: 'variable' },
@@ -332,14 +334,16 @@ const ArenaBattle = () => {
 
             const newBlocks = [...currentBlocks];
             
-            // Adjust delta based on canvas scale
-            let newX = newBlocks[index].position.x + (delta.x / canvasScale);
-            let newY = newBlocks[index].position.y + (delta.y / canvasScale);
+            // Delta is already scale-compensated by customModifier, use it directly
+            let newX = newBlocks[index].position.x + delta.x;
+            let newY = newBlocks[index].position.y + delta.y;
 
-            // Clamp positions to reasonable bounds so they don't get lost when zoomed out
+            // Clamp positions within the container bounds (using unscaled coordinates)
             const padding = 20;
-            const maxWidth = containerRef.current ? (containerRef.current.clientWidth / canvasScale) - 150 : 2000;
-            const maxHeight = containerRef.current ? (containerRef.current.clientHeight / canvasScale) - 80 : 1500;
+            const containerW = containerRef.current ? containerRef.current.clientWidth / canvasScale : 2000;
+            const containerH = containerRef.current ? containerRef.current.clientHeight / canvasScale : 1500;
+            const maxWidth = containerW - 160;
+            const maxHeight = containerH - 80;
             
             newX = Math.max(padding, Math.min(newX, maxWidth));
             newY = Math.max(padding, Math.min(newY, maxHeight));
