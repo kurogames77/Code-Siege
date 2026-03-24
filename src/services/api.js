@@ -41,17 +41,30 @@ const apiRequest = async (endpoint, options = {}, _isRetry = false) => {
     // Auto-refresh token on 401 and retry once.
     // DO NOT trigger this for login/register endpoints, as 401 there means authentication failed, not token expired.
     const isAuthEndpoint = endpoint.startsWith('/auth/login') || endpoint.startsWith('/auth/register');
-    if (response.status === 401 && !_isRetry && !isAuthEndpoint) {
+    if (response.status === 401 && !isAuthEndpoint) {
+        if (!_isRetry) {
+            try {
+                const { default: supabase } = await import('../lib/supabase');
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session?.access_token) {
+                    setToken(session.access_token);
+                    return await apiRequest(endpoint, options, true);
+                }
+            } catch (refreshErr) {
+                // Token refresh failed silently
+            }
+        }
+        
+        // If we reach here, either the retry failed with 401, or getSession() failed.
+        // Token is hopelessly expired! We MUST clear it to prevent ghost sessions.
+        setToken(null);
         try {
             const { default: supabase } = await import('../lib/supabase');
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.access_token) {
-                setToken(session.access_token);
-                return apiRequest(endpoint, options, true);
-            }
-        } catch (refreshErr) {
-            // Token refresh failed silently
-        }
+            await supabase.auth.signOut({ scope: 'local' });
+        } catch (e) {}
+        
+        // Throw a specific error so the frontend components know why it failed
+        throw new Error('Invalid or expired token. Please log in again.');
     }
 
     const data = await response.json();

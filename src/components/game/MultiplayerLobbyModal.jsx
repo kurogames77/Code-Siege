@@ -17,7 +17,7 @@ import supabase from '../../lib/supabase';
 import { useUser } from '../../contexts/UserContext';
 
 import { getRankFromExp as getRankData } from '../../utils/rankSystem';
-import { userAPI, algorithmAPI } from '../../services/api';
+import { userAPI, algorithmAPI, coursesAPI } from '../../services/api';
 
 const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     const navigate = useNavigate();
@@ -75,19 +75,11 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
 
     const [courses, setCourses] = useState([]);
     
-    // Fetch courses from Supabase
+    // Fetch courses from API instead of direct Supabase query
     useEffect(() => {
         const fetchCourses = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('courses')
-                    .select('*')
-                    .order('name', { ascending: true });
-
-                if (error) {
-                    console.error('[MultiplayerLobby] Supabase Error:', error.message);
-                    return;
-                }
+                const data = await coursesAPI.getCourses();
                 if (data && data.length > 0) {
                     const uniqueCourses = Array.from(new Map(data.map(item => [item.name, item])).values());
                     setCourses(uniqueCourses);
