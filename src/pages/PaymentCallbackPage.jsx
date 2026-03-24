@@ -102,7 +102,7 @@ const PaymentCallbackPage = () => {
         };
 
         processPayment();
-    }, [searchParams, navigate, user, refreshUser, showSuccess, showError]);
+    }, [searchParams, navigate, user, refreshUser, loading, showSuccess, showError]);
 
     return (
         <div className="min-h-screen bg-[#0a0f1a] flex items-center justify-center p-4 font-galsb">

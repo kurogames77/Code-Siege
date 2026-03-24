@@ -487,10 +487,23 @@ export const UserProvider = ({ children }) => {
         }
     };
 
+    // Refresh user data from the backend (used after payment, gem top-up, etc.)
+    const refreshUser = async () => {
+        try {
+            if (!authAPI.isAuthenticated()) return;
+            const { user: authUser, profile } = await authAPI.getMe();
+            if (authUser) {
+                setUser(formatUser(profile, authUser));
+            }
+        } catch (error) {
+            console.error('[Auth] refreshUser error:', error);
+        }
+    };
+
     const value = {
         user, setUser, loading, isAuthenticated, onlineUserIds,
         register, login, loginWithGoogle, logout,
-        updateAvatar, updateProfile, updateTowerProgress, updateExp, updateGems, checkAuth
+        updateAvatar, updateProfile, updateTowerProgress, updateExp, updateGems, checkAuth, refreshUser
     };
 
     return (
