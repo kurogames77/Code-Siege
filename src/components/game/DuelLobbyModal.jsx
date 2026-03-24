@@ -20,12 +20,7 @@ import { getRankFromExp as getRankData } from '../../utils/rankSystem';
 
 const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     const navigate = useNavigate();
-    const [courses, setCourses] = useState([
-        { id: 'js', name: 'JavaScript' },
-        { id: 'py', name: 'Python' },
-        { id: 'mysql', name: 'MySQL' },
-        { id: 'cpp', name: 'C++' }
-    ]);
+    const [courses, setCourses] = useState([]);
     const [selectedLanguage, setSelectedLanguage] = useState('JavaScript');
     const [selectedDifficulty, setSelectedDifficulty] = useState('Medium');
     const [selectedMode, setSelectedMode] = useState('Puzzle Blocks');
@@ -52,10 +47,10 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
 
 
                 if (data && data.length > 0) {
-
-                    setCourses(data);
+                    const uniqueCourses = Array.from(new Map(data.map(item => [item.name, item])).values());
+                    setCourses(uniqueCourses);
                     if (!selectedLanguage) {
-                        setSelectedLanguage(data[0].name);
+                        setSelectedLanguage(uniqueCourses[0].name);
                     }
                 } else {
                     console.warn('[DuelLobby] Courses table is empty or blocked by RLS.');

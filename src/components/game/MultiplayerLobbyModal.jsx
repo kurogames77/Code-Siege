@@ -62,7 +62,35 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     const [selectedMode, setSelectedMode] = useState('Puzzle Blocks');
     const [selectedWager, setSelectedWager] = useState(100);
 
-    const languages = ['Python', 'C#', 'C++', 'JavaScript', 'PHP', 'MySQL'];
+    const [courses, setCourses] = useState([]);
+    
+    // Fetch courses from Supabase
+    useEffect(() => {
+        const fetchCourses = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('courses')
+                    .select('*')
+                    .order('name', { ascending: true });
+
+                if (error) {
+                    console.error('[MultiplayerLobby] Supabase Error:', error.message);
+                    return;
+                }
+                if (data && data.length > 0) {
+                    const uniqueCourses = Array.from(new Map(data.map(item => [item.name, item])).values());
+                    setCourses(uniqueCourses);
+                    // Ensure a default language if none selected
+                    // The initial state for selectedLanguage is 'JavaScript', so it might not be empty, 
+                    // but we ensure consistency.
+                }
+            } catch (err) {
+                console.error('[MultiplayerLobby] fetchCourses error:', err);
+            }
+        };
+        fetchCourses();
+    }, []);
+
     const wagerOptions = [50, 100, 200, 500, 1000];
 
     // Modals & Notifications
@@ -763,9 +791,13 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                                     onChange={(e) => { playSelect(); setSelectedLanguage(e.target.value); }}
                                                     className="w-full bg-[#0B1221] border border-white/10 text-white font-bold text-xs px-3 py-2 rounded-lg appearance-none relative z-10 focus:border-cyan-500 focus:outline-none transition-colors cursor-pointer"
                                                 >
-                                                    {languages.map((lang) => (
-                                                        <option key={lang} value={lang}>{lang}</option>
-                                                    ))}
+                                                    {courses.length > 0 ? (
+                                                        courses.map((c) => (
+                                                            <option key={c.id} value={c.name}>{c.name}</option>
+                                                        ))
+                                                    ) : (
+                                                        <option disabled value="">No Languages</option>
+                                                    )}
                                                 </select>
                                             )}
                                             {!settingsLocked && <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 z-20 pointer-events-none" />}
@@ -911,10 +943,10 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                                         <>
                                                             <div className={`absolute inset-x-[-20%] bottom-14 top-20 z-10 pointer-events-none flex items-end justify-center ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
                                                                 <motion.img
-                                                                    initial={{ scale: 1.0 }}
-                                                                    animate={{ scale: isGrey ? 0.90 : 0.95 }}
+                                                                    initial={{ scale: 1.15 }}
+                                                                    animate={{ scale: isGrey ? 1.10 : 1.30 }}
                                                                     src={player.heroImage || player.avatar}
-                                                                    className={`w-full max-h-[95%] object-contain object-bottom transition-all duration-700 ${isGrey ? 'brightness-50 grayscale' : 'brightness-110'}`}
+                                                                    className={`w-full max-h-[110%] object-contain object-bottom transition-all duration-700 origin-bottom ${isGrey ? 'brightness-50 grayscale' : 'brightness-110'}`}
                                                                     alt="Hero"
                                                                 />
                                                             </div>

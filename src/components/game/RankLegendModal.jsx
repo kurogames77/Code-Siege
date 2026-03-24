@@ -67,7 +67,7 @@ const RankLegendModal = ({ isOpen, onClose }) => {
                         {/* GRID CONTENT */}
                         <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                {[...RANKS].reverse().map((rank, index) => (
+                                {[...RANKS].map((rank, index) => (
                                     <motion.div
                                         key={rank.name}
                                         initial={{ opacity: 0, y: 20 }}

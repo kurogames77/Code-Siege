@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { DndContext, useSensor, useSensors, PointerSensor, DragOverlay } from '@dnd-kit/core';
+import { restrictToWindowEdges, restrictToParentElement } from '@dnd-kit/modifiers';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Lightbulb, X, Trophy, Bug, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 import PuzzleBlock from './PuzzleBlock';
@@ -683,7 +684,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                     <DndContext 
                                         sensors={sensors} 
                                         onDragEnd={handleDragEnd} 
-                                        modifiers={[customModifier]}
+                                        modifiers={[customModifier, restrictToParentElement]}
                                     >
                                         <div className="relative w-full flex-1 overflow-hidden">
                                             {/* Zoom Controls */}
