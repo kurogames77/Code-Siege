@@ -334,9 +334,9 @@ const ArenaBattle = () => {
 
             const newBlocks = [...currentBlocks];
             
-            // Delta is already scale-compensated by customModifier, use it directly
-            let newX = newBlocks[index].position.x + delta.x;
-            let newY = newBlocks[index].position.y + delta.y;
+            // Convert screen-space delta to canvas-space by dividing by scale
+            let newX = newBlocks[index].position.x + (delta.x / canvasScale);
+            let newY = newBlocks[index].position.y + (delta.y / canvasScale);
 
             // Clamp positions within the container bounds (using unscaled coordinates)
             const padding = 20;

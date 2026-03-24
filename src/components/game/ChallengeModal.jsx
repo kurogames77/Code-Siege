@@ -125,9 +125,9 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             if (index === -1) return currentBlocks;
 
             const newBlocks = [...currentBlocks];
-            // Delta is already scale-compensated by customModifier, use it directly
-            let newX = newBlocks[index].position.x + delta.x;
-            let newY = newBlocks[index].position.y + delta.y;
+            // Convert screen-space delta to canvas-space by dividing by scale
+            let newX = newBlocks[index].position.x + (delta.x / canvasScale);
+            let newY = newBlocks[index].position.y + (delta.y / canvasScale);
 
             // Clamp positions within the container bounds
             const padding = 20;
@@ -686,7 +686,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                     <DndContext 
                                         sensors={sensors} 
                                         onDragEnd={handleDragEnd} 
-                                        modifiers={[customModifier, restrictToParentElement]}
+                                        modifiers={[customModifier]}
                                     >
                                         <div className="relative w-full flex-1 overflow-hidden">
                                             {/* Zoom Controls */}

@@ -175,9 +175,9 @@ const GrandArena = () => {
             prev.map((block) => {
                 if (block.id !== active.id) return block;
                 
-                // Delta is already scale-compensated by customModifier, use it directly
-                let newX = (block.position?.x || 0) + delta.x;
-                let newY = (block.position?.y || 0) + delta.y;
+                // Convert screen-space delta to canvas-space by dividing by scale
+                let newX = (block.position?.x || 0) + (delta.x / canvasScale);
+                let newY = (block.position?.y || 0) + (delta.y / canvasScale);
 
                 // Clamp within container bounds
                 const padding = 20;
