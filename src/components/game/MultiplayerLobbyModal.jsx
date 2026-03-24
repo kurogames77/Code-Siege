@@ -13,6 +13,7 @@ import jrmsuLogo from '../../assets/jrmsulogo.png';
 import gameMapBg from '../../assets/gamemapbg.png';
 import lobbyMusic from '../../assets/sounds/lobbymusic.mp3';
 import useSound from '../../hooks/useSound';
+import supabase from '../../lib/supabase';
 import { useUser } from '../../contexts/UserContext';
 
 import { getRankFromExp as getRankData } from '../../utils/rankSystem';
@@ -929,7 +930,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                             const isGrey = matchState === 'ready_check' && !player?.isReady;
 
                                             return (
-                                                <div key={i} className="relative group w-44 h-[520px] shrink-0">
+                                                <div key={i} className="relative group w-44 h-[520px] shrink-0 overflow-hidden rounded-[24px]">
                                                     {/* Background Banner Shape */}
                                                     <div
                                                         className={`absolute inset-0 transition-all duration-300 ${player
