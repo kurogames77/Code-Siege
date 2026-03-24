@@ -191,8 +191,15 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                 });
             } else {
                 // If already on play page, just open the modal
-                if (isDuel) setIsDuelLobbyOpen(true);
-                else setIsMultiplayerLobbyOpen(true);
+                if (isDuel) {
+                    setIsMultiplayerLobbyOpen(false); // Close multiplayer lobby first
+                    setMultiplayerInviter(null);
+                    setIsDuelLobbyOpen(true);
+                } else {
+                    setIsDuelLobbyOpen(false); // Close duel lobby first
+                    setDuelOpponent(null);
+                    setIsMultiplayerLobbyOpen(true);
+                }
             }
 
             if (!invitationOverride) setActiveInvitation(null);

@@ -25,15 +25,26 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     // Core User Data
     const { user, onlineUserIds } = useUser();
 
-    // Get selected hero
-    const selectedHeroImage = localStorage.getItem('selectedHeroImage') || 'hero1a.png';
+    // Get selected hero with unlock validation
+    // Hero unlock levels: Nyx(hero2)=1, Valerius(hero1a)=4, Ignis(hero3)=7, Daemon(hero4)=10
+    const heroUnlockLevels = {
+        'hero1a.png': 4,  // Valerius
+        'hero2.png': 1,   // Nyx (default, always unlocked)
+        'hero3.png': 7,   // Ignis
+        'hero4.png': 10   // Daemon
+    };
     const heroMap = {
         'hero1a.png': hero1aStatic,
         'hero2.png': hero2Static,
         'hero3.png': hero3Static,
         'hero4.png': hero4Static
     };
-    const currentHeroImage = heroMap[selectedHeroImage] || hero1aStatic;
+    const rawSelectedHero = localStorage.getItem('selectedHeroImage') || 'hero2.png';
+    const userLevel = user?.level || 1;
+    // Validate: if the selected hero requires a higher level, fall back to Nyx (hero2)
+    const requiredLevel = heroUnlockLevels[rawSelectedHero] || 1;
+    const validatedHeroImage = userLevel >= requiredLevel ? rawSelectedHero : 'hero2.png';
+    const currentHeroImage = heroMap[validatedHeroImage] || hero2Static;
 
     const currentUser = {
         id: user.id,
@@ -58,7 +69,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     const [timer, setTimer] = useState(0); // Unified timer state
 
     // Language, Mode & Wager Selection
-    const [selectedLanguage, setSelectedLanguage] = useState('JavaScript');
+    const [selectedLanguage, setSelectedLanguage] = useState('');
     const [selectedMode, setSelectedMode] = useState('Puzzle Blocks');
     const [selectedWager, setSelectedWager] = useState(100);
 
@@ -80,9 +91,8 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                 if (data && data.length > 0) {
                     const uniqueCourses = Array.from(new Map(data.map(item => [item.name, item])).values());
                     setCourses(uniqueCourses);
-                    // Ensure a default language if none selected
-                    // The initial state for selectedLanguage is 'JavaScript', so it might not be empty, 
-                    // but we ensure consistency.
+                    // Always set selected language to first available course
+                    setSelectedLanguage(uniqueCourses[0].name);
                 }
             } catch (err) {
                 console.error('[MultiplayerLobby] fetchCourses error:', err);
@@ -767,7 +777,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                         <div className="flex-1 flex overflow-hidden">
 
                             {/* LEFT SIDEBAR: MATCH SETTINGS */}
-                            <div className="w-56 bg-black/60 border-r border-white/5 flex flex-col p-4 backdrop-blur-md" onClick={(e) => e.stopPropagation()}>
+                            <div className="w-40 md:w-56 bg-black/60 border-r border-white/5 flex flex-col p-3 md:p-4 backdrop-blur-md shrink-0" onClick={(e) => e.stopPropagation()}>
                                 <h3 className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Match Settings</h3>
                                 {settingsLocked && (
                                     <div className="mb-3 px-2 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center gap-1.5">
@@ -929,7 +939,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                             const isGrey = matchState === 'ready_check' && !player?.isReady;
 
                                             return (
-                                                <div key={i} className="relative group w-44 h-[520px] shrink-0 overflow-hidden rounded-[24px]">
+                                                <div key={i} className="relative group w-28 md:w-44 h-[350px] md:h-[560px] shrink-0 overflow-hidden rounded-[16px] md:rounded-[24px]">
                                                     {/* Background Banner Shape */}
                                                     <div
                                                         className={`absolute inset-0 transition-all duration-300 ${player
@@ -941,12 +951,12 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
 
                                                     {player ? (
                                                         <>
-                                                            <div className={`absolute inset-x-[-20%] bottom-14 top-20 z-10 pointer-events-none flex items-end justify-center ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
+                                                            <div className={`absolute inset-x-[-10%] bottom-0 top-16 md:top-14 z-10 pointer-events-none flex items-end justify-center ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
                                                                 <motion.img
-                                                                    initial={{ scale: 1.15 }}
-                                                                    animate={{ scale: isGrey ? 1.10 : 1.30 }}
+                                                                    initial={{ scale: 1.05 }}
+                                                                    animate={{ scale: isGrey ? 1.0 : 1.15 }}
                                                                     src={player.heroImage || player.avatar}
-                                                                    className={`w-full max-h-[110%] object-contain object-bottom transition-all duration-700 origin-bottom ${isGrey ? 'brightness-50 grayscale' : 'brightness-110'}`}
+                                                                    className={`w-full max-h-full object-contain object-bottom transition-all duration-700 origin-bottom ${isGrey ? 'brightness-50 grayscale' : 'brightness-110'}`}
                                                                     alt="Hero"
                                                                 />
                                                             </div>
