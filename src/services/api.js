@@ -246,6 +246,12 @@ export const userAPI = {
         return apiRequest('/users/friends');
     },
 
+    removeFriend: async (friendId) => {
+        return apiRequest(`/users/friends/${friendId}`, {
+            method: 'DELETE',
+        });
+    },
+
     sendDuelInvite: async (receiverId, senderName, lobbyId, mode) => {
         return apiRequest('/users/duel-invite', {
             method: 'POST',

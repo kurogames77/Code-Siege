@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Camera, Trophy, Medal, Target, Swords, User, Users, History, Settings, Info, Image as ImageIcon, CheckCircle2, XCircle, Clock, Book, Bell, Lock, Globe, Edit, Save, Award, Download, Palette, Circle, KeyRound } from 'lucide-react';
+import { X, Camera, Trophy, Medal, Target, Swords, User, Users, UserMinus, History, Settings, Info, Image as ImageIcon, CheckCircle2, XCircle, Clock, Book, Bell, Lock, Globe, Edit, Save, Award, Download, Palette, Circle, KeyRound } from 'lucide-react';
 
 
 import useSound from '../../hooks/useSound';
@@ -303,6 +303,20 @@ const ProfileModal = ({ isOpen, onClose }) => {
             }
         };
 
+        const handleUnfriend = async (friendId, e) => {
+            e.stopPropagation();
+            if (!window.confirm("Are you sure you want to remove this friend?")) return;
+            
+            try {
+                await userAPI.removeFriend(friendId);
+                toast.success('Friend removed');
+                setFriendsList(prev => prev.filter(f => f.id !== friendId));
+            } catch (err) {
+                console.error("Failed to unfriend", err);
+                toast.error('Failed to remove friend');
+            }
+        };
+
         const onlineFriends = friendsList.filter(f => onlineUserIds.has(String(f.id)) || onlineUserIds.has(f.id));
         const offlineFriends = friendsList.filter(f => !onlineUserIds.has(String(f.id)) && !onlineUserIds.has(f.id));
         return (
@@ -348,8 +362,16 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                             <button 
                                                 onClick={() => handleViewFriendProfile(friend.id)}
                                                 className="p-2 rounded-xl bg-slate-800 hover:bg-cyan-500/20 text-slate-400 hover:text-cyan-400 border border-white/5 transition-colors"
+                                                title="View Profile"
                                             >
                                                 <Info className="w-4 h-4" />
+                                            </button>
+                                            <button 
+                                                onClick={(e) => handleUnfriend(friend.id, e)}
+                                                className="p-2 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-white/5 transition-colors"
+                                                title="Unfriend"
+                                            >
+                                                <UserMinus className="w-4 h-4" />
                                             </button>
                                         </div>
                                     </div>
@@ -380,8 +402,16 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                             <button 
                                                 onClick={() => handleViewFriendProfile(friend.id)}
                                                 className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-500 hover:text-slate-300 border border-white/5 transition-colors"
+                                                title="View Profile"
                                             >
                                                 <Info className="w-4 h-4" />
+                                            </button>
+                                            <button 
+                                                onClick={(e) => handleUnfriend(friend.id, e)}
+                                                className="p-2 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 border border-white/5 transition-colors"
+                                                title="Unfriend"
+                                            >
+                                                <UserMinus className="w-4 h-4" />
                                             </button>
                                         </div>
                                     </div>

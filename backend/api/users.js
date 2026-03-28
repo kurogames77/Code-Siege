@@ -373,6 +373,36 @@ router.get('/friends', authenticateUser, async (req, res) => {
 });
 
 /**
+ * DELETE /api/users/friends/:friendId
+ * Unfriend a user by removing the accepted friend request
+ * Uses service-role client to bypass RLS
+ */
+router.delete('/friends/:friendId', authenticateUser, async (req, res) => {
+    try {
+        const { friendId } = req.params;
+        const userId = req.user.id;
+        const db = supabaseService || supabase;
+
+        const { error } = await db
+            .from('notifications')
+            .delete()
+            .eq('type', 'friend_request')
+            .eq('action_status', 'accepted')
+            .or(`and(sender_id.eq.${userId},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${userId})`);
+
+        if (error) {
+            console.error('Unfriend error:', error);
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json({ status: 'unfriended' });
+    } catch (error) {
+        console.error('Unfriend error:', error);
+        res.status(500).json({ error: 'Failed to unfriend' });
+    }
+});
+
+/**
  * POST /api/users/duel-invite
  * Send a duel or multiplayer invite notification
  * Uses service-role client to bypass RLS
