@@ -278,7 +278,7 @@ const InstructorDashboard = ({ theme }) => {
                         </div>
                     </div>
 
-                    <div className="h-[200px] w-full">
+                    <div className="w-full" style={{ height: Math.max(80, courseCompletionData.length * 45) }}>
                         <ResponsiveContainer width="99%" height="100%">
                             <BarChart data={courseCompletionData} layout="vertical" margin={{ left: 20 }}>
                                 <Tooltip

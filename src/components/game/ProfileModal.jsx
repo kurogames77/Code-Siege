@@ -40,6 +40,22 @@ const ProfileModal = ({ isOpen, onClose }) => {
     const [isFriendLoading, setIsFriendLoading] = useState(false);
     const [friendToRemove, setFriendToRemove] = useState(null);
 
+    const confirmUnfriend = async () => {
+        if (!friendToRemove) return;
+        try {
+            await userAPI.removeFriend(friendToRemove.id);
+            toast.success('Friend removed');
+            setFriendsList(prev => prev.filter(f => f.id !== friendToRemove.id));
+            playSuccess();
+        } catch (err) {
+            console.error("Failed to unfriend", err);
+            toast.error('Failed to remove friend');
+            playCancel();
+        } finally {
+            setFriendToRemove(null);
+        }
+    };
+
     // Fetch battle stats on mount
     useEffect(() => {
         if (!isOpen) return;
@@ -281,22 +297,6 @@ const ProfileModal = ({ isOpen, onClose }) => {
             e.stopPropagation();
             playClick();
             setFriendToRemove(friend);
-        };
-
-        const confirmUnfriend = async () => {
-            if (!friendToRemove) return;
-            try {
-                await userAPI.removeFriend(friendToRemove.id);
-                toast.success('Friend removed');
-                setFriendsList(prev => prev.filter(f => f.id !== friendToRemove.id));
-                playSuccess();
-            } catch (err) {
-                console.error("Failed to unfriend", err);
-                toast.error('Failed to remove friend');
-                playCancel();
-            } finally {
-                setFriendToRemove(null);
-            }
         };
 
         const onlineFriends = friendsList.filter(f => onlineUserIds.has(String(f.id)) || onlineUserIds.has(f.id));
