@@ -192,11 +192,15 @@ const ArenaBattle = () => {
         const wagerAmount = parseInt(wager, 10) || 100;
         updateExp(-wagerAmount);
 
-        // Broadcast withdrawal to opponent - await + delay to ensure message is sent
-        // before navigation unmounts the component and removes the channel
-        if (arenaChannelRef.current) {
+        // Clean up the arena channel BEFORE broadcasting to prevent
+        // our own listener from catching the withdrawal event
+        const channelToClean = arenaChannelRef.current;
+        arenaChannelRef.current = null;
+
+        // Broadcast withdrawal to opponent then navigate
+        if (channelToClean) {
             try {
-                await arenaChannelRef.current.send({
+                await channelToClean.send({
                     type: 'broadcast',
                     event: 'duel-withdraw',
                     payload: {
@@ -204,14 +208,17 @@ const ArenaBattle = () => {
                         withdrawnName: user.name
                     }
                 });
-                // Give a tiny buffer for the socket flush before unmount (100ms instead of 1.5s freeze)
+                // Give a tiny buffer for the socket flush before unmount
                 await new Promise(resolve => setTimeout(resolve, 100));
             } catch (err) {
                 console.error('[ArenaBattle] Failed to send withdraw broadcast:', err);
             }
+            supabase.removeChannel(channelToClean);
         }
 
-        navigate('/play', { state: { openDuelLobby: true } });
+        // Navigate to /play WITHOUT reopening the duel lobby
+        // to prevent the lobby from reconnecting and redirecting back to arena
+        navigate('/play', { replace: true });
     };
 
     const handleTimeout = () => {
