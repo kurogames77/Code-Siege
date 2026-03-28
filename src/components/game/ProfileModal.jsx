@@ -56,18 +56,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
     const { playClick, playCancel, playSelect, playSuccess } = useSound();
     const toast = useToast();
 
-    // Validation for School and College
-    const isValidSchool = (school) => {
-        if (!school) return false;
-        const valid = ['jrmsu', 'jose rizal memorial state university'];
-        return valid.includes(school.toLowerCase().trim());
-    };
 
-    const isValidCollege = (college) => {
-        if (!college) return false;
-        const valid = ['ccs', 'college of computing studies'];
-        return valid.includes(college.toLowerCase().trim());
-    };
 
     // Hero selection logic
     const selectedHeroId = localStorage.getItem('selectedHeroId') || '3';
@@ -83,8 +72,6 @@ const ProfileModal = ({ isOpen, onClose }) => {
         setEditForm({
             name: user.name,
             gender: user.gender,
-            school: user.school,
-            college: user.college,
             course: user.course,
             email: user.email
         });
@@ -174,18 +161,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
                             accept="image/*"
                         />
                     </div>
-                    {/* Logos below profile pic - only show if school/college have values */}
-                    {/* Logos below profile pic - only show if school/college match valid values */}
-                    {(isValidSchool(user.school) || isValidCollege(user.college)) && (
-                        <div className="flex items-center gap-4">
-                            {isValidSchool(user.school) && (
-                                <img src={jrmsulogo} alt={user.school} className="w-14 h-14 object-contain drop-shadow-[0_0_15px_rgba(34,211,238,0.2)]" />
-                            )}
-                            {isValidCollege(user.college) && (
-                                <img src={ccslogo} alt={user.college} className="w-14 h-14 object-contain drop-shadow-[0_0_15px_rgba(34,211,238,0.2)]" />
-                            )}
-                        </div>
-                    )}
+
                 </div>
 
                 <div className="flex-1">
@@ -199,13 +175,11 @@ const ProfileModal = ({ isOpen, onClose }) => {
                         <span className={`w-1.5 h-1.5 rounded-full bg-${currentTheme.colors.primary}-400/50`}></span>
                         <span>Lvl: {getRankFromExp(user.exp || 0)?.id || 1}</span>
                     </p>
-                    <div className="flex flex-col gap-4 items-start">
-                        <div className="flex gap-4">
-                            <span className={`px-3 py-1 rounded-lg bg-${currentTheme.colors.primary}-500/10 border border-${currentTheme.colors.primary}-500/30 text-${currentTheme.colors.primary}-400 text-[10px] font-black uppercase tracking-widest`}>
-                                {user.rankName}
-                            </span>
+                    <div className="flex flex-row gap-4 items-center mt-2">
+                        <span className={`px-3 py-2 rounded-lg bg-${currentTheme.colors.primary}-500/10 border border-${currentTheme.colors.primary}-500/30 text-${currentTheme.colors.primary}-400 text-[10px] font-black uppercase tracking-widest flex items-center`}>
+                            {user.rankName}
+                        </span>
 
-                        </div>
                         <button
                             onClick={handleEditClick}
                             className={`flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/10 transition-all group`}
@@ -361,14 +335,14 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                             <span className="text-[10px] font-bold text-emerald-400 uppercase hidden sm:block">Online</span>
                                             <button 
                                                 onClick={() => handleViewFriendProfile(friend.id)}
-                                                className="p-2 rounded-xl bg-slate-800 hover:bg-cyan-500/20 text-slate-400 hover:text-cyan-400 border border-white/5 transition-colors"
+                                                className={`p-2 rounded-xl bg-${currentTheme.colors.primary}-500/10 hover:bg-${currentTheme.colors.primary}-500/20 text-${currentTheme.colors.primary}-400 border border-${currentTheme.colors.primary}-500/30 transition-colors`}
                                                 title="View Profile"
                                             >
                                                 <Info className="w-4 h-4" />
                                             </button>
                                             <button 
                                                 onClick={(e) => handleUnfriend(friend.id, e)}
-                                                className="p-2 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-white/5 transition-colors"
+                                                className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition-colors"
                                                 title="Unfriend"
                                             >
                                                 <UserMinus className="w-4 h-4" />
@@ -401,14 +375,14 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                             <span className="text-[10px] font-bold text-slate-600 uppercase hidden sm:block">Offline</span>
                                             <button 
                                                 onClick={() => handleViewFriendProfile(friend.id)}
-                                                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-500 hover:text-slate-300 border border-white/5 transition-colors"
+                                                className="p-2 rounded-xl bg-slate-800/80 hover:bg-cyan-500/20 text-slate-400 hover:text-cyan-400 border border-white/5 transition-colors"
                                                 title="View Profile"
                                             >
                                                 <Info className="w-4 h-4" />
                                             </button>
                                             <button 
                                                 onClick={(e) => handleUnfriend(friend.id, e)}
-                                                className="p-2 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 border border-white/5 transition-colors"
+                                                className="p-2 rounded-xl bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-white/5 transition-colors"
                                                 title="Unfriend"
                                             >
                                                 <UserMinus className="w-4 h-4" />

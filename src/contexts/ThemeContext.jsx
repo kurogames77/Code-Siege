@@ -6,7 +6,7 @@ const ThemeContext = createContext();
 export const themes = {
     default: {
         id: 'default',
-        name: 'Cyberpunk Default',
+        name: 'Default',
         colors: {
             primary: 'cyan',
             secondary: 'indigo',
