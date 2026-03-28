@@ -350,7 +350,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                         event: 'sync-settings',
                         payload: {
                             targetId: payload.senderId,
-                            language: selectedLanguageRef.current,
+                            language: selectedLanguageRef.current || (courses.length > 0 ? courses[0].name : ''),
                             difficulty: selectedDifficultyRef.current,
                             mode: selectedModeRef.current,
                             wager: selectedWagerRef.current
@@ -362,7 +362,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 // Guest receives the host's match settings
                 if (payload.targetId === user.id || payload.targetId === '*') {
 
-                    setSelectedLanguage(payload.language);
+                    if (payload.language) setSelectedLanguage(payload.language);
                     setSelectedDifficulty(payload.difficulty);
                     setSelectedMode(payload.mode);
                     setSelectedWager(payload.wager);
@@ -633,7 +633,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 event: 'sync-settings',
                 payload: {
                     targetId: opponentRef.current?.id || '*',
-                    language: settingType === 'language' ? value : selectedLanguageRef.current,
+                    language: settingType === 'language' ? value : (selectedLanguageRef.current || (courses.length > 0 ? courses[0].name : '')),
                     difficulty: settingType === 'difficulty' ? value : selectedDifficultyRef.current,
                     mode: settingType === 'mode' ? value : selectedModeRef.current,
                     wager: settingType === 'wager' ? value : selectedWagerRef.current

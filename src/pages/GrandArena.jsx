@@ -227,7 +227,7 @@ const GrandArena = () => {
         playClick();
         const wagerAmount = parseInt(wager, 10) || 0;
         updateExp(-wagerAmount);
-        navigate('/play', { state: { openMultiplayerLobby: true } });
+        navigate('/play', { replace: true });
     };
 
     const handleResetGame = () => {

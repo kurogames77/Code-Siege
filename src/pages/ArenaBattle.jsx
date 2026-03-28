@@ -197,7 +197,7 @@ const ArenaBattle = () => {
         const channelToClean = arenaChannelRef.current;
         arenaChannelRef.current = null;
 
-        // Broadcast withdrawal to opponent then navigate
+        // Broadcast withdrawal to opponent on the arena channel
         if (channelToClean) {
             try {
                 await channelToClean.send({
@@ -208,16 +208,33 @@ const ArenaBattle = () => {
                         withdrawnName: user.name
                     }
                 });
-                // Give a tiny buffer for the socket flush before unmount
-                await new Promise(resolve => setTimeout(resolve, 100));
             } catch (err) {
                 console.error('[ArenaBattle] Failed to send withdraw broadcast:', err);
             }
             supabase.removeChannel(channelToClean);
         }
 
+        // Also broadcast player-leave on the LOBBY channel so the opponent's
+        // DuelLobbyModal detects we left and resets their lobby state
+        if (lobbyId) {
+            try {
+                const lobbyChannel = supabase.channel(`duel-lobby-${lobbyId}`, {
+                    config: { broadcast: { ack: true, self: false } }
+                });
+                await lobbyChannel.subscribe();
+                await lobbyChannel.send({
+                    type: 'broadcast',
+                    event: 'player-leave',
+                    payload: { playerId: user.id }
+                });
+                await new Promise(resolve => setTimeout(resolve, 150));
+                supabase.removeChannel(lobbyChannel);
+            } catch (err) {
+                console.error('[ArenaBattle] Failed to send lobby leave broadcast:', err);
+            }
+        }
+
         // Navigate to /play WITHOUT reopening the duel lobby
-        // to prevent the lobby from reconnecting and redirecting back to arena
         navigate('/play', { replace: true });
     };
 
