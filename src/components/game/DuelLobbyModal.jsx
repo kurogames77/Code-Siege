@@ -11,7 +11,7 @@ import lobbyMusic from '../../assets/sounds/lobbymusic.mp3';
 import useSound from '../../hooks/useSound';
 import { useUser } from '../../contexts/UserContext';
 import supabase from '../../lib/supabase';
-import { authAPI, userAPI, battlesAPI } from '../../services/api';
+import { authAPI, userAPI, battlesAPI, coursesAPI } from '../../services/api';
 import { getRankFromExp } from '../../utils/rankSystem';
 import rankGold from '../../assets/rankbadges/rank6.png';
 import rankSilver from '../../assets/rankbadges/rank3.png';
@@ -28,30 +28,18 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     const { playClick, playSuccess, playCancel, playSelect, playCountdownVoice } = useSound();
     const { user, onlineUserIds } = useUser();
 
-    // Fetch courses from Supabase
+    // Fetch courses via backend API (bypasses RLS)
     useEffect(() => {
         const fetchCourses = async () => {
             try {
-
-
-                const { data, error, status } = await supabase
-                    .from('courses')
-                    .select('*')
-                    .order('name', { ascending: true });
-
-
-                if (error) {
-                    console.error('[DuelLobby] Supabase Error:', error.message, error.details, error.hint);
-                    return;
-                }
-
+                const data = await coursesAPI.getCourses();
 
                 if (data && data.length > 0) {
                     const uniqueCourses = Array.from(new Map(data.map(item => [item.name, item])).values());
                     setCourses(uniqueCourses);
                     setSelectedLanguage(uniqueCourses[0].name);
                 } else {
-                    console.warn('[DuelLobby] Courses table is empty or blocked by RLS.');
+                    console.warn('[DuelLobby] No courses found.');
                 }
             } catch (err) {
                 console.error('[DuelLobby] Critical error in fetchCourses:', err);
