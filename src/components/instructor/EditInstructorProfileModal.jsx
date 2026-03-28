@@ -103,7 +103,7 @@ const EditInstructorProfileModal = ({ isOpen, onClose, currentProfile }) => {
                             </div>
                             <button
                                 onClick={onClose}
-                                className="p-2 bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-xl transition-colors"
+                                className="p-2 bg-white/5 hover:bg-rose-500 text-slate-400 hover:text-white rounded-full transition-all duration-300 hover:rotate-180 hover:shadow-[0_0_15px_rgba(244,63,94,0.6)]"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -226,16 +226,9 @@ const EditInstructorProfileModal = ({ isOpen, onClose, currentProfile }) => {
                             {/* Footer Actions */}
                             <div className="pt-4 flex gap-3">
                                 <button
-                                    type="button"
-                                    onClick={onClose}
-                                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl font-bold uppercase tracking-wider text-xs transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
                                     type="submit"
                                     disabled={isLoading}
-                                    className="flex-1 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-black uppercase tracking-wider text-xs shadow-lg shadow-cyan-900/20 transition-all active:scale-95 flex items-center justify-center gap-2"
+                                    className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-black uppercase tracking-wider text-xs shadow-lg shadow-cyan-900/20 transition-all active:scale-95 flex items-center justify-center gap-2"
                                 >
                                     {isLoading ? (
                                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

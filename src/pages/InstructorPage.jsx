@@ -93,7 +93,7 @@ const InstructorPage = () => {
 
     return (
         <div
-            className={`flex h-screen transition-colors duration-500 overflow-hidden font-inter selection:bg-cyan-500/30 selection:text-cyan-200 ${theme === 'dark' ? 'bg-[#020617] text-slate-200' : 'bg-slate-50 text-slate-900'
+            className={`flex h-screen transition-colors duration-200 overflow-hidden font-inter selection:bg-cyan-500/30 selection:text-cyan-200 ${theme === 'dark' ? 'bg-[#020617] text-slate-200' : 'bg-slate-50 text-slate-900'
                 }`}
             style={{ '--scrollbar-thumb': theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}
         >
@@ -109,7 +109,7 @@ const InstructorPage = () => {
             {/* Main Content */}
             <main className="flex-1 flex flex-col relative overflow-hidden">
                 {/* Top Terminal Bar */}
-                <header className={`h-20 border-b flex items-center justify-between px-10 shrink-0 z-10 transition-colors duration-500 ${theme === 'dark' ? 'border-white/5 bg-[#0B1224]/30 backdrop-blur-md' : 'border-slate-200 bg-white shadow-sm'
+                <header className={`h-20 border-b flex items-center justify-between px-10 shrink-0 z-10 transition-colors duration-200 ${theme === 'dark' ? 'border-white/5 bg-[#0B1224]/30 backdrop-blur-md' : 'border-slate-200 bg-white shadow-sm'
                     }`}>
                     <div className="flex items-center gap-8 flex-1 max-w-2xl text-slate-500">
                     </div>
@@ -138,7 +138,7 @@ const InstructorPage = () => {
                 {/* Scrollable Content Area */}
                 <div className="flex-1 overflow-y-auto p-10 custom-scrollbar relative">
                     {/* Background Grid Pattern */}
-                    <div className={`absolute inset-0 pointer-events-none overflow-hidden transition-opacity duration-700 ${theme === 'dark' ? 'opacity-[0.03]' : 'opacity-[0.05]'}`}>
+                    <div className={`absolute inset-0 pointer-events-none overflow-hidden transition-opacity duration-200 ${theme === 'dark' ? 'opacity-[0.03]' : 'opacity-[0.05]'}`}>
                         <div className="absolute inset-0" style={{
                             backgroundImage: theme === 'dark'
                                 ? 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)'

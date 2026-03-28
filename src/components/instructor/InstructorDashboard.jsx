@@ -79,15 +79,15 @@ const InstructorDashboard = ({ theme }) => {
         return () => clearInterval(timer);
     }, []);
 
-    // Placeholder data for graphs until backend provides historical data
-    const courseCompletionData = [
-        { name: 'Python', count: 0 },
-        { name: 'C#', count: 0 },
-        { name: 'C++', count: 0 },
-        { name: 'JavaScript', count: 0 },
-        { name: 'MySQL', count: 0 },
-        { name: 'PHP', count: 0 },
-    ];
+    // Generate completion data dynamically based on assigned courses
+    const courseCompletionData = instructorCourses.length > 0
+        ? instructorCourses.map(course => ({
+            name: course.name,
+            count: 0 // Will be populated with actual API data in the future
+        }))
+        : [
+            { name: 'Python', count: 0 } // Fallback
+        ];
 
     const completionRate = statsData.totalStudents > 0
         ? Math.round((statsData.totalCertificates / statsData.totalStudents) * 100)
@@ -129,7 +129,7 @@ const InstructorDashboard = ({ theme }) => {
                         <p className={`text-xs font-bold uppercase tracking-[0.2em] mt-1 transition-colors ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>Real-time status of the Code Siege ecosystem</p>
                     </div>
                     <div className="flex items-center gap-4">
-                        <div className={`px-6 py-3 border rounded-2xl flex items-center gap-3 transition-all duration-500 ${theme === 'dark' ? 'bg-slate-900 border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
+                        <div className={`px-6 py-3 border rounded-2xl flex items-center gap-3 transition-all duration-200 ${theme === 'dark' ? 'bg-slate-900 border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
                             <Clock className="w-4 h-4 text-cyan-500" />
                             <span className={`text-xs font-black uppercase tracking-widest transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                                 {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -142,7 +142,7 @@ const InstructorDashboard = ({ theme }) => {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`p-12 border rounded-[2.5rem] text-center transition-all duration-500 ${theme === 'dark' ? 'bg-slate-900/40 border-white/5' : 'bg-white border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.02)]'}`}
+                    className={`p-12 border rounded-[2.5rem] text-center transition-all duration-200 ${theme === 'dark' ? 'bg-slate-900/40 border-white/5' : 'bg-white border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.02)]'}`}
                 >
                     <div className={`w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center ${theme === 'dark' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-cyan-50 text-cyan-600'}`}>
                         <BookOpen className="w-8 h-8" />
@@ -165,7 +165,7 @@ const InstructorDashboard = ({ theme }) => {
                     <p className={`text-xs font-bold uppercase tracking-[0.2em] mt-1 transition-colors ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>Real-time status of the Code Siege ecosystem</p>
                 </div>
                 <div className="flex items-center gap-4">
-                    <div className={`px-6 py-3 border rounded-2xl flex items-center gap-3 transition-all duration-500 ${theme === 'dark' ? 'bg-slate-900 border-white/5' : 'bg-white border-slate-200 shadow-sm'
+                    <div className={`px-6 py-3 border rounded-2xl flex items-center gap-3 transition-all duration-200 ${theme === 'dark' ? 'bg-slate-900 border-white/5' : 'bg-white border-slate-200 shadow-sm'
                         }`}>
                         <Clock className="w-4 h-4 text-cyan-500" />
                         <span className={`text-xs font-black uppercase tracking-widest transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
@@ -185,7 +185,7 @@ const InstructorDashboard = ({ theme }) => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: idx * 0.1 }}
-                            className={`p-6 border rounded-[2rem] relative overflow-hidden group transition-all duration-500 shadow-xl ${theme === 'dark' ? 'bg-slate-900/40 border-white/5 hover:border-white/10' : 'bg-white border-slate-200 hover:border-cyan-500 shadow-[0_10px_30px_rgba(0,0,0,0.02)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.05)]'
+                            className={`p-6 border rounded-[2rem] relative overflow-hidden group transition-all duration-200 shadow-xl ${theme === 'dark' ? 'bg-slate-900/40 border-white/5 hover:border-white/10' : 'bg-white border-slate-200 hover:border-cyan-500 shadow-[0_10px_30px_rgba(0,0,0,0.02)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.05)]'
                                 }`}
                         >
                             <div className="flex items-start justify-between">
@@ -220,7 +220,7 @@ const InstructorDashboard = ({ theme }) => {
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.1 }}
-                    className={`p-8 border rounded-[2.5rem] relative overflow-hidden transition-all duration-500 ${theme === 'dark' ? 'bg-slate-900/40 border-white/5' : 'bg-white border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.02)]'
+                    className={`p-8 border rounded-[2.5rem] relative overflow-hidden transition-all duration-200 ${theme === 'dark' ? 'bg-slate-900/40 border-white/5' : 'bg-white border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.02)]'
                         }`}
                 >
                     <div className="flex items-center justify-between mb-8">
@@ -265,7 +265,7 @@ const InstructorDashboard = ({ theme }) => {
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.2 }}
-                    className={`p-8 border rounded-[2.5rem] relative overflow-hidden transition-all duration-500 ${theme === 'dark' ? 'bg-slate-900/40 border-white/5' : 'bg-white border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.02)]'
+                    className={`p-8 border rounded-[2.5rem] relative overflow-hidden transition-all duration-200 ${theme === 'dark' ? 'bg-slate-900/40 border-white/5' : 'bg-white border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.02)]'
                         }`}
                 >
                     <div className="flex items-center justify-between mb-8">

@@ -35,10 +35,10 @@ const ProfileModal = ({ isOpen, onClose }) => {
     const [changingPassword, setChangingPassword] = useState(false);
     const [stats, setStats] = useState({ winnings: 0, losses: 0, winRate: '0%' });
     
-    // Friend Viewer
     const [selectedFriend, setSelectedFriend] = useState(null);
     const [isFriendViewerOpen, setIsFriendViewerOpen] = useState(false);
     const [isFriendLoading, setIsFriendLoading] = useState(false);
+    const [friendToRemove, setFriendToRemove] = useState(null);
 
     // Fetch battle stats on mount
     useEffect(() => {
@@ -277,17 +277,25 @@ const ProfileModal = ({ isOpen, onClose }) => {
             }
         };
 
-        const handleUnfriend = async (friendId, e) => {
+        const handleUnfriend = (friend, e) => {
             e.stopPropagation();
-            if (!window.confirm("Are you sure you want to remove this friend?")) return;
-            
+            playClick();
+            setFriendToRemove(friend);
+        };
+
+        const confirmUnfriend = async () => {
+            if (!friendToRemove) return;
             try {
-                await userAPI.removeFriend(friendId);
+                await userAPI.removeFriend(friendToRemove.id);
                 toast.success('Friend removed');
-                setFriendsList(prev => prev.filter(f => f.id !== friendId));
+                setFriendsList(prev => prev.filter(f => f.id !== friendToRemove.id));
+                playSuccess();
             } catch (err) {
                 console.error("Failed to unfriend", err);
                 toast.error('Failed to remove friend');
+                playCancel();
+            } finally {
+                setFriendToRemove(null);
             }
         };
 
@@ -341,7 +349,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                                 <Info className="w-4 h-4" />
                                             </button>
                                             <button 
-                                                onClick={(e) => handleUnfriend(friend.id, e)}
+                                                onClick={(e) => handleUnfriend(friend, e)}
                                                 className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition-colors"
                                                 title="Unfriend"
                                             >
@@ -381,7 +389,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                                 <Info className="w-4 h-4" />
                                             </button>
                                             <button 
-                                                onClick={(e) => handleUnfriend(friend.id, e)}
+                                                onClick={(e) => handleUnfriend(friend, e)}
                                                 className="p-2 rounded-xl bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-white/5 transition-colors"
                                                 title="Unfriend"
                                             >
@@ -759,6 +767,48 @@ const ProfileModal = ({ isOpen, onClose }) => {
                             >
                                 <X className="w-6 h-6" />
                             </button>
+
+                            {/* Unfriend Confirm Modal */}
+                            <AnimatePresence>
+                                {friendToRemove && (
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="absolute inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+                                    >
+                                        <motion.div
+                                            initial={{ scale: 0.9, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            exit={{ scale: 0.9, opacity: 0 }}
+                                            className="bg-slate-900 border border-rose-500/30 w-full max-w-sm rounded-[2rem] p-8 text-center shadow-[0_0_50px_rgba(244,63,94,0.2)]"
+                                        >
+                                            <div className="w-16 h-16 mx-auto bg-rose-500/10 text-rose-500 flex items-center justify-center rounded-2xl mb-6">
+                                                <UserMinus className="w-8 h-8" />
+                                            </div>
+                                            <h3 className="text-xl font-black text-white italic uppercase tracking-wider mb-2">Remove Friend?</h3>
+                                            <p className="text-slate-400 text-sm mb-8">
+                                                Are you sure you want to unfriend <span className="text-rose-400 font-bold">{friendToRemove.name || friendToRemove.username}</span>? This action cannot be undone.
+                                            </p>
+                                            
+                                            <div className="flex items-center gap-4">
+                                                <button
+                                                    onClick={() => setFriendToRemove(null)}
+                                                    className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold uppercase tracking-wider transition-colors border border-white/10"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={confirmUnfriend}
+                                                    className="flex-1 py-4 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black uppercase tracking-wider transition-colors shadow-lg shadow-rose-500/20"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        </motion.div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
                             {/* Content Renders */}
                             <AnimatePresence mode="wait">

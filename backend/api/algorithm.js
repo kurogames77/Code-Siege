@@ -8,7 +8,7 @@ import { authenticateUser } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get __dirname equivalent in ES modules
+// Get __dirname equivalent in ES modules 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
