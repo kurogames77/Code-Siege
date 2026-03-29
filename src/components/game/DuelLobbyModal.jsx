@@ -220,21 +220,25 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     useEffect(() => {
         if (!isOpen) {
             acceptSentRef.current = false;
-            // Broadcast leave if we were in an active lobby — await + delay to ensure delivery
-            if (lobbyChannelRef.current && opponentRef.current) {
+            // ALWAYS untrack presence + broadcast leave when modal closes
+            // This ensures the opponent immediately sees us leave
+            if (lobbyChannelRef.current) {
                 const ch = lobbyChannelRef.current;
+                // Untrack presence so opponent gets instant presence leave event
+                ch.untrack().catch(() => { });
+                // Also send explicit broadcast as a backup
                 ch.send({
                     type: 'broadcast',
                     event: 'player-leave',
                     payload: { playerId: user?.id }
                 }).catch(() => { });
             }
-            // Small delay to let the broadcast flush before full reset
+            // Small delay to let the untrack/broadcast flush before full reset
             setTimeout(() => {
                 resetLobbyState();
-            }, 150);
+            }, 200);
         }
-    }, [isOpen, resetLobbyState]);
+    }, [isOpen, resetLobbyState, user?.id]);
 
     useEffect(() => {
         if (!isOpen || !user || !lobbyId) return;
@@ -406,15 +410,16 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             });
 
         return () => {
-            // Send leave broadcast then tear down the channel.
-            // Add a delay before removeChannel to ensure the broadcast is flushed.
+            // Untrack presence first for instant server-side removal
             const ch = channel;
+            ch.untrack().catch(() => { });
+            // Send leave broadcast as backup
             ch.send({
                 type: 'broadcast',
                 event: 'player-leave',
                 payload: { playerId: user.id }
             }).catch(() => { });
-            // Give the broadcast time to flush before destroying the channel
+            // Give the untrack + broadcast time to flush before destroying the channel
             setTimeout(() => {
                 supabase.removeChannel(ch);
             }, 300);
@@ -1267,9 +1272,10 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                                 </button>
                                                 <button
                                                     onClick={async () => {
-                                                        // Broadcast leave before closing — await + delay to ensure delivery
+                                                        // Untrack presence + broadcast leave before closing
                                                         if (lobbyChannelRef.current) {
                                                             try {
+                                                                await lobbyChannelRef.current.untrack();
                                                                 await lobbyChannelRef.current.send({
                                                                     type: 'broadcast',
                                                                     event: 'player-leave',
