@@ -92,6 +92,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         setInvitedFriendId(null);
         setSuccessInviteIds(new Set());
         setLobbyId(null); // Force a fresh lobbyId on next open
+        setBattleRecordId(null);
         setShowExitModal(false);
         acceptSentRef.current = false;
         opponentRef.current = null;
@@ -99,10 +100,40 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     }, []);
 
     // Set initial opponent and lobby from prop (when accepting a duel invite)
+    // This handles both first invites AND subsequent re-invites with a new lobbyId
     useEffect(() => {
         if (isOpen && initialOpponent) {
-            if (!opponent) {
+            // If the incoming invite has a DIFFERENT lobbyId than what we currently have,
+            // we need to switch channels (handles second invite scenario)
+            if (initialOpponent.lobbyId && lobbyId && initialOpponent.lobbyId !== lobbyId) {
+                // Cleanup old channel before switching
+                if (lobbyChannelRef.current) {
+                    lobbyChannelRef.current.untrack().catch(() => {});
+                    lobbyChannelRef.current.send({
+                        type: 'broadcast',
+                        event: 'player-leave',
+                        payload: { playerId: user?.id }
+                    }).catch(() => {});
+                    const oldCh = lobbyChannelRef.current;
+                    lobbyChannelRef.current = null;
+                    setTimeout(() => supabase.removeChannel(oldCh), 200);
+                }
+                // Reset state for new lobby
+                setOpponent(initialOpponent);
+                setMatchState('lobby');
+                setTimer(60);
+                setIsUserReady(false);
+                setIsOpponentReady(false);
+                setStartCountdown(5);
+                acceptSentRef.current = false;
+                opponentRef.current = initialOpponent;
+                matchStateRef.current = 'lobby';
+                setLobbyId(initialOpponent.lobbyId);
+                return;
+            }
 
+            // First time joining: set opponent and lobby
+            if (!opponent) {
                 setOpponent(initialOpponent);
                 setMatchState('lobby');
                 setTimer(60);
@@ -111,7 +142,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 setLobbyId(initialOpponent.lobbyId);
             }
         }
-    }, [isOpen, initialOpponent, opponent, lobbyId]);
+    }, [isOpen, initialOpponent, opponent, lobbyId, user?.id]);
 
     // Generate lobbyId for host
     useEffect(() => {
@@ -222,21 +253,27 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             acceptSentRef.current = false;
             // ALWAYS untrack presence + broadcast leave when modal closes
             // This ensures the opponent immediately sees us leave
-            if (lobbyChannelRef.current) {
-                const ch = lobbyChannelRef.current;
-                // Untrack presence so opponent gets instant presence leave event
-                ch.untrack().catch(() => { });
-                // Also send explicit broadcast as a backup
-                ch.send({
-                    type: 'broadcast',
-                    event: 'player-leave',
-                    payload: { playerId: user?.id }
-                }).catch(() => { });
-            }
-            // Small delay to let the untrack/broadcast flush before full reset
-            setTimeout(() => {
+            const ch = lobbyChannelRef.current;
+            if (ch) {
+                lobbyChannelRef.current = null; // Prevent double-cleanup
+                // Await untrack + broadcast, then clean up channel, then reset state
+                (async () => {
+                    try {
+                        await ch.untrack();
+                        await ch.send({
+                            type: 'broadcast',
+                            event: 'player-leave',
+                            payload: { playerId: user?.id }
+                        });
+                    } catch (e) { /* best effort */ }
+                    // Wait for messages to flush before destroying channel
+                    await new Promise(r => setTimeout(r, 250));
+                    supabase.removeChannel(ch);
+                    resetLobbyState();
+                })();
+            } else {
                 resetLobbyState();
-            }, 200);
+            }
         }
     }, [isOpen, resetLobbyState, user?.id]);
 
@@ -410,19 +447,23 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             });
 
         return () => {
-            // Untrack presence first for instant server-side removal
+            // Skip cleanup if the channel was already cleaned up by isOpen handler
+            if (lobbyChannelRef.current !== channel) return;
+            lobbyChannelRef.current = null;
             const ch = channel;
-            ch.untrack().catch(() => { });
-            // Send leave broadcast as backup
-            ch.send({
-                type: 'broadcast',
-                event: 'player-leave',
-                payload: { playerId: user.id }
-            }).catch(() => { });
-            // Give the untrack + broadcast time to flush before destroying the channel
-            setTimeout(() => {
+            // Untrack presence + broadcast leave, then remove channel
+            (async () => {
+                try {
+                    await ch.untrack();
+                    await ch.send({
+                        type: 'broadcast',
+                        event: 'player-leave',
+                        payload: { playerId: user.id }
+                    });
+                } catch (e) { /* best effort */ }
+                await new Promise(r => setTimeout(r, 250));
                 supabase.removeChannel(ch);
-            }, 300);
+            })();
         };
     }, [isOpen, user, lobbyId]);
 
