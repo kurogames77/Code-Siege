@@ -377,7 +377,7 @@ router.get('/users', async (req, res) => {
 
         let query = supabaseService
             .from('users')
-            .select('id, username, email, role, student_id, college, is_banned, avatar_url, created_at, xp, level, gems', { count: 'exact' })
+            .select('id, username, email, role, student_id, is_banned, avatar_url, created_at, xp, level, gems', { count: 'exact' })
             .order('created_at', { ascending: false })
             .range(offset, offset + limit - 1);
 
@@ -497,13 +497,12 @@ router.patch('/users/:id/role', requireAdmin, async (req, res) => {
 router.patch('/users/:id', requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
-        const { username, email, student_id, college, avatar_url, enrolled_language, handled_towers } = req.body;
+        const { username, email, student_id, avatar_url, enrolled_language, handled_towers } = req.body;
 
         const updates = {};
         if (username !== undefined) updates.username = username;
         if (email !== undefined) updates.email = email;
         if (student_id !== undefined) updates.student_id = student_id;
-        if (college !== undefined) updates.college = college;
         if (avatar_url !== undefined) updates.avatar_url = avatar_url;
         if (enrolled_language !== undefined) updates.enrolled_language = enrolled_language;
         if (handled_towers !== undefined) updates.handled_towers = handled_towers;
