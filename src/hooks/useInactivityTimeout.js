@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 
-const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 const THROTTLE_INTERVAL = 30 * 1000; // 30 seconds
 
 const useInactivityTimeout = () => {
