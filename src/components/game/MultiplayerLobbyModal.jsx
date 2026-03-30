@@ -107,13 +107,20 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     const audioRef = React.useRef(null);
     const { playClick, playSuccess, playCancel, playSelect, playCountdownVoice } = useSound();
     const [allFriends, setAllFriends] = useState([]);
-    const [invitedFriendId, setInvitedFriendId] = useState(null);
+    const [invitedFriendIds, setInvitedFriendIds] = useState(new Set());
     const [successInviteIds, setSuccessInviteIds] = useState(new Set());
 
     // Matchmaking Real-Time Queue
     const [matchmakingQueue, setMatchmakingQueue] = useState({});
     const channelRef = React.useRef(null);
     const matchmakingIntervalRef = React.useRef(null);
+    const playersRef = React.useRef(players); // Ref to always have latest players for broadcasts
+    const isHostRef = React.useRef(false); // Track if this user is the lobby host
+
+    // Keep playersRef in sync with state
+    React.useEffect(() => {
+        playersRef.current = players;
+    }, [players]);
 
     // Add inviter to players when opened via invite, and reset on close
     useEffect(() => {
@@ -147,6 +154,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             setTimer(0);
             setSearchError(null);
             setInviteError(null);
+            isHostRef.current = false;
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, initialInviter]);
@@ -173,6 +181,29 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             if (hasChanges) setPlayers(updated);
         }
     }, [matchmakingQueue, user, players]);
+
+    // Broadcast party-sync to all members whenever the host's players list changes
+    // This replaces the old setTimeout-based broadcast inside setPlayers,
+    // guaranteeing we always send the LATEST state (no stale closures)
+    useEffect(() => {
+        if (!isHostRef.current || !channelRef.current || players.length <= 1) return;
+        
+        const playerIds = players.map(p => p.id);
+        channelRef.current.send({
+            type: 'broadcast',
+            event: 'party-sync',
+            payload: {
+                hostId: user.id,
+                playerIds,
+                players: players,
+                settings: {
+                    language: selectedLanguage,
+                    mode: selectedMode,
+                    wager: selectedWager
+                }
+            }
+        });
+    }, [players, user, selectedLanguage, selectedMode, selectedWager]);
 
     // --- TIMERS & STATE MANAGEMENT ---
 
@@ -298,6 +329,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             .on('broadcast', { event: 'multi-invite-accept' }, (payload) => {
                 // If we are the host who invited them
                 if (payload.payload.targetId === user.id) {
+                    isHostRef.current = true;
 
                     // Add them to our party UI
                     setPlayers(prev => {
@@ -319,30 +351,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                             isReady: true
                         };
 
-                        const updatedPlayers = [...prev, newPlayer];
-
-                        // Broadcast the full party list to ALL members so everyone stays in sync
-                        setTimeout(() => {
-                            if (channelRef.current) {
-                                const playerIds = updatedPlayers.map(p => p.id);
-
-                                channelRef.current.send({
-                                    type: 'broadcast',
-                                    event: 'party-sync',
-                                    payload: {
-                                        playerIds,
-                                        players: updatedPlayers,
-                                        settings: {
-                                            language: selectedLanguage,
-                                            mode: selectedMode,
-                                            wager: selectedWager
-                                        }
-                                    }
-                                });
-                            }
-                        }, 100);
-
-                        return updatedPlayers;
+                        return [...prev, newPlayer];
                     });
 
                     // Keep their invite button as a checkmark
@@ -350,10 +359,10 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                 }
             })
             .on('broadcast', { event: 'party-sync' }, (payload) => {
-                // All party members receive the full updated player list + settings from the host
-                const { playerIds, players: syncedPlayers, settings } = payload.payload;
-                if (playerIds.includes(user.id)) {
-
+                // Only NON-HOST party members receive the full updated player list + settings
+                // The host already has the authoritative state — don't overwrite it
+                const { playerIds, players: syncedPlayers, settings, hostId } = payload.payload;
+                if (playerIds.includes(user.id) && hostId !== user.id) {
                     setPlayers(syncedPlayers);
                     // Sync match settings from host
                     if (settings) {
@@ -663,13 +672,18 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     };
 
     const handleInvite = async (friend) => {
-        if (invitedFriendId === friend.id) return;
+        if (invitedFriendIds.has(friend.id)) return;
         playClick();
-        setInvitedFriendId(friend.id);
+        isHostRef.current = true;
+        setInvitedFriendIds(prev => new Set([...prev, friend.id]));
         setInviteError(null);
 
         const timeoutId = setTimeout(() => {
-            setInvitedFriendId(null);
+            setInvitedFriendIds(prev => {
+                const next = new Set(prev);
+                next.delete(friend.id);
+                return next;
+            });
             setInviteError('Invite timed out. Try again.');
             setTimeout(() => setInviteError(null), 3000);
         }, 10000);
@@ -691,7 +705,11 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             setTimeout(() => setInviteError(null), 3000);
         } finally {
             clearTimeout(timeoutId);
-            setInvitedFriendId(null);
+            setInvitedFriendIds(prev => {
+                const next = new Set(prev);
+                next.delete(friend.id);
+                return next;
+            });
         }
     };
 
@@ -1045,17 +1063,17 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                                             e.stopPropagation();
                                                             handleInvite(friend);
                                                         }}
-                                                        disabled={invitedFriendId === friend.id || isInvited}
+                                                        disabled={invitedFriendIds.has(friend.id) || isInvited}
                                                         className={`w-8 h-8 rounded-lg flex items-center justify-center text-white transition-all shrink-0 ${isInvited
                                                             ? 'bg-blue-600/50 cursor-default'
-                                                            : invitedFriendId === friend.id
+                                                            : invitedFriendIds.has(friend.id)
                                                                 ? 'bg-amber-600/50 cursor-not-allowed'
                                                                 : 'bg-emerald-600 hover:bg-emerald-500 hover:scale-110 active:scale-95 shadow-lg shadow-emerald-900/20'
                                                             }`}
                                                     >
                                                         {isInvited ? (
                                                             <Check className="w-4 h-4 text-blue-200" />
-                                                        ) : invitedFriendId === friend.id ? (
+                                                        ) : invitedFriendIds.has(friend.id) ? (
                                                             <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                                         ) : (
                                                             <UserPlus className="w-3.5 h-3.5" />
