@@ -234,19 +234,20 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     // Auto-Transition: Search Timeout
     useEffect(() => {
         if (matchState === 'searching' && timer === 0) {
-
-            setMatchState('idle');
-            setTimer(0);
             
-            // Only keep the players who were already explicitly invited/were with us before search
-            // If we just want to reset to our "base" group, we can just keep everyone who isn't a random match.
-            // But right now we only add friends or ourselves to `players` before a match is found. 
-            // So just keep the current `players` array since it represents our party, OR reset to party:
-            setSearchError('No players found. Try again.');
-            playCancel(); // Play a sound indicating failure
-            setTimeout(() => setSearchError(null), 5000);
+            if (players.length >= 3) {
+                setMatchState('search_timeout');
+                setSearchError('No players found. You can start with your current party.');
+                setTimeout(() => setSearchError(null), 5000);
+            } else {
+                setMatchState('idle');
+                setTimer(0);
+                setSearchError('No players found. Try again.');
+                playCancel(); // Play a sound indicating failure
+                setTimeout(() => setSearchError(null), 5000);
+            }
         }
-    }, [matchState, timer, playCancel]);
+    }, [matchState, timer, playCancel, players.length]);
 
     // Auto-Transition: Ready Check Timeout
     useEffect(() => {
@@ -313,7 +314,8 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             })
             .on('broadcast', { event: 'match_found' }, (payload) => {
                 // If we are part of the match group broadcasted by the host
-                if (payload.payload.playerIds.includes(user.id) && matchState === 'searching') {
+                if (payload.payload.playerIds.includes(user.id) && 
+                   (matchState === 'searching' || matchState === 'idle' || matchState === 'search_timeout')) {
 
                     setPlayers(payload.payload.players);
                     startReadyPhase();
@@ -615,7 +617,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
 
     const handleFindMatch = () => {
         playClick();
-        if (matchState === 'idle') {
+        if (matchState === 'idle' || matchState === 'search_timeout') {
             setMatchState('searching');
             setTimer(60); // Set to 1 minute search timeout
         } else if (matchState === 'searching') {
@@ -778,10 +780,10 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                             {/* Center: Lobby Timer */}
                             <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                                    {matchState === 'searching' ? 'Finding Match...' : matchState === 'ready_check' ? 'Confirm Ready' : matchState === 'starting' ? 'Launching' : 'Auto-Start In'}
+                                    {matchState === 'searching' ? 'Finding Match...' : matchState === 'ready_check' ? 'Confirm Ready' : matchState === 'starting' ? 'Launching' : matchState === 'search_timeout' ? 'Ready to Start' : 'Auto-Start In'}
                                 </span>
                                 <span className={`text-xl font-black tracking-wider ${timer < 10 && timer > 0 ? 'text-rose-500' : 'text-slate-200'}`}>
-                                    {formatTime(timer)}
+                                    {matchState === 'search_timeout' ? '—' : formatTime(timer)}
                                 </span>
                             </div>
 
@@ -913,6 +915,32 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                                 }`}
                                         >
                                             {players.find(p => p.id === user.id)?.isReady ? 'Ready!' : 'Click to Ready'}
+                                        </button>
+                                    ) : matchState === 'search_timeout' ? (
+                                        <button
+                                            onClick={() => {
+                                                playClick();
+                                                if (channelRef.current) {
+                                                    const playerIds = players.map(p => p.id);
+                                                    channelRef.current.send({
+                                                        type: 'broadcast',
+                                                        event: 'match_found',
+                                                        payload: {
+                                                            playerIds: playerIds,
+                                                            players: players
+                                                        }
+                                                    });
+                                                }
+                                                startReadyPhase();
+                                            }}
+                                            disabled={!!initialInviter}
+                                            className={`w-full h-11 rounded-xl border-2 flex items-center justify-center gap-2 transition-all text-xs font-black uppercase tracking-widest ${
+                                                !!initialInviter
+                                                ? 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'
+                                                : 'bg-gradient-to-b from-blue-500 to-indigo-600 border-indigo-400 text-white hover:scale-105 shadow-[0_0_20px_rgba(99,102,241,0.5)]'
+                                            }`}
+                                        >
+                                            {!!initialInviter ? 'Waiting for Host...' : 'Start Match'}
                                         </button>
                                     ) : (
                                         <button
