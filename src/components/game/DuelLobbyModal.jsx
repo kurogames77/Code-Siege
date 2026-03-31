@@ -340,6 +340,12 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
                 // Detect opponent leaving via presence leave event
                 if (matchStateRef.current === 'starting') return; // GUARD: Do not abort an active launch sequence
+                
+                // Ignore leave if they are still tracked in presenceState (e.g., ghost unmount)
+                const state = channel.presenceState();
+                const isStillHere = Boolean(state[key] && state[key].length > 0);
+                if (isStillHere) return;
+
                 const currentOpponent = opponentRef.current;
                 if (currentOpponent) {
                     const opponentLeft = leftPresences.some(p => String(p.id) === String(currentOpponent.id)) ||
@@ -357,6 +363,12 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             .on('broadcast', { event: 'player-leave' }, ({ payload }) => {
                 // Explicit leave broadcast: ALWAYS reset lobby — no state guard
                 if (matchStateRef.current === 'starting') return; // GUARD: Do not abort an active launch sequence
+                
+                // Ignore leave if they are still tracked in presenceState
+                const state = channel.presenceState();
+                const isStillHere = Boolean(state[payload.playerId] && state[payload.playerId].length > 0);
+                if (isStillHere) return;
+
                 const currentOpponent = opponentRef.current;
                 if (currentOpponent && String(payload.playerId) === String(currentOpponent.id)) {
 
@@ -369,7 +381,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 }
             })
             .on('broadcast', { event: 'duel-invite' }, ({ payload }) => {
-                if (payload.targetId === user.id) {
+                if (String(payload.targetId) === String(user.id)) {
 
                     // No longer auto-accepting. NotificationModal handles the UI.
                 }
@@ -377,7 +389,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             .on('broadcast', { event: 'duel-accept' }, ({ payload }) => {
                 // If we are the sender (host) and the recipient (guest) accepted
 
-                if (payload.targetId === user.id) {
+                if (String(payload.targetId) === String(user.id)) {
                     // Always accept — remove idle guard so re-accepts work even if state wasn't reset
                     playSuccess();
                     setOpponent({
@@ -408,7 +420,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             })
             .on('broadcast', { event: 'sync-settings' }, ({ payload }) => {
                 // Guest receives the host's match settings
-                if (payload.targetId === user.id || payload.targetId === '*') {
+                if (String(payload.targetId) === String(user.id) || payload.targetId === '*') {
 
                     if (payload.language) setSelectedLanguage(payload.language);
                     setSelectedDifficulty(payload.difficulty);
@@ -420,12 +432,12 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 // Use ref to check opponent to avoid stale closure
                 const currentOpponent = opponentRef.current;
 
-                if (currentOpponent && payload.playerId === currentOpponent.id) {
+                if (currentOpponent && String(payload.playerId) === String(currentOpponent.id)) {
                     setIsOpponentReady(payload.isReady);
                 }
             })
             .on('broadcast', { event: 'game-start' }, ({ payload }) => {
-                if (payload.targetId === user.id && matchStateRef.current !== 'starting') {
+                if (String(payload.targetId) === String(user.id) && matchStateRef.current !== 'starting') {
 
                     setBattleRecordId(payload.battleRecordId);
                     setMatchState('starting');
