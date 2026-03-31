@@ -160,7 +160,7 @@ router.get('/notifications', authenticateUser, async (req, res) => {
     try {
         const db = supabaseService || supabase;
 
-        const { data, error } = await db
+        let query = db
             .from('notifications')
             .select(`
                 id,
@@ -168,6 +168,7 @@ router.get('/notifications', authenticateUser, async (req, res) => {
                 title,
                 message,
                 sender_id,
+                receiver_id,
                 action_status,
                 is_read,
                 created_at,
@@ -176,10 +177,18 @@ router.get('/notifications', authenticateUser, async (req, res) => {
                 )
             `)
             .eq('receiver_id', req.user.id)
-            .neq('type', 'duel_invite')
-            .neq('type', 'multiplayer_invite')
             .order('created_at', { ascending: false })
             .limit(30);
+
+        // By default, exclude invite types from the general notifications list
+        // Pass ?include_invites=true to include them (used by invite polling)
+        if (req.query.include_invites !== 'true') {
+            query = query
+                .neq('type', 'duel_invite')
+                .neq('type', 'multiplayer_invite');
+        }
+
+        const { data, error } = await query;
 
         if (error) {
             console.error('Fetch notifications error:', error);

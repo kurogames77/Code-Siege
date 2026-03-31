@@ -223,6 +223,10 @@ export const userAPI = {
         return apiRequest('/users/notifications');
     },
 
+    getNotificationsWithInvites: async () => {
+        return apiRequest('/users/notifications?include_invites=true');
+    },
+
     respondToNotification: async (notifId, action, senderName) => {
         return apiRequest(`/users/notifications/${notifId}/respond`, {
             method: 'PATCH',

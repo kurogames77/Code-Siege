@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 950" width="100%" height="100%" style="background-color: white;">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#000000" />
+    </marker>
+    
+    <style>
+      .header-rect { fill: #003b73; stroke: #003b73; stroke-width: 2; }
+      .header-text { fill: white; font-family: 'Segoe UI', Arial, sans-serif; font-size: 15px; font-weight: bold; text-anchor: middle; dominant-baseline: middle; }
+      .body-rect { fill: white; stroke: #003b73; stroke-width: 2; }
+      .body-text { fill: #222222; font-family: 'Segoe UI', Arial, sans-serif; font-size: 15px; text-anchor: middle; dominant-baseline: middle; }
+      .math-text { fill: #222222; font-family: 'Times New Roman', serif; font-size: 18px; font-style: italic; text-anchor: middle; dominant-baseline: middle; text-rendering: geometricPrecision; }
+      .cluster-rect { fill: #0073b4; stroke: #005a8c; stroke-width: 2; rx: 6; ry: 6; }
+      .bottom-rect { fill: #008ccc; stroke: #0073b4; stroke-width: 2; rx: 4; ry: 4; }
+      .line { stroke: #000000; stroke-width: 1.5; fill: none; }
+      .title-text { fill: #000000; font-family: 'Segoe UI', Arial, sans-serif; font-size: 16px; font-style: italic; font-weight: bold; text-anchor: middle; }
+    </style>
+  </defs>
+
+  <!-- Box 1: INPUT DATA -->
+  <!-- Header -->
+  <path class="header-rect" d="M 170 55 q 0 -5 5 -5 h 450 q 5 0 5 5 v 25 h -460 z" />
+  <text x="400" y="67" class="header-text">INPUT DATA</text>
+  <!-- Body -->
+  <path class="body-rect" d="M 170 80 h 460 v 35 q 0 5 -5 5 h -450 q -5 0 -5 -5 z" />
+  <text x="400" y="100" class="body-text">Time Consumed, Error Count, Hints Used</text>
+
+  <!-- Arrow -->
+  <line class="line" x1="400" y1="120" x2="400" y2="155" marker-end="url(#arrow)" />
+
+  <!-- Box 2: IRT STRUGGLE DETECTION -->
+  <!-- Header -->
+  <path class="header-rect" d="M 170 160 q 0 -5 5 -5 h 450 q 5 0 5 5 v 25 h -460 z" />
+  <text x="400" y="172" class="header-text">IRT STRUGGLE DETECTION</text>
+  <!-- Body -->
+  <path class="body-rect" d="M 170 185 h 460 v 35 q 0 5 -5 5 h -450 q -5 0 -5 -5 z" />
+  <text x="400" y="205" class="body-text">Multi-Factor Assessment (Time, Errors, Hints)</text>
+
+  <!-- Arrow -->
+  <line class="line" x1="400" y1="225" x2="400" y2="260" marker-end="url(#arrow)" />
+
+  <!-- Box 3: MIN-MAX NORMALIZATION -->
+  <!-- Header -->
+  <path class="header-rect" d="M 170 265 q 0 -5 5 -5 h 450 q 5 0 5 5 v 25 h -460 z" />
+  <text x="400" y="277" class="header-text">MIN-MAX NORMALIZATION (Feature Scaling)</text>
+  <!-- Body -->
+  <path class="body-rect" d="M 170 290 h 460 v 40 q 0 5 -5 5 h -450 q -5 0 -5 -5 z" />
+  <text x="400" y="313" class="math-text">x<tspan dy="5" font-size="12">norm</tspan><tspan dy="-5"> = (x - x</tspan><tspan dy="5" font-size="12">min</tspan><tspan dy="-5">) / (x</tspan><tspan dy="5" font-size="12">max</tspan><tspan dy="-5"> - x</tspan><tspan dy="5" font-size="12">min</tspan><tspan dy="-5">)</tspan></text>
+
+  <!-- Arrow -->
+  <line class="line" x1="400" y1="335" x2="400" y2="370" marker-end="url(#arrow)" />
+
+  <!-- Box 4: K-MEANS++ CLUSTERING -->
+  <!-- Header -->
+  <path class="header-rect" d="M 170 375 q 0 -5 5 -5 h 450 q 5 0 5 5 v 25 h -460 z" />
+  <text x="400" y="387" class="header-text">K-MEANS++ CLUSTERING (Skill Grouping)</text>
+  <!-- Body -->
+  <path class="body-rect" d="M 170 400 h 460 v 40 q 0 5 -5 5 h -450 q -5 0 -5 -5 z" />
+  <text x="400" y="423" class="math-text">Minimize J = ∑ || x<tspan dy="5" font-size="12">i</tspan><tspan dy="-5"> - μ</tspan><tspan dy="5" font-size="12">j</tspan><tspan dy="-5"> ||²</tspan></text>
+
+  <!-- Arrow Split -->
+  <line class="line" x1="400" y1="445" x2="400" y2="475" />
+  <line class="line" x1="220" y1="475" x2="580" y2="475" />
+  
+  <line class="line" x1="220" y1="475" x2="220" y2="505" marker-end="url(#arrow)" />
+  <line class="line" x1="400" y1="475" x2="400" y2="505" marker-end="url(#arrow)" />
+  <line class="line" x1="580" y1="475" x2="580" y2="505" marker-end="url(#arrow)" />
+
+  <!-- Clusters -->
+  <rect class="cluster-rect" x="160" y="510" width="120" height="35" />
+  <text x="220" y="528" class="header-text">Cluster 1</text>
+
+  <rect class="cluster-rect" x="340" y="510" width="120" height="35" />
+  <text x="400" y="528" class="header-text">Cluster 2</text>
+
+  <rect class="cluster-rect" x="520" y="510" width="120" height="35" />
+  <text x="580" y="528" class="header-text">Cluster 3</text>
+
+  <!-- Arrows to Solvers -->
+  <line class="line" x1="220" y1="545" x2="220" y2="575" marker-end="url(#arrow)" />
+  <line class="line" x1="400" y1="545" x2="400" y2="575" marker-end="url(#arrow)" />
+  <line class="line" x1="580" y1="545" x2="580" y2="575" marker-end="url(#arrow)" />
+
+  <!-- Box 5: ADAPTIVE MATCHMAKING & DDA x3 -->
+  
+  <!-- S1 -->
+  <path class="header-rect" d="M 120 580 h 200 v 25 h -200 z" />
+  <text x="220" y="592" class="header-text" font-size="13">MATCH &amp; DDA EVALUATOR</text>
+  <path class="body-rect" d="M 120 605 h 200 v 100 h -200 z" />
+  <text x="220" y="625" class="body-text" font-size="13">Match Score Criteria:</text>
+  <text x="220" y="645" class="body-text" font-size="12">(IRT Skill Similarity,</text>
+  <text x="220" y="660" class="body-text" font-size="12">Adaptive Weighting,</text>
+  <text x="220" y="675" class="body-text" font-size="12">Trend-Aware DDA)</text>
+
+  <!-- S2 -->
+  <path class="header-rect" d="M 300 580 h 200 v 25 h -200 z" />
+  <text x="400" y="592" class="header-text" font-size="13">MATCH &amp; DDA EVALUATOR</text>
+  <path class="body-rect" d="M 300 605 h 200 v 100 h -200 z" />
+  <text x="400" y="625" class="body-text" font-size="13">Match Score Criteria:</text>
+  <text x="400" y="645" class="body-text" font-size="12">(IRT Skill Similarity,</text>
+  <text x="400" y="660" class="body-text" font-size="12">Adaptive Weighting,</text>
+  <text x="400" y="675" class="body-text" font-size="12">Trend-Aware DDA)</text>
+
+  <!-- S3 -->
+  <path class="header-rect" d="M 480 580 h 200 v 25 h -200 z" />
+  <text x="580" y="592" class="header-text" font-size="13">MATCH &amp; DDA EVALUATOR</text>
+  <path class="body-rect" d="M 480 605 h 200 v 100 h -200 z" />
+  <text x="580" y="625" class="body-text" font-size="13">Match Score Criteria:</text>
+  <text x="580" y="645" class="body-text" font-size="12">(IRT Skill Similarity,</text>
+  <text x="580" y="660" class="body-text" font-size="12">Adaptive Weighting,</text>
+  <text x="580" y="675" class="body-text" font-size="12">Trend-Aware DDA)</text>
+
+  <!-- Merge Arrows -->
+  <line class="line" x1="220" y1="705" x2="220" y2="735" />
+  <line class="line" x1="400" y1="705" x2="400" y2="735" />
+  <line class="line" x1="580" y1="705" x2="580" y2="735" />
+  
+  <line class="line" x1="220" y1="735" x2="580" y2="735" />
+  <line class="line" x1="400" y1="735" x2="400" y2="765" marker-end="url(#arrow)" />
+
+  <!-- Final Box -->
+  <rect class="bottom-rect" x="250" y="770" width="300" height="40" />
+  <text x="400" y="790" class="header-text" font-size="15">ADAPTED GAMEPLAY &amp; FAIR MATCH</text>
+
+  <!-- Title Bottom -->
+  <text x="400" y="860" class="title-text">Figure 1. Hybrid Adaptive Algorithm Flowchart Integrating IRT,</text>
+  <text x="400" y="880" class="title-text">K-Means++ Clustering and Dynamic Difficulty Adjustment</text>
+  
+</svg>

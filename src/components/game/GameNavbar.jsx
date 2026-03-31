@@ -90,10 +90,51 @@ const GameNavbar = ({ onLobbyStateChange }) => {
         return () => supabase.removeChannel(channel);
     }, [user?.id]);
 
-    // Real-time listener for NEW invitations (Popups)
+    // Real-time listener for NEW invitations (Popups) + Fallback Polling
     useEffect(() => {
         if (!user?.id) return;
 
+        // Track which notification IDs we've already shown a popup for
+        const shownInviteIds = new Set();
+
+        // Shared function to process a new invite notification
+        const processInviteNotif = async (newNotif, source) => {
+            if (!newNotif || shownInviteIds.has(newNotif.id)) return;
+            if (newNotif.receiver_id !== user.id) return;
+            if (newNotif.type !== 'duel_invite' && newNotif.type !== 'multiplayer_invite') return;
+            if (newNotif.action_status !== 'pending') return;
+
+            // Mark as shown so polling doesn't re-trigger
+            shownInviteIds.add(newNotif.id);
+            console.log(`[Invite] Received ${newNotif.type} via ${source} from ${newNotif.sender_id}`);
+
+            // Fetch sender details via backend API (by ID)
+            let sender = null;
+            try {
+                const result = await userAPI.getUserProfile(newNotif.sender_id);
+                sender = result?.user || null;
+            } catch (err) {
+                console.error('[Invite] Failed to fetch sender details:', err);
+            }
+
+            if (sender) {
+                const rank = getRankData(sender.xp || 0);
+                // Parse lobbyId from message
+                const lobbyMatch = newNotif.message?.match(/\[LOBBY:([^\]]+)\]/);
+                setActiveInvitation({
+                    id: newNotif.id,
+                    type: newNotif.type,
+                    senderId: newNotif.sender_id,
+                    sender: sender,
+                    rankName: rank.name,
+                    rankIcon: rank.icon,
+                    rankColor: rank.color,
+                    lobbyId: lobbyMatch ? lobbyMatch[1] : null
+                });
+            }
+        };
+
+        // 1. Real-time listener (primary)
         const channel = supabase
             .channel('realtime_invites')
             .on('postgres_changes', {
@@ -101,40 +142,38 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                 schema: 'public',
                 table: 'notifications'
             }, async (payload) => {
-                const newNotif = payload.new;
-                // Only react to invitations for THIS user
-                if (newNotif?.receiver_id === user.id &&
-                    (newNotif.type === 'duel_invite' || newNotif.type === 'multiplayer_invite')) {
-
-                    // Fetch sender details via backend API (by ID)
-                    let sender = null;
-                    try {
-                        const result = await userAPI.getUserProfile(newNotif.sender_id);
-                        sender = result?.user || null;
-                    } catch (err) {
-                        console.error('[Invite] Failed to fetch sender details:', err);
-                    }
-
-                    if (sender) {
-                        const rank = getRankData(sender.xp || 0);
-                        // Parse lobbyId from message
-                        const lobbyMatch = newNotif.message?.match(/\[LOBBY:([^\]]+)\]/);
-                        setActiveInvitation({
-                            id: newNotif.id,
-                            type: newNotif.type,
-                            senderId: newNotif.sender_id,
-                            sender: sender,
-                            rankName: rank.name,
-                            rankIcon: rank.icon,
-                            rankColor: rank.color,
-                            lobbyId: lobbyMatch ? lobbyMatch[1] : null
-                        });
-                    }
-                }
+                await processInviteNotif(payload.new, 'realtime');
             })
-            .subscribe();
+            .subscribe((status) => {
+                console.log('[Invite] Realtime channel status:', status);
+            });
 
-        return () => supabase.removeChannel(channel);
+        // 2. Fallback polling (in case Realtime doesn't deliver)
+        const pollForInvites = async () => {
+            try {
+                const result = await userAPI.getNotificationsWithInvites();
+                const pending = (result?.notifications || []).filter(n =>
+                    (n.type === 'duel_invite' || n.type === 'multiplayer_invite') &&
+                    n.action_status === 'pending' &&
+                    n.receiver_id === user.id &&
+                    !shownInviteIds.has(n.id)
+                );
+                // Only show the most recent pending invite
+                if (pending.length > 0) {
+                    // Sort by created_at descending and pick the newest
+                    const newest = pending.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+                    await processInviteNotif(newest, 'polling');
+                }
+            } catch (err) {
+                // Silent fail — polling is a fallback
+            }
+        };
+        const pollInterval = setInterval(pollForInvites, 5000);
+
+        return () => {
+            supabase.removeChannel(channel);
+            clearInterval(pollInterval);
+        };
     }, [user?.id]);
 
     const handleAcceptInvite = async (invitationOverride) => {

@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1060" width="100%" height="100%" style="background-color: #FAFAFA;">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+    
+    .card-title { font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 700; text-anchor: middle; dominant-baseline: middle; }
+    .card-sub { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 500; text-anchor: middle; dominant-baseline: middle; }
+    .card-small { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 400; text-anchor: middle; dominant-baseline: middle; }
+    .math-text { font-family: 'Georgia', serif; font-size: 19px; font-style: italic; font-weight: 600; text-anchor: middle; dominant-baseline: middle; text-rendering: geometricPrecision; }
+    
+    .line { stroke: #94A3B8; stroke-width: 3.5; fill: none; stroke-linecap: round; stroke-linejoin: round;}
+    .fig-title { fill: #334155; font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 700; text-anchor: middle; }
+    .fig-sub { fill: #64748B; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 400; text-anchor: middle; }
+  </style>
+
+  <defs>
+    <filter id="shadow" x="-5%" y="-5%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-opacity="0.05" />
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.03" />
+    </filter>
+
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#94A3B8" />    
+    </marker>
+  </defs>
+
+  <!-- Node 1: INPUT DATA -->
+  <rect x="250" y="60" width="400" height="80" rx="16" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="450" y="90" class="card-title" fill="#334155">📥 INPUT DATA</text>
+  <text x="450" y="115" class="card-sub" fill="#64748B">Time Consumed, Error Count, Hints Used</text>
+
+  <path class="line" d="M 450 140 L 450 185" marker-end="url(#arrow)"/>
+
+  <!-- Node 2: IRT DETECTION -->
+  <rect x="220" y="190" width="460" height="80" rx="16" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="450" y="220" class="card-title" fill="#5B21B6">🧠 IRT STRUGGLE DETECTION</text>
+  <text x="450" y="245" class="card-sub" fill="#7C3AED">Multi-Factor Assessment (Time, Errors, Hints)</text>
+
+  <path class="line" d="M 450 270 L 450 315" marker-end="url(#arrow)"/>
+
+  <!-- Node 3: NORMALIZATION -->
+  <rect x="220" y="320" width="460" height="90" rx="16" fill="#ECFEFF" stroke="#A5F3FC" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="450" y="352" class="card-title" fill="#164E63">⚖️ MIN-MAX NORMALIZATION (Feature Scaling)</text>
+  <text x="450" y="385" class="math-text" fill="#0E7490">x<tspan dy="5" font-size="13">norm</tspan><tspan dy="-5"> = (x - x</tspan><tspan dy="5" font-size="13">min</tspan><tspan dy="-5">) / (x</tspan><tspan dy="5" font-size="13">max</tspan><tspan dy="-5"> - x</tspan><tspan dy="5" font-size="13">min</tspan><tspan dy="-5">)</tspan></text>
+
+  <path class="line" d="M 450 410 L 450 455" marker-end="url(#arrow)"/>
+
+  <!-- Node 4: KMEANS -->
+  <rect x="220" y="460" width="460" height="90" rx="16" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="450" y="492" class="card-title" fill="#1E40AF">🎯 K-MEANS++ CLUSTERING (Skill Grouping)</text>
+  <text x="450" y="525" class="math-text" fill="#2563EB">Minimize J = ∑ || x<tspan dy="5" font-size="13">i</tspan><tspan dy="-5"> - μ</tspan><tspan dy="5" font-size="13">j</tspan><tspan dy="-5"> ||²</tspan></text>
+
+  <!-- Branching Arrows -->
+  <path class="line" d="M 450 550 L 450 595" marker-end="url(#arrow)"/>
+  <path class="line" d="M 450 550 C 450 572, 230 572, 230 595" marker-end="url(#arrow)"/>
+  <path class="line" d="M 450 550 C 450 572, 670 572, 670 595" marker-end="url(#arrow)"/>
+
+  <!-- Node 5: Clusters -->
+  <rect x="160" y="600" width="140" height="50" rx="12" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="230" y="627" class="card-title" fill="#065F46">👥 Cluster 1</text>
+
+  <rect x="380" y="600" width="140" height="50" rx="12" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="450" y="627" class="card-title" fill="#065F46">👥 Cluster 2</text>
+
+  <rect x="600" y="600" width="140" height="50" rx="12" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="670" y="627" class="card-title" fill="#065F46">👥 Cluster 3</text>
+
+  <!-- Arrows to Evaluators -->
+  <path class="line" d="M 230 650 L 230 695" marker-end="url(#arrow)"/>
+  <path class="line" d="M 450 650 L 450 695" marker-end="url(#arrow)"/>
+  <path class="line" d="M 670 650 L 670 695" marker-end="url(#arrow)"/>
+
+  <!-- Node 6: Evaluators -->
+  <!-- E1 -->
+  <rect x="130" y="700" width="200" height="135" rx="16" fill="#FFFBEB" stroke="#FDE68A" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="230" y="730" class="card-title" fill="#92400E">⚙️ MATCH &amp; DDA</text>
+  <text x="230" y="755" class="card-sub" fill="#B45309">Match Criteria:</text>
+  <text x="230" y="778" class="card-small" fill="#B45309">IRT Skill Similarity</text>
+  <text x="230" y="798" class="card-small" fill="#B45309">Adaptive Weighting</text>
+  <text x="230" y="818" class="card-small" fill="#B45309">Trend-Aware DDA</text>
+
+  <!-- E2 -->
+  <rect x="350" y="700" width="200" height="135" rx="16" fill="#FFFBEB" stroke="#FDE68A" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="450" y="730" class="card-title" fill="#92400E">⚙️ MATCH &amp; DDA</text>
+  <text x="450" y="755" class="card-sub" fill="#B45309">Match Criteria:</text>
+  <text x="450" y="778" class="card-small" fill="#B45309">IRT Skill Similarity</text>
+  <text x="450" y="798" class="card-small" fill="#B45309">Adaptive Weighting</text>
+  <text x="450" y="818" class="card-small" fill="#B45309">Trend-Aware DDA</text>
+
+  <!-- E3 -->
+  <rect x="570" y="700" width="200" height="135" rx="16" fill="#FFFBEB" stroke="#FDE68A" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="670" y="730" class="card-title" fill="#92400E">⚙️ MATCH &amp; DDA</text>
+  <text x="670" y="755" class="card-sub" fill="#B45309">Match Criteria:</text>
+  <text x="670" y="778" class="card-small" fill="#B45309">IRT Skill Similarity</text>
+  <text x="670" y="798" class="card-small" fill="#B45309">Adaptive Weighting</text>
+  <text x="670" y="818" class="card-small" fill="#B45309">Trend-Aware DDA</text>
+
+  <!-- Merge Arrows -->
+  <path class="line" d="M 450 835 L 450 885" marker-end="url(#arrow)"/>
+  <path class="line" d="M 230 835 C 230 860, 450 860, 450 885" marker-end="url(#arrow)"/>
+  <path class="line" d="M 670 835 C 670 860, 450 860, 450 885" marker-end="url(#arrow)"/>
+
+  <!-- Node 7: Output -->
+  <rect x="250" y="890" width="400" height="70" rx="16" fill="#FFF1F2" stroke="#FDA4AF" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="450" y="927" class="card-title" font-size="18px" fill="#9F1239">🎮 ADAPTED GAMEPLAY &amp; FAIR MATCH</text>
+
+  <!-- Title Bottom -->
+  <text x="450" y="1010" class="fig-title">Figure 1. Modern Algorithm Architecture</text>
+  <text x="450" y="1035" class="fig-sub">Integrating IRT Assessment, K-Means++ Clustering, and Trend-Aware Dynamic Difficulty Adjustment</text>
+</svg>
