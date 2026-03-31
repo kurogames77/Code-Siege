@@ -198,43 +198,44 @@ const ArenaBattle = () => {
         arenaChannelRef.current = null;
 
         // Broadcast withdrawal to opponent on the arena channel
+        // Use fire-and-forget so we don't block navigation
         if (channelToClean) {
-            try {
-                await channelToClean.send({
-                    type: 'broadcast',
-                    event: 'duel-withdraw',
-                    payload: {
-                        withdrawnBy: user.id,
-                        withdrawnName: user.name
-                    }
-                });
-            } catch (err) {
+            channelToClean.send({
+                type: 'broadcast',
+                event: 'duel-withdraw',
+                payload: {
+                    withdrawnBy: user.id,
+                    withdrawnName: user.name
+                }
+            }).catch(err => {
                 console.error('[ArenaBattle] Failed to send withdraw broadcast:', err);
-            }
-            supabase.removeChannel(channelToClean);
+            }).finally(() => {
+                supabase.removeChannel(channelToClean);
+            });
         }
 
-        // Also broadcast player-leave on the LOBBY channel so the opponent's
-        // DuelLobbyModal detects we left and resets their lobby state
+        // Also broadcast player-leave on the LOBBY channel (fire-and-forget)
         if (lobbyId) {
-            try {
-                const lobbyChannel = supabase.channel(`duel-lobby-${lobbyId}`, {
-                    config: { broadcast: { ack: true, self: false } }
-                });
-                await lobbyChannel.subscribe();
-                await lobbyChannel.send({
-                    type: 'broadcast',
-                    event: 'player-leave',
-                    payload: { playerId: user.id }
-                });
-                await new Promise(resolve => setTimeout(resolve, 150));
-                supabase.removeChannel(lobbyChannel);
-            } catch (err) {
-                console.error('[ArenaBattle] Failed to send lobby leave broadcast:', err);
-            }
+            (async () => {
+                try {
+                    const lobbyChannel = supabase.channel(`duel-lobby-${lobbyId}`, {
+                        config: { broadcast: { ack: true, self: false } }
+                    });
+                    await lobbyChannel.subscribe();
+                    await lobbyChannel.send({
+                        type: 'broadcast',
+                        event: 'player-leave',
+                        payload: { playerId: user.id }
+                    });
+                    await new Promise(resolve => setTimeout(resolve, 150));
+                    supabase.removeChannel(lobbyChannel);
+                } catch (err) {
+                    console.error('[ArenaBattle] Failed to send lobby leave broadcast:', err);
+                }
+            })();
         }
 
-        // Navigate to /play WITHOUT reopening the duel lobby
+        // Navigate IMMEDIATELY — don't wait for broadcasts to complete
         navigate('/play', { replace: true });
     };
 
