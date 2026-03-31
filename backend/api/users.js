@@ -195,6 +195,20 @@ router.get('/notifications', authenticateUser, async (req, res) => {
             return res.status(400).json({ error: error.message });
         }
 
+        // Auto-expire old pending invite notifications (older than 2 minutes)
+        // This prevents stale invites from piling up in the database
+        if (req.query.include_invites === 'true') {
+            const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+            db.from('notifications')
+                .update({ action_status: 'expired', is_read: true })
+                .eq('receiver_id', req.user.id)
+                .eq('action_status', 'pending')
+                .in('type', ['duel_invite', 'multiplayer_invite'])
+                .lt('created_at', twoMinAgo)
+                .then(() => {}) // fire-and-forget
+                .catch(() => {});
+        }
+
         res.json({ notifications: data || [] });
     } catch (error) {
         console.error('Fetch notifications error:', error);

@@ -152,11 +152,15 @@ const GameNavbar = ({ onLobbyStateChange }) => {
         const pollForInvites = async () => {
             try {
                 const result = await userAPI.getNotificationsWithInvites();
+                const now = Date.now();
                 const pending = (result?.notifications || []).filter(n =>
                     (n.type === 'duel_invite' || n.type === 'multiplayer_invite') &&
                     n.action_status === 'pending' &&
                     n.receiver_id === user.id &&
-                    !shownInviteIds.has(n.id)
+                    !shownInviteIds.has(n.id) &&
+                    // CRITICAL: Only show invites created within the last 60 seconds
+                    // This prevents old stale invites from popping up
+                    (now - new Date(n.created_at).getTime()) < 60000
                 );
                 // Only show the most recent pending invite
                 if (pending.length > 0) {
