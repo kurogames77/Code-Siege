@@ -236,7 +236,7 @@ const ArenaBattle = () => {
 
                 if (payload.winnerId !== user.id) {
                     // Opponent solved it first — this player loses
-                    setBattleOutcome('lose');
+                    setBattleOutcome('loss');
                     setIsFailed(true);
                     setResult({ type: 'error', message: `> ${opponent} solved the puzzle first! You lose.` });
                     setTimeout(() => {
@@ -548,6 +548,7 @@ const ArenaBattle = () => {
                             key="boss-battle"
                             level={30} // Force Boss1
                             outcome={battleOutcome}
+                            isDuel={true}
                             onVideoResume={() => {
                                 if (videoRef.current) {
                                     videoRef.current.play();

@@ -30,7 +30,7 @@ import bossloss1 from '../../assets/enemyactions/bossloss1.png';
 import bossloss2 from '../../assets/enemyactions/bossloss2.png';
 import bossloss3 from '../../assets/enemyactions/bossloss3.png';
 
-const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, level }) => {
+const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, level, isDuel = false }) => {
     const gameContainer = useRef(null);
     const gameRef = useRef(null);
 
@@ -125,19 +125,32 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
 
 
             // --- ENEMY SETUP ---
-            const isBoss = level === 30;
+            const isBoss = level === 30 && !isDuel;
 
             // Position beside 3rd door (Move Boss further back)
             // Standard: 0.62, Boss: 0.66 (Slightly adjusted for "side of door")
             const enemyX = isBoss ? width * 0.66 : width * 0.62;
             const enemyY = height * 0.52;
 
-            const initialEnemyTexture = isBoss ? 'bossfirst' : 'enemy22';
+            const initialEnemyTexture = isDuel ? 'heroBack' : (isBoss ? 'bossfirst' : 'enemy22');
 
             const demon = this.add.sprite(enemyX, enemyY, initialEnemyTexture);
-            demon.setScale(isBoss ? 0.3 : 0.2); // Boss is bigger but reduced from 0.4
+            demon.setScale(isDuel ? 0.35 : (isBoss ? 0.3 : 0.2)); // Duel uses hero size
+            if (isDuel) demon.setFlipX(true); // Face the local hero
             demon.setDepth(5); // Behind hero
             demon.setAlpha(0); // Start invisible
+            
+            if (isDuel) {
+                // Add floating animation for opponent hero
+                this.tweens.add({
+                    targets: demon,
+                    y: enemyY - 15,
+                    duration: 1500,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Sine.easeInOut'
+                });
+            }
 
             // Enemy Entrance (Sync with Hero)
             this.tweens.add({
@@ -246,22 +259,31 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                         }
 
                     } else {
-                        // STANDARD ENEMY IDLE
-                        if (current === 'enemy22') {
-                            demon.setTexture('enemy33');
+                        // STANDARD ENEMY IDLE OR DUEL IDLE
+                        if (current === 'enemy22' || (isDuel && cycleCount === 3)) {
+                            if (!isDuel) demon.setTexture('enemy33');
+                            else {
+                                demon.setTexture('heroRaise1');
+                                this.time.delayedCall(200, () => { 
+                                    demon.setTexture('heroRaise2'); 
+                                    this.time.delayedCall(200, () => { demon.setTexture('heroAttack'); });
+                                });
+                            }
 
                             // Check if this is the 2nd time '33' appears (cycle ~3 or specific timing)
                             if (cycleCount === 3) { // 3rd tick is at 3s
                                 // Launch Enemy Projectile
-                                const eProjectile = this.add.sprite(enemyX - 50, enemyY, 'enemy33attack');
-                                eProjectile.setScale(0.1);
+                                const projectileKey = isDuel ? 'fireball' : 'enemy33attack';
+                                const eProjectile = this.add.sprite(enemyX - 50, enemyY, projectileKey);
+                                eProjectile.setScale(isDuel ? 0.3 : 0.1);
+                                if (isDuel) eProjectile.setFlipX(true);
                                 eProjectile.setDepth(20); // Front
 
                                 this.tweens.add({
                                     targets: eProjectile,
                                     x: hero.x,
                                     y: hero.y,
-                                    scale: 0.5, // "Get better" / larger as it approaches
+                                    scale: isDuel ? 0.4 : 0.5, // "Get better" / larger as it approaches
                                     alpha: 0,   // Fade out as it passes
                                     duration: 800,
                                     ease: 'Quad.easeOut',
@@ -305,11 +327,19 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                             heroHealthBar = updateHealth(heroHealthBar, startX - 30, startY - 120, 0.8, true);
                                             this.cameras.main.shake(100, 0.005);
                                         }
+                                        
+                                        // Return opponent to idle if duel
+                                        if (isDuel) {
+                                            this.time.delayedCall(500, () => {
+                                                demon.setTexture('heroBack');
+                                            });
+                                        }
                                     }
                                 });
                             }
                         } else {
-                            if (!isBoss) demon.setTexture('enemy22');
+                            if (!isBoss && !isDuel) demon.setTexture('enemy22');
+                            else if (isDuel && cycleCount !== 3) demon.setTexture('heroBack');
                         }
                     }
                 }
@@ -382,15 +412,32 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                                 // Fade out happens in the shared logic below
                                             });
                                         });
+                                    } else if (isDuel) {
+                                        // Opponent Hero Death
+                                        this.tweens.killTweensOf(demon); // Stop floating
+                                        this.tweens.add({
+                                            targets: demon,
+                                            y: enemyY + 60, 
+                                            scale: 0.25,
+                                            duration: 500,
+                                            ease: 'Bounce.easeOut'
+                                        });
+                                        demon.setTexture('hero2loss1');
+                                        this.time.delayedCall(200, () => {
+                                            demon.setTexture('hero2loss2');
+                                            this.time.delayedCall(200, () => {
+                                                demon.setTexture('hero2loss3');
+                                            });
+                                        });
                                     } else {
                                         demon.setTexture('enemy11');
                                     }
 
                                     this.time.delayedCall(200, () => {
-                                        if (!isBoss) demon.setTexture('enemy44');
+                                        if (!isBoss && !isDuel) demon.setTexture('enemy44');
 
                                         this.time.delayedCall(200, () => {
-                                            if (!isBoss) demon.setTexture('enemy55');
+                                            if (!isBoss && !isDuel) demon.setTexture('enemy55');
 
                                             // Resume video after death sequence
                                             this.time.delayedCall(300, () => {
