@@ -132,8 +132,16 @@ const ArenaBattle = () => {
                     );
 
                     if (levels && levels.length > 0) {
-                        // 3. Pick a random level from the results
-                        const randomLevel = levels[Math.floor(Math.random() * levels.length)];
+                        // 3. Pick a consistent level based on lobbyId
+                        // Create a deterministic hash from lobbyId so both players get the same puzzle
+                        const seedStr = String(lobbyId || location.state?.battleRecordId || 'fallback-seed-123');
+                        let hash = 0;
+                        for (let i = 0; i < seedStr.length; i++) {
+                            hash = (hash << 5) - hash + seedStr.charCodeAt(i);
+                            hash |= 0; // Convert to 32bit integer
+                        }
+                        const seed = Math.abs(hash);
+                        const randomLevel = levels[seed % levels.length];
 
                         const puzzleData = {
                             description: randomLevel.description || (mode === 'code'
