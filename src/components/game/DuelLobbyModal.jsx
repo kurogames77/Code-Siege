@@ -657,10 +657,15 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 try {
                     const battleRecord = await battlesAPI.create('duel', opponent?.id);
                     newBattleId = battleRecord?.battle?.id || battleRecord?.id || null;
-                    setBattleRecordId(newBattleId);
                 } catch (err) {
                     console.error('[DuelLobby] Failed to create battle record:', err);
                 }
+
+                // If API creation failed, generate the fallback ID on the Host so BOTH players share the exactly same ID
+                if (!newBattleId) {
+                    newBattleId = Math.floor(Math.random() * 9000) + 1000;
+                }
+                setBattleRecordId(newBattleId);
 
                 // Broadcast game-start to the opponent so both start the countdown together
                 if (lobbyChannelRef.current) {
