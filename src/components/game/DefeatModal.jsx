@@ -33,7 +33,7 @@ const DefeatModal = ({ isOpen, onRetry, losses }) => {
                                     transition={{ delay: 0.2 }}
                                     className="text-2xl font-black text-white uppercase tracking-wider mb-2"
                                 >
-                                    Mission Failed
+                                    DEFEAT
                                 </motion.h2>
 
                                 <motion.p
@@ -71,7 +71,7 @@ const DefeatModal = ({ isOpen, onRetry, losses }) => {
                                         className="w-full bg-red-600 hover:bg-red-500 text-white py-4 rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all hover:scale-[1.02]"
                                     >
                                         <RotateCw className="w-5 h-5" />
-                                        Retry Level
+                                        Return to Lobby
                                     </Button>
                                 </div>
                             </div>

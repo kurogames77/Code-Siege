@@ -328,10 +328,14 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                             this.cameras.main.shake(100, 0.005);
                                         }
                                         
-                                        // Return opponent to idle if duel
+                                        // Return opponent to victory pose if duel
                                         if (isDuel) {
                                             this.time.delayedCall(500, () => {
-                                                demon.setTexture('heroBack');
+                                                if (outcome === 'loss') {
+                                                    demon.setTexture('heroRaise1'); // Victory pose
+                                                } else {
+                                                    demon.setTexture('heroBack');
+                                                }
                                             });
                                         }
                                     }
