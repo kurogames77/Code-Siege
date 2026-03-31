@@ -6,7 +6,7 @@ import Button from '../ui/Button';
 // Assets
 import expIcon from '../../assets/exp.png';
 
-const VictoryModal = ({ isOpen, rewards, onNextLevel, isLastLevel = false }) => {
+const VictoryModal = ({ isOpen, rewards, onNextLevel, isLastLevel = false, isDuel = false }) => {
     return (
         <AnimatePresence>
             {isOpen && (
@@ -39,7 +39,7 @@ const VictoryModal = ({ isOpen, rewards, onNextLevel, isLastLevel = false }) => 
                                         {isLastLevel ? "Campaign Complete!" : "Victory!"}
                                     </h2>
                                     <p className="text-slate-400 font-bold tracking-[0.3em] uppercase text-xs mb-10">
-                                        {isLastLevel ? "You have conquered this tower" : "Level Complete"}
+                                        {isDuel ? "Duel Complete" : (isLastLevel ? "You have conquered this tower" : "Level Complete")}
                                     </p>
                                 </motion.div>
 
@@ -86,7 +86,9 @@ const VictoryModal = ({ isOpen, rewards, onNextLevel, isLastLevel = false }) => 
                                         className="w-full bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-black py-3 rounded-xl flex items-center justify-center gap-3 font-black text-sm shadow-[0_0_30px_rgba(245,158,11,0.4)] group overflow-hidden relative"
                                     >
                                         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                                        <span className="relative z-10">{isLastLevel ? "FINISH & RETURN TO MAP" : "CONTINUE TO NEXT LEVEL"}</span>
+                                        <span className="relative z-10">
+                                            {isDuel ? "CONTINUE TO LOBBY" : (isLastLevel ? "FINISH & RETURN TO MAP" : "CONTINUE TO NEXT LEVEL")}
+                                        </span>
                                         <ArrowRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
                                     </Button>
                                 </motion.div>

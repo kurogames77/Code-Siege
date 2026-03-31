@@ -575,6 +575,7 @@ const ArenaBattle = () => {
                         rewards={{ exp: parseInt(wager, 10) || 100 }}
                         onNextLevel={handleResetGame}
                         onReplay={handleResetGame}
+                        isDuel={true}
                     />
                     <DefeatModal
                         isOpen={showDefeat}
