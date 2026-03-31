@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { DndContext, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, X, Trophy, ZoomIn, ZoomOut, Maximize } from 'lucide-react'; // Lightbulb removed
+import { Play, X, Trophy, ZoomIn, ZoomOut, Maximize, Loader2 } from 'lucide-react';
 import PuzzleBlock from '../components/game/PuzzleBlock';
 import CodeTimer from '../components/game/CodeTimer';
 import Button from '../components/ui/Button';
@@ -20,6 +20,7 @@ import DefeatModal from '../components/game/DefeatModal';
 
 import { useUser } from '../contexts/UserContext';
 import { getRankFromExp as getRankData } from '../utils/rankSystem';
+import { coursesAPI } from '../services/api';
 import supabase from '../lib/supabase';
 
 const ArenaBattle = () => {
@@ -81,8 +82,20 @@ const ArenaBattle = () => {
         y: transform.y / canvasScale
     });
 
-    // Mock Puzzle data — mode-aware descriptions
-    const puzzle = {
+    // Dynamic puzzle state (fetched from Supabase)
+    const [puzzle, setPuzzle] = useState(null);
+    const [loadingPuzzle, setLoadingPuzzle] = useState(true);
+
+    // Map lobby mode names to database course_mode values
+    const getDbCourseMode = (lobbyModeName) => {
+        if (lobbyModeName === 'Puzzle Blocks') return 'Beginner';
+        if (lobbyModeName === 'Blocks') return 'Intermediate';
+        if (lobbyModeName === 'Hardcode') return 'Advance';
+        return 'Beginner';
+    };
+
+    // Fallback puzzle if Supabase fetch fails or returns no data
+    const fallbackPuzzle = {
         description: mode === 'code'
             ? "Write the code to produce the expected output below."
             : "Arrange the blocks to calculate the total power output.",
@@ -94,9 +107,81 @@ const ArenaBattle = () => {
         ],
         correctSequence: ['b1', 'b2', 'b3'],
         rewards: { exp: parseInt(wager, 10) || 100 }
-        // Hints removed from object usage
     };
 
+    // Fetch a random level from Supabase matching lobby settings
+    useEffect(() => {
+        const fetchDuelPuzzle = async () => {
+            setLoadingPuzzle(true);
+            try {
+                // 1. Get all courses to find the matching language/course
+                const courses = await coursesAPI.getCourses();
+                const matchedCourse = courses.find(c =>
+                    c.name.toLowerCase().includes(language.toLowerCase().replace(' (rec.)', ''))
+                );
+
+                if (matchedCourse) {
+                    const dbMode = getDbCourseMode(lobbyMode);
+                    const dbDifficulty = difficulty || 'Easy';
+
+                    // 2. Fetch levels matching mode + difficulty for this course
+                    const levels = await coursesAPI.getLevels(
+                        matchedCourse.id,
+                        dbMode,
+                        dbDifficulty
+                    );
+
+                    if (levels && levels.length > 0) {
+                        // 3. Pick a random level from the results
+                        const randomLevel = levels[Math.floor(Math.random() * levels.length)];
+
+                        const puzzleData = {
+                            description: randomLevel.description || (mode === 'code'
+                                ? "Write the code to produce the expected output below."
+                                : "Arrange the blocks to produce the expected output."),
+                            expectedOutput: randomLevel.expectedOutput || randomLevel.expected_output || 'N/A',
+                            initialBlocks: randomLevel.initialBlocks || randomLevel.initial_blocks || [],
+                            correctSequence: randomLevel.correctSequence || randomLevel.correct_sequence || [],
+                            initialCode: randomLevel.initialCode || randomLevel.initial_code || '',
+                            rewards: randomLevel.rewards || { exp: parseInt(wager, 10) || 100 }
+                        };
+
+                        // Parse JSON strings if needed
+                        if (typeof puzzleData.initialBlocks === 'string') {
+                            puzzleData.initialBlocks = JSON.parse(puzzleData.initialBlocks);
+                        }
+                        if (typeof puzzleData.correctSequence === 'string') {
+                            puzzleData.correctSequence = JSON.parse(puzzleData.correctSequence);
+                        }
+                        if (typeof puzzleData.rewards === 'string') {
+                            puzzleData.rewards = JSON.parse(puzzleData.rewards);
+                        }
+
+                        // Override rewards to use wager
+                        puzzleData.rewards = { exp: parseInt(wager, 10) || 100 };
+
+                        console.log(`[ArenaBattle] Loaded level: ${randomLevel.title || 'Untitled'} | Mode: ${dbMode} | Difficulty: ${dbDifficulty}`);
+                        setPuzzle(puzzleData);
+                    } else {
+                        console.warn('[ArenaBattle] No levels found for settings, using fallback.');
+                        setPuzzle(fallbackPuzzle);
+                    }
+                } else {
+                    console.warn(`[ArenaBattle] No course matched for language: ${language}`);
+                    setPuzzle(fallbackPuzzle);
+                }
+            } catch (err) {
+                console.error('[ArenaBattle] Failed to fetch puzzle from DB:', err);
+                setPuzzle(fallbackPuzzle);
+            } finally {
+                setLoadingPuzzle(false);
+            }
+        };
+
+        fetchDuelPuzzle();
+    }, [language, lobbyMode, difficulty]);
+
+    // Initialize blocks when puzzle changes
     useEffect(() => {
         if (puzzle && puzzle.initialBlocks) {
             setCanvasScale(getScaleForBlockCount(puzzle.initialBlocks.length));
@@ -112,13 +197,19 @@ const ArenaBattle = () => {
             setIsSuccess(false);
             setIsFailed(false);
             setCurrentReward(puzzle.rewards?.exp || 0);
+
+            // Pre-fill code editor with initial code for Hardcode mode
+            if (mode === 'code' && puzzle.initialCode) {
+                setCodeValue(puzzle.initialCode);
+            }
+
             setTerminalLogs([
                 "> Duel Protocol Initiated...",
                 "> Opponent Connected: " + opponent,
                 "> Waiting for input sequence..."
             ]);
         }
-    }, [opponent]); // Added opponent dependency
+    }, [puzzle, opponent]);
 
     // --- ARENA CHANNEL FOR DUEL COMMUNICATION ---
     useEffect(() => {
@@ -528,6 +619,15 @@ const ArenaBattle = () => {
                         </div>
                     </motion.div>
                 </motion.div>
+            ) : loadingPuzzle ? (
+                <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-black/95 backdrop-blur-md">
+                    <div className="relative flex flex-col items-center gap-6">
+                        <Loader2 className="w-16 h-16 text-cyan-500 animate-spin" />
+                        <p className="text-cyan-400 font-mono text-sm uppercase tracking-[0.2em] animate-pulse font-bold">
+                            Initializing Arena Protocol...
+                        </p>
+                    </div>
+                </div>
             ) : (
                 <>
                     {/* --- STANDARD GAME UI --- */}
