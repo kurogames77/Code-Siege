@@ -303,18 +303,37 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                     }));
                 setOnlineUsers(users);
 
-                // Check if the opponent has left the presence state
-                const currentOpponent = opponentRef.current;
-                if (currentOpponent && matchStateRef.current === 'lobby') {
-                    const opponentStillPresent = Object.values(state)
-                        .flat()
-                        .some(u => String(u.id) === String(currentOpponent.id));
-                    if (!opponentStillPresent) {
-                        setOpponent(null);
-                        setMatchState('idle');
+            })
+            .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+                // If we are the host, robustly capture the opponent immediately when they join the Presence channel 
+                if (!initialOpponent && !opponentRef.current) {
+                    const guest = newPresences.find(u => String(u.id) !== String(user.id));
+                    if (guest) {
+                        playSuccess();
+                        setOpponent({
+                            id: guest.id,
+                            name: guest.name,
+                            avatar: guest.avatar,
+                            rankName: guest.rankName,
+                            rankIcon: guest.rankIcon
+                        });
+                        setMatchState('lobby');
                         setIsUserReady(false);
                         setIsOpponentReady(false);
-                        setTimer(0);
+                        setTimer(60);
+
+                        // Host sends current settings to the joining guest
+                        channel.send({
+                            type: 'broadcast',
+                            event: 'sync-settings',
+                            payload: {
+                                targetId: guest.id,
+                                language: selectedLanguageRef.current || (courses.length > 0 ? courses[0].name : ''),
+                                difficulty: selectedDifficultyRef.current,
+                                mode: selectedModeRef.current,
+                                wager: selectedWagerRef.current
+                            }
+                        });
                     }
                 }
             })
