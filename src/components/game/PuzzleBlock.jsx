@@ -62,10 +62,31 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
         transform: `translate3d(${position?.x || 0}px, ${position?.y || 0}px, 0)`,
     };
 
-    // Consistent block colors matching game theme (teal/cyan)
+    // Randomized block colors - each block gets a unique vibrant color
     const blockColors = useMemo(() => {
-        return { from: '#22d3ee', to: '#0891b2' }; // Cyan - matches game UI theme
-    }, []);
+        const COLOR_PALETTE = [
+            { from: '#f43f5e', to: '#e11d48' }, // Rose
+            { from: '#a855f7', to: '#9333ea' }, // Purple
+            { from: '#22d3ee', to: '#0891b2' }, // Cyan
+            { from: '#10b981', to: '#059669' }, // Emerald
+            { from: '#3b82f6', to: '#2563eb' }, // Blue
+            { from: '#f59e0b', to: '#d97706' }, // Amber
+            { from: '#ec4899', to: '#db2777' }, // Pink
+            { from: '#8b5cf6', to: '#7c3aed' }, // Violet
+            { from: '#14b8a6', to: '#0d9488' }, // Teal
+            { from: '#ef4444', to: '#dc2626' }, // Red
+            { from: '#06b6d4', to: '#0284c7' }, // Sky
+            { from: '#84cc16', to: '#65a30d' }, // Lime
+        ];
+        // Seeded index from block id for consistent random color per block
+        let hash = 0;
+        const seed = String(id);
+        for (let i = 0; i < seed.length; i++) {
+            hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
+        }
+        const idx = Math.abs(hash) % COLOR_PALETTE.length;
+        return COLOR_PALETTE[idx];
+    }, [id]);
     const width = 140;
     const height = 48;
     const tabRadius = 10;
