@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 
 // Import Assets
 import heroBack from '../../assets/hero2actions/hero2back.png';
+import heroFront from '../../assets/hero2actions/hero2front.png';
 import heroRaise1 from '../../assets/hero2actions/hero2raise1.png';
 import heroRaise2 from '../../assets/hero2actions/hero2raise2.png';
 import heroAttack from '../../assets/hero2actions/hero2attack.png';
@@ -61,6 +62,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
         function preload() {
             // Hero
             this.load.image('heroBack', heroBack);
+            this.load.image('heroFront', heroFront);
             this.load.image('heroRaise1', heroRaise1);
             this.load.image('heroRaise2', heroRaise2);
             this.load.image('heroAttack', heroAttack);
@@ -132,12 +134,11 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
             const enemyX = isDuel ? width * 0.65 : (isBoss ? width * 0.66 : width * 0.62);
             const enemyY = isDuel ? height * 0.55 : height * 0.52;
 
-            const initialEnemyTexture = isDuel ? 'heroBack' : (isBoss ? 'bossfirst' : 'enemy22');
+            const initialEnemyTexture = isDuel ? 'heroFront' : (isBoss ? 'bossfirst' : 'enemy22');
 
             const demon = this.add.sprite(enemyX, enemyY, initialEnemyTexture);
             // Duel opponent matches player size
             demon.setScale(isDuel ? 0.40 : (isBoss ? 0.3 : 0.2));
-            if (isDuel) demon.scaleX *= -1; // Flip by changing scaleX (reliable in Phaser)
             demon.setDepth(5); // Behind hero
             demon.setAlpha(0); // Start invisible
             
@@ -160,8 +161,6 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                 duration: 1200,
                 ease: 'Linear',
                 onComplete: () => {
-                    // Ensure mirrored horizontally continuously
-                    if (isDuel && demon.scaleX > 0) demon.scaleX *= -1;
                 }
             });
 
@@ -269,13 +268,13 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                             if (!isDuel) demon.setTexture('enemy33');
                             else {
                                 demon.setTexture('heroRaise1');
-                                if (demon.scaleX > 0) demon.scaleX *= -1; // Keep facing player
+                                demon.setFlipX(true);
                                 this.time.delayedCall(200, () => { 
                                     demon.setTexture('heroRaise2');
-                                    if (demon.scaleX > 0) demon.scaleX *= -1;
+                                    demon.setFlipX(true);
                                     this.time.delayedCall(200, () => {
                                         demon.setTexture('heroAttack');
-                                        if (demon.scaleX > 0) demon.scaleX *= -1;
+                                        demon.setFlipX(true);
                                     });
                                 });
                             }
@@ -342,10 +341,11 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                             this.time.delayedCall(500, () => {
                                                 if (outcome === 'loss') {
                                                     demon.setTexture('heroRaise1');
+                                                    demon.setFlipX(true);
                                                 } else {
-                                                    demon.setTexture('heroBack');
+                                                    demon.setTexture('heroFront');
+                                                    demon.setFlipX(false);
                                                 }
-                                                if (demon.scaleX > 0) demon.scaleX *= -1; // Always keep opponent facing player
                                             });
                                         }
                                     }
@@ -354,8 +354,8 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                         } else {
                             if (!isBoss && !isDuel) demon.setTexture('enemy22');
                             else if (isDuel && cycleCount !== 3) {
-                                demon.setTexture('heroBack');
-                                if (demon.scaleX > 0) demon.scaleX *= -1; // Keep facing player after texture reset
+                                demon.setTexture('heroFront');
+                                demon.setFlipX(false);
                             }
                         }
                     }
@@ -440,13 +440,13 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                             ease: 'Bounce.easeOut'
                                         });
                                         demon.setTexture('hero2loss1');
-                                        if (demon.scaleX > 0) demon.scaleX *= -1;
+                                        demon.setFlipX(true);
                                         this.time.delayedCall(200, () => {
                                             demon.setTexture('hero2loss2');
-                                            if (demon.scaleX > 0) demon.scaleX *= -1;
+                                            demon.setFlipX(true);
                                             this.time.delayedCall(200, () => {
                                                 demon.setTexture('hero2loss3');
-                                                if (demon.scaleX > 0) demon.scaleX *= -1;
+                                                demon.setFlipX(true);
                                             });
                                         });
                                     } else {
