@@ -517,7 +517,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
         <div
             ref={gameContainer}
             className="absolute inset-0 z-50 pointer-events-none"
-            style={{ width: '100%', height: '100%', mixBlendMode: 'darken' }}
+            style={{ width: '100%', height: '100%' }}
         />
     );
 };
