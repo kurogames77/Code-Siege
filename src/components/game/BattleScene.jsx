@@ -267,16 +267,15 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                         if (current === 'enemy22' || (isDuel && cycleCount === 3)) {
                             if (!isDuel) demon.setTexture('enemy33');
                             else {
-                                demon.setTexture('heroRaise1');
-                                demon.setFlipX(true);
-                                this.time.delayedCall(200, () => { 
-                                    demon.setTexture('heroRaise2');
-                                    demon.setFlipX(true);
-                                    this.time.delayedCall(200, () => {
-                                        demon.setTexture('heroAttack');
-                                        demon.setFlipX(true);
-                                    });
+                                // Jump slightly to simulate attack instead of turning backwards
+                                this.tweens.add({
+                                    targets: demon,
+                                    y: enemyY - 40,
+                                    duration: 150,
+                                    yoyo: true
                                 });
+                                demon.setTexture('heroFront');
+                                demon.setFlipX(false);
                             }
 
                             // Check if this is the 2nd time '33' appears (cycle ~3 or specific timing)
@@ -339,12 +338,17 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                         // Return opponent to victory pose if duel
                                         if (isDuel) {
                                             this.time.delayedCall(500, () => {
+                                                demon.setTexture('heroFront');
+                                                demon.setFlipX(false);
                                                 if (outcome === 'loss') {
-                                                    demon.setTexture('heroRaise1');
-                                                    demon.setFlipX(true);
-                                                } else {
-                                                    demon.setTexture('heroFront');
-                                                    demon.setFlipX(false);
+                                                    // Victory jump
+                                                    this.tweens.add({
+                                                        targets: demon,
+                                                        y: enemyY - 40,
+                                                        duration: 300,
+                                                        yoyo: true,
+                                                        repeat: -1
+                                                    });
                                                 }
                                             });
                                         }

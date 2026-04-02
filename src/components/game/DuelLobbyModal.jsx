@@ -17,9 +17,11 @@ import rankGold from '../../assets/rankbadges/rank6.png';
 import rankSilver from '../../assets/rankbadges/rank3.png';
 import rankDiamond from '../../assets/rankbadges/rank12.png';
 import { getRankFromExp as getRankData } from '../../utils/rankSystem';
+import { useToast } from '../../contexts/ToastContext';
 
 const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     const navigate = useNavigate();
+    const toast = useToast();
     const [courses, setCourses] = useState([]);
     const [selectedLanguage, setSelectedLanguage] = useState('');
     const [selectedDifficulty, setSelectedDifficulty] = useState('Medium');
@@ -305,9 +307,9 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
 
             })
             .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+                const guest = newPresences.find(u => String(u.id) !== String(user.id));
                 // If we are the host, robustly capture the opponent immediately when they join the Presence channel 
                 if (!initialOpponent && !opponentRef.current) {
-                    const guest = newPresences.find(u => String(u.id) !== String(user.id));
                     if (guest) {
                         playSuccess();
                         setOpponent({
@@ -333,6 +335,15 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                 mode: selectedModeRef.current,
                                 wager: selectedWagerRef.current
                             }
+                        });
+                    }
+                } else if (!initialOpponent && opponentRef.current) {
+                    // Host already has an opponent, reject any other guest!
+                    if (guest && String(guest.id) !== String(opponentRef.current.id)) {
+                        channel.send({
+                            type: 'broadcast',
+                            event: 'lobby-full',
+                            payload: { targetId: guest.id }
                         });
                     }
                 }
@@ -384,6 +395,12 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 if (String(payload.targetId) === String(user.id)) {
 
                     // No longer auto-accepting. NotificationModal handles the UI.
+                }
+            })
+            .on('broadcast', { event: 'lobby-full' }, ({ payload }) => {
+                if (String(payload.targetId) === String(user.id)) {
+                    toast.error('Friend is already in battle or lobby with someone else.');
+                    onBack();
                 }
             })
             .on('broadcast', { event: 'duel-accept' }, ({ payload }) => {
@@ -477,7 +494,21 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 }
             });
 
+        const hostCheckTimeout = initialOpponent ? setTimeout(() => {
+            if (lobbyChannelRef.current) {
+                const state = lobbyChannelRef.current.presenceState();
+                const allPlayers = Object.values(state).flat();
+                const isHostPresent = allPlayers.some(p => String(p.id) === String(initialOpponent.id));
+                if (!isHostPresent) {
+                    toast.error('Friend is no longer in the lobby (match may have started).');
+                    onBack();
+                }
+            }
+        }, 4000) : null;
+
+
         return () => {
+            if (hostCheckTimeout) clearTimeout(hostCheckTimeout);
             // Skip cleanup if the channel was already cleaned up by isOpen handler
             if (lobbyChannelRef.current !== channel) return;
             lobbyChannelRef.current = null;
