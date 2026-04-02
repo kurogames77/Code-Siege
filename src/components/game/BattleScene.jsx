@@ -98,7 +98,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
             // --- HERO SETUP ---
             // In duel mode, position heroes closer and at matching sizes
             const startY = height * 0.7; // Ground level target
-            const startX = isDuel ? width * 0.35 : (width / 2) - 150;
+            const startX = isDuel ? width * 0.28 : (width / 2) - 150;
 
             // Start slightly higher (air) and smaller (depth)
             const hero = this.add.sprite(startX, startY - 50, 'heroBack');
@@ -111,7 +111,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                 targets: hero,
                 y: startY,           // Land on ground
                 alpha: 1,            // Fade in
-                scale: isDuel ? 0.30 : 0.4,  // Set full scale
+                scale: isDuel ? 0.28 : 0.4,  // Set full scale
                 duration: 1200,      // Smooth arrival
                 ease: 'Back.easeOut' // "Pop" landing effect
             });
@@ -131,14 +131,14 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
             const isBoss = level === 30 && !isDuel;
 
             // Position: In duel mode, pull opponent in to match hero distance
-            const enemyX = isDuel ? width * 0.65 : (isBoss ? width * 0.66 : width * 0.62);
-            const enemyY = isDuel ? height * 0.55 : height * 0.52;
+            const enemyX = isDuel ? width * 0.72 : (isBoss ? width * 0.66 : width * 0.62);
+            const enemyY = isDuel ? height * 0.58 : height * 0.52;
 
             const initialEnemyTexture = isDuel ? 'heroFront' : (isBoss ? 'bossfirst' : 'enemy22');
 
             const demon = this.add.sprite(enemyX, enemyY, initialEnemyTexture);
             // Duel opponent matches player size
-            demon.setScale(isDuel ? 0.30 : (isBoss ? 0.3 : 0.2));
+            demon.setScale(isDuel ? 0.22 : (isBoss ? 0.3 : 0.2));
             demon.setDepth(5); // Behind hero
             demon.setAlpha(0); // Start invisible
             
@@ -516,8 +516,8 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
     return (
         <div
             ref={gameContainer}
-            className="absolute inset-0 z-50 pointer-events-none" // pointer-events-none to let clicks pass through if needed, though usually this layer blocks
-            style={{ width: '100%', height: '100%' }}
+            className="absolute inset-0 z-50 pointer-events-none"
+            style={{ width: '100%', height: '100%', mixBlendMode: 'darken' }}
         />
     );
 };

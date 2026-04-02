@@ -97,6 +97,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         setBattleRecordId(null);
         setShowExitModal(false);
         acceptSentRef.current = false;
+        if (hostCheckRetryRef.current) { clearTimeout(hostCheckRetryRef.current); hostCheckRetryRef.current = null; }
         opponentRef.current = null;
         matchStateRef.current = 'idle';
     }, []);
@@ -248,6 +249,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     // --- REALTIME PRESENCE & BROADCAST ---
     const lobbyChannelRef = React.useRef(null);
     const acceptSentRef = React.useRef(false);
+    const hostCheckRetryRef = React.useRef(null);
 
     // Full reset when modal is closed (isOpen → false)
     useEffect(() => {
@@ -317,7 +319,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                             name: guest.name,
                             avatar: guest.avatar,
                             rankName: guest.rankName,
-                            rankIcon: guest.rankIcon
+                            rankIcon: guest.rankIcon,
+                            heroImage: heroMap[guest.heroImageKey] || hero2Static
                         });
                         setMatchState('lobby');
                         setIsUserReady(false);
@@ -407,14 +410,24 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 // If we are the sender (host) and the recipient (guest) accepted
 
                 if (String(payload.targetId) === String(user.id)) {
-                    // Always accept — remove idle guard so re-accepts work even if state wasn't reset
+                    // GUARD: If we already have an opponent, reject the late acceptor
+                    if (opponentRef.current && String(opponentRef.current.id) !== String(payload.senderId)) {
+                        console.log('[DuelLobby] Already have opponent, rejecting late acceptor:', payload.senderId);
+                        channel.send({
+                            type: 'broadcast',
+                            event: 'lobby-full',
+                            payload: { targetId: payload.senderId }
+                        });
+                        return;
+                    }
                     playSuccess();
                     setOpponent({
                         id: payload.senderId,
                         name: payload.senderName,
                         avatar: payload.senderAvatar,
                         rankName: payload.senderRankName,
-                        rankIcon: payload.senderRankIcon
+                        rankIcon: payload.senderRankIcon,
+                        heroImage: heroMap[payload.senderHeroImageKey] || hero2Static
                     });
                     setMatchState('lobby');
                     setIsUserReady(false);
@@ -469,6 +482,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                         avatar: user.avatar,
                         rankName: user.rankName,
                         rankIcon: user.rankIcon,
+                        heroImageKey: localStorage.getItem('selectedHeroImage') || 'hero1a.png',
                         online_at: new Date().toISOString(),
                     });
 
@@ -486,7 +500,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                     senderName: user.name,
                                     senderAvatar: user.avatar,
                                     senderRankName: user.rankName,
-                                    senderRankIcon: user.rankIcon
+                                    senderRankIcon: user.rankIcon,
+                                    senderHeroImageKey: localStorage.getItem('selectedHeroImage') || 'hero1a.png'
                                 }
                             });
                         }, 500);
@@ -494,31 +509,35 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 }
             });
 
+        // Helper: check if the host is still in the lobby Presence state
+        const checkHostPresence = () => {
+            if (!lobbyChannelRef.current) return false;
+            const state = lobbyChannelRef.current.presenceState();
+            const allPlayers = Object.values(state).flat();
+            return allPlayers.some(p => String(p.id) === String(initialOpponent.id));
+        };
+
+        // Give Presence more time to sync — first check at 5s, if host not found retry at 8s
         const hostCheckTimeout = initialOpponent ? setTimeout(() => {
-            if (lobbyChannelRef.current) {
-                const state = lobbyChannelRef.current.presenceState();
-                const allPlayers = Object.values(state).flat();
-                const isHostPresent = allPlayers.some(p => String(p.id) === String(initialOpponent.id));
-                if (!isHostPresent) {
-                    toast.error('Friend is no longer in the lobby (match may have started).');
-                    onBack();
-                    return;
-                }
-                // Also check if there's ANOTHER player already in the lobby (someone accepted before us)
-                const otherPlayers = allPlayers.filter(p =>
-                    String(p.id) !== String(user.id) &&
-                    String(p.id) !== String(initialOpponent.id)
-                );
-                if (otherPlayers.length > 0) {
-                    toast.error('This duel lobby is full — the match already has an opponent.');
-                    onBack();
-                }
-            }
-        }, 4000) : null;
+            if (checkHostPresence()) return; // Host is here, all good
+
+            // Retry once more after 3 seconds (Presence can be slow)
+            const retryTimeout = setTimeout(() => {
+                if (checkHostPresence()) return; // Host appeared on retry
+
+                // Host is truly gone
+                toast.error('Friend is no longer in the lobby (match may have started).');
+                onBack();
+            }, 3000);
+
+            // Store retry timeout for cleanup
+            hostCheckRetryRef.current = retryTimeout;
+        }, 5000) : null;
 
 
         return () => {
             if (hostCheckTimeout) clearTimeout(hostCheckTimeout);
+            if (hostCheckRetryRef.current) clearTimeout(hostCheckRetryRef.current);
             // Skip cleanup if the channel was already cleaned up by isOpen handler
             if (lobbyChannelRef.current !== channel) return;
             lobbyChannelRef.current = null;
@@ -624,6 +643,11 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
 
     const handleInvite = async (friend) => {
         if (invitedFriendId === friend.id) return;
+        // GUARD: Don't allow inviting more people when opponent already joined
+        if (opponent) {
+            toast.error('Lobby is full — you already have an opponent.');
+            return;
+        }
         playClick();
         setInvitedFriendId(friend.id);
 
