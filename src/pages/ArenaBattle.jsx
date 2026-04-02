@@ -335,7 +335,8 @@ const ArenaBattle = () => {
         }
 
         // Navigate IMMEDIATELY — don't wait for broadcasts to complete
-        navigate('/play', { replace: true });
+        // Pass openDuelLobby state so user returns to the duel lobby, not the map
+        navigate('/play', { replace: true, state: { openDuelLobby: true } });
     };
 
     const handleTimeout = () => {

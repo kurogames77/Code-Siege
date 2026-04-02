@@ -111,7 +111,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                 targets: hero,
                 y: startY,           // Land on ground
                 alpha: 1,            // Fade in
-                scale: isDuel ? 0.40 : 0.4,  // Set full scale
+                scale: isDuel ? 0.30 : 0.4,  // Set full scale
                 duration: 1200,      // Smooth arrival
                 ease: 'Back.easeOut' // "Pop" landing effect
             });
@@ -138,7 +138,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
 
             const demon = this.add.sprite(enemyX, enemyY, initialEnemyTexture);
             // Duel opponent matches player size
-            demon.setScale(isDuel ? 0.40 : (isBoss ? 0.3 : 0.2));
+            demon.setScale(isDuel ? 0.30 : (isBoss ? 0.3 : 0.2));
             demon.setDepth(5); // Behind hero
             demon.setAlpha(0); // Start invisible
             
@@ -439,7 +439,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                         this.tweens.add({
                                             targets: demon,
                                             y: enemyY + 60, 
-                                            scale: 0.25,
+                                            scale: 0.20,
                                             duration: 500,
                                             ease: 'Bounce.easeOut'
                                         });

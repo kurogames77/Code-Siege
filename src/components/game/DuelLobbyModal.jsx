@@ -399,7 +399,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             })
             .on('broadcast', { event: 'lobby-full' }, ({ payload }) => {
                 if (String(payload.targetId) === String(user.id)) {
-                    toast.error('Friend is already in battle or lobby with someone else.');
+                    toast.error('This duel lobby is full — the match already has an opponent.');
                     onBack();
                 }
             })
@@ -501,6 +501,16 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 const isHostPresent = allPlayers.some(p => String(p.id) === String(initialOpponent.id));
                 if (!isHostPresent) {
                     toast.error('Friend is no longer in the lobby (match may have started).');
+                    onBack();
+                    return;
+                }
+                // Also check if there's ANOTHER player already in the lobby (someone accepted before us)
+                const otherPlayers = allPlayers.filter(p =>
+                    String(p.id) !== String(user.id) &&
+                    String(p.id) !== String(initialOpponent.id)
+                );
+                if (otherPlayers.length > 0) {
+                    toast.error('This duel lobby is full — the match already has an opponent.');
                     onBack();
                 }
             }
