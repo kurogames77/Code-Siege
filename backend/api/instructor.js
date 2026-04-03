@@ -1031,4 +1031,191 @@ router.patch('/courses/levels/:id', async (req, res) => {
     }
 });
 
+// ============================================
+// BAN REQUEST MANAGEMENT
+// ============================================
+
+/**
+ * POST /api/instructor/ban-request
+ * Instructor requests to ban/disable a student
+ */
+router.post('/ban-request', async (req, res) => {
+    try {
+        const { student_id, student_name, reason, tower_name } = req.body;
+        const instructorId = req.user.id;
+        const instructorName = req.user.username || req.user.email;
+
+        if (!student_id) {
+            return res.status(400).json({ error: 'Student ID is required' });
+        }
+
+        // Verify the student exists and is actually a student
+        const { data: student, error: studentError } = await supabaseService
+            .from('users')
+            .select('id, username, role, is_banned')
+            .eq('id', student_id)
+            .single();
+
+        if (studentError || !student) {
+            return res.status(404).json({ error: 'Student not found' });
+        }
+
+        if (student.is_banned) {
+            return res.status(400).json({ error: 'Student is already banned' });
+        }
+
+        // Check for duplicate pending request
+        const { data: existing } = await supabaseService
+            .from('ban_requests')
+            .select('id')
+            .eq('student_id', student_id)
+            .eq('status', 'pending')
+            .maybeSingle();
+
+        if (existing) {
+            return res.status(400).json({ error: 'A ban request for this student is already pending' });
+        }
+
+        // Create the ban request
+        const { data: request, error } = await supabaseService
+            .from('ban_requests')
+            .insert({
+                student_id,
+                student_name: student_name || student.username,
+                instructor_id: instructorId,
+                instructor_name: instructorName,
+                reason: reason || 'No reason provided',
+                tower_name: tower_name || null,
+                status: 'pending'
+            })
+            .select()
+            .single();
+
+        if (error) {
+            // If the table doesn't exist, create it on the fly
+            if (error.code === '42P01') {
+                return res.status(500).json({ error: 'Ban requests table not configured. Please create the ban_requests table in Supabase.' });
+            }
+            console.error('Create ban request error:', error);
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.status(201).json({
+            message: 'Ban request submitted successfully. Admin will review it.',
+            request
+        });
+    } catch (error) {
+        console.error('Ban request error:', error);
+        res.status(500).json({ error: 'Failed to submit ban request' });
+    }
+});
+
+/**
+ * GET /api/instructor/ban-requests
+ * Get all ban requests (admin sees all, instructor sees own)
+ */
+router.get('/ban-requests', async (req, res) => {
+    try {
+        const { status = 'all' } = req.query;
+
+        let query = supabaseService
+            .from('ban_requests')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (status !== 'all') {
+            query = query.eq('status', status);
+        }
+
+        // Non-admin users only see their own requests
+        if (req.user.role !== 'admin') {
+            query = query.eq('instructor_id', req.user.id);
+        }
+
+        const { data: requests, error } = await query;
+
+        if (error) {
+            if (error.code === '42P01') {
+                // Table doesn't exist yet — return empty
+                return res.json({ requests: [] });
+            }
+            console.error('Get ban requests error:', error);
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json({ requests: requests || [] });
+    } catch (error) {
+        console.error('Get ban requests error:', error);
+        res.status(500).json({ error: 'Failed to get ban requests' });
+    }
+});
+
+/**
+ * PATCH /api/instructor/ban-requests/:id/respond
+ * Admin approves or rejects a ban request
+ */
+router.patch('/ban-requests/:id/respond', requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { action } = req.body; // 'approve' or 'reject'
+
+        if (!['approve', 'reject'].includes(action)) {
+            return res.status(400).json({ error: 'Action must be "approve" or "reject"' });
+        }
+
+        // Get the ban request
+        const { data: request, error: fetchError } = await supabaseService
+            .from('ban_requests')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !request) {
+            return res.status(404).json({ error: 'Ban request not found' });
+        }
+
+        if (request.status !== 'pending') {
+            return res.status(400).json({ error: `Request already ${request.status}` });
+        }
+
+        // If approved, ban the student
+        if (action === 'approve') {
+            const { error: banError } = await supabaseService
+                .from('users')
+                .update({ is_banned: true })
+                .eq('id', request.student_id);
+
+            if (banError) {
+                console.error('Ban student error:', banError);
+                return res.status(400).json({ error: 'Failed to ban student' });
+            }
+        }
+
+        // Update the request status
+        const { data: updated, error: updateError } = await supabaseService
+            .from('ban_requests')
+            .update({
+                status: action === 'approve' ? 'approved' : 'rejected',
+                reviewed_at: new Date().toISOString(),
+                reviewed_by: req.user.id
+            })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (updateError) {
+            return res.status(400).json({ error: updateError.message });
+        }
+
+        res.json({
+            message: action === 'approve' ? 'Ban request approved. Student has been banned.' : 'Ban request rejected.',
+            request: updated
+        });
+    } catch (error) {
+        console.error('Respond to ban request error:', error);
+        res.status(500).json({ error: 'Failed to respond to ban request' });
+    }
+});
+
 export default router;
+

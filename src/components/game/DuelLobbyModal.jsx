@@ -155,15 +155,26 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         }
     }, [isOpen, lobbyId, initialOpponent]);
 
-    // Get selected hero
-    const selectedHeroImage = localStorage.getItem('selectedHeroImage') || 'hero1a.png';
+    // Get selected hero with unlock validation
+    // Hero unlock levels: Nyx(hero2)=1, Valerius(hero1a)=4, Ignis(hero3)=7, Daemon(hero4)=10
+    const heroUnlockLevels = {
+        'hero1a.png': 4,  // Valerius
+        'hero2.png': 1,   // Nyx (default, always unlocked)
+        'hero3.png': 7,   // Ignis
+        'hero4.png': 10   // Daemon
+    };
     const heroMap = {
         'hero1a.png': hero1aStatic,
         'hero2.png': hero2Static,
         'hero3.png': hero3Static,
         'hero4.png': hero4Static
     };
-    const currentHeroImage = heroMap[selectedHeroImage] || hero1aStatic;
+    const rawSelectedHero = localStorage.getItem('selectedHeroImage') || 'hero2.png';
+    const userLevel = user?.level || 1;
+    // Validate: if the selected hero requires a higher level, fall back to Nyx (hero2)
+    const requiredLevel = heroUnlockLevels[rawSelectedHero] || 1;
+    const validatedHeroImage = userLevel >= requiredLevel ? rawSelectedHero : 'hero2.png';
+    const currentHeroImage = heroMap[validatedHeroImage] || hero2Static;
     const [startCountdown, setStartCountdown] = useState(5); // Launch countdown
 
     // AUDIO
@@ -482,7 +493,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                         avatar: user.avatar,
                         rankName: user.rankName,
                         rankIcon: user.rankIcon,
-                        heroImageKey: localStorage.getItem('selectedHeroImage') || 'hero1a.png',
+                        heroImageKey: validatedHeroImage,
                         online_at: new Date().toISOString(),
                     });
 
@@ -501,7 +512,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                     senderAvatar: user.avatar,
                                     senderRankName: user.rankName,
                                     senderRankIcon: user.rankIcon,
-                                    senderHeroImageKey: localStorage.getItem('selectedHeroImage') || 'hero1a.png'
+                                    senderHeroImageKey: validatedHeroImage
                                 }
                             });
                         }, 500);

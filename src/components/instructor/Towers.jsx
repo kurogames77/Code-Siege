@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Castle, CheckCircle2, Unlock, Lock, Settings2, Users, X, Loader2 } from 'lucide-react';
+import { Castle, CheckCircle2, Unlock, Lock, Settings2, Users, X, Loader2, UserX, AlertTriangle, Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '../../contexts/ToastContext';
 import { instructorAPI } from '../../services/api';
+import supabase from '../../lib/supabase';
 
 import { useUser } from '../../contexts/UserContext';
 
@@ -42,6 +43,16 @@ const Towers = ({ theme }) => {
     const [unlockMode, setUnlockMode] = useState('all'); // 'all', 'custom', 'undo'
     const [customFloors, setCustomFloors] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Ban Request State
+    const [isBanModalOpen, setIsBanModalOpen] = useState(false);
+    const [banTower, setBanTower] = useState(null);
+    const [banSearch, setBanSearch] = useState('');
+    const [banStudents, setBanStudents] = useState([]);
+    const [banLoading, setBanLoading] = useState(false);
+    const [selectedBanStudent, setSelectedBanStudent] = useState(null);
+    const [banReason, setBanReason] = useState('');
+    const [banSubmitting, setBanSubmitting] = useState(false);
 
     // Fetch instructor's assigned courses from the courses table
     const { data: instructorCourses = [], isLoading: coursesLoading } = useQuery({
@@ -107,6 +118,71 @@ const Towers = ({ theme }) => {
             setIsSubmitting(false);
         }
     };
+
+    // Ban Request Functions
+    const openBanModal = async (tower) => {
+        setBanTower(tower);
+        setIsBanModalOpen(true);
+        setBanSearch('');
+        setSelectedBanStudent(null);
+        setBanReason('');
+        setBanStudents([]);
+        setBanLoading(true);
+
+        try {
+            // Fetch students who have progress on this tower
+            const { data: users, error } = await supabase
+                .from('users')
+                .select('id, username, student_id, email, tower_progress, is_banned')
+                .in('role', ['user', 'student'])
+                .eq('is_banned', false);
+
+            if (!error && users) {
+                const studentsWithProgress = users.filter(u => {
+                    const progress = u.tower_progress || {};
+                    return progress[tower.id] && progress[tower.id] > 0;
+                });
+                setBanStudents(studentsWithProgress);
+            }
+        } catch (err) {
+            console.error('Failed to fetch students:', err);
+        } finally {
+            setBanLoading(false);
+        }
+    };
+
+    const closeBanModal = () => {
+        setIsBanModalOpen(false);
+        setTimeout(() => {
+            setBanTower(null);
+            setSelectedBanStudent(null);
+        }, 200);
+    };
+
+    const handleBanRequest = async () => {
+        if (!selectedBanStudent || !banTower) return;
+        try {
+            setBanSubmitting(true);
+            const res = await instructorAPI.requestBanStudent(
+                selectedBanStudent.id,
+                selectedBanStudent.username,
+                banReason || 'Instructor requested ban',
+                banTower.name
+            );
+            toast.success(res.message || 'Ban request submitted successfully!');
+            closeBanModal();
+        } catch (error) {
+            toast.error(error.message || 'Failed to submit ban request');
+        } finally {
+            setBanSubmitting(false);
+        }
+    };
+
+    const filteredBanStudents = banStudents.filter(s =>
+        s.username?.toLowerCase().includes(banSearch.toLowerCase()) ||
+        s.student_id?.toLowerCase().includes(banSearch.toLowerCase()) ||
+        s.email?.toLowerCase().includes(banSearch.toLowerCase())
+    );
 
     return (
         <div className="h-full flex flex-col pt-8 space-y-8 pb-10">
@@ -224,6 +300,18 @@ const Towers = ({ theme }) => {
                                         <Lock className="w-5 h-5 mb-0.5" />
                                         <span className="text-[8px] font-black tracking-tighter uppercase">UNDO</span>
                                     </button>
+                                    <button
+                                        onClick={() => openBanModal(tower)}
+                                        className={`flex flex-col items-center justify-center p-3 w-14 h-14 rounded-xl border transition-all ${
+                                            theme === 'dark' 
+                                                ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500 hover:text-black' 
+                                                : 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-600 hover:text-white hover:border-transparent'
+                                        }`}
+                                        title="Request to Ban/Disable a Student"
+                                    >
+                                        <UserX className="w-5 h-5 mb-0.5" />
+                                        <span className="text-[8px] font-black tracking-tighter uppercase">BAN</span>
+                                    </button>
                                 </div>
                             </div>
                         </motion.div>
@@ -306,6 +394,128 @@ const Towers = ({ theme }) => {
                                 >
                                     {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
                                     Confirm Action
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Ban Request Modal */}
+            <AnimatePresence>
+                {isBanModalOpen && banTower && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                            onClick={closeBanModal}
+                        />
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className={`relative w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border ${
+                                theme === 'dark' ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
+                            }`}
+                        >
+                            <div className={`p-6 border-b ${theme === 'dark' ? 'border-slate-800' : 'border-slate-100'}`}>
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className={`text-xl font-black italic tracking-tighter flex items-center gap-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                                        <AlertTriangle className="w-5 h-5 text-amber-500" />
+                                        Request Ban/Disable
+                                    </h3>
+                                    <button onClick={closeBanModal} className={`p-2 rounded-full transition-all duration-300 hover:rotate-180 ${theme === 'dark' ? 'hover:bg-rose-500 hover:text-white text-slate-400' : 'hover:bg-rose-500 hover:text-white text-slate-500'}`}>
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                    Select a student from <span className={`font-bold ${theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600'}`}>{banTower.name}</span> to request ban/disable. The admin will review your request.
+                                </p>
+                            </div>
+
+                            <div className="p-6 space-y-4">
+                                {/* Search */}
+                                <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                                    <Search className="w-4 h-4 text-slate-500" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search student..."
+                                        value={banSearch}
+                                        onChange={(e) => setBanSearch(e.target.value)}
+                                        className={`flex-1 bg-transparent outline-none text-sm ${theme === 'dark' ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'}`}
+                                    />
+                                </div>
+
+                                {/* Student List */}
+                                <div className={`max-h-48 overflow-y-auto rounded-xl border ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
+                                    {banLoading ? (
+                                        <div className="flex items-center justify-center p-8">
+                                            <Loader2 className="w-6 h-6 animate-spin text-cyan-500" />
+                                        </div>
+                                    ) : filteredBanStudents.length === 0 ? (
+                                        <div className={`p-6 text-center text-sm ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                                            {banStudents.length === 0 ? 'No students have progress on this tower yet.' : 'No students match your search.'}
+                                        </div>
+                                    ) : (
+                                        filteredBanStudents.map((student) => (
+                                            <button
+                                                key={student.id}
+                                                onClick={() => setSelectedBanStudent(student)}
+                                                className={`w-full text-left px-4 py-3 flex items-center justify-between transition-colors border-b last:border-b-0 ${
+                                                    selectedBanStudent?.id === student.id
+                                                        ? (theme === 'dark' ? 'bg-amber-500/10 border-amber-500/20' : 'bg-amber-50 border-amber-200')
+                                                        : (theme === 'dark' ? 'hover:bg-slate-800/50 border-slate-700/50' : 'hover:bg-slate-50 border-slate-100')
+                                                }`}
+                                            >
+                                                <div>
+                                                    <div className={`font-bold text-sm ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{student.username}</div>
+                                                    <div className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>{student.student_id || student.email}</div>
+                                                </div>
+                                                {selectedBanStudent?.id === student.id && (
+                                                    <CheckCircle2 className="w-5 h-5 text-amber-500" />
+                                                )}
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+
+                                {/* Reason */}
+                                {selectedBanStudent && (
+                                    <div>
+                                        <label className={`block text-xs font-bold uppercase tracking-widest mb-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Reason for Ban Request</label>
+                                        <textarea
+                                            value={banReason}
+                                            onChange={(e) => setBanReason(e.target.value)}
+                                            placeholder="Describe why this student should be banned..."
+                                            rows={3}
+                                            className={`w-full px-4 py-3 rounded-xl border outline-none transition-all text-sm resize-none ${
+                                                theme === 'dark'
+                                                    ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-500 focus:border-amber-500'
+                                                    : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-amber-500'
+                                            }`}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className={`p-6 border-t flex gap-3 ${theme === 'dark' ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-slate-50'}`}>
+                                <button
+                                    onClick={closeBanModal}
+                                    className={`flex-1 py-2.5 rounded-xl font-bold text-sm border transition-all ${
+                                        theme === 'dark' ? 'border-slate-700 text-slate-400 hover:bg-slate-800' : 'border-slate-200 text-slate-500 hover:bg-slate-100'
+                                    }`}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleBanRequest}
+                                    disabled={!selectedBanStudent || banSubmitting}
+                                    className="flex-1 py-2.5 rounded-xl font-bold text-sm bg-amber-500 hover:bg-amber-400 text-black shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                                >
+                                    {banSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                                    Submit Ban Request
                                 </button>
                             </div>
                         </motion.div>

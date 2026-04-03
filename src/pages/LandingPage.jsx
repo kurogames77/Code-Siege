@@ -726,6 +726,7 @@ const LandingPage = () => {
                                             <input
                                                 type="email"
                                                 required
+                                                autoComplete="email"
                                                 placeholder="Enter your email"
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
@@ -740,6 +741,7 @@ const LandingPage = () => {
                                             <input
                                                 type="text"
                                                 required
+                                                autoComplete="username"
                                                 placeholder="Enter your Student ID"
                                                 value={studentId}
                                                 onChange={(e) => setStudentId(e.target.value)}
@@ -754,6 +756,7 @@ const LandingPage = () => {
                                             <input
                                                 type="text"
                                                 required
+                                                autoComplete="username"
                                                 placeholder="Enter your Instructor ID"
                                                 value={instructorId}
                                                 onChange={(e) => setInstructorId(e.target.value)}
@@ -769,6 +772,7 @@ const LandingPage = () => {
                                         <input
                                             type={showPassword ? 'text' : 'password'}
                                             required
+                                            autoComplete="current-password"
                                             placeholder="Enter your password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
