@@ -178,11 +178,12 @@ const Towers = ({ theme }) => {
         }
     };
 
-    const filteredBanStudents = banStudents.filter(s =>
-        s.username?.toLowerCase().includes(banSearch.toLowerCase()) ||
-        s.student_id?.toLowerCase().includes(banSearch.toLowerCase()) ||
-        s.email?.toLowerCase().includes(banSearch.toLowerCase())
-    );
+    const filteredBanStudents = banStudents.filter(s => {
+        const searchUpper = banSearch.toUpperCase();
+        return (s.username && s.username.toUpperCase().includes(searchUpper)) ||
+               (s.student_id && s.student_id.toUpperCase().includes(searchUpper)) ||
+               (s.email && s.email.toUpperCase().includes(searchUpper));
+    });
 
     return (
         <div className="h-full flex flex-col pt-8 space-y-8 pb-10">
