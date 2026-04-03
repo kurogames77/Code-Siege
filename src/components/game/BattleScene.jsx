@@ -266,94 +266,102 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                         // STANDARD ENEMY IDLE OR DUEL IDLE
                         if (current === 'enemy22' || (isDuel && cycleCount === 3)) {
                             if (!isDuel) demon.setTexture('enemy33');
-                            else {
-                                // Jump slightly to simulate attack instead of turning backwards
-                                this.tweens.add({
-                                    targets: demon,
-                                    y: enemyY - 40,
-                                    duration: 150,
-                                    yoyo: true
-                                });
-                                demon.setTexture('heroFront');
-                                demon.setFlipX(false);
-                            }
 
                             // Check if this is the 2nd time '33' appears (cycle ~3 or specific timing)
                             if (cycleCount === 3) { // 3rd tick is at 3s
-                                // Launch Enemy Projectile
-                                const projectileKey = isDuel ? 'fireball' : 'enemy33attack';
-                                const eProjectile = this.add.sprite(enemyX - 50, enemyY, projectileKey);
-                                eProjectile.setScale(isDuel ? 0.3 : 0.1);
-                                if (isDuel) eProjectile.setFlipX(true);
-                                eProjectile.setDepth(20); // Front
+                                
+                                const launchOpAttack = () => {
+                                    // Launch Enemy Projectile
+                                    const projectileKey = isDuel ? 'fireball' : 'enemy33attack';
+                                    const eProjectile = this.add.sprite(enemyX - 50, enemyY, projectileKey);
+                                    eProjectile.setScale(isDuel ? 0.3 : 0.1);
+                                    if (isDuel) eProjectile.setFlipX(true);
+                                    eProjectile.setDepth(20); // Front
 
-                                this.tweens.add({
-                                    targets: eProjectile,
-                                    x: hero.x,
-                                    y: hero.y,
-                                    scale: isDuel ? 0.4 : 0.5,
-                                    alpha: 0,
-                                    duration: 800,
-                                    ease: 'Quad.easeOut',
-                                    onComplete: () => {
-                                        eProjectile.destroy();
+                                    this.tweens.add({
+                                        targets: eProjectile,
+                                        x: hero.x,
+                                        y: hero.y,
+                                        scale: isDuel ? 0.4 : 0.5,
+                                        alpha: 0,
+                                        duration: 800,
+                                        ease: 'Quad.easeOut',
+                                        onComplete: () => {
+                                            eProjectile.destroy();
 
-                                        // --- DAMAGE LOGIC (Enemy Hits Hero) ---
-                                        if (outcome === 'loss') {
-                                            // FATAL HIT
-                                            heroHealthBar = updateHealth(heroHealthBar, startX - 30, startY - 120, 0, true);
+                                            // --- DAMAGE LOGIC (Enemy Hits Hero) ---
+                                            if (outcome === 'loss') {
+                                                // FATAL HIT
+                                                heroHealthBar = updateHealth(heroHealthBar, startX - 30, startY - 120, 0, true);
 
-                                            // Visual Death Sequence (Smooth Transition)
-                                            this.tweens.killTweensOf(hero); // Stop floating
+                                                // Visual Death Sequence (Smooth Transition)
+                                                this.tweens.killTweensOf(hero); // Stop floating
 
-                                            // Animate "Fall" and "Shrink"
-                                            this.tweens.add({
-                                                targets: hero,
-                                                y: startY + 60,
-                                                scale: 0.25,
-                                                duration: 500,
-                                                ease: 'Bounce.easeOut'
-                                            });
+                                                // Animate "Fall" and "Shrink"
+                                                this.tweens.add({
+                                                    targets: hero,
+                                                    y: startY + 60,
+                                                    scale: 0.25,
+                                                    duration: 500,
+                                                    ease: 'Bounce.easeOut'
+                                                });
 
-                                            hero.setTexture('hero2loss1');
-
-                                            this.time.delayedCall(200, () => {
-                                                hero.setTexture('hero2loss2');
+                                                hero.setTexture('hero2loss1');
 
                                                 this.time.delayedCall(200, () => {
-                                                    hero.setTexture('hero2loss3');
+                                                    hero.setTexture('hero2loss2');
 
-                                                    this.time.delayedCall(800, () => {
-                                                        if (onBattleEnd) onBattleEnd();
+                                                    this.time.delayedCall(200, () => {
+                                                        hero.setTexture('hero2loss3');
+
+                                                        this.time.delayedCall(800, () => {
+                                                            if (onBattleEnd) onBattleEnd();
+                                                        });
                                                     });
                                                 });
-                                            });
 
-                                        } else {
-                                            // MINOR HIT (Win Flow)
-                                            heroHealthBar = updateHealth(heroHealthBar, startX - 30, startY - 120, 0.8, true);
-                                            this.cameras.main.shake(100, 0.005);
+                                            } else {
+                                                // MINOR HIT (Win Flow)
+                                                heroHealthBar = updateHealth(heroHealthBar, startX - 30, startY - 120, 0.8, true);
+                                                this.cameras.main.shake(100, 0.005);
+                                            }
+                                            
+                                            // Return opponent to victory pose if duel
+                                            if (isDuel) {
+                                                this.time.delayedCall(500, () => {
+                                                    demon.setTexture('heroFront');
+                                                    demon.setFlipX(false);
+                                                    if (outcome === 'loss') {
+                                                        // Victory jump
+                                                        this.tweens.add({
+                                                            targets: demon,
+                                                            y: enemyY - 40,
+                                                            duration: 300,
+                                                            yoyo: true,
+                                                            repeat: -1
+                                                        });
+                                                    }
+                                                });
+                                            }
                                         }
-                                        
-                                        // Return opponent to victory pose if duel
-                                        if (isDuel) {
-                                            this.time.delayedCall(500, () => {
-                                                demon.setTexture('heroFront');
-                                                demon.setFlipX(false);
-                                                if (outcome === 'loss') {
-                                                    // Victory jump
-                                                    this.tweens.add({
-                                                        targets: demon,
-                                                        y: enemyY - 40,
-                                                        duration: 300,
-                                                        yoyo: true,
-                                                        repeat: -1
-                                                    });
-                                                }
-                                            });
-                                        }
-                                    }
-                                });
+                                    });
+                                };
+
+                                if (isDuel) {
+                                    // Make opponent animate raising staff before attack
+                                    demon.setTexture('heroRaise1');
+                                    demon.setFlipX(true); // Opponent faces left natively, flipping them actually looks weird if they face left, but default is left so we mimic what flipX does if needed. It usually is false, let's keep false.
+                                    demon.setFlipX(false); 
+                                    this.time.delayedCall(250, () => {
+                                        demon.setTexture('heroRaise2');
+                                        this.time.delayedCall(250, () => {
+                                            demon.setTexture('heroAttack');
+                                            launchOpAttack();
+                                        });
+                                    });
+                                } else {
+                                    launchOpAttack();
+                                }
                             }
                         } else {
                             if (!isBoss && !isDuel) demon.setTexture('enemy22');

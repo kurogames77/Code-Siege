@@ -1430,16 +1430,18 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                                 </button>
                                                 <button
                                                     onClick={async () => {
-                                                        // Untrack presence + broadcast leave before closing
+                                                        // Async fire-and-forget channel cleanup to prevent UI blocking
                                                         if (lobbyChannelRef.current) {
+                                                            const ch = lobbyChannelRef.current;
+                                                            lobbyChannelRef.current = null;
                                                             try {
-                                                                await lobbyChannelRef.current.send({
+                                                                ch.send({
                                                                     type: 'broadcast',
                                                                     event: 'player-leave',
                                                                     payload: { playerId: user?.id }
-                                                                });
-                                                                await lobbyChannelRef.current.untrack();
-                                                                await new Promise(resolve => setTimeout(resolve, 200));
+                                                                }).catch(() => {});
+                                                                ch.untrack().catch(() => {});
+                                                                setTimeout(() => supabase.removeChannel(ch), 500);
                                                             } catch (e) { /* best effort */ }
                                                         }
                                                         resetLobbyState();
