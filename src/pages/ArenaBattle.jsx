@@ -206,9 +206,9 @@ const ArenaBattle = () => {
             setIsFailed(false);
             setCurrentReward(puzzle.rewards?.exp || 0);
 
-            // Pre-fill code editor with initial code for Hardcode mode
-            if (mode === 'code' && puzzle.initialCode) {
-                setCodeValue(puzzle.initialCode);
+            // Ensure code editor starts fresh without giving away the solution
+            if (mode === 'code') {
+                setCodeValue('');
             }
 
             setTerminalLogs([
@@ -733,13 +733,32 @@ const ArenaBattle = () => {
                                                 <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />IDE Terminal</span>
                                                 <span className="text-xs text-cyan-500 font-mono px-3 py-1 bg-cyan-950/50 rounded-md border border-cyan-500/30">{language}</span>
                                             </div>
-                                            <textarea
-                                                value={codeValue}
-                                                onChange={(e) => setCodeValue(e.target.value)}
-                                                className="w-full flex-1 bg-[#060913]/90 backdrop-blur-sm border-x border-b border-cyan-500/30 rounded-b-lg p-6 text-cyan-100 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500 placeholder-cyan-800/60 resize-none custom-scrollbar focus:placeholder-transparent text-lg font-mono leading-relaxed"
-                                                placeholder={`// Write your ${language} code sequence here...\n// Ensure syntax is strictly formatted based on the objective.\n\nfunction executeTask() {\n  \n}\n`}
-                                                spellCheck={false}
-                                            />
+                                            <div className="w-full flex-1 bg-[#060913]/90 backdrop-blur-sm border-x border-b border-cyan-500/30 rounded-b-lg overflow-hidden flex relative font-mono text-lg">
+                                                {/* Line Numbers Sidebar */}
+                                                <div 
+                                                    id="ide-line-numbers"
+                                                    className="w-12 py-6 pr-3 bg-slate-900/50 border-r border-cyan-500/20 text-cyan-700/60 text-right select-none overflow-hidden shrink-0"
+                                                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                                >
+                                                    {Array.from({ length: Math.max((codeValue || '').split('\n').length, 1) }, (_, i) => (
+                                                        <div key={i} className="h-[28px] leading-[28px]">{i + 1}</div>
+                                                    ))}
+                                                </div>
+                                                
+                                                {/* Textarea Code Editor */}
+                                                <textarea
+                                                    value={codeValue}
+                                                    onChange={(e) => setCodeValue(e.target.value)}
+                                                    onScroll={(e) => {
+                                                        const lines = document.getElementById('ide-line-numbers');
+                                                        if (lines) lines.scrollTop = e.target.scrollTop;
+                                                    }}
+                                                    className="w-full h-full p-6 text-cyan-100 bg-transparent focus:outline-none focus:ring-0 resize-none custom-scrollbar whitespace-pre placeholder-cyan-800/60 focus:placeholder-transparent"
+                                                    style={{ lineHeight: '28px' }}
+                                                    placeholder={`// Write your ${language} code sequence here...\n// Objective: ${puzzle?.description?.substring(0, 50)}...\n\n`}
+                                                    spellCheck={false}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
