@@ -388,11 +388,6 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             .on('broadcast', { event: 'player-leave' }, ({ payload }) => {
                 // Explicit leave broadcast: ALWAYS reset lobby — no state guard
                 if (matchStateRef.current === 'starting') return; // GUARD: Do not abort an active launch sequence
-                
-                // Ignore leave if they are still tracked in presenceState
-                const state = channel.presenceState();
-                const isStillHere = Boolean(state[payload.playerId] && state[payload.playerId].length > 0);
-                if (isStillHere) return;
 
                 const currentOpponent = opponentRef.current;
                 if (currentOpponent && String(payload.playerId) === String(currentOpponent.id)) {
@@ -606,6 +601,16 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                     setStartCountdown(5);
                 };
                 triggerGameStart();
+            } else {
+                // Guest fallback: if host fails or is delayed in sending game-start, guest forces start after 2.5s
+                const fallbackTimeout = setTimeout(() => {
+                    if (matchStateRef.current === 'lobby') {
+                        setBattleRecordId(Math.floor(Math.random() * 9000) + 1000);
+                        setMatchState('starting');
+                        setStartCountdown(5);
+                    }
+                }, 2500);
+                return () => clearTimeout(fallbackTimeout);
             }
         }
         return () => clearInterval(interval);
@@ -1428,12 +1433,12 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                                         // Untrack presence + broadcast leave before closing
                                                         if (lobbyChannelRef.current) {
                                                             try {
-                                                                await lobbyChannelRef.current.untrack();
                                                                 await lobbyChannelRef.current.send({
                                                                     type: 'broadcast',
                                                                     event: 'player-leave',
                                                                     payload: { playerId: user?.id }
                                                                 });
+                                                                await lobbyChannelRef.current.untrack();
                                                                 await new Promise(resolve => setTimeout(resolve, 200));
                                                             } catch (e) { /* best effort */ }
                                                         }
