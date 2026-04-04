@@ -199,7 +199,8 @@ router.get('/notifications', authenticateUser, async (req, res) => {
                 is_read,
                 created_at,
                 sender:users!notifications_sender_id_fkey(
-                    id, username, student_id, avatar_url, course, xp
+                    id, username, student_id, avatar_url, course,
+                    user_progress(xp, tower_id)
                 )
             `)
             .eq('receiver_id', req.user.id)
@@ -235,7 +236,16 @@ router.get('/notifications', authenticateUser, async (req, res) => {
                 .catch(() => {});
         }
 
-        res.json({ notifications: data || [] });
+        const mappedData = (data || []).map(notif => {
+            if (notif.sender && notif.sender.user_progress) {
+                const globalProgress = notif.sender.user_progress.find(up => up.tower_id === 'global');
+                notif.sender.xp = globalProgress ? globalProgress.xp : 0;
+                delete notif.sender.user_progress;
+            }
+            return notif;
+        });
+
+        res.json({ notifications: mappedData });
     } catch (error) {
         console.error('Fetch notifications error:', error);
         res.status(500).json({ error: 'Failed to fetch notifications' });
@@ -408,7 +418,14 @@ router.get('/friends', authenticateUser, async (req, res) => {
         // Fetch friend profiles
         const { data: profiles, error: profileError } = await db
             .from('users')
-            .select('id, username, avatar_url, xp, course, last_active_at')
+            .select(`
+                id,
+                username,
+                avatar_url,
+                course,
+                last_active_at,
+                user_progress(xp, tower_id)
+            `)
             .in('id', uniqueIds);
 
         if (profileError) {
@@ -416,7 +433,16 @@ router.get('/friends', authenticateUser, async (req, res) => {
             return res.status(400).json({ error: profileError.message });
         }
 
-        res.json({ friends: profiles || [] });
+        const mappedProfiles = (profiles || []).map(p => {
+             const globalProgress = p.user_progress?.find(up => up.tower_id === 'global');
+             return {
+                 ...p,
+                 xp: globalProgress ? globalProgress.xp : 0,
+                 user_progress: undefined
+             };
+        });
+
+        res.json({ friends: mappedProfiles });
     } catch (error) {
         console.error('Fetch friends error:', error);
         res.status(500).json({ error: 'Failed to fetch friends' });
