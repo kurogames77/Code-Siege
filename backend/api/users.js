@@ -22,7 +22,7 @@ router.get('/search', authenticateUser, async (req, res) => {
 
         const { data, error } = await db
             .from('users')
-            .select('id, username, student_id, avatar_url, xp, level, course')
+            .select('id, username, student_id, avatar_url, course')
             .or(`student_id.eq.${query},username.ilike.%${query}%`)
             .neq('id', req.user.id)
             .limit(1);
@@ -35,8 +35,21 @@ router.get('/search', authenticateUser, async (req, res) => {
         if (!data || data.length === 0) {
             return res.status(404).json({ error: 'No user found' });
         }
+        
+        let user = data[0];
+        
+        const { data: currentProgress } = await db
+            .from('user_progress')
+            .select('level, xp')
+            .eq('user_id', user.id)
+            .order('completed_at', { ascending: false })
+            .limit(1)
+            .single();
+            
+        user.level = currentProgress?.level || 1;
+        user.xp = currentProgress?.xp || 0;
 
-        res.json({ user: data[0] });
+        res.json({ user });
     } catch (error) {
         console.error('User search error:', error);
         res.status(500).json({ error: 'Search failed' });
@@ -53,15 +66,28 @@ router.get('/profile/:id', authenticateUser, async (req, res) => {
         const db = supabaseService || supabase;
         const { data, error } = await db
             .from('users')
-            .select('id, username, student_id, avatar_url, course, xp, level')
+            .select('id, username, student_id, avatar_url, course')
             .eq('id', req.params.id)
             .single();
 
         if (error || !data) {
             return res.status(404).json({ error: 'User not found' });
         }
+        
+        let user = data;
+        
+        const { data: currentProgress } = await db
+            .from('user_progress')
+            .select('level, xp')
+            .eq('user_id', user.id)
+            .order('completed_at', { ascending: false })
+            .limit(1)
+            .single();
+            
+        user.level = currentProgress?.level || 1;
+        user.xp = currentProgress?.xp || 0;
 
-        res.json({ user: data });
+        res.json({ user });
     } catch (error) {
         console.error('Get user profile error:', error);
         res.status(500).json({ error: 'Failed to get user profile' });
@@ -472,31 +498,44 @@ router.post('/duel-invite', authenticateUser, async (req, res) => {
  */
 router.get('/leaderboard', async (req, res) => {
     try {
-        const { timeframe = 'weekly', limit = 50 } = req.query;
+            const { timeframe = 'weekly', limit = 50 } = req.query;
 
-        // Fetch top users sorted by XP (descending)
-        const { data: users, error } = await supabase
-            .from('users')
-            .select('id, username, avatar_url, level, xp')
-            .order('xp', { ascending: false })
-            .limit(parseInt(limit));
+            // Fetch top users sorted by XP using raw user_progress 
+            // Since we sync xp across all rows, we can get distinct user_id or use the user_id's max xp
+            // We'll use a direct descending search on user_progress but take unique user_ids
+            const { data: progressRecords, error } = await supabaseService
+                .from('user_progress')
+                .select('user_id, level, xp, users(id, username, avatar_url)')
+                .order('xp', { ascending: false });
 
-        if (error) {
-            return res.status(400).json({ error: error.message });
-        }
+            if (error) {
+                return res.status(400).json({ error: error.message });
+            }
 
-        // Format leaderboard data
-        const leaderboard = users.map((user, index) => ({
-            rank: index + 1,
-            id: user.id,
-            name: user.username,
-            avatar: user.avatar_url,
-            score: user.xp || 0,
-            level: user.level || 1
-        }));
+            // Deduplicate to find correct top XP per user
+            const usersMap = new Map();
+            progressRecords?.forEach(record => {
+                if (!usersMap.has(record.user_id) && record.users) {
+                    usersMap.set(record.user_id, {
+                        id: record.users.id,
+                        name: record.users.username,
+                        avatar: record.users.avatar_url,
+                        score: record.xp || 0,
+                        level: record.level || 1
+                    });
+                }
+            });
+            
+            const uniqueUsers = Array.from(usersMap.values()).slice(0, parseInt(limit));
 
-        res.json({ leaderboard, timeframe });
-    } catch (error) {
+            // Format leaderboard data
+            const leaderboard = uniqueUsers.map((user, index) => ({
+                rank: index + 1,
+                ...user
+            }));
+
+            res.json({ leaderboard, timeframe });
+        } catch (error) {
         console.error('Leaderboard error:', error);
         res.status(500).json({ error: 'Failed to fetch leaderboard' });
     }
@@ -543,7 +582,6 @@ router.patch('/:id', authenticateUser, async (req, res) => {
 
         const updates = {};
         if (username) updates.username = username;
-        if (selected_hero) updates.selected_hero = selected_hero;
         if (selected_theme) updates.selected_theme = selected_theme;
         if (course !== undefined) updates.course = course;
         if (student_id !== undefined) updates.student_id = student_id;
@@ -552,32 +590,43 @@ router.patch('/:id', authenticateUser, async (req, res) => {
         if (gender !== undefined) updates.gender = gender;
         if (student_code !== undefined) updates.student_code = student_code;
 
-        // Use service role to bypass RLS (authenticateUser already verified identity)
         const db = supabaseService || supabase;
-        const { data: profile, error } = await db
-            .from('users')
-            .update(updates)
-            .eq('id', id)
-            .select()
-            .single();
+        let profile = null;
 
-        if (error) {
-            // If update returned 0 rows (e.g. new OAuth user, trigger row not yet created),
-            // try an upsert as fallback
-            if (error.code === 'PGRST116' || error.message?.includes('JSON object')) {
-                console.log(`[Users] PATCH update returned no rows for ${id}, trying upsert fallback...`);
-                const { data: upserted, error: upsertErr } = await db
-                    .from('users')
-                    .upsert({ id, email: req.user.email, ...updates }, { onConflict: 'id' })
-                    .select()
-                    .single();
-                if (upsertErr) {
-                    console.error('[Users] Upsert fallback also failed:', upsertErr);
-                    return res.status(400).json({ error: upsertErr.message });
+        if (Object.keys(updates).length > 0) {
+            const { data, error } = await db
+                .from('users')
+                .update(updates)
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) {
+                if (error.code === 'PGRST116' || error.message?.includes('JSON object')) {
+                    console.log(`[Users] PATCH update returned no rows for ${id}, trying upsert fallback...`);
+                    const { data: upserted, error: upsertErr } = await db
+                        .from('users')
+                        .upsert({ id, email: req.user.email, ...updates }, { onConflict: 'id' })
+                        .select()
+                        .single();
+                    if (upsertErr) {
+                        return res.status(400).json({ error: upsertErr.message });
+                    }
+                    profile = upserted;
+                } else {
+                    return res.status(400).json({ error: error.message });
                 }
-                return res.json({ message: 'Profile created/updated', profile: upserted });
+            } else {
+                profile = data;
             }
-            return res.status(400).json({ error: error.message });
+        } else {
+            const { data } = await db.from('users').select('*').eq('id', id).single();
+            profile = data;
+        }
+
+        if (selected_hero) {
+            await db.from('user_progress').update({ selected_hero }).eq('user_id', id);
+            if (profile) profile.selected_hero = selected_hero;
         }
 
         res.json({ message: 'Profile updated', profile });
@@ -697,26 +746,33 @@ router.patch('/:id/gems', authenticateUser, async (req, res) => {
         }
 
         // Get current gems
-        const { data: user } = await supabase
-            .from('users')
+        const { data: progressRow } = await supabaseService
+            .from('user_progress')
             .select('gems')
-            .eq('id', id)
+            .eq('user_id', id)
+            .order('completed_at', { ascending: false })
+            .limit(1)
             .single();
 
-        const newGems = Math.max(0, (user?.gems || 0) + amount);
+        const newGems = Math.max(0, (progressRow?.gems || 0) + amount);
 
-        const { data: profile, error } = await supabase
-            .from('users')
+        // Update all progress rows
+        await supabaseService
+            .from('user_progress')
             .update({ gems: newGems })
-            .eq('id', id)
-            .select()
-            .single();
+            .eq('user_id', id);
 
-        if (error) {
-            return res.status(400).json({ error: error.message });
+        const { data: userProfile } = await supabaseService
+            .from('users')
+            .select('*')
+            .eq('id', id)
+            .single();
+            
+        if (userProfile) {
+            userProfile.gems = newGems;
         }
 
-        res.json({ message: 'Gems updated', gems: newGems, profile });
+        res.json({ message: 'Gems updated', gems: newGems, profile: userProfile });
     } catch (error) {
         console.error('Update gems error:', error);
         res.status(500).json({ error: 'Failed to update gems' });

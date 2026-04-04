@@ -400,7 +400,7 @@ router.get('/users', async (req, res) => {
 
         let query = supabaseService
             .from('users')
-            .select('id, username, email, role, student_id, is_banned, avatar_url, created_at, xp, level, gems', { count: 'exact' })
+            .select('id, username, email, role, student_id, is_banned, avatar_url, created_at', { count: 'exact' })
             .order('created_at', { ascending: false })
             .range(offset, offset + limit - 1);
 
@@ -413,9 +413,37 @@ router.get('/users', async (req, res) => {
         if (error) {
             return res.status(400).json({ error: error.message });
         }
+        
+        let formattedUsers = users || [];
+        
+        if (formattedUsers.length > 0) {
+            const userIds = formattedUsers.map(u => u.id);
+            // Fetch stats for these users
+            const { data: progressStats } = await supabaseService
+                .from('user_progress')
+                .select('user_id, level, xp, gems')
+                .in('user_id', userIds)
+                .order('completed_at', { ascending: false });
+                
+            const statsMap = new Map();
+            if (progressStats) {
+                progressStats.forEach(stat => {
+                    if (!statsMap.has(stat.user_id)) {
+                        statsMap.set(stat.user_id, stat);
+                    }
+                });
+            }
+            
+            formattedUsers = formattedUsers.map(u => ({
+                ...u,
+                level: statsMap.get(u.id)?.level || 1,
+                xp: statsMap.get(u.id)?.xp || 0,
+                gems: statsMap.get(u.id)?.gems || 0
+            }));
+        }
 
         res.json({
-            users: users || [],
+            users: formattedUsers,
             total: count || 0,
             page,
             limit,

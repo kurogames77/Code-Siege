@@ -156,10 +156,6 @@ router.post('/register', async (req, res) => {
             course: course || null,
             student_code: student_code || null,
             role: role || 'student',
-            level: 1,
-            xp: 0,
-            gems: 0,
-            selected_hero: '3',
             selected_theme: 'default'
         };
 
@@ -211,6 +207,25 @@ router.post('/register', async (req, res) => {
                     profileError = insertError || new Error('Profile creation failed after all retries');
                     console.error('[Auth] INSERT fallback also failed:', profileError);
                 }
+            }
+        }
+
+        // Initialize user progress baseline row to store global stats
+        if (profile) {
+            const { error: initProgressError } = await supabaseService
+                .from('user_progress')
+                .insert({
+                    user_id: authData.user.id,
+                    tower_id: 'global',
+                    floor: 0,
+                    completed: true,
+                    level: 1,
+                    xp: 0,
+                    gems: 0,
+                    selected_hero: '3'
+                });
+            if (initProgressError) {
+                console.error('[Auth] Failed to insert initial global progress stats:', initProgressError);
             }
         }
 
@@ -385,6 +400,26 @@ router.post('/login', async (req, res) => {
             .eq('id', data.user.id)
             .single();
 
+        // Get global stats from user_progress
+        if (profile) {
+            const { data: currentProgress } = await supabaseService
+                .from('user_progress')
+                .select('level, xp, gems, selected_hero')
+                .eq('user_id', data.user.id)
+                .order('completed_at', { ascending: false })
+                .limit(1)
+                .single();
+            
+            if (currentProgress) {
+                profile.level = currentProgress.level;
+                profile.xp = currentProgress.xp;
+                profile.gems = currentProgress.gems;
+                profile.selected_hero = currentProgress.selected_hero;
+            } else {
+                profile.level = 1; profile.xp = 0; profile.gems = 0; profile.selected_hero = '3';
+            }
+        }
+
         logger.info('AUTH_SERVICE', `User logged in: ${profile?.username || loginEmail} (${profile?.role || 'user'}), Session: ${active_session_id}`);
 
         res.json({
@@ -461,6 +496,26 @@ router.get('/me', async (req, res) => {
             .select('*')
             .eq('id', user.id)
             .single();
+
+        // Append global stats from user_progress
+        if (profile) {
+            const { data: currentProgress } = await supabaseService
+                .from('user_progress')
+                .select('level, xp, gems, selected_hero')
+                .eq('user_id', user.id)
+                .order('completed_at', { ascending: false })
+                .limit(1)
+                .single();
+            
+            if (currentProgress) {
+                profile.level = currentProgress.level;
+                profile.xp = currentProgress.xp;
+                profile.gems = currentProgress.gems;
+                profile.selected_hero = currentProgress.selected_hero;
+            } else {
+                profile.level = 1; profile.xp = 0; profile.gems = 0; profile.selected_hero = '3';
+            }
+        }
 
         res.json({ user, profile });
     } catch (error) {

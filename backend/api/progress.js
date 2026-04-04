@@ -54,6 +54,15 @@ router.post('/complete', authenticateUser, async (req, res) => {
             // Already completed, just return existing record
             result = { data: existing };
         } else {
+            // Get current global stats
+            const { data: latestStats } = await supabase
+                .from('user_progress')
+                .select('level, xp, gems, selected_hero')
+                .eq('user_id', req.user.id)
+                .order('completed_at', { ascending: false })
+                .limit(1)
+                .single();
+                
             // Insert new
             result = await supabase
                 .from('user_progress')
@@ -62,7 +71,11 @@ router.post('/complete', authenticateUser, async (req, res) => {
                     tower_id,
                     floor,
                     completed: true,
-                    completed_at: new Date().toISOString()
+                    completed_at: new Date().toISOString(),
+                    level: latestStats?.level || 1,
+                    xp: latestStats?.xp || 0,
+                    gems: latestStats?.gems || 0,
+                    selected_hero: latestStats?.selected_hero || '3'
                 })
                 .select()
                 .single();
@@ -91,25 +104,25 @@ router.patch('/xp', authenticateUser, async (req, res) => {
             return res.status(400).json({ error: 'Valid XP amount required' });
         }
 
-        // Get current user stats
-        const { data: user } = await supabase
-            .from('users')
+        // Get current user stats from user_progress
+        const { data: userStats } = await supabase
+            .from('user_progress')
             .select('xp, level')
-            .eq('id', req.user.id)
+            .eq('user_id', req.user.id)
+            .order('completed_at', { ascending: false })
+            .limit(1)
             .single();
 
-        const newXp = (user?.xp || 0) + amount;
+        const newXp = (userStats?.xp || 0) + amount;
 
         // Calculate level (100 XP per level)
         const newLevel = Math.floor(newXp / 100) + 1;
-        const leveledUp = newLevel > (user?.level || 1);
+        const leveledUp = newLevel > (userStats?.level || 1);
 
-        const { data: profile, error } = await supabase
-            .from('users')
+        const { error } = await supabase
+            .from('user_progress')
             .update({ xp: newXp, level: newLevel })
-            .eq('id', req.user.id)
-            .select()
-            .single();
+            .eq('user_id', req.user.id);
 
         if (error) {
             return res.status(400).json({ error: error.message });
@@ -119,8 +132,7 @@ router.patch('/xp', authenticateUser, async (req, res) => {
             message: 'XP added',
             xp: newXp,
             level: newLevel,
-            leveledUp,
-            profile
+            leveledUp
         });
     } catch (error) {
         console.error('Add XP error:', error);

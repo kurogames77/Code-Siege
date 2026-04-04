@@ -219,15 +219,31 @@ export const UserProvider = ({ children }) => {
                 }
             }, 30000);
 
-            // Profile updates
+            // Profile and Progress updates
             profileChannel = supabase
                 .channel(`user-profile-${user.id}`)
                 .on(
                     'postgres_changes',
                     { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${user.id}` },
-                    (payload) => {
-
-                        setUser(prev => ({ ...prev, ...formatUser(payload.new, user) }));
+                    async () => {
+                        try {
+                            const { profile } = await authAPI.getMe();
+                            if (profile) setUser(prev => ({ ...prev, ...formatUser(profile, prev) }));
+                        } catch (e) {
+                            console.error('Error fetching updated profile', e);
+                        }
+                    }
+                )
+                .on(
+                    'postgres_changes',
+                    { event: 'UPDATE', schema: 'public', table: 'user_progress', filter: `user_id=eq.${user.id}` },
+                    async () => {
+                        try {
+                            const { profile } = await authAPI.getMe();
+                            if (profile) setUser(prev => ({ ...prev, ...formatUser(profile, prev) }));
+                        } catch (e) {
+                            console.error('Error fetching updated progress', e);
+                        }
                     }
                 )
                 .subscribe();
