@@ -133,35 +133,15 @@ const Towers = ({ theme }) => {
             // Fetch students
             const { data: users, error } = await supabase
                 .from('users')
-                .select('id, username, student_id, email, tower_progress, is_banned')
+                .select('id, username, student_id, email, is_banned')
                 .in('role', ['user', 'student'])
                 .eq('is_banned', false);
 
             if (error) throw error;
 
-            // Fetch progress directly using instructorAPI to bypass RLS limits on user_progress table
-            const progressData = await instructorAPI.getTowerProgressRecords(tower.id.toString());
-            const towerProgressRecords = progressData?.progress || [];
-
-            const usersWithTableProgress = new Set(towerProgressRecords.map(tp => tp.user_id));
-
             if (users) {
-                const studentsWithProgress = users.filter(u => {
-                    let progress = {};
-                    if (u.tower_progress) {
-                        try {
-                            progress = typeof u.tower_progress === 'string' 
-                                ? JSON.parse(u.tower_progress) 
-                                : u.tower_progress;
-                        } catch (e) {}
-                    }
-                    
-                    const hasGlobalProgress = progress[tower.id] && Number(progress[tower.id]) > 0;
-                    const hasTableProgress = usersWithTableProgress.has(u.id);
-                    
-                    return hasGlobalProgress || hasTableProgress;
-                });
-                setBanStudents(studentsWithProgress);
+                // Show all students regardless of if they have started the tower yet
+                setBanStudents(users);
             }
         } catch (err) {
             console.error('Failed to fetch students:', err);
@@ -476,7 +456,7 @@ const Towers = ({ theme }) => {
                                         </div>
                                     ) : filteredBanStudents.length === 0 ? (
                                         <div className={`p-6 text-center text-sm ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                                            {banStudents.length === 0 ? 'No students have progress on this tower yet.' : 'No students match your search.'}
+                                            {banStudents.length === 0 ? 'No active students found in the system.' : 'No students match your search.'}
                                         </div>
                                     ) : (
                                         filteredBanStudents.map((student) => (
