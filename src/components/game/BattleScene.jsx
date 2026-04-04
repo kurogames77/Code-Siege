@@ -350,8 +350,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                 if (isDuel) {
                                     // Make opponent animate raising staff before attack
                                     demon.setTexture('heroRaise1');
-                                    demon.setFlipX(true); // Opponent faces left natively, flipping them actually looks weird if they face left, but default is left so we mimic what flipX does if needed. It usually is false, let's keep false.
-                                    demon.setFlipX(false); 
+                                    demon.setFlipX(true); // Flip so opponent faces left towards the player
                                     this.time.delayedCall(250, () => {
                                         demon.setTexture('heroRaise2');
                                         this.time.delayedCall(250, () => {
