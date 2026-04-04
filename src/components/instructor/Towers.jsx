@@ -53,7 +53,7 @@ const Towers = ({ theme }) => {
     const [banSubmitting, setBanSubmitting] = useState(false);
 
     // Fetch active students
-    const { data: activeStudents = [], isLoading: isStudentsLoading } = useQuery({
+    const { data: activeStudents = [], isLoading: isStudentsLoading, refetch: refetchStudents } = useQuery({
         queryKey: ['activeStudents'],
         queryFn: async () => {
             const { data, error } = await supabase
@@ -147,6 +147,10 @@ const Towers = ({ theme }) => {
         setBanSearch('');
         setSelectedBanStudent(null);
         setBanReason('');
+        
+        // Silently refresh data in the background each time the modal opens to ensure real-time sync
+        refetchStudents();
+        refetchPendingBans();
     };
 
     const closeBanModal = () => {
