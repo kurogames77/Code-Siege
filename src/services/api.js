@@ -470,6 +470,10 @@ export const instructorAPI = {
         return apiRequest('/instructor/stats');
     },
 
+    getTowerProgressRecords: async (towerId) => {
+        return apiRequest(`/instructor/tower-progress/${towerId}`);
+    },
+
     getUsers: async (page = 1, limit = 20, search = '') => {
         return apiRequest(`/instructor/users?page=${page}&limit=${limit}&search=${search}`);
     },

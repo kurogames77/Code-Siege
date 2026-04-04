@@ -42,6 +42,29 @@ router.get('/stats', async (req, res) => {
     }
 });
 
+/**
+ * GET /api/instructor/tower-progress/:towerId
+ * Get raw user_progress records for a tower (bypasses RLS)
+ */
+router.get('/tower-progress/:towerId', async (req, res) => {
+    try {
+        const { towerId } = req.params;
+        const { data, error } = await supabaseService
+            .from('user_progress')
+            .select('user_id, floor')
+            .eq('tower_id', towerId);
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json({ progress: data || [] });
+    } catch (error) {
+        console.error('Get tower progress error:', error);
+        res.status(500).json({ error: 'Failed to get tower progress' });
+    }
+});
+
 // ============================================
 // STUDENT CODES MANAGEMENT (ADMIN ONLY)
 // ============================================

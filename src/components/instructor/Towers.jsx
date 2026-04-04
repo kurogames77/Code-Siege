@@ -139,15 +139,11 @@ const Towers = ({ theme }) => {
 
             if (error) throw error;
 
-            // Fetch progress directly from user_progress table for this tower
-            const { data: towerProgressRecords, error: progressError } = await supabase
-                .from('user_progress')
-                .select('user_id, floor')
-                .eq('tower_id', tower.id.toString());
-                
-            if (progressError) throw progressError;
+            // Fetch progress directly using instructorAPI to bypass RLS limits on user_progress table
+            const progressData = await instructorAPI.getTowerProgressRecords(tower.id.toString());
+            const towerProgressRecords = progressData?.progress || [];
 
-            const usersWithTableProgress = new Set(towerProgressRecords?.map(tp => tp.user_id) || []);
+            const usersWithTableProgress = new Set(towerProgressRecords.map(tp => tp.user_id));
 
             if (users) {
                 const studentsWithProgress = users.filter(u => {
