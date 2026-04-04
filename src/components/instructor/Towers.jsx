@@ -130,17 +130,40 @@ const Towers = ({ theme }) => {
         setBanLoading(true);
 
         try {
-            // Fetch students who have progress on this tower
+            // Fetch students
             const { data: users, error } = await supabase
                 .from('users')
                 .select('id, username, student_id, email, tower_progress, is_banned')
                 .in('role', ['user', 'student'])
                 .eq('is_banned', false);
 
-            if (!error && users) {
+            if (error) throw error;
+
+            // Fetch progress directly from user_progress table for this tower
+            const { data: towerProgressRecords, error: progressError } = await supabase
+                .from('user_progress')
+                .select('user_id, floor')
+                .eq('tower_id', tower.id.toString());
+                
+            if (progressError) throw progressError;
+
+            const usersWithTableProgress = new Set(towerProgressRecords?.map(tp => tp.user_id) || []);
+
+            if (users) {
                 const studentsWithProgress = users.filter(u => {
-                    const progress = u.tower_progress || {};
-                    return progress[tower.id] && progress[tower.id] > 0;
+                    let progress = {};
+                    if (u.tower_progress) {
+                        try {
+                            progress = typeof u.tower_progress === 'string' 
+                                ? JSON.parse(u.tower_progress) 
+                                : u.tower_progress;
+                        } catch (e) {}
+                    }
+                    
+                    const hasGlobalProgress = progress[tower.id] && Number(progress[tower.id]) > 0;
+                    const hasTableProgress = usersWithTableProgress.has(u.id);
+                    
+                    return hasGlobalProgress || hasTableProgress;
                 });
                 setBanStudents(studentsWithProgress);
             }
