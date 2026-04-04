@@ -48,11 +48,32 @@ const Towers = ({ theme }) => {
     const [isBanModalOpen, setIsBanModalOpen] = useState(false);
     const [banTower, setBanTower] = useState(null);
     const [banSearch, setBanSearch] = useState('');
-    const [banStudents, setBanStudents] = useState([]);
-    const [banLoading, setBanLoading] = useState(false);
     const [selectedBanStudent, setSelectedBanStudent] = useState(null);
     const [banReason, setBanReason] = useState('');
     const [banSubmitting, setBanSubmitting] = useState(false);
+
+    // Fetch active students
+    const { data: activeStudents = [], isLoading: isStudentsLoading } = useQuery({
+        queryKey: ['activeStudents'],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('users')
+                .select('id, username, student_id, email, is_banned')
+                .in('role', ['user', 'student'])
+                .eq('is_banned', false);
+            if (error) throw error;
+            return data || [];
+        }
+    });
+
+    // Fetch pending ban requests to avoid duplicate submissions
+    const { data: pendingRequests = [], refetch: refetchPendingBans } = useQuery({
+        queryKey: ['pendingBanRequests'],
+        queryFn: async () => {
+            const res = await instructorAPI.getBanRequests('pending');
+            return res.requests || [];
+        }
+    });
 
     // Fetch instructor's assigned courses from the courses table
     const { data: instructorCourses = [], isLoading: coursesLoading } = useQuery({
@@ -120,34 +141,12 @@ const Towers = ({ theme }) => {
     };
 
     // Ban Request Functions
-    const openBanModal = async (tower) => {
+    const openBanModal = (tower) => {
         setBanTower(tower);
         setIsBanModalOpen(true);
         setBanSearch('');
         setSelectedBanStudent(null);
         setBanReason('');
-        setBanStudents([]);
-        setBanLoading(true);
-
-        try {
-            // Fetch students
-            const { data: users, error } = await supabase
-                .from('users')
-                .select('id, username, student_id, email, is_banned')
-                .in('role', ['user', 'student'])
-                .eq('is_banned', false);
-
-            if (error) throw error;
-
-            if (users) {
-                // Show all students regardless of if they have started the tower yet
-                setBanStudents(users);
-            }
-        } catch (err) {
-            console.error('Failed to fetch students:', err);
-        } finally {
-            setBanLoading(false);
-        }
     };
 
     const closeBanModal = () => {
@@ -169,6 +168,7 @@ const Towers = ({ theme }) => {
                 banTower.name
             );
             toast.success(res.message || 'Ban request submitted successfully!');
+            refetchPendingBans();
             closeBanModal();
         } catch (error) {
             toast.error(error.message || 'Failed to submit ban request');
@@ -177,7 +177,10 @@ const Towers = ({ theme }) => {
         }
     };
 
-    const filteredBanStudents = banStudents.filter(s => {
+    const pendingIds = pendingRequests.map(r => r.student_id);
+    const selectableBanStudents = activeStudents.filter(s => !pendingIds.includes(s.id));
+
+    const filteredBanStudents = selectableBanStudents.filter(s => {
         const searchUpper = banSearch.toUpperCase();
         return (s.username && s.username.toUpperCase().includes(searchUpper)) ||
                (s.student_id && s.student_id.toUpperCase().includes(searchUpper)) ||
@@ -450,13 +453,13 @@ const Towers = ({ theme }) => {
 
                                 {/* Student List */}
                                 <div className={`max-h-48 overflow-y-auto rounded-xl border ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
-                                    {banLoading ? (
+                                    {isStudentsLoading ? (
                                         <div className="flex items-center justify-center p-8">
                                             <Loader2 className="w-6 h-6 animate-spin text-cyan-500" />
                                         </div>
                                     ) : filteredBanStudents.length === 0 ? (
                                         <div className={`p-6 text-center text-sm ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                                            {banStudents.length === 0 ? 'No active students found in the system.' : 'No students match your search.'}
+                                            {selectableBanStudents.length === 0 ? 'No active students available.' : 'No students match your search.'}
                                         </div>
                                     ) : (
                                         filteredBanStudents.map((student) => (
