@@ -1115,38 +1115,39 @@ router.post('/ban-request', async (req, res) => {
             return res.status(400).json({ error: 'Student is already banned' });
         }
 
-        // Check for duplicate pending request
+        // Check for duplicate pending request in notifications
         const { data: existing } = await supabaseService
-            .from('ban_requests')
+            .from('notifications')
             .select('id')
-            .eq('student_id', student_id)
-            .eq('status', 'pending')
+            .eq('receiver_id', student_id)
+            .eq('type', 'ban_request')
+            .eq('action_status', 'pending')
             .maybeSingle();
 
         if (existing) {
             return res.status(400).json({ error: 'A ban request for this student is already pending' });
         }
 
-        // Create the ban request
+        // Create the ban request in notifications table
         const { data: request, error } = await supabaseService
-            .from('ban_requests')
+            .from('notifications')
             .insert({
-                student_id,
-                student_name: student_name || student.username,
-                instructor_id: instructorId,
-                instructor_name: instructorName,
-                reason: reason || 'No reason provided',
-                tower_name: tower_name || null,
-                status: 'pending'
+                type: 'ban_request',
+                sender_id: instructorId,
+                receiver_id: student_id,
+                title: JSON.stringify({
+                    student_name: student_name || student.username,
+                    instructor_name: instructorName,
+                    tower_name: tower_name || null
+                }),
+                message: reason || 'No reason provided',
+                action_status: 'pending',
+                is_read: false
             })
             .select()
             .single();
 
         if (error) {
-            // If the table doesn't exist, create it on the fly
-            if (error.code === '42P01') {
-                return res.status(500).json({ error: 'Ban requests table not configured. Please create the ban_requests table in Supabase.' });
-            }
             console.error('Create ban request error:', error);
             return res.status(400).json({ error: error.message });
         }
@@ -1170,31 +1171,45 @@ router.get('/ban-requests', async (req, res) => {
         const { status = 'all' } = req.query;
 
         let query = supabaseService
-            .from('ban_requests')
+            .from('notifications')
             .select('*')
+            .eq('type', 'ban_request')
             .order('created_at', { ascending: false });
 
         if (status !== 'all') {
-            query = query.eq('status', status);
+            query = query.eq('action_status', status);
         }
 
         // Non-admin users only see their own requests
         if (req.user.role !== 'admin') {
-            query = query.eq('instructor_id', req.user.id);
+            query = query.eq('sender_id', req.user.id);
         }
 
-        const { data: requests, error } = await query;
+        const { data: notifications, error } = await query;
 
         if (error) {
-            if (error.code === '42P01') {
-                // Table doesn't exist yet — return empty
-                return res.json({ requests: [] });
-            }
             console.error('Get ban requests error:', error);
             return res.status(400).json({ error: error.message });
         }
 
-        res.json({ requests: requests || [] });
+        // Map notifications to the format expected by the frontend
+        const requests = (notifications || []).map(notif => {
+            let meta = {};
+            try { meta = JSON.parse(notif.title); } catch(e) {}
+            return {
+                id: notif.id,
+                student_id: notif.receiver_id,
+                student_name: meta.student_name || 'Unknown Student',
+                instructor_id: notif.sender_id,
+                instructor_name: meta.instructor_name || 'Unknown Instructor',
+                reason: notif.message,
+                tower_name: meta.tower_name || null,
+                status: notif.action_status,
+                created_at: notif.created_at
+            };
+        });
+
+        res.json({ requests });
     } catch (error) {
         console.error('Get ban requests error:', error);
         res.status(500).json({ error: 'Failed to get ban requests' });
@@ -1214,19 +1229,20 @@ router.patch('/ban-requests/:id/respond', requireAdmin, async (req, res) => {
             return res.status(400).json({ error: 'Action must be "approve" or "reject"' });
         }
 
-        // Get the ban request
+        // Get the ban request notification
         const { data: request, error: fetchError } = await supabaseService
-            .from('ban_requests')
+            .from('notifications')
             .select('*')
             .eq('id', id)
+            .eq('type', 'ban_request')
             .single();
 
         if (fetchError || !request) {
             return res.status(404).json({ error: 'Ban request not found' });
         }
 
-        if (request.status !== 'pending') {
-            return res.status(400).json({ error: `Request already ${request.status}` });
+        if (request.action_status !== 'pending') {
+            return res.status(400).json({ error: `Request already ${request.action_status}` });
         }
 
         // If approved, ban the student
@@ -1234,7 +1250,7 @@ router.patch('/ban-requests/:id/respond', requireAdmin, async (req, res) => {
             const { error: banError } = await supabaseService
                 .from('users')
                 .update({ is_banned: true })
-                .eq('id', request.student_id);
+                .eq('id', request.receiver_id);
 
             if (banError) {
                 console.error('Ban student error:', banError);
@@ -1242,13 +1258,12 @@ router.patch('/ban-requests/:id/respond', requireAdmin, async (req, res) => {
             }
         }
 
-        // Update the request status
+        // Update the notification status
         const { data: updated, error: updateError } = await supabaseService
-            .from('ban_requests')
+            .from('notifications')
             .update({
-                status: action === 'approve' ? 'approved' : 'rejected',
-                reviewed_at: new Date().toISOString(),
-                reviewed_by: req.user.id
+                action_status: action === 'approve' ? 'approved' : 'rejected',
+                is_read: true
             })
             .eq('id', id)
             .select()
