@@ -350,7 +350,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                 if (isDuel) {
                                     // Make opponent animate raising staff before attack
                                     demon.setTexture('heroRaise1');
-                                    demon.setFlipX(true); // Flip so opponent faces left towards the player
+                                    demon.setFlipX(false); // Keep facing the player (don't turn around)
                                     this.time.delayedCall(250, () => {
                                         demon.setTexture('heroRaise2');
                                         this.time.delayedCall(250, () => {
