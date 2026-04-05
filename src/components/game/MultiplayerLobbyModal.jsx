@@ -51,7 +51,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
         name: user.name,
         level: user.level || 42,
         status: 'ready',
-        avatar: user.avatar || heroAsset,
+        avatar: user.avatar || null,
         heroImage: currentHeroImage, // Use the real static image
         rankName: user.rankName,
         rankIcon: user.rankIcon,
@@ -121,6 +121,11 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     React.useEffect(() => {
         playersRef.current = players;
     }, [players]);
+
+    const matchStateRef = React.useRef(matchState);
+    React.useEffect(() => {
+        matchStateRef.current = matchState;
+    }, [matchState]);
 
     // Add inviter to players when opened via invite, and reset on close
     useEffect(() => {
@@ -315,7 +320,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             .on('broadcast', { event: 'match_found' }, (payload) => {
                 // If we are part of the match group broadcasted by the host
                 if (payload.payload.playerIds.includes(user.id) && 
-                   (matchState === 'searching' || matchState === 'idle' || matchState === 'search_timeout')) {
+                   (matchStateRef.current === 'searching' || matchStateRef.current === 'idle' || matchStateRef.current === 'search_timeout')) {
 
                     setPlayers(payload.payload.players);
                     startReadyPhase();
@@ -324,7 +329,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             .on('broadcast', { event: 'ready_status' }, (payload) => {
                 // Sync ready status across the matched group
                 const { userId, isReady } = payload.payload;
-                if (matchState === 'ready_check') {
+                if (matchStateRef.current === 'ready_check') {
                     setPlayers(prev => prev.map(p => p.id === userId ? { ...p, isReady } : p));
                 }
             })
@@ -343,7 +348,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                             level: 1,
                             status: 'ready',
                             avatar: payload.payload.senderAvatar || heroAsset,
-                            heroImage: hero2Static,
+                            heroImage: payload.payload.senderHeroImageKey ? heroMap[payload.payload.senderHeroImageKey] : hero2Static,
                             rankName: payload.payload.senderRankName || '',
                             rankIcon: payload.payload.senderRankIcon || '',
                             rankId: null,
@@ -398,7 +403,8 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                 senderName: user.name,
                                 senderAvatar: user.avatar_url || currentUser.avatar,
                                 senderRankName: currentUser.rankName,
-                                senderRankIcon: currentUser.rankIcon
+                                senderRankIcon: currentUser.rankIcon,
+                                senderHeroImageKey: validatedHeroImage
                             }
                         });
                     }
@@ -1016,8 +1022,14 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                                             {/* UI Elements (Avatar, Name, Rank) */}
                                                             <div className={`absolute inset-0 z-20 flex flex-col items-center h-full pointer-events-none ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
                                                                 <div className="relative flex flex-col items-center pt-4 px-2 w-full">
-                                                                    <div className={`w-14 h-14 rounded-lg border-2 p-0.5 mb-1.5 transition-all duration-500 pointer-events-auto ${isGrey ? 'border-slate-500' : 'border-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.5)]'}`}>
-                                                                        <img src={player.avatar} className="w-full h-full object-cover rounded-md" alt="" />
+                                                                    <div className={`w-14 h-14 rounded-lg border-2 p-0.5 mb-1.5 transition-all duration-500 pointer-events-auto flex items-center justify-center overflow-hidden bg-slate-800 ${isGrey ? 'border-slate-500' : 'border-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.5)]'}`}>
+                                                                        {player.avatar ? (
+                                                                            <img src={player.avatar} className="w-full h-full object-cover rounded-md" alt="" />
+                                                                        ) : (
+                                                                            <span className="text-xl font-black text-cyan-400 uppercase select-none">
+                                                                                {player.name ? player.name.charAt(0) : '?'}
+                                                                            </span>
+                                                                        )}
                                                                     </div>
                                                                     <h3 className={`text-[10px] font-black italic uppercase tracking-tighter text-center truncate w-full drop-shadow-[0_2px_8px_rgba(0,0,0,1)] ${isGrey ? 'text-slate-400' : 'text-white'}`}>{player.name}</h3>
                                                                     <span className={`text-[9px] font-black uppercase tracking-[0.2em] drop-shadow-sm ${isGrey ? 'text-slate-500' : 'text-cyan-400'}`}>{displayRankName}</span>
