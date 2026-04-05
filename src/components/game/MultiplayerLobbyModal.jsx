@@ -1025,7 +1025,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                             const isGrey = matchState === 'ready_check' && !player?.isReady;
 
                                             return (
-                                                <div key={i} className="relative group w-32 sm:w-36 md:w-48 h-[400px] sm:h-[450px] md:h-[600px] shrink-0 overflow-hidden rounded-[16px] md:rounded-[24px]">
+                                                <div key={i} className="relative group w-32 sm:w-36 md:w-48 h-[400px] sm:h-[450px] md:h-[600px] shrink-0 overflow-hidden" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%)' }}>
                                                     {/* Background Banner Shape */}
                                                     <div
                                                         className={`absolute inset-0 transition-all duration-300 ${player
