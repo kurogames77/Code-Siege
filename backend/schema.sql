@@ -147,8 +147,6 @@ CREATE TABLE IF NOT EXISTS public.battles (
     winner_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
     mode VARCHAR(20) DEFAULT 'duel' CHECK (mode IN ('duel', 'multiplayer', 'tournament')),
     status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'completed', 'cancelled')),
-    player1_score INTEGER,
-    player2_score INTEGER,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     completed_at TIMESTAMP WITH TIME ZONE
 );
@@ -162,7 +160,6 @@ CREATE TABLE IF NOT EXISTS public.instructor_applications (
     username TEXT NOT NULL,
     password_hash TEXT NOT NULL, 
     student_id TEXT,
-    course TEXT,
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     reviewed_at TIMESTAMPTZ,

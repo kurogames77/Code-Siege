@@ -387,13 +387,11 @@ export const battlesAPI = {
         });
     },
 
-    complete: async (battleId, winnerId, player1Score, player2Score) => {
+    complete: async (battleId, winnerId) => {
         return apiRequest(`/battles/${battleId}/complete`, {
             method: 'PATCH',
             body: JSON.stringify({
-                winner_id: winnerId,
-                player1_score: player1Score,
-                player2_score: player2Score
+                winner_id: winnerId
             }),
         });
     },

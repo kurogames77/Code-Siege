@@ -221,7 +221,7 @@ router.get('/applications', async (req, res) => {
 
         const { data: applications, error } = await supabaseService
             .from('instructor_applications')
-            .select('id, username, email, student_id, course, status, created_at')
+            .select('id, username, email, student_id, status, created_at')
             .eq('status', status)
             .order('created_at', { ascending: false });
 
@@ -286,18 +286,29 @@ router.post('/applications/:id/approve', requireAdmin, async (req, res) => {
                 username: application.username,
                 email: application.email,
                 student_id: application.student_id || null,
-                course: application.course || null,
                 role: 'instructor',
-                level: 1,
-                xp: 0,
-                gems: 0,
-                selected_hero: '3',
                 selected_theme: 'default'
             }, {
                 onConflict: 'id'
             })
             .select()
             .single();
+
+        // Initialize global stats in user_progress for the new instructor
+        if (profile) {
+            await supabaseService
+                .from('user_progress')
+                .upsert({
+                    user_id: authData.user.id,
+                    tower_id: 'global',
+                    floor: 0,
+                    completed: true,
+                    level: 1,
+                    xp: 0,
+                    gems: 0,
+                    selected_hero: '3'
+                }, { onConflict: 'user_id,tower_id,floor' });
+        }
 
         if (profileError) {
             console.error('Profile creation error:', profileError);

@@ -12,6 +12,8 @@ import fireballHit from '../../assets/hero2actions/fireballhit.png';
 import hero2loss1 from '../../assets/hero2actions/hero2loss1.png';
 import hero2loss2 from '../../assets/hero2actions/hero2loss2.png';
 import hero2loss3 from '../../assets/hero2actions/hero2loss3.png';
+import hero2frontraise1 from '../../assets/hero2actions/hero2frontraise1.png';
+import hero2frontraise3 from '../../assets/hero2actions/hero2frontraise3.png';
 
 // Import Enemy Assets
 import enemy22 from '../../assets/enemyactions/22.png';
@@ -71,6 +73,8 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
             this.load.image('hero2loss1', hero2loss1);
             this.load.image('hero2loss2', hero2loss2);
             this.load.image('hero2loss3', hero2loss3);
+            this.load.image('hero2frontraise1', hero2frontraise1);
+            this.load.image('hero2frontraise3', hero2frontraise3);
 
             // Enemy
             this.load.image('enemy22', enemy22);
@@ -348,8 +352,8 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                 };
 
                                 if (isDuel) {
-                                    // Animated casting sequence while keeping heroFront (no turning)
-                                    demon.setTexture('heroFront');
+                                    // Animated casting sequence using actual attack sprites
+                                    demon.setTexture('hero2frontraise1'); // Start staff lift
                                     demon.setFlipX(false);
                                     const baseX = demon.x;
                                     const baseY = demon.y;
@@ -361,32 +365,33 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                         targets: demon,
                                         x: baseX + 8,
                                         y: baseY - 12,
-                                        angle: 6,
-                                        scaleX: baseScaleX * 1.08,
-                                        scaleY: baseScaleY * 1.12,
+                                        scaleX: baseScaleX * 1.05,
+                                        scaleY: baseScaleY * 1.05,
                                         duration: 250,
                                         ease: 'Back.easeOut',
                                         onComplete: () => {
                                             // Phase 2: Hold briefly at peak
                                             this.time.delayedCall(100, () => {
                                                 // Phase 3: Lunge forward & cast (simulate staff swing)
+                                                demon.setTexture('hero2frontraise3'); // Attack frame
                                                 this.tweens.add({
                                                     targets: demon,
                                                     x: baseX - 15,
                                                     y: baseY + 4,
-                                                    angle: -8,
-                                                    scaleX: baseScaleX * 1.15,
+                                                    scaleX: baseScaleX * 1.1,
                                                     scaleY: baseScaleY * 0.95,
                                                     duration: 150,
                                                     ease: 'Quad.easeIn',
                                                     onComplete: () => {
                                                         launchOpAttack();
                                                         // Phase 4: Return to idle pose
+                                                        this.time.delayedCall(200, () => {
+                                                            demon.setTexture('heroFront');
+                                                        });
                                                         this.tweens.add({
                                                             targets: demon,
                                                             x: baseX,
                                                             y: baseY,
-                                                            angle: 0,
                                                             scaleX: baseScaleX,
                                                             scaleY: baseScaleY,
                                                             duration: 400,

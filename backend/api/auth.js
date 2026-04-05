@@ -67,7 +67,6 @@ router.post('/register', async (req, res) => {
                     username,
                     password_hash: password, // Store plain for now, admin will create user with this
                     student_id: student_id || null,
-                    course: course || null,
                     status: 'pending'
                 })
                 .select()

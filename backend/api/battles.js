@@ -130,7 +130,7 @@ router.patch('/:id/join', authenticateUser, async (req, res) => {
 router.patch('/:id/complete', authenticateUser, async (req, res) => {
     try {
         const { id } = req.params;
-        const { winner_id, player1_score, player2_score } = req.body;
+        const { winner_id } = req.body;
 
         const { data: battle } = await supabase
             .from('battles')
@@ -151,8 +151,6 @@ router.patch('/:id/complete', authenticateUser, async (req, res) => {
             .from('battles')
             .update({
                 winner_id,
-                player1_score,
-                player2_score,
                 status: 'completed',
                 completed_at: new Date().toISOString()
             })
@@ -169,12 +167,22 @@ router.patch('/:id/complete', authenticateUser, async (req, res) => {
             return res.status(400).json({ error: error.message });
         }
 
-        // Award XP to winner
+        // Award XP to winner via user_progress (global row)
         if (winner_id) {
-            await supabase
-                .from('users')
-                .update({ xp: supabase.raw('xp + 50') })
-                .eq('id', winner_id);
+            const { data: progressRow } = await supabase
+                .from('user_progress')
+                .select('xp')
+                .eq('user_id', winner_id)
+                .eq('tower_id', 'global')
+                .single();
+
+            if (progressRow) {
+                await supabase
+                    .from('user_progress')
+                    .update({ xp: (progressRow.xp || 0) + 50 })
+                    .eq('user_id', winner_id)
+                    .eq('tower_id', 'global');
+            }
         }
 
         res.json({ message: 'Battle completed', battle: updated });
