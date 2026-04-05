@@ -36,27 +36,32 @@ const GrandArena = () => {
 
     // Initialize players state from location state
     useEffect(() => {
-        if (location.state?.players) {
-            setPlayers(location.state.players.map(p => ({
-                ...p,
+        if (location.state?.opponents && location.state.opponents.length > 0) {
+            const selfPlayer = {
+                id: user?.id || 1,
+                name: user?.name || 'OPERATIVE',
                 progress: 0,
-                isWin: false
-            })));
+                isWin: false,
+                avatar: user?.avatar_url || user?.avatar || heroAsset
+            };
+            const others = location.state.opponents.map(o => ({
+                ...o,
+                progress: 0,
+                isWin: false,
+                avatar: o.avatar || heroAsset
+            }));
+            setPlayers([selfPlayer, ...others]);
         } else {
             // Mock data for direct access
-            // Only set if not already set to avoid resets
             setPlayers(prev => {
                 if (prev.length > 0) return prev;
                 return [
-                    { id: user?.id || 1, name: user?.name || 'OPERATIVE', progress: 0, isWin: false, avatar: user?.avatar || heroAsset },
-                    { id: 101, name: 'CyberKnight_99', progress: 0, isWin: false, avatar: heroAsset },
-                    { id: 102, name: 'LogicQueen', progress: 0, isWin: false, avatar: heroAsset },
-                    { id: 103, name: 'CodeSlinger', progress: 0, isWin: false, avatar: heroAsset },
-                    { id: 104, name: 'ByteWizard', progress: 0, isWin: false, avatar: heroAsset }
+                    { id: user?.id || 1, name: user?.name || 'OPERATIVE', progress: 0, isWin: false, avatar: user?.avatar_url || user?.avatar || heroAsset },
+                    { id: 101, name: 'CyberKnight_99', progress: 0, isWin: false, avatar: heroAsset }
                 ];
             });
         }
-    }, [location.state]); // Removed user from dependencies to prevent reset on EXP update
+    }, [location.state, user]);
 
     const [blocks, setBlocks] = useState([]);
 
@@ -118,7 +123,7 @@ const GrandArena = () => {
             ...b,
             position: {
                 x: 100 + (i % 2) * 250,
-                y: 250 + Math.floor(i / 2) * 120
+                y: 100 + Math.floor(i / 2) * 120
             }
         }));
         setBlocks(initialized);
@@ -286,7 +291,7 @@ const GrandArena = () => {
                         <BattleScene
                             key="boss-battle-grand"
                             isMultiplayer={true}
-                            numOpponents={Math.max(2, players.length - 1)} // Guarantee at least 2 opponents visually
+                            numOpponents={Math.max(1, players.length - 1)} // Number of other players
                             outcome={battleOutcome}
                             onVideoResume={() => {
                                 if (videoRef.current) {
@@ -322,7 +327,6 @@ const GrandArena = () => {
                         <div className="flex items-center gap-6">
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-cyan-500 rounded-full animate-ping" />
-                                <span className="text-cyan-500 font-mono text-[10px] tracking-[0.2em] uppercase">GrandArena_Active</span>
                             </div>
                             <div className="h-6 w-px bg-cyan-900/50" />
                             <CodeTimer onExpire={handleTimeout} />
@@ -362,10 +366,6 @@ const GrandArena = () => {
 
                         {/* Controls - Withdraw */}
                         <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded">
-                                <img src={gemIcon} className="w-4 h-4 object-contain" alt="gem" />
-                                <span className="text-amber-500 font-mono text-xs font-bold leading-none">{wager} GEMS</span>
-                            </div>
                             <button
                                 onClick={handleWithdrawClick}
                                 className="text-slate-500 hover:text-white transition-colors"
@@ -438,22 +438,6 @@ const GrandArena = () => {
 
                         {/* Control Console */}
                         <div className="w-[380px] bg-[#080b14] border-l border-white/10 p-6 flex flex-col gap-6 shadow-[-20px_0_50px_rgba(0,0,0,0.5)] relative z-40">
-                            {/* EXP Wager */}
-                            <div className="bg-cyan-950/10 border border-cyan-500/20 p-4 relative group">
-                                <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-cyan-500/50" />
-                                <div className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-cyan-500/50" />
-                                <div className="flex items-center gap-4">
-                                    <div className="relative">
-                                        <div className="absolute inset-0 bg-yellow-500/20 blur-md rounded-full" />
-                                        <img src={expIcon} className="w-10 h-10 object-contain relative z-10" alt="EXP" />
-                                    </div>
-                                    <div>
-                                        <div className="text-cyan-500 text-[10px] uppercase tracking-widest font-bold">EXP WAGER</div>
-                                        <div className="text-white font-mono text-lg font-bold">+ {wager} EXP</div>
-                                    </div>
-                                </div>
-                            </div>
-
                             {/* Target Output */}
                             <div className="space-y-2">
                                 <h3 className="text-cyan-600 uppercase tracking-widest text-[10px] font-bold flex items-center gap-2">
