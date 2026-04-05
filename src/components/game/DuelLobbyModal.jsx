@@ -75,6 +75,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     React.useEffect(() => { selectedDifficultyRef.current = selectedDifficulty; }, [selectedDifficulty]);
     React.useEffect(() => { selectedModeRef.current = selectedMode; }, [selectedMode]);
     React.useEffect(() => { selectedWagerRef.current = selectedWager; }, [selectedWager]);
+    const userRef = React.useRef(user);
+    React.useEffect(() => { userRef.current = user; }, [user]);
 
     // MODALS
     const [showAddFriendModal, setShowAddFriendModal] = useState(false);
@@ -293,12 +295,15 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     }, [isOpen, resetLobbyState, user?.id]);
 
     useEffect(() => {
-        if (!isOpen || !user || !lobbyId) return;
+        if (!isOpen || !user?.id || !lobbyId) return;
+
+        // Use ref to get latest user data without triggering channel recreation
+        const currentUser = userRef.current || user;
 
         const channel = supabase.channel(`duel-lobby-${lobbyId}`, {
             config: {
                 presence: {
-                    key: user.id,
+                    key: currentUser.id,
                 },
                 broadcast: { ack: true, self: false }
             },
@@ -311,7 +316,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 const state = channel.presenceState();
                 const users = Object.values(state)
                     .flat()
-                    .filter(u => u.id !== user.id)
+                    .filter(u => u.id !== currentUser.id)
                     .map(u => ({
                         ...u,
                         status: 'online'
@@ -320,7 +325,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
 
             })
             .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-                const guest = newPresences.find(u => String(u.id) !== String(user.id));
+                const guest = newPresences.find(u => String(u.id) !== String(currentUser.id));
                 // If we are the host, robustly capture the opponent immediately when they join the Presence channel 
                 if (!initialOpponent && !opponentRef.current) {
                     if (guest) {
@@ -401,13 +406,13 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 }
             })
             .on('broadcast', { event: 'duel-invite' }, ({ payload }) => {
-                if (String(payload.targetId) === String(user.id)) {
+                if (String(payload.targetId) === String(currentUser.id)) {
 
                     // No longer auto-accepting. NotificationModal handles the UI.
                 }
             })
             .on('broadcast', { event: 'lobby-full' }, ({ payload }) => {
-                if (String(payload.targetId) === String(user.id)) {
+                if (String(payload.targetId) === String(currentUser.id)) {
                     toast.error('This duel lobby is full — the match already has an opponent.');
                     onBack();
                 }
@@ -415,7 +420,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             .on('broadcast', { event: 'duel-accept' }, ({ payload }) => {
                 // If we are the sender (host) and the recipient (guest) accepted
 
-                if (String(payload.targetId) === String(user.id)) {
+                if (String(payload.targetId) === String(currentUser.id)) {
                     // GUARD: If we already have an opponent, reject the late acceptor
                     if (opponentRef.current && String(opponentRef.current.id) !== String(payload.senderId)) {
                         console.log('[DuelLobby] Already have opponent, rejecting late acceptor:', payload.senderId);
@@ -456,7 +461,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             })
             .on('broadcast', { event: 'sync-settings' }, ({ payload }) => {
                 // Guest receives the host's match settings
-                if (String(payload.targetId) === String(user.id) || payload.targetId === '*') {
+                if (String(payload.targetId) === String(currentUser.id) || payload.targetId === '*') {
 
                     if (payload.language) setSelectedLanguage(payload.language);
                     setSelectedDifficulty(payload.difficulty);
@@ -473,7 +478,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 }
             })
             .on('broadcast', { event: 'game-start' }, ({ payload }) => {
-                if (String(payload.targetId) === String(user.id) && matchStateRef.current !== 'starting') {
+                if (String(payload.targetId) === String(currentUser.id) && matchStateRef.current !== 'starting') {
 
                     setBattleRecordId(payload.battleRecordId);
                     setMatchState('starting');
@@ -483,11 +488,11 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             .subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
                     await channel.track({
-                        id: user.id,
-                        name: user.name,
-                        avatar: user.avatar,
-                        rankName: user.rankName,
-                        rankIcon: user.rankIcon,
+                        id: currentUser.id,
+                        name: currentUser.name,
+                        avatar: currentUser.avatar,
+                        rankName: currentUser.rankName,
+                        rankIcon: currentUser.rankIcon,
                         heroImageKey: validatedHeroImage,
                         online_at: new Date().toISOString(),
                     });
@@ -502,11 +507,11 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                 event: 'duel-accept',
                                 payload: {
                                     targetId: initialOpponent.id,
-                                    senderId: user.id,
-                                    senderName: user.name,
-                                    senderAvatar: user.avatar,
-                                    senderRankName: user.rankName,
-                                    senderRankIcon: user.rankIcon,
+                                    senderId: currentUser.id,
+                                    senderName: currentUser.name,
+                                    senderAvatar: currentUser.avatar,
+                                    senderRankName: currentUser.rankName,
+                                    senderRankIcon: currentUser.rankIcon,
                                     senderHeroImageKey: validatedHeroImage
                                 }
                             });
@@ -555,14 +560,14 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                     await ch.send({
                         type: 'broadcast',
                         event: 'player-leave',
-                        payload: { playerId: user.id }
+                        payload: { playerId: currentUser.id }
                     });
                 } catch (e) { /* best effort */ }
                 await new Promise(r => setTimeout(r, 250));
                 supabase.removeChannel(ch);
             })();
         };
-    }, [isOpen, user, lobbyId]);
+    }, [isOpen, user?.id, lobbyId]);
 
     // --- TIMERS ---
 
