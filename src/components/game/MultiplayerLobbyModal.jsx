@@ -418,10 +418,8 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                         playerData: currentUser // Send our visual data so others can see us
                     });
 
-                    // If we joined via an invite, tell the host we are here!
                     if (initialInviter && initialInviter.id) {
-
-                        await channel.send({
+                        const acceptPayload = {
                             type: 'broadcast',
                             event: 'multi-invite-accept',
                             payload: {
@@ -433,7 +431,12 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                 senderRankIcon: currentUser.rankIcon,
                                 senderHeroImageKey: validatedHeroImage
                             }
-                        });
+                        };
+                        
+                        await channel.send(acceptPayload);
+                        // Redundancy payload broadcasts to prevent websocket race condition drops during cluster pairing
+                        setTimeout(() => channelRef.current?.send(acceptPayload), 1000);
+                        setTimeout(() => channelRef.current?.send(acceptPayload), 3000);
                     }
                 }
             });
@@ -1037,7 +1040,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
 
                                                     {player ? (
                                                         <>
-                                                            <div className={`absolute inset-x-[-10%] bottom-[5%] top-10 sm:top-8 md:top-6 z-10 pointer-events-none flex items-end justify-center ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
+                                                            <div className={`absolute inset-x-[-10%] bottom-[12%] top-10 sm:top-8 md:top-6 z-10 pointer-events-none flex items-end justify-center ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
                                                                 <motion.img
                                                                     initial={{ scale: 1.05 }}
                                                                     animate={{ scale: isGrey ? 1.0 : 1.15 }}
