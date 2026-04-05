@@ -348,20 +348,53 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                 };
 
                                 if (isDuel) {
-                                    // Keep opponent facing the player (heroFront) during attack
-                                    // The raise/attack sprites are back-view and make it look like turning around
+                                    // Animated casting sequence while keeping heroFront (no turning)
                                     demon.setTexture('heroFront');
                                     demon.setFlipX(false);
-                                    // Quick scale pulse to indicate casting, then launch fireball
+                                    const baseX = demon.x;
+                                    const baseY = demon.y;
+                                    const baseScaleX = demon.scaleX;
+                                    const baseScaleY = demon.scaleY;
+
+                                    // Phase 1: Lean back & raise (simulate staff lift)
                                     this.tweens.add({
                                         targets: demon,
-                                        scaleX: demon.scaleX * 1.15,
-                                        scaleY: demon.scaleY * 1.15,
-                                        duration: 300,
-                                        yoyo: true,
-                                        ease: 'Quad.easeOut',
+                                        x: baseX + 8,
+                                        y: baseY - 12,
+                                        angle: 6,
+                                        scaleX: baseScaleX * 1.08,
+                                        scaleY: baseScaleY * 1.12,
+                                        duration: 250,
+                                        ease: 'Back.easeOut',
                                         onComplete: () => {
-                                            launchOpAttack();
+                                            // Phase 2: Hold briefly at peak
+                                            this.time.delayedCall(100, () => {
+                                                // Phase 3: Lunge forward & cast (simulate staff swing)
+                                                this.tweens.add({
+                                                    targets: demon,
+                                                    x: baseX - 15,
+                                                    y: baseY + 4,
+                                                    angle: -8,
+                                                    scaleX: baseScaleX * 1.15,
+                                                    scaleY: baseScaleY * 0.95,
+                                                    duration: 150,
+                                                    ease: 'Quad.easeIn',
+                                                    onComplete: () => {
+                                                        launchOpAttack();
+                                                        // Phase 4: Return to idle pose
+                                                        this.tweens.add({
+                                                            targets: demon,
+                                                            x: baseX,
+                                                            y: baseY,
+                                                            angle: 0,
+                                                            scaleX: baseScaleX,
+                                                            scaleY: baseScaleY,
+                                                            duration: 400,
+                                                            ease: 'Sine.easeOut'
+                                                        });
+                                                    }
+                                                });
+                                            });
                                         }
                                     });
                                 } else {
