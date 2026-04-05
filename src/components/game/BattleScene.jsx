@@ -348,15 +348,21 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                 };
 
                                 if (isDuel) {
-                                    // Make opponent animate raising staff before attack
-                                    demon.setTexture('heroRaise1');
-                                    demon.setFlipX(false); // Keep facing the player (don't turn around)
-                                    this.time.delayedCall(250, () => {
-                                        demon.setTexture('heroRaise2');
-                                        this.time.delayedCall(250, () => {
-                                            demon.setTexture('heroAttack');
+                                    // Keep opponent facing the player (heroFront) during attack
+                                    // The raise/attack sprites are back-view and make it look like turning around
+                                    demon.setTexture('heroFront');
+                                    demon.setFlipX(false);
+                                    // Quick scale pulse to indicate casting, then launch fireball
+                                    this.tweens.add({
+                                        targets: demon,
+                                        scaleX: demon.scaleX * 1.15,
+                                        scaleY: demon.scaleY * 1.15,
+                                        duration: 300,
+                                        yoyo: true,
+                                        ease: 'Quad.easeOut',
+                                        onComplete: () => {
                                             launchOpAttack();
-                                        });
+                                        }
                                     });
                                 } else {
                                     launchOpAttack();
