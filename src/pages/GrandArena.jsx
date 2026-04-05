@@ -7,7 +7,7 @@ import { Swords, Trophy, Clock, X, User, Shield, Zap, Play, ZoomIn, ZoomOut, Max
 import PuzzleBlock from '../components/game/PuzzleBlock';
 import CodeTimer from '../components/game/CodeTimer';
 import Button from '../components/ui/Button';
-import supabase from '../api/supabaseClient';
+import supabase from '../lib/supabase';
 
 // Assets
 import gameCodeBg from '../assets/gamecodebg.jpg';
