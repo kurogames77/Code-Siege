@@ -285,7 +285,8 @@ const GrandArena = () => {
                     {showBattle && (
                         <BattleScene
                             key="boss-battle-grand"
-                            level={30} // Boss Battle for Grand Arena Finale
+                            isMultiplayer={true}
+                            numOpponents={Math.max(2, players.length - 1)} // Guarantee at least 2 opponents visually
                             outcome={battleOutcome}
                             onVideoResume={() => {
                                 if (videoRef.current) {
