@@ -201,6 +201,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                 hostId: user.id,
                 playerIds,
                 players: players,
+                matchState: matchState,
                 settings: {
                     language: selectedLanguage,
                     mode: selectedMode,
@@ -208,7 +209,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                 }
             }
         });
-    }, [players, user, selectedLanguage, selectedMode, selectedWager]);
+    }, [players, user, selectedLanguage, selectedMode, selectedWager, matchState]);
 
     // --- TIMERS & STATE MANAGEMENT ---
 
@@ -368,7 +369,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             .on('broadcast', { event: 'party-sync' }, (payload) => {
                 // Only NON-HOST party members receive the full updated player list + settings
                 // The host already has the authoritative state — don't overwrite it
-                const { playerIds, players: syncedPlayers, settings, hostId } = payload.payload;
+                const { playerIds, players: syncedPlayers, settings, hostId, matchState: hostMatchState } = payload.payload;
                 if (playerIds.includes(user.id) && hostId !== user.id) {
                     setPlayers(syncedPlayers);
                     // Sync match settings from host
@@ -376,6 +377,16 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                         setSelectedLanguage(settings.language);
                         setSelectedMode(settings.mode);
                         setSelectedWager(settings.wager);
+                    }
+                    // Sync searching/idle state
+                    if (hostMatchState && hostMatchState !== matchStateRef.current) {
+                        if (hostMatchState === 'searching') {
+                            setMatchState('searching');
+                            setTimer(60);
+                        } else if (hostMatchState === 'idle') {
+                            setMatchState('idle');
+                            setTimer(0);
+                        }
                     }
                 }
             })
@@ -630,7 +641,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             // Cancel Search
             setMatchState('idle');
             setTimer(0);
-            setPlayers([{ ...currentUser, isReady: true }]); // Reset back to just us
+            setPlayers(prev => prev.map(p => ({ ...p, isReady: true })));
         }
     };
 
