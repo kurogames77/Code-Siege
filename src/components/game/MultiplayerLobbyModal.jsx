@@ -127,6 +127,9 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
         matchStateRef.current = matchState;
     }, [matchState]);
 
+    // Debounce timers for presence leave events to avoid false kicks
+    const leaveTimersRef = React.useRef({});
+
     // Add inviter to players when opened via invite, and reset on close
     useEffect(() => {
         if (isOpen) {
@@ -305,18 +308,31 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                 setMatchmakingQueue(activePlayers);
             })
             .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+                // Don't remove ourselves
+                if (key === user.id) return;
 
-                // Remove player from our party UI if they leave presence
-                setPlayers(prev => {
-                    // Don't remove ourselves accidentally
-                    if (key === user.id) return prev;
-                    
-                    const filtered = prev.filter(p => p.id !== key);
-                    if (filtered.length !== prev.length) {
-                        return filtered;
+                // Cancel any existing timer for this user (in case of rapid leave/rejoin)
+                if (leaveTimersRef.current[key]) {
+                    clearTimeout(leaveTimersRef.current[key]);
+                }
+
+                // Debounce: wait 3 seconds, then check if they're truly gone
+                // Supabase Presence fires transient leave events when track() is called
+                leaveTimersRef.current[key] = setTimeout(() => {
+                    // Check if this player is still in the current presence state
+                    const currentPresence = channel.presenceState();
+                    if (!currentPresence[key] || currentPresence[key].length === 0) {
+                        // They are truly gone — remove from party
+                        setPlayers(prev => {
+                            const filtered = prev.filter(p => p.id !== key);
+                            if (filtered.length !== prev.length) {
+                                return filtered;
+                            }
+                            return prev;
+                        });
                     }
-                    return prev;
-                });
+                    delete leaveTimersRef.current[key];
+                }, 3000);
             })
             .on('broadcast', { event: 'match_found' }, (payload) => {
                 // If we are part of the match group broadcasted by the host
@@ -423,6 +439,10 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             });
 
         return () => {
+            // Clear all pending leave debounce timers
+            Object.values(leaveTimersRef.current).forEach(clearTimeout);
+            leaveTimersRef.current = {};
+
             if (channelRef.current) {
                 supabase.removeChannel(channelRef.current);
             }
