@@ -268,35 +268,38 @@ const GameNavbar = ({ onLobbyStateChange }) => {
 
     // Auto-open lobbies when navigating from arena battle
     useEffect(() => {
-        // Small delay to ensure component is fully mounted and state is stable
-        const timer = setTimeout(() => {
-            const params = new URLSearchParams(location.search);
-            const action = params.get('action');
+        const params = new URLSearchParams(location.search);
+        const action = params.get('action');
 
-            if (location.state?.openDuelLobby || action === 'openDuelLobby') {
-                // Check if opponent data was passed via navigation state
-                if (location.state?.duelOpponent) {
-                    setDuelOpponent(location.state.duelOpponent);
-                }
-                setIsDuelLobbyOpen(true);
-            }
-            if (location.state?.openMultiplayerLobby || action === 'openMultiplayerLobby') {
-                if (location.state?.multiplayerInviter) {
-                    setMultiplayerInviter(location.state.multiplayerInviter);
-                }
-                setIsMultiplayerLobbyOpen(true);
-            }
-            if (location.state?.openShop) {
-                setIsShopOpen(true);
-            }
+        let shouldClearState = false;
 
-            // Clean up query params if present
-            if (action) {
-                navigate(location.pathname, { replace: true });
+        if (location.state?.openDuelLobby || action === 'openDuelLobby') {
+            // Check if opponent data was passed via navigation state
+            if (location.state?.duelOpponent) {
+                setDuelOpponent(location.state.duelOpponent);
             }
-        }, 100);
+            setIsDuelLobbyOpen(true);
+            shouldClearState = true;
+        }
+        if (location.state?.openMultiplayerLobby || action === 'openMultiplayerLobby') {
+            if (location.state?.multiplayerInviter) {
+                setMultiplayerInviter(location.state.multiplayerInviter);
+            }
+            setIsMultiplayerLobbyOpen(true);
+            shouldClearState = true;
+        }
+        if (location.state?.openShop) {
+            setIsShopOpen(true);
+            shouldClearState = true;
+        }
 
-        return () => clearTimeout(timer);
+        // Clean up state and query params to prevent re-opening on refresh
+        if (shouldClearState) {
+            // Delay cleanup slightly to ensure modal state is fully initialized
+            setTimeout(() => {
+                navigate(location.pathname, { replace: true, state: {} });
+            }, 50);
+        }
     }, [location, navigate]);
 
     // Notify parent/context when lobby states change
