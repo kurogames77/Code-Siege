@@ -148,9 +148,9 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                 let currY = baseEnemyY;
                 
                 if (isMultiplayer && numToSpawn > 1) {
-                    // Stagger formation backwards to carefully avoid clumped sprites
-                    const xOffset = 60; // Spread out more horizontally
-                    const yOffset = -55; // Spread out more vertically
+                    // Stagger formation backwards to carefully avoid clumped sprites and overlapping healthbars
+                    const xOffset = 140; // Spread out more horizontally
+                    const yOffset = -70; // Spread out more vertically
                     const midIndex = (numToSpawn - 1) / 2;
                     currX = baseEnemyX + (i - midIndex) * xOffset;
                     currY = baseEnemyY + (i - midIndex) * yOffset;

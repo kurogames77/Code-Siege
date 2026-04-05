@@ -7,6 +7,7 @@ import { Swords, Trophy, Clock, X, User, Shield, Zap, Play, ZoomIn, ZoomOut, Max
 import PuzzleBlock from '../components/game/PuzzleBlock';
 import CodeTimer from '../components/game/CodeTimer';
 import Button from '../components/ui/Button';
+import supabase from '../api/supabaseClient';
 
 // Assets
 import gameCodeBg from '../assets/gamecodebg.jpg';
@@ -42,7 +43,8 @@ const GrandArena = () => {
                 name: user?.name || 'OPERATIVE',
                 progress: 0,
                 isWin: false,
-                avatar: user?.avatar_url || user?.avatar || heroAsset
+                avatar: user?.avatar_url || user?.avatar || heroAsset,
+                rankName: getRankData(user?.xp || 0).name || 'OPERATIVE'
             };
             const others = location.state.opponents.map(o => ({
                 ...o,
@@ -105,15 +107,25 @@ const GrandArena = () => {
         })
     );
 
+    // Helper to get rank names locally if missing from user map
+    const getRankData = (xp) => {
+        if (xp >= 50000) return { name: 'Sudo Master' };
+        if (xp >= 30000) return { name: 'Root Override' };
+        if (xp >= 15000) return { name: 'Cyber Knight' };
+        if (xp >= 5000) return { name: 'Binary Apprentice' };
+        if (xp >= 1000) return { name: 'Code Initiate' };
+        return { name: 'Siege Novice' };
+    };
+
     // Mock Puzzle Data
     const puzzle = {
         title: "Power Grid Optimization",
-        description: "Calculate the total power output by multiplying the base power (100) by the multiplier (X).",
+        description: "Calculate the total power output.",
         expectedOutput: "Total Power: 500",
         initialBlocks: [
-            { id: 'b1', content: 'total_power = 100 * x', type: 'function' },
-            { id: 'b2', content: 'print(f"Total Power: {total_power}")', type: 'string' },
-            { id: 'b3', content: 'x = 10', type: 'keyword' }
+            { id: 'b1', content: 'power = 100 * x', type: 'function' },
+            { id: 'b2', content: 'print(power)', type: 'string' },
+            { id: 'b3', content: 'x = 5', type: 'keyword' }
         ]
     };
 
@@ -130,76 +142,114 @@ const GrandArena = () => {
         setCanvasScale(getScaleForBlockCount(initialized.length));
     }, []);
 
-    // Simulate Opponent Progress
+    const arenaChannelRef = useRef(null);
+
+    // --- REALTIME MULTIPLAYER SYNC ---
     useEffect(() => {
-        if (isSuccess || isFailed || showPostScene) return;
+        if (!user || players.length === 0 || isSuccess || isFailed || showPostScene) return;
 
-        const interval = setInterval(() => {
-            setPlayers(currentPlayers => {
-                // If the player has already won, stop all simulation
-                if (currentPlayers.find(p => p.id === user?.id && p.progress >= 100)) return currentPlayers;
+        // Generate deterministic channel name based on party members
+        const partyIds = players.map(p => p.id).sort();
+        const channelName = `grand-arena-${partyIds.join('-')}`;
 
-                let someoneWon = false;
-                const newPlayers = currentPlayers.map(p => {
-                    if (p.id === user?.id || p.progress >= 100) return p;
+        const channel = supabase.channel(channelName, {
+            config: {
+                broadcast: { ack: true, self: false }
+            }
+        });
+        arenaChannelRef.current = channel;
 
-                    const increment = Math.random() * 2.5;
-                    const newProgress = Math.min(100, p.progress + increment);
-
-                    if (newProgress >= 100) someoneWon = true;
-
-                    return { ...p, progress: newProgress };
-                });
-
-                if (someoneWon) {
+        channel
+            .on('broadcast', { event: 'arena-progress' }, ({ payload }) => {
+                setPlayers(current => current.map(p => {
+                    if (p.id === payload.playerId) {
+                        return { ...p, progress: payload.progress };
+                    }
+                    return p;
+                }));
+            })
+            .on('broadcast', { event: 'arena-complete' }, ({ payload }) => {
+                if (payload.winnerId !== user.id) {
                     setIsFailed(true);
-                    setResult({ type: 'error', message: "ARENA DEFEATED - AN OPPONENT BREACHED THE SYSTEM!" });
-
-                    // TRIGGER DEFEAT FLOW
-                    const wagerAmount = parseInt(wager, 10) || 0;
-                    // Deduct logic handled in Battle/Defeat flow typically, 
-                    // but here we mark outcome first
+                    setResult({ type: 'error', message: `> ${payload.winnerName || 'An opponent'} solved the puzzle first! You lose.` });
                     setBattleOutcome('loss');
+                    const wagerAmount = parseInt(wager, 10) || 0;
                     updateExp(-wagerAmount);
-
-                    setTimeout(() => {
-                        setShowPostScene(true);
-                    }, 1500);
+                    setTimeout(() => setShowPostScene(true), 1500);
                 }
+            })
+            .subscribe();
 
-                return newPlayers;
-            });
-        }, 1500);
-
-        return () => clearInterval(interval);
-    }, [isSuccess, isFailed, showPostScene, wager, updateExp]);
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [user, players.length, isSuccess, isFailed, showPostScene, wager, updateExp]);
 
     const handleDragEnd = (event) => {
         const { active, delta } = event;
-        setBlocks((prev) =>
-            prev.map((block) => {
-                if (block.id !== active.id) return block;
-                
-                // Convert screen-space delta to canvas-space by dividing by scale
-                let newX = (block.position?.x || 0) + (delta.x / canvasScale);
-                let newY = (block.position?.y || 0) + (delta.y / canvasScale);
+        setBlocks((prev) => {
+            const currentBlock = prev.find(b => b.id === active.id);
+            if (!currentBlock) return prev;
 
-                // Clamp within container bounds
-                const padding = 20;
-                const containerW = containerRef.current ? containerRef.current.clientWidth / canvasScale : 2000;
-                const containerH = containerRef.current ? containerRef.current.clientHeight / canvasScale : 1500;
-                newX = Math.max(padding, Math.min(newX, containerW - 160));
-                newY = Math.max(padding, Math.min(newY, containerH - 80));
+            let newX = (currentBlock.position?.x || 0) + (delta.x / canvasScale);
+            let newY = (currentBlock.position?.y || 0) + (delta.y / canvasScale);
 
-                return {
-                    ...block,
-                    position: {
-                        x: Math.round(newX),
-                        y: Math.round(newY)
+            // Clamp bounds
+            const padding = 20;
+            const containerW = containerRef.current ? containerRef.current.clientWidth / canvasScale : 2000;
+            const containerH = containerRef.current ? containerRef.current.clientHeight / canvasScale : 1500;
+            newX = Math.max(padding, Math.min(newX, containerW - 160));
+            newY = Math.max(padding, Math.min(newY, containerH - 80));
+
+            const updatedBlock = { ...currentBlock, position: { x: Math.round(newX), y: Math.round(newY) } };
+            const newBlocks = [...prev];
+            const index = prev.findIndex(b => b.id === active.id);
+
+            // Snapping Logic
+            const SNAP_THRESHOLD = 30;
+            const BLOCK_HEIGHT = 65;
+            
+            for (const other of prev) {
+                if (other.id !== active.id) {
+                    const dx = newX - Math.round(other.position?.x || 0);
+                    const dy = newY - (Math.round(other.position?.y || 0) + BLOCK_HEIGHT);
+                    
+                    if (Math.abs(dy) < SNAP_THRESHOLD && Math.abs(dx) < SNAP_THRESHOLD) {
+                        updatedBlock.position = { 
+                            x: Math.round(other.position?.x || 0), 
+                            y: Math.round((other.position?.y || 0) + BLOCK_HEIGHT) 
+                        };
+                        playClick();
+                        break;
                     }
-                };
-            })
-        );
+                    
+                    const dyTop = newY - (Math.round(other.position?.y || 0) - BLOCK_HEIGHT);
+                    if (Math.abs(dyTop) < SNAP_THRESHOLD && Math.abs(dx) < SNAP_THRESHOLD) {
+                        updatedBlock.position = { 
+                            x: Math.round(other.position?.x || 0), 
+                            y: Math.round((other.position?.y || 0) - BLOCK_HEIGHT) 
+                        };
+                        playClick();
+                        break;
+                    }
+                }
+            }
+
+            newBlocks[index] = updatedBlock;
+
+            // Broadcast slight progress manually when building the chain
+            if (arenaChannelRef.current) {
+                try {
+                     arenaChannelRef.current.send({
+                         type: 'broadcast',
+                         event: 'arena-progress',
+                         payload: { playerId: user?.id, progress: Math.min(99, Math.random() * 40 + 30) }
+                     });
+                } catch(e) {}
+            }
+
+            return newBlocks;
+        });
     };
 
     const handleSubmit = () => {
@@ -211,6 +261,15 @@ const GrandArena = () => {
             setIsSuccess(true);
             setPlayers(prev => prev.map(p => p.id === user?.id ? { ...p, progress: 100 } : p));
             setResult({ type: 'success', message: "SYSTEM STABILIZED - RIFT SECURED!" });
+
+            // BROADCAST WIN TO PARTY
+            if (arenaChannelRef.current) {
+                arenaChannelRef.current.send({
+                    type: 'broadcast',
+                    event: 'arena-complete',
+                    payload: { winnerId: user?.id, winnerName: user?.name || user?.username }
+                });
+            }
 
             // TRIGGER VICTORY FLOW
             setBattleOutcome('win');
@@ -345,7 +404,7 @@ const GrandArena = () => {
                                         <div className="flex flex-col min-w-[100px]">
                                             <div className="flex items-baseline gap-1.5 mb-0.5">
                                                 <span className={`font-galsb text-[8px] tracking-wider uppercase ${isSelf ? 'text-cyan-400' : 'text-slate-500'}`}>
-                                                    {isSelf ? 'NOVICE' : 'AGENT'}
+                                                    {player.rankName || (isSelf ? 'NOVICE' : 'AGENT')}
                                                 </span>
                                                 <span className={`font-galsb text-[10px] tracking-widest uppercase truncate max-w-[80px] ${isSelf ? 'text-white' : 'text-slate-300'}`}>
                                                     {player.name}
