@@ -1040,23 +1040,24 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
 
                                                     {player ? (
                                                         <>
-                                                            <div className={`absolute inset-x-[-10%] bottom-[12%] top-10 sm:top-8 md:top-6 z-10 pointer-events-none flex items-end justify-center ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
+                                                            {/* Bottom Dark Gradient for Base readability */}
+                                                            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#0B1221]/90 via-[#0B1221]/30 to-transparent z-10 pointer-events-none rounded-b-xl" />
+
+                                                            {/* Hero Image */}
+                                                            <div className={`absolute inset-0 pt-28 pb-[18%] px-[-10%] z-10 pointer-events-none flex items-center justify-center ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
                                                                 <motion.img
-                                                                    initial={{ scale: 1.05 }}
-                                                                    animate={{ scale: isGrey ? 1.0 : 1.15 }}
+                                                                    initial={{ scale: 1.1 }}
+                                                                    animate={{ scale: isGrey ? 1.0 : 1.4 }}
                                                                     src={player.heroImage || player.avatar}
-                                                                    className={`w-[110%] max-h-full object-contain object-bottom transition-all duration-700 origin-bottom ${isGrey ? 'brightness-50 grayscale' : 'brightness-110'}`}
+                                                                    className={`w-[120%] h-[110%] object-contain object-center transition-all duration-700 drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] ${isGrey ? 'brightness-50 grayscale' : 'brightness-110'}`}
                                                                     alt="Hero"
                                                                 />
                                                             </div>
 
-                                                            {/* Bottom Dark Gradient for Rank readability */}
-                                                            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent z-10 pointer-events-none rounded-b-xl" />
-
                                                             {/* UI Elements (Avatar, Name, Rank) */}
                                                             <div className={`absolute inset-0 z-20 flex flex-col items-center h-full pointer-events-none ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
-                                                                <div className="relative flex flex-col items-center pt-4 px-2 w-full">
-                                                                    <div className={`w-14 h-14 rounded-lg border-2 p-0.5 mb-1.5 transition-all duration-500 pointer-events-auto flex items-center justify-center overflow-hidden bg-slate-800 ${isGrey ? 'border-slate-500' : 'border-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.5)]'}`}>
+                                                                <div className="relative flex flex-col items-center pt-5 px-2 w-full">
+                                                                    <div className={`w-14 h-14 rounded-lg border-2 p-0.5 mb-2 transition-all duration-500 pointer-events-auto flex items-center justify-center overflow-hidden bg-slate-800 ${isGrey ? 'border-slate-500' : 'border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.5)]'}`}>
                                                                         {player.avatar ? (
                                                                             <img src={player.avatar} className="w-full h-full object-cover rounded-md" alt="" />
                                                                         ) : (
@@ -1065,13 +1066,12 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                                                             </span>
                                                                         )}
                                                                     </div>
-                                                                    <h3 className={`text-[10px] font-black italic uppercase tracking-tighter text-center truncate w-full drop-shadow-[0_2px_8px_rgba(0,0,0,1)] ${isGrey ? 'text-slate-400' : 'text-white'}`}>{player.name}</h3>
-                                                                    <span className={`text-[9px] font-black uppercase tracking-[0.2em] drop-shadow-sm ${isGrey ? 'text-slate-500' : 'text-cyan-400'}`}>{displayRankName}</span>
-                                                                </div>
-
-                                                                {/* Rank Icon */}
-                                                                <div className="relative flex flex-col items-center pb-6 mt-auto w-full">
-                                                                    <img src={displayRankIcon} className={`w-12 h-12 object-contain drop-shadow-2xl transition-all ${isGrey ? 'grayscale opacity-50' : 'scale-110'}`} alt="Rank" />
+                                                                    <h3 className={`text-[11px] font-black italic uppercase tracking-tighter text-center truncate w-full drop-shadow-[0_2px_8px_rgba(0,0,0,1)] ${isGrey ? 'text-slate-400' : 'text-white'}`}>{player.name}</h3>
+                                                                    
+                                                                    <div className="flex items-center gap-1.5 mt-1.5 bg-black/60 px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-md">
+                                                                        <img src={displayRankIcon} className="w-4 h-4 sm:w-5 sm:h-5 object-contain" alt="" />
+                                                                        <span className={`text-[8.5px] font-black uppercase tracking-widest drop-shadow-sm ${isGrey ? 'text-slate-500' : 'text-cyan-400'}`}>{displayRankName}</span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </>
