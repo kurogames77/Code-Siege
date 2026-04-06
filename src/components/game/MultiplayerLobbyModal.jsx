@@ -1056,8 +1056,8 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
 
                                                             {/* UI Elements (Avatar, Name, Rank) */}
                                                             <div className={`absolute inset-0 z-20 flex flex-col items-center h-full pointer-events-none ${isGrey ? 'opacity-50' : 'opacity-100'}`}>
-                                                                <div className="relative flex flex-col items-center pt-5 px-2 w-full">
-                                                                    <div className={`w-14 h-14 rounded-lg border-2 p-0.5 mb-2 transition-all duration-500 pointer-events-auto flex items-center justify-center overflow-hidden bg-slate-800 ${isGrey ? 'border-slate-500' : 'border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.5)]'}`}>
+                                                                <div className="relative flex flex-col items-center pt-3 px-2 w-full">
+                                                                    <div className={`w-14 h-14 rounded-lg border-2 p-0.5 mb-1.5 transition-all duration-500 pointer-events-auto flex items-center justify-center overflow-hidden bg-slate-800 ${isGrey ? 'border-slate-500' : 'border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.5)]'}`}>
                                                                         {player.avatar ? (
                                                                             <img src={player.avatar} className="w-full h-full object-cover rounded-md" alt="" />
                                                                         ) : (
@@ -1068,7 +1068,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                                                     </div>
                                                                     <h3 className={`text-[11px] font-black italic uppercase tracking-tighter text-center truncate w-full drop-shadow-[0_2px_8px_rgba(0,0,0,1)] ${isGrey ? 'text-slate-400' : 'text-white'}`}>{player.name}</h3>
                                                                     
-                                                                    <div className="flex items-center gap-1.5 mt-1.5 bg-black/60 px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-md">
+                                                                    <div className="flex items-center gap-1.5 mt-2 bg-black/60 px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-md">
                                                                         <img src={displayRankIcon} className="w-4 h-4 sm:w-5 sm:h-5 object-contain" alt="" />
                                                                         <span className={`text-[8.5px] font-black uppercase tracking-widest drop-shadow-sm ${isGrey ? 'text-slate-500' : 'text-cyan-400'}`}>{displayRankName}</span>
                                                                     </div>

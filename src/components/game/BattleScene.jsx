@@ -135,8 +135,9 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
             const isBoss = level === 30 && !isDuel && !isMultiplayer;
 
             // Position: Base position for enemies
+            // Position enemies: in duel/multiplayer, match the same Y baseline as the hero
             const baseEnemyX = (isDuel || isMultiplayer) ? width * 0.72 : (isBoss ? width * 0.66 : width * 0.62);
-            const baseEnemyY = (isDuel || isMultiplayer) ? height * 0.58 : height * 0.52;
+            const baseEnemyY = (isDuel || isMultiplayer) ? startY : height * 0.52;
 
             const initialEnemyTexture = (isDuel || isMultiplayer) ? 'heroFront' : (isBoss ? 'bossfirst' : 'enemy22');
 
@@ -148,16 +149,15 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                 let currY = baseEnemyY;
                 
                 if (isMultiplayer && numToSpawn > 1) {
-                    // Stagger formation backwards to carefully avoid clumped sprites and overlapping healthbars
-                    const xOffset = 140; // Spread out more horizontally
-                    const yOffset = -70; // Spread out more vertically
+                    // Spread enemies horizontally only — keep same Y baseline as player hero
+                    const xOffset = 140;
                     const midIndex = (numToSpawn - 1) / 2;
                     currX = baseEnemyX + (i - midIndex) * xOffset;
-                    currY = baseEnemyY + (i - midIndex) * yOffset;
+                    // No vertical offset — all enemies on the same line
                 }
 
                 const d = this.add.sprite(currX, currY, initialEnemyTexture);
-                d.setScale((isDuel || isMultiplayer) ? 0.22 : (isBoss ? 0.3 : 0.2));
+                d.setScale((isDuel || isMultiplayer) ? 0.28 : (isBoss ? 0.3 : 0.2));
                 // Ensure depth sorting is proper so characters in front appear correctly
                 d.setDepth(5 + Math.round(currY / 10));
                 d.setAlpha(0); // Start invisible
@@ -214,7 +214,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
             let heroHealthBar = drawBar(startX - 30, startY - 120, 1, 0x00ff00);
             
             // Array of enemy health bars
-            let enemyHealthBars = enemyGroup.map(d => drawBar(d.x - 30, d.y - 100, 1, 0xff0000));
+            let enemyHealthBars = enemyGroup.map(d => drawBar(d.x - 30, d.y - 120, 1, 0xff0000));
             // Keep original reference for legacy logic compatibility 
             let enemyHealthBar = enemyHealthBars[0];
 
@@ -472,7 +472,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                     projectile.setDepth(20);
 
                                     if (enemyHealthBars[tIndex]) {
-                                        enemyHealthBars[tIndex] = updateHealth(enemyHealthBars[tIndex], targetEnemy.x - 30, targetEnemy.y - 100, 0, false);
+                                        enemyHealthBars[tIndex] = updateHealth(enemyHealthBars[tIndex], targetEnemy.x - 30, targetEnemy.y - 120, 0, false);
                                     }
 
                                     this.time.delayedCall(200, () => {

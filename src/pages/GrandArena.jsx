@@ -205,29 +205,48 @@ const GrandArena = () => {
             const newBlocks = [...prev];
             const index = prev.findIndex(b => b.id === active.id);
 
-            // Snapping Logic
-            const SNAP_THRESHOLD = 30;
-            const BLOCK_HEIGHT = 65;
+            // Snapping Logic — matches ArenaBattle (horizontal + vertical)
+            const SNAP_THRESHOLD = 50;
+            const BLOCK_WIDTH = 140;
+            const BLOCK_HEIGHT = 48;
             
             for (const other of prev) {
                 if (other.id !== active.id) {
                     const dx = newX - Math.round(other.position?.x || 0);
-                    const dy = newY - (Math.round(other.position?.y || 0) + BLOCK_HEIGHT);
-                    
-                    if (Math.abs(dy) < SNAP_THRESHOLD && Math.abs(dx) < SNAP_THRESHOLD) {
+                    const dy = newY - Math.round(other.position?.y || 0);
+
+                    // Snap RIGHT of other block (horizontal connect)
+                    if (Math.abs(dx - BLOCK_WIDTH) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
                         updatedBlock.position = { 
-                            x: Math.round(other.position?.x || 0), 
-                            y: Math.round((other.position?.y || 0) + BLOCK_HEIGHT) 
+                            x: Math.round(other.position?.x || 0) + BLOCK_WIDTH, 
+                            y: Math.round(other.position?.y || 0) 
                         };
                         playClick();
                         break;
                     }
-                    
-                    const dyTop = newY - (Math.round(other.position?.y || 0) - BLOCK_HEIGHT);
-                    if (Math.abs(dyTop) < SNAP_THRESHOLD && Math.abs(dx) < SNAP_THRESHOLD) {
+                    // Snap LEFT of other block (horizontal connect)
+                    if (Math.abs(dx + BLOCK_WIDTH) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
+                        updatedBlock.position = { 
+                            x: Math.round(other.position?.x || 0) - BLOCK_WIDTH, 
+                            y: Math.round(other.position?.y || 0) 
+                        };
+                        playClick();
+                        break;
+                    }
+                    // Snap BELOW other block (vertical connect)
+                    if (Math.abs(dy - BLOCK_HEIGHT) < SNAP_THRESHOLD && Math.abs(dx) < SNAP_THRESHOLD) {
                         updatedBlock.position = { 
                             x: Math.round(other.position?.x || 0), 
-                            y: Math.round((other.position?.y || 0) - BLOCK_HEIGHT) 
+                            y: Math.round(other.position?.y || 0) + BLOCK_HEIGHT 
+                        };
+                        playClick();
+                        break;
+                    }
+                    // Snap ABOVE other block (vertical connect)
+                    if (Math.abs(dy + BLOCK_HEIGHT) < SNAP_THRESHOLD && Math.abs(dx) < SNAP_THRESHOLD) {
+                        updatedBlock.position = { 
+                            x: Math.round(other.position?.x || 0), 
+                            y: Math.round(other.position?.y || 0) - BLOCK_HEIGHT 
                         };
                         playClick();
                         break;
