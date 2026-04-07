@@ -42,8 +42,7 @@ router.get('/search', authenticateUser, async (req, res) => {
             .from('user_progress')
             .select('level, xp')
             .eq('user_id', user.id)
-            .order('completed_at', { ascending: false })
-            .limit(1)
+            .eq('tower_id', 'global')
             .single();
             
         user.level = currentProgress?.level || 1;
@@ -80,8 +79,7 @@ router.get('/profile/:id', authenticateUser, async (req, res) => {
             .from('user_progress')
             .select('level, xp')
             .eq('user_id', user.id)
-            .order('completed_at', { ascending: false })
-            .limit(1)
+            .eq('tower_id', 'global')
             .single();
             
         user.level = currentProgress?.level || 1;
@@ -778,8 +776,7 @@ router.patch('/:id/gems', authenticateUser, async (req, res) => {
             .from('user_progress')
             .select('gems')
             .eq('user_id', id)
-            .order('completed_at', { ascending: false })
-            .limit(1)
+            .eq('tower_id', 'global')
             .single();
 
         const newGems = Math.max(0, (progressRow?.gems || 0) + amount);

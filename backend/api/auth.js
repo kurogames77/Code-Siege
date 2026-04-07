@@ -405,8 +405,7 @@ router.post('/login', async (req, res) => {
                 .from('user_progress')
                 .select('level, xp, gems, selected_hero')
                 .eq('user_id', data.user.id)
-                .order('completed_at', { ascending: false })
-                .limit(1)
+                .eq('tower_id', 'global')
                 .single();
             
             if (currentProgress) {
@@ -502,8 +501,7 @@ router.get('/me', async (req, res) => {
                 .from('user_progress')
                 .select('level, xp, gems, selected_hero')
                 .eq('user_id', user.id)
-                .order('completed_at', { ascending: false })
-                .limit(1)
+                .eq('tower_id', 'global')
                 .single();
             
             if (currentProgress) {

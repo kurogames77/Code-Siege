@@ -59,8 +59,7 @@ router.post('/complete', authenticateUser, async (req, res) => {
                 .from('user_progress')
                 .select('level, xp, gems, selected_hero')
                 .eq('user_id', req.user.id)
-                .order('completed_at', { ascending: false })
-                .limit(1)
+                .eq('tower_id', 'global')
                 .single();
                 
             // Insert new
@@ -109,8 +108,7 @@ router.patch('/xp', authenticateUser, async (req, res) => {
             .from('user_progress')
             .select('xp, level')
             .eq('user_id', req.user.id)
-            .order('completed_at', { ascending: false })
-            .limit(1)
+            .eq('tower_id', 'global')
             .single();
 
         const newXp = (userStats?.xp || 0) + amount;

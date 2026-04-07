@@ -434,7 +434,7 @@ router.get('/users', async (req, res) => {
                 .from('user_progress')
                 .select('user_id, level, xp, gems')
                 .in('user_id', userIds)
-                .order('completed_at', { ascending: false });
+                .eq('tower_id', 'global');
                 
             const statsMap = new Map();
             if (progressStats) {
