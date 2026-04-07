@@ -102,7 +102,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
             // --- HERO SETUP ---
             // In duel mode, position heroes closer and at matching sizes
             const startY = height * 0.7; // Ground level target
-            const startX = isDuel ? width * 0.22 : (width / 2) - 150;
+            const startX = isDuel ? width * 0.30 : (width / 2) - 150;
 
             // Start slightly higher (air) and smaller (depth)
             const hero = this.add.sprite(startX, startY - 50, 'heroBack');
@@ -115,7 +115,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                 targets: hero,
                 y: startY,           // Land on ground
                 alpha: 1,            // Fade in
-                scale: isDuel ? 0.28 : 0.4,  // Set full scale
+                scale: isDuel ? 0.35 : 0.4,  // Set full scale — duel hero closer to viewer
                 duration: 800,       // Faster arrival
                 ease: 'Back.easeOut' // "Pop" landing effect
             });
@@ -136,8 +136,8 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
 
             // Position: Base position for enemies
             // Position enemies: in duel/multiplayer, match the same Y baseline as the hero
-            const baseEnemyX = (isDuel || isMultiplayer) ? width * 0.78 : (isBoss ? width * 0.66 : width * 0.62);
-            const baseEnemyY = (isDuel || isMultiplayer) ? startY : height * 0.52;
+            const baseEnemyX = (isDuel || isMultiplayer) ? width * 0.82 : (isBoss ? width * 0.66 : width * 0.62);
+            const baseEnemyY = (isDuel || isMultiplayer) ? startY - 30 : height * 0.52;
 
             const initialEnemyTexture = (isDuel || isMultiplayer) ? 'heroFront' : (isBoss ? 'bossfirst' : 'enemy22');
 
@@ -157,7 +157,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                 }
 
                 const d = this.add.sprite(currX, currY, initialEnemyTexture);
-                d.setScale((isDuel || isMultiplayer) ? 0.28 : (isBoss ? 0.3 : 0.2));
+                d.setScale((isDuel || isMultiplayer) ? 0.22 : (isBoss ? 0.3 : 0.2));
                 // Ensure depth sorting is proper so characters in front appear correctly
                 d.setDepth(5 + Math.round(currY / 10));
                 d.setAlpha(0); // Start invisible
