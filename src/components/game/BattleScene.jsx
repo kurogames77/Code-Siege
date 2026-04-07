@@ -102,7 +102,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
             // --- HERO SETUP ---
             // In duel mode, position heroes closer and at matching sizes
             const startY = height * 0.7; // Ground level target
-            const startX = isDuel ? width * 0.28 : (width / 2) - 150;
+            const startX = isDuel ? width * 0.22 : (width / 2) - 150;
 
             // Start slightly higher (air) and smaller (depth)
             const hero = this.add.sprite(startX, startY - 50, 'heroBack');
@@ -116,7 +116,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                 y: startY,           // Land on ground
                 alpha: 1,            // Fade in
                 scale: isDuel ? 0.28 : 0.4,  // Set full scale
-                duration: 1200,      // Smooth arrival
+                duration: 800,       // Faster arrival
                 ease: 'Back.easeOut' // "Pop" landing effect
             });
 
@@ -136,7 +136,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
 
             // Position: Base position for enemies
             // Position enemies: in duel/multiplayer, match the same Y baseline as the hero
-            const baseEnemyX = (isDuel || isMultiplayer) ? width * 0.72 : (isBoss ? width * 0.66 : width * 0.62);
+            const baseEnemyX = (isDuel || isMultiplayer) ? width * 0.78 : (isBoss ? width * 0.66 : width * 0.62);
             const baseEnemyY = (isDuel || isMultiplayer) ? startY : height * 0.52;
 
             const initialEnemyTexture = (isDuel || isMultiplayer) ? 'heroFront' : (isBoss ? 'bossfirst' : 'enemy22');
@@ -180,7 +180,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                 this.tweens.add({
                     targets: d,
                     alpha: 1,
-                    duration: 1200,
+                    duration: 800,
                     ease: 'Linear'
                 });
 
@@ -211,10 +211,10 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
             };
 
             // Initial Bars
-            let heroHealthBar = drawBar(startX - 30, startY - 120, 1, 0x00ff00);
+            let heroHealthBar = drawBar(startX - 30, startY - 140, 1, 0x00ff00);
             
             // Array of enemy health bars
-            let enemyHealthBars = enemyGroup.map(d => drawBar(d.x - 30, d.y - 120, 1, 0xff0000));
+            let enemyHealthBars = enemyGroup.map(d => drawBar(d.x - 30, d.y - 140, 1, 0xff0000));
             // Keep original reference for legacy logic compatibility 
             let enemyHealthBar = enemyHealthBars[0];
 
@@ -262,7 +262,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                 // HERO REACTIONS
                                 if (outcome === 'loss') {
                                     // DEAD
-                                    heroHealthBar = updateHealth(heroHealthBar, startX - 30, startY - 120, 0, true);
+                                    heroHealthBar = updateHealth(heroHealthBar, startX - 30, startY - 140, 0, true);
 
                                     this.tweens.killTweensOf(hero);
                                     this.tweens.add({
@@ -282,7 +282,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                     });
                                 } else {
                                     // HIT
-                                    heroHealthBar = updateHealth(heroHealthBar, startX - 30, startY - 120, 0.8, true);
+                                    heroHealthBar = updateHealth(heroHealthBar, startX - 30, startY - 140, 0.8, true);
                                     this.cameras.main.shake(100, 0.005);
                                 }
 
@@ -295,10 +295,11 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
 
                     } else {
                         // STANDARD ENEMY IDLE OR DUEL IDLE
-                        if (current === 'enemy22' || ((isDuel || isMultiplayer) && cycleCount === 3)) {
+                        const duelAttackCycle = isDuel ? 2 : 3; // Duel attacks at 2s, others at 3s
+                        if (current === 'enemy22' || ((isDuel || isMultiplayer) && cycleCount === duelAttackCycle)) {
                             if (!isDuel && !isMultiplayer) demon.setTexture('enemy33');
 
-                            if (cycleCount === 3) { // 3rd tick is at 3s
+                            if (cycleCount === duelAttackCycle) { // Attack at the designated cycle
                                 const launchOpAttack = (attackerSprite, isLast) => {
                                     // Launch Enemy Projectile
                                     const projectileKey = (isDuel || isMultiplayer) ? 'fireball' : 'enemy33attack';
@@ -321,7 +322,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                             // Apply damage logic only once (for the last attacker)
                                             if (isLast) {
                                                 if (outcome === 'loss') {
-                                                    heroHealthBar = updateHealth(heroHealthBar, startX - 30, startY - 120, 0, true);
+                                                    heroHealthBar = updateHealth(heroHealthBar, startX - 30, startY - 140, 0, true);
                                                     this.tweens.killTweensOf(hero);
 
                                                     this.tweens.add({
@@ -343,7 +344,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                                         });
                                                     });
                                                 } else {
-                                                    heroHealthBar = updateHealth(heroHealthBar, startX - 30, startY - 120, 0.8, true);
+                                                    heroHealthBar = updateHealth(heroHealthBar, startX - 30, startY - 140, 0.8, true);
                                                     this.cameras.main.shake(100, 0.005);
                                                 }
                                             }
@@ -425,7 +426,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                             }
                         } else {
                             if (!isBoss && !isDuel && !isMultiplayer) demon.setTexture('enemy22');
-                            else if ((isDuel || isMultiplayer) && cycleCount !== 3) {
+                            else if ((isDuel || isMultiplayer) && cycleCount !== duelAttackCycle) {
                                 enemyGroup.forEach(d => {
                                     d.setTexture('heroFront');
                                     d.setFlipX(false);
@@ -437,7 +438,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
             });
 
             // 3. Sequence Logic
-            const ATTACK_DELAY = 4000; // Hero and enemy idle for 4 seconds
+            const ATTACK_DELAY = isDuel ? 3000 : 4000; // Faster attack in duel mode
 
             this.time.delayedCall(ATTACK_DELAY, () => {
                 // If we lost, Hero is dead/dying, abort attack
@@ -472,7 +473,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                     projectile.setDepth(20);
 
                                     if (enemyHealthBars[tIndex]) {
-                                        enemyHealthBars[tIndex] = updateHealth(enemyHealthBars[tIndex], targetEnemy.x - 30, targetEnemy.y - 120, 0, false);
+                                        enemyHealthBars[tIndex] = updateHealth(enemyHealthBars[tIndex], targetEnemy.x - 30, targetEnemy.y - 140, 0, false);
                                     }
 
                                     this.time.delayedCall(200, () => {
