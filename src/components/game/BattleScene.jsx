@@ -492,7 +492,9 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                             });
                                         } else if (isDuel || isMultiplayer) {
                                             this.tweens.killTweensOf(targetEnemy);
-                                            this.tweens.add({ targets: targetEnemy, y: targetEnemy.y + 60, scale: 0.20, duration: 500, ease: 'Bounce.easeOut' });
+                                            // Push defeated enemy far to the right and further down so they don't overlap with the hero walking to center
+                                            const defeatedX = isMultiplayer ? width * 0.85 + (tIndex * 80) : width * 0.88;
+                                            this.tweens.add({ targets: targetEnemy, x: defeatedX, y: targetEnemy.y + 100, scale: 0.20, duration: 600, ease: 'Bounce.easeOut' });
                                             targetEnemy.setTexture('hero2loss1');
                                             targetEnemy.setFlipX(true);
                                             this.time.delayedCall(200, () => {
