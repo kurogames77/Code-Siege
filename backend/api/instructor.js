@@ -811,7 +811,7 @@ router.get('/courses', async (req, res) => {
  */
 router.post('/courses', async (req, res) => {
     try {
-        const { id, name, icon_type, color, difficulty, mode } = req.body;
+        const { id, name } = req.body;
         const userId = req.user.id;
         const userRole = req.user.role;
 
@@ -843,10 +843,6 @@ router.post('/courses', async (req, res) => {
         const payload = {
             id,
             name,
-            icon_type,
-            color,
-            difficulty,
-            mode,
             instructor_id: existingCourse ? existingCourse.instructor_id : userId // Preserve owner or assign new
         };
 

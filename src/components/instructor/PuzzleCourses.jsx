@@ -266,11 +266,7 @@ const PuzzleCourses = ({ theme }) => {
 
             saveMutation.mutate({
                 id: selectedLang.id,
-                name: selectedLang.name,
-                color: selectedLang.color,
-                icon_type: 'custom',
-                difficulty: 'Beginner',
-                mode: 'Standard'
+                name: selectedLang.name
             }, {
                 onSuccess: () => handleCloseModal()
             });
@@ -366,14 +362,10 @@ const PuzzleCourses = ({ theme }) => {
             }
 
             // Update course in DB
-            // Ensure all required fields for 'upsert' are present (id, name, icon_type, color, difficulty, mode)
+            // Ensure all required fields for 'upsert' are present (id, name)
             saveMutation.mutate({
                 id: selectedCourse.id,
-                name: selectedCourse.name,
-                icon_type: selectedCourse.icon_type || selectedCourse.id, // Fallback to ID if icon_type missing
-                color: selectedCourse.color || 'blue',
-                difficulty: formData.difficulty,
-                mode: formData.mode
+                name: selectedCourse.name
             });
 
         } catch (error) {
@@ -389,9 +381,8 @@ const PuzzleCourses = ({ theme }) => {
     const handleUpdateSubmit = (e) => {
         e.preventDefault();
         saveMutation.mutate({
-            ...selectedCourse,
-            difficulty: formData.difficulty,
-            mode: formData.mode
+            id: selectedCourse.id,
+            name: selectedCourse.name
         }, {
             onSuccess: () => handleCloseModal()
         });
