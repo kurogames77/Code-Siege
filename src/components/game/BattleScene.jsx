@@ -142,8 +142,8 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
             const initialEnemyTexture = (isDuel || isMultiplayer) ? 'heroFront' : (isBoss ? 'bossfirst' : 'enemy22');
 
             const enemyGroup = [];
-            const numToSpawn = isMultiplayer ? Math.max(2, numOpponents) : 1;
-
+            // In multiplayer: if win, face all opponents (fallback to 4 if not provided). If loss, face only the winning hero.
+            const numToSpawn = isMultiplayer ? (outcome === 'win' ? Math.max(2, numOpponents || 4) : 1) : 1;
             for (let i = 0; i < numToSpawn; i++) {
                 let currX = baseEnemyX;
                 let currY = baseEnemyY;
