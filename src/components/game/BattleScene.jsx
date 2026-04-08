@@ -136,7 +136,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
 
             // Position: Base position for enemies
             // Position enemies: in duel/multiplayer, match the same Y baseline as the hero
-            const baseEnemyX = (isDuel || isMultiplayer) ? width * 0.82 : (isBoss ? width * 0.66 : width * 0.62);
+            const baseEnemyX = (isDuel || isMultiplayer) ? width * 0.88 : (isBoss ? width * 0.66 : width * 0.62);
             const baseEnemyY = (isDuel || isMultiplayer) ? startY - 30 : height * 0.52;
 
             const initialEnemyTexture = (isDuel || isMultiplayer) ? 'heroFront' : (isBoss ? 'bossfirst' : 'enemy22');
@@ -494,7 +494,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                         } else if (isDuel || isMultiplayer) {
                                             this.tweens.killTweensOf(targetEnemy);
                                             // Push defeated enemy far to the right and further down so they don't overlap with the hero walking to center
-                                            const defeatedX = isMultiplayer ? width * 0.85 + (tIndex * 80) : width * 0.88;
+                                            const defeatedX = isMultiplayer ? width * 0.92 + (tIndex * 80) : width * 0.95;
                                             this.tweens.add({ targets: targetEnemy, x: defeatedX, y: targetEnemy.y + 100, scale: 0.20, duration: 600, ease: 'Bounce.easeOut' });
                                             targetEnemy.setTexture('hero2loss1');
                                             targetEnemy.setFlipX(true);
