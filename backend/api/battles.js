@@ -16,9 +16,12 @@ router.get('/', authenticateUser, async (req, res) => {
                 *,
                 player1:player1_id(id, username, avatar_url),
                 player2:player2_id(id, username, avatar_url),
+                player3:player3_id(id, username, avatar_url),
+                player4:player4_id(id, username, avatar_url),
+                player5:player5_id(id, username, avatar_url),
                 winner:winner_id(id, username)
             `)
-            .or(`player1_id.eq.${req.user.id},player2_id.eq.${req.user.id}`)
+            .or(`player1_id.eq.${req.user.id},player2_id.eq.${req.user.id},player3_id.eq.${req.user.id},player4_id.eq.${req.user.id},player5_id.eq.${req.user.id}`)
             .order('created_at', { ascending: false })
             .limit(50);
 
@@ -94,21 +97,36 @@ router.patch('/:id/join', authenticateUser, async (req, res) => {
             return res.status(400).json({ error: 'Battle is not available' });
         }
 
-        if (battle.player1_id === req.user.id) {
-            return res.status(400).json({ error: 'Cannot join your own battle' });
+        if ([battle.player1_id, battle.player2_id, battle.player3_id, battle.player4_id, battle.player5_id].includes(req.user.id)) {
+            return res.status(400).json({ error: 'Already joined this battle' });
         }
+
+        let slotToFill = null;
+        if (!battle.player2_id) slotToFill = 'player2_id';
+        else if (!battle.player3_id) slotToFill = 'player3_id';
+        else if (!battle.player4_id) slotToFill = 'player4_id';
+        else if (!battle.player5_id) slotToFill = 'player5_id';
+
+        if (!slotToFill) {
+            return res.status(400).json({ error: 'Battle is full' });
+        }
+
+        const updatePayload = {
+            [slotToFill]: req.user.id,
+            status: 'active'
+        };
 
         const { data: updated, error } = await supabase
             .from('battles')
-            .update({
-                player2_id: req.user.id,
-                status: 'active'
-            })
+            .update(updatePayload)
             .eq('id', id)
             .select(`
                 *,
                 player1:player1_id(id, username, avatar_url),
-                player2:player2_id(id, username, avatar_url)
+                player2:player2_id(id, username, avatar_url),
+                player3:player3_id(id, username, avatar_url),
+                player4:player4_id(id, username, avatar_url),
+                player5:player5_id(id, username, avatar_url)
             `)
             .single();
 
@@ -143,7 +161,7 @@ router.patch('/:id/complete', authenticateUser, async (req, res) => {
         }
 
         // Verify user is a participant
-        if (battle.player1_id !== req.user.id && battle.player2_id !== req.user.id) {
+        if (![battle.player1_id, battle.player2_id, battle.player3_id, battle.player4_id, battle.player5_id].includes(req.user.id)) {
             return res.status(403).json({ error: 'Not a participant' });
         }
 
@@ -159,6 +177,9 @@ router.patch('/:id/complete', authenticateUser, async (req, res) => {
                 *,
                 player1:player1_id(id, username, avatar_url),
                 player2:player2_id(id, username, avatar_url),
+                player3:player3_id(id, username, avatar_url),
+                player4:player4_id(id, username, avatar_url),
+                player5:player5_id(id, username, avatar_url),
                 winner:winner_id(id, username)
             `)
             .single();
