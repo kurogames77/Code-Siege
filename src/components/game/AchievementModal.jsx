@@ -61,25 +61,25 @@ const AchievementModal = ({ isOpen, onClose }) => {
         { id: 2, title: 'Python Enchanter', description: 'Master intermediate Python concepts', progress: 0, total: 10, reward: '500 EXP', rewardIcon: expIcon, status: 'locked', image: pythonEnchanter, category: 'PYTHON', gemReward: 3 },
         { id: 3, title: 'Python Grand Sorceres', description: 'Reach advanced Python mastery', progress: 0, total: 5, reward: '1000 EXP', rewardIcon: expIcon, status: 'locked', image: grandSorceres, category: 'PYTHON', gemReward: 5 },
         // C# Set
-        { id: 4, title: 'C# Initiate', description: 'Begin your journey into C# development', progress: 0, total: 1, reward: '150 EXP', rewardIcon: expIcon, status: 'locked', image: cshInitiate, category: 'CSHARP', gemReward: 2 },
-        { id: 5, title: 'C# Spell Engineer', description: 'Engineered complex systems in C#', progress: 0, total: 5, reward: '600 EXP', rewardIcon: expIcon, status: 'locked', image: cshSpellEngineer, category: 'CSHARP', gemReward: 4 },
-        { id: 6, title: 'C# System Architect', description: 'Master the architecture of C# systems', progress: 0, total: 10, reward: '1200 EXP', rewardIcon: expIcon, status: 'locked', image: cshSystemArchitect, category: 'CSHARP', gemReward: 5 },
+        { id: 4, title: 'C# Initiate', description: 'Complete all beginner C# challenges', progress: 0, total: 1, reward: '150 EXP', rewardIcon: expIcon, status: 'locked', image: cshInitiate, category: 'CSHARP', gemReward: 2 },
+        { id: 5, title: 'C# Spell Engineer', description: 'Master intermediate C# concepts', progress: 0, total: 5, reward: '600 EXP', rewardIcon: expIcon, status: 'locked', image: cshSpellEngineer, category: 'CSHARP', gemReward: 4 },
+        { id: 6, title: 'C# System Architect', description: 'Reach advanced C# mastery', progress: 0, total: 10, reward: '1200 EXP', rewardIcon: expIcon, status: 'locked', image: cshSystemArchitect, category: 'CSHARP', gemReward: 5 },
         // C++ Set
-        { id: 7, title: 'C++ Forge Adept', description: 'Forge your path in the fires of C++', progress: 0, total: 1, reward: '200 EXP', rewardIcon: expIcon, status: 'locked', image: cppForgeAddect, category: 'CPP', gemReward: 3 },
-        { id: 8, title: 'C++ System Knight', description: 'Protect the memory safety of C++', progress: 0, total: 5, reward: '700 EXP', rewardIcon: expIcon, status: 'locked', image: cppSystemKnight, category: 'CPP', gemReward: 4 },
-        { id: 9, title: 'C++ Obsidian Mage', description: 'Wield the dark magic of low-level optimization', progress: 0, total: 10, reward: '1500 EXP', rewardIcon: <Trophy className="w-3 h-3 text-purple-400" />, status: 'locked', image: cppObsidianMage, category: 'CPP', gemReward: 5 },
+        { id: 7, title: 'C++ Forge Adept', description: 'Complete all beginner C++ challenges', progress: 0, total: 1, reward: '200 EXP', rewardIcon: expIcon, status: 'locked', image: cppForgeAddect, category: 'CPP', gemReward: 3 },
+        { id: 8, title: 'C++ System Knight', description: 'Master intermediate C++ concepts', progress: 0, total: 5, reward: '700 EXP', rewardIcon: expIcon, status: 'locked', image: cppSystemKnight, category: 'CPP', gemReward: 4 },
+        { id: 9, title: 'C++ Obsidian Mage', description: 'Reach advanced C++ mastery', progress: 0, total: 10, reward: '1500 EXP', rewardIcon: <Trophy className="w-3 h-3 text-purple-400" />, status: 'locked', image: cppObsidianMage, category: 'CPP', gemReward: 5 },
         // JavaScript Set
-        { id: 10, title: 'JavaScript Spark', description: 'Ignite your web development skills', progress: 0, total: 1, reward: '100 EXP', rewardIcon: expIcon, status: 'locked', image: jsSpark, category: 'JAVASCRIPT', gemReward: 2 },
-        { id: 11, title: 'JavaScript Conductor', description: 'Conduct asynchronous flows with ease', progress: 0, total: 5, reward: '500 EXP', rewardIcon: expIcon, status: 'locked', image: jsConductor, category: 'JAVASCRIPT', gemReward: 3 },
-        { id: 12, title: 'JavaScript Storm Architect', description: 'Architect complex frontend applications', progress: 0, total: 10, reward: '1000 EXP', rewardIcon: expIcon, status: 'locked', image: jsStormArchitect, category: 'JAVASCRIPT', gemReward: 5 },
+        { id: 10, title: 'JavaScript Spark', description: 'Complete all beginner JavaScript challenges', progress: 0, total: 1, reward: '100 EXP', rewardIcon: expIcon, status: 'locked', image: jsSpark, category: 'JAVASCRIPT', gemReward: 2 },
+        { id: 11, title: 'JavaScript Conductor', description: 'Master intermediate JavaScript concepts', progress: 0, total: 5, reward: '500 EXP', rewardIcon: expIcon, status: 'locked', image: jsConductor, category: 'JAVASCRIPT', gemReward: 3 },
+        { id: 12, title: 'JavaScript Storm Architect', description: 'Reach advanced JavaScript mastery', progress: 0, total: 10, reward: '1000 EXP', rewardIcon: expIcon, status: 'locked', image: jsStormArchitect, category: 'JAVASCRIPT', gemReward: 5 },
         // PHP Set
-        { id: 13, title: 'PHP Scribe', description: 'Learn the ancient scrolls of server-side scripting', progress: 0, total: 1, reward: '100 EXP', rewardIcon: expIcon, status: 'locked', image: phpScribe, category: 'PHP', gemReward: 2 },
-        { id: 14, title: 'PHP Alchemist', description: 'Transmute data into dynamic web content', progress: 0, total: 5, reward: '500 EXP', rewardIcon: expIcon, status: 'locked', image: phpAlchemist, category: 'PHP', gemReward: 3 },
-        { id: 15, title: 'PHP Grand Weaver', description: 'Weave intricate backend systems', progress: 0, total: 10, reward: '1000 EXP', rewardIcon: expIcon, status: 'locked', image: phpGransWeaver, category: 'PHP', gemReward: 5 },
+        { id: 13, title: 'PHP Scribe', description: 'Complete all beginner PHP challenges', progress: 0, total: 1, reward: '100 EXP', rewardIcon: expIcon, status: 'locked', image: phpScribe, category: 'PHP', gemReward: 2 },
+        { id: 14, title: 'PHP Alchemist', description: 'Master intermediate PHP concepts', progress: 0, total: 5, reward: '500 EXP', rewardIcon: expIcon, status: 'locked', image: phpAlchemist, category: 'PHP', gemReward: 3 },
+        { id: 15, title: 'PHP Grand Weaver', description: 'Reach advanced PHP mastery', progress: 0, total: 10, reward: '1000 EXP', rewardIcon: expIcon, status: 'locked', image: phpGransWeaver, category: 'PHP', gemReward: 5 },
         // MySQL Set
-        { id: 16, title: 'MySQL Data Scribe', description: 'Record information in the digital archives', progress: 0, total: 1, reward: '120 EXP', rewardIcon: expIcon, status: 'locked', image: mysqlDataScribe, category: 'MYSQL', gemReward: 2 },
-        { id: 17, title: 'MySQL Query Master', description: 'Search through the archives with efficiency', progress: 0, total: 5, reward: '600 EXP', rewardIcon: expIcon, status: 'locked', image: mysqlQueryMaster, category: 'MYSQL', gemReward: 3 },
-        { id: 18, title: 'MySQL Schema Architect', description: 'Design the foundations of database structures', progress: 0, total: 10, reward: '1200 EXP', rewardIcon: expIcon, status: 'locked', image: mysqlSchemaArchitect, category: 'MYSQL', gemReward: 5 }
+        { id: 16, title: 'MySQL Data Scribe', description: 'Complete all beginner MySQL challenges', progress: 0, total: 1, reward: '120 EXP', rewardIcon: expIcon, status: 'locked', image: mysqlDataScribe, category: 'MYSQL', gemReward: 2 },
+        { id: 17, title: 'MySQL Query Master', description: 'Master intermediate MySQL concepts', progress: 0, total: 5, reward: '600 EXP', rewardIcon: expIcon, status: 'locked', image: mysqlQueryMaster, category: 'MYSQL', gemReward: 3 },
+        { id: 18, title: 'MySQL Schema Architect', description: 'Reach advanced MySQL mastery', progress: 0, total: 10, reward: '1200 EXP', rewardIcon: expIcon, status: 'locked', image: mysqlSchemaArchitect, category: 'MYSQL', gemReward: 5 }
     ];
 
     const filteredAchievements = achievements.filter(a => {
