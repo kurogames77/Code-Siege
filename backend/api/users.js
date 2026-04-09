@@ -520,48 +520,53 @@ router.post('/duel-invite', authenticateUser, async (req, res) => {
 
 /**
  * GET /api/users/leaderboard
- * Get top users sorted by XP for leaderboard
+ * Get top users sorted by PvP wins (1v1 duel and multiplayer) for leaderboard
  */
 router.get('/leaderboard', async (req, res) => {
     try {
-            const { timeframe = 'weekly', limit = 50 } = req.query;
+        const { timeframe = 'weekly', limit = 50 } = req.query;
 
-            // Fetch top users sorted by XP using raw user_progress 
-            // Since we sync xp across all rows, we can get distinct user_id or use the user_id's max xp
-            // We'll use a direct descending search on user_progress but take unique user_ids
-            const { data: progressRecords, error } = await supabaseService
-                .from('user_progress')
-                .select('user_id, level, xp, users(id, username, avatar_url)')
-                .order('xp', { ascending: false });
+        // Fetch battles to determine PvP ranking
+        const { data: battles, error } = await supabaseService
+            .from('battles')
+            .select('winner_id, winner:winner_id(id, username, avatar_url)')
+            .not('winner_id', 'is', null);
 
-            if (error) {
-                return res.status(400).json({ error: error.message });
-            }
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
 
-            // Deduplicate to find correct top XP per user
-            const usersMap = new Map();
-            progressRecords?.forEach(record => {
-                if (!usersMap.has(record.user_id) && record.users) {
-                    usersMap.set(record.user_id, {
-                        id: record.users.id,
-                        name: record.users.username,
-                        avatar: record.users.avatar_url,
-                        score: record.xp || 0,
-                        level: record.level || 1
+        // Tally wins (50 EXP per win)
+        const usersMap = new Map();
+        battles?.forEach(battle => {
+            const wId = battle.winner_id;
+            if (wId && battle.winner) {
+                if (!usersMap.has(wId)) {
+                    usersMap.set(wId, {
+                        id: battle.winner.id,
+                        name: battle.winner.username,
+                        avatar: battle.winner.avatar_url,
+                        score: 0,
+                        level: 1 // Default level placeholder
                     });
                 }
-            });
-            
-            const uniqueUsers = Array.from(usersMap.values()).slice(0, parseInt(limit));
+                usersMap.get(wId).score += 50;
+            }
+        });
+        
+        // Convert to array and sort descending by score
+        const uniqueUsers = Array.from(usersMap.values())
+            .sort((a, b) => b.score - a.score)
+            .slice(0, parseInt(limit));
 
-            // Format leaderboard data
-            const leaderboard = uniqueUsers.map((user, index) => ({
-                rank: index + 1,
-                ...user
-            }));
+        // Format leaderboard data
+        const leaderboard = uniqueUsers.map((user, index) => ({
+            rank: index + 1,
+            ...user
+        }));
 
-            res.json({ leaderboard, timeframe });
-        } catch (error) {
+        res.json({ leaderboard, timeframe });
+    } catch (error) {
         console.error('Leaderboard error:', error);
         res.status(500).json({ error: 'Failed to fetch leaderboard' });
     }

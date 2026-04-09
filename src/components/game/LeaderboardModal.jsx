@@ -217,7 +217,7 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                         <Loader2 className={`w-12 h-12 text-${currentTheme.colors.primary}-400 animate-spin`} />
                                         <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Loading Rankings...</p>
                                     </div>
-                                ) : topPlayers.length < 3 ? (
+                                ) : topPlayers.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center gap-4 text-center">
                                         <Trophy className="w-16 h-16 text-slate-700" />
                                         <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">No Rankings Yet</p>
@@ -226,31 +226,33 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                 ) : (
                                     <div className="flex items-end justify-center gap-4 w-full">
                                         {/* 2nd Place */}
-                                        <motion.div
-                                            variants={podiumVariants}
-                                            className="flex-1 flex flex-col items-center max-w-[140px]"
-                                        >
-                                            <div className="relative mb-6 group cursor-pointer">
-                                                <div className="w-24 h-24 rounded-full border-2 border-slate-400 p-1 bg-slate-900 relative z-10 group-hover:scale-110 transition-transform duration-500">
-                                                    <img src={topPlayers[1].avatar} className="w-full h-full object-cover rounded-full" alt="" />
-                                                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-slate-400 text-slate-950 font-black rounded-full flex items-center justify-center border-2 border-slate-900 text-sm">2</div>
+                                        {topPlayers[1] ? (
+                                            <motion.div
+                                                variants={podiumVariants}
+                                                className="flex-1 flex flex-col items-center max-w-[140px]"
+                                            >
+                                                <div className="relative mb-6 group cursor-pointer">
+                                                    <div className="w-24 h-24 rounded-full border-2 border-slate-400 p-1 bg-slate-900 relative z-10 group-hover:scale-110 transition-transform duration-500">
+                                                        <img src={topPlayers[1].avatar} className="w-full h-full object-cover rounded-full" alt="" />
+                                                        <div className="absolute -top-2 -right-2 w-8 h-8 bg-slate-400 text-slate-950 font-black rounded-full flex items-center justify-center border-2 border-slate-900 text-sm">2</div>
+                                                    </div>
+                                                    <motion.div
+                                                        animate={{ scale: [1, 1.1, 1] }}
+                                                        transition={{ duration: 2, repeat: Infinity }}
+                                                        className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-12 h-12 z-20"
+                                                    >
+                                                        <img src={topPlayers[1].rankIcon} className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]" alt="" />
+                                                    </motion.div>
                                                 </div>
-                                                <motion.div
-                                                    animate={{ scale: [1, 1.1, 1] }}
-                                                    transition={{ duration: 2, repeat: Infinity }}
-                                                    className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-12 h-12 z-20"
-                                                >
-                                                    <img src={topPlayers[1].rankIcon} className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]" alt="" />
-                                                </motion.div>
-                                            </div>
-                                            <div className="text-center w-full">
-                                                <h3 className="text-sm font-black text-white uppercase italic truncate mb-0.5">{topPlayers[1].name}</h3>
-                                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-2">{topPlayers[1].rankName}</p>
-                                                <div className={`bg-slate-900/50 border border-white/10 rounded-lg py-1.5 px-3 group hover:border-${currentTheme.colors.primary}-500/50 transition-colors`}>
-                                                    <span className={`text-xs font-black text-${currentTheme.colors.primary}-400 group-hover:text-white transition-colors`}>{topPlayers[1].score.toLocaleString()} <span className="text-[8px] opacity-60">EXP</span></span>
+                                                <div className="text-center w-full">
+                                                    <h3 className="text-sm font-black text-white uppercase italic truncate mb-0.5">{topPlayers[1].name}</h3>
+                                                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-2">{topPlayers[1].rankName}</p>
+                                                    <div className={`bg-slate-900/50 border border-white/10 rounded-lg py-1.5 px-3 group hover:border-${currentTheme.colors.primary}-500/50 transition-colors`}>
+                                                        <span className={`text-xs font-black text-${currentTheme.colors.primary}-400 group-hover:text-white transition-colors`}>{topPlayers[1].score.toLocaleString()} <span className="text-[8px] opacity-60">EXP</span></span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </motion.div>
+                                            </motion.div>
+                                        ) : <div className="flex-1 max-w-[140px]" />}
 
                                         {/* 1st Place */}
                                         <motion.div
@@ -287,31 +289,33 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                         </motion.div>
 
                                         {/* 3rd Place */}
-                                        <motion.div
-                                            variants={podiumVariants}
-                                            className="flex-1 flex flex-col items-center max-w-[140px]"
-                                        >
-                                            <div className="relative mb-6 group cursor-pointer">
-                                                <div className="w-24 h-24 rounded-full border-2 border-orange-700 p-1 bg-slate-900 relative z-10 group-hover:scale-110 transition-transform duration-500">
-                                                    <img src={topPlayers[2].avatar} className="w-full h-full object-cover rounded-full" alt="" />
-                                                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-orange-700 text-orange-50 font-black rounded-full flex items-center justify-center border-2 border-slate-900 text-sm">3</div>
+                                        {topPlayers[2] ? (
+                                            <motion.div
+                                                variants={podiumVariants}
+                                                className="flex-1 flex flex-col items-center max-w-[140px]"
+                                            >
+                                                <div className="relative mb-6 group cursor-pointer">
+                                                    <div className="w-24 h-24 rounded-full border-2 border-orange-700 p-1 bg-slate-900 relative z-10 group-hover:scale-110 transition-transform duration-500">
+                                                        <img src={topPlayers[2].avatar} className="w-full h-full object-cover rounded-full" alt="" />
+                                                        <div className="absolute -top-2 -right-2 w-8 h-8 bg-orange-700 text-orange-50 font-black rounded-full flex items-center justify-center border-2 border-slate-900 text-sm">3</div>
+                                                    </div>
+                                                    <motion.div
+                                                        animate={{ scale: [1, 1.1, 1] }}
+                                                        transition={{ duration: 2.5, repeat: Infinity }}
+                                                        className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-12 h-12 z-20"
+                                                    >
+                                                        <img src={topPlayers[2].rankIcon} className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(194,65,12,0.3)]" alt="" />
+                                                    </motion.div>
                                                 </div>
-                                                <motion.div
-                                                    animate={{ scale: [1, 1.1, 1] }}
-                                                    transition={{ duration: 2.5, repeat: Infinity }}
-                                                    className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-12 h-12 z-20"
-                                                >
-                                                    <img src={topPlayers[2].rankIcon} className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(194,65,12,0.3)]" alt="" />
-                                                </motion.div>
-                                            </div>
-                                            <div className="text-center w-full">
-                                                <h3 className="text-sm font-black text-white uppercase italic truncate mb-0.5">{topPlayers[2].name}</h3>
-                                                <p className="text-[9px] font-bold text-orange-400/60 uppercase tracking-wider mb-2">{topPlayers[2].rankName}</p>
-                                                <div className="bg-slate-900/50 border border-white/10 rounded-lg py-1.5 px-3 group hover:border-orange-500/50 transition-colors">
-                                                    <span className="text-xs font-black text-orange-700 group-hover:text-white transition-colors">{topPlayers[2].score.toLocaleString()} <span className="text-[8px] opacity-60">EXP</span></span>
+                                                <div className="text-center w-full">
+                                                    <h3 className="text-sm font-black text-white uppercase italic truncate mb-0.5">{topPlayers[2].name}</h3>
+                                                    <p className="text-[9px] font-bold text-orange-400/60 uppercase tracking-wider mb-2">{topPlayers[2].rankName}</p>
+                                                    <div className="bg-slate-900/50 border border-white/10 rounded-lg py-1.5 px-3 group hover:border-orange-500/50 transition-colors">
+                                                        <span className="text-xs font-black text-orange-700 group-hover:text-white transition-colors">{topPlayers[2].score.toLocaleString()} <span className="text-[8px] opacity-60">EXP</span></span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </motion.div>
+                                            </motion.div>
+                                        ) : <div className="flex-1 max-w-[140px]" />}
                                     </div>
                                 )}
 
