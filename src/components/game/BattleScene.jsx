@@ -33,7 +33,7 @@ import bossloss1 from '../../assets/enemyactions/bossloss1.png';
 import bossloss2 from '../../assets/enemyactions/bossloss2.png';
 import bossloss3 from '../../assets/enemyactions/bossloss3.png';
 
-const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, level, isDuel = false, isMultiplayer = false, numOpponents = 0 }) => {
+const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, level, isDuel = false, isMultiplayer = false, numOpponents = 0, playerName = '', opponentName = '' }) => {
     const gameContainer = useRef(null);
     const gameRef = useRef(null);
 
@@ -136,7 +136,7 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
 
             // Position: Base position for enemies
             // Position enemies: in duel/multiplayer, match the same Y baseline as the hero
-            const baseEnemyX = (isDuel || isMultiplayer) ? width * 0.88 : (isBoss ? width * 0.66 : width * 0.62);
+            const baseEnemyX = (isDuel || isMultiplayer) ? width * 0.70 : (isBoss ? width * 0.66 : width * 0.62);
             const baseEnemyY = (isDuel || isMultiplayer) ? startY - 30 : height * 0.52;
 
             const initialEnemyTexture = (isDuel || isMultiplayer) ? 'heroFront' : (isBoss ? 'bossfirst' : 'enemy22');
@@ -212,9 +212,18 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
 
             // Initial Bars
             let heroHealthBar = drawBar(startX - 30, startY - 140, 1, 0x00ff00);
+            if (playerName) {
+                this.add.text(startX, startY - 155, playerName, { fontSize: '14px', fill: '#00ff00', fontStyle: 'bold' }).setOrigin(0.5).setDepth(30);
+            }
             
             // Array of enemy health bars
-            let enemyHealthBars = enemyGroup.map(d => drawBar(d.x - 30, d.y - 140, 1, 0xff0000));
+            let enemyHealthBars = enemyGroup.map(d => {
+                let bar = drawBar(d.x - 30, d.y - 140, 1, 0xff0000);
+                if (opponentName) {
+                    this.add.text(d.x, d.y - 155, opponentName, { fontSize: '14px', fill: '#ff0000', fontStyle: 'bold' }).setOrigin(0.5).setDepth(30);
+                }
+                return bar;
+            });
             // Keep original reference for legacy logic compatibility 
             let enemyHealthBar = enemyHealthBars[0];
 

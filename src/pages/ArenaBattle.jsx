@@ -20,7 +20,7 @@ import DefeatModal from '../components/game/DefeatModal';
 
 import { useUser } from '../contexts/UserContext';
 import { getRankFromExp as getRankData } from '../utils/rankSystem';
-import { coursesAPI } from '../services/api';
+import { coursesAPI, battlesAPI } from '../services/api';
 import supabase from '../lib/supabase';
 
 const ArenaBattle = () => {
@@ -426,6 +426,12 @@ const ArenaBattle = () => {
             const wagerAmount = parseInt(wager, 10) || 100;
             updateExp(wagerAmount);
             setBattleOutcome('win');
+            
+            // Sync battle results to backend database
+            const recordId = location.state?.battleRecordId;
+            if (recordId && typeof recordId === 'string' && recordId.includes('-')) {
+                battlesAPI.complete(recordId, user.id).catch(err => console.error("Failed to sync battle record", err));
+            }
 
             // Broadcast to opponent that we completed the puzzle
             if (arenaChannelRef.current) {
@@ -558,6 +564,8 @@ const ArenaBattle = () => {
                             level={30} // Force Boss1
                             outcome={battleOutcome}
                             isDuel={true}
+                            playerName={user?.username || user?.name || 'Player'}
+                            opponentName={opponent || 'Opponent'}
                             onVideoResume={() => {
                                 if (videoRef.current) {
                                     videoRef.current.play();
