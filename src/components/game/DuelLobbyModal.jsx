@@ -643,6 +643,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 navigate(`/arena-battle/b-${finalBattleId}`, {
                     state: {
                         opponent: opponent.name,
+                        opponentId: opponent.id,
                         opponentAvatar: opponent.avatar,
                         opponentRankName: opponent.rankName,
                         opponentRankIcon: opponent.rankIcon,

@@ -26,7 +26,7 @@ import supabase from '../lib/supabase';
 const ArenaBattle = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { opponent = 'Unknown Recruiter', opponentAvatar, opponentRankName, opponentRankIcon, language = 'JavaScript', wager = '100', mode: lobbyMode = 'Puzzle Blocks', difficulty, lobbyId } = location.state || {};
+    const { opponent = 'Unknown Recruiter', opponentId, opponentAvatar, opponentRankName, opponentRankIcon, language = 'JavaScript', wager = '100', mode: lobbyMode = 'Puzzle Blocks', difficulty, lobbyId } = location.state || {};
 
     // Mimic ChallengeModal State
     const [blocks, setBlocks] = useState([]);
@@ -439,9 +439,28 @@ const ArenaBattle = () => {
             
             // Sync battle results to backend database
             const recordId = location.state?.battleRecordId;
-            if (recordId) {
-                battlesAPI.complete(recordId, user.id).catch(err => console.error("Failed to sync battle record", err));
-            }
+            const syncBattle = async () => {
+                try {
+                    // Try to complete the existing battle record first
+                    if (recordId) {
+                        await battlesAPI.complete(recordId, user.id);
+                        return; // Success!
+                    }
+                } catch (err) {
+                    console.warn('[ArenaBattle] Complete failed, creating new record:', err.message);
+                }
+                // Fallback: create a brand new completed battle record
+                try {
+                    const newBattle = await battlesAPI.create('duel', opponentId);
+                    const newId = newBattle?.battle?.id || newBattle?.id;
+                    if (newId) {
+                        await battlesAPI.complete(newId, user.id);
+                    }
+                } catch (err2) {
+                    console.error('[ArenaBattle] Failed to create fallback battle record:', err2);
+                }
+            };
+            syncBattle();
 
             // Broadcast to opponent that we completed the puzzle
             if (arenaChannelRef.current) {
