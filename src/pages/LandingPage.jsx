@@ -10,6 +10,7 @@ import towerIcon from '../assets/tower11.png';
 import heroesIcon from '../assets/heroes.png';
 import battleIcon from '../assets/doorbattle.png';
 import rankingIcon from '../assets/ranking.png';
+import leaderboardIcon from '../assets/leaderboard.png';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
 
@@ -409,7 +410,7 @@ const LandingPage = () => {
             </section>
 
             {/* Features Section (About) — Animated */}
-            <AboutSection towerIcon={towerIcon} heroesIcon={heroesIcon} battleIcon={battleIcon} rankingIcon={rankingIcon} />
+            <AboutSection towerIcon={towerIcon} heroesIcon={heroesIcon} battleIcon={battleIcon} rankingIcon={rankingIcon} leaderboardIcon={leaderboardIcon} />
 
             {modal?.type === 'signup' && (
                 <div className="landing-modal" role="dialog" aria-modal="true" aria-labelledby="signup-title">
@@ -1230,14 +1231,14 @@ const featureData = [
     {
         title: 'Global Warfare',
         description: 'Test your code in real-time. Dominate high-stakes 1v1 Duels or compete in massive Multiplayer battles for glory.',
-        iconKey: 'battleIcon',
+        iconKey: 'rankingIcon',
         gradient: 'from-orange-500/20 to-rose-500/20',
         glowColor: 'rgba(249, 115, 22, 0.4)',
     },
     {
         title: 'Rank Hierarchy',
         description: 'Climb the ladder from a humble Siege Novice to the godlike status of Siege Deity. Your code determines your rank.',
-        iconKey: 'rankingIcon',
+        iconKey: 'leaderboardIcon',
         gradient: 'from-amber-500/20 to-yellow-500/20',
         glowColor: 'rgba(245, 158, 11, 0.4)',
     },
@@ -1251,10 +1252,10 @@ const cardVariants = {
     })
 };
 
-const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon }) => {
+const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderboardIcon }) => {
     const sectionRef = useRef(null);
     const isInView = useInView(sectionRef, { once: true, amount: 0.2 });
-    const iconMap = { towerIcon, heroesIcon, battleIcon, rankingIcon };
+    const iconMap = { towerIcon, heroesIcon, battleIcon, rankingIcon, leaderboardIcon };
 
     return (
         <section id="about" className="landing-features" ref={sectionRef}>
