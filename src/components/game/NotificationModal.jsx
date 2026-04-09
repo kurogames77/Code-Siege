@@ -270,6 +270,7 @@ const NotificationModal = ({ isOpen, onClose, onAcceptInvite, onDeclineInvite })
                                         const sender = notif.sender;
                                         const isPending = config.hasActions && notif.action_status === 'pending';
                                         const isActioned = config.hasActions && notif.action_status !== 'pending';
+                                        const isDuelOrMulti = notif.type === 'duel_invite' || notif.type === 'multiplayer_invite';
 
                                         return (
                                             <motion.div
@@ -282,11 +283,19 @@ const NotificationModal = ({ isOpen, onClose, onAcceptInvite, onDeclineInvite })
                                                         handleDismiss(notif.id);
                                                     }
                                                 }}
-                                                className={`group relative rounded-xl p-4 transition-all cursor-pointer ${notif.is_read
-                                                    ? 'bg-slate-800/20 border border-white/3'
-                                                    : `bg-slate-800/40 hover:bg-slate-800/60 border border-${config.color}-500/15 hover:border-${config.color}-500/30`
-                                                    }`}
+                                                className={`group relative rounded-xl p-4 transition-all cursor-pointer ${
+                                                    isDuelOrMulti && isPending
+                                                        ? 'bg-gradient-to-r from-rose-950/40 to-purple-950/40 border border-rose-500/30 hover:border-rose-400/60 shadow-[0_0_20px_rgba(244,63,94,0.1)] hover:shadow-[0_0_30px_rgba(244,63,94,0.2)]'
+                                                        : notif.is_read
+                                                            ? 'bg-slate-800/20 border border-white/3'
+                                                            : `bg-slate-800/40 hover:bg-slate-800/60 border border-${config.color}-500/15 hover:border-${config.color}-500/30`
+                                                }`}
                                             >
+                                                {/* Animated glow for pending duel invites */}
+                                                {isDuelOrMulti && isPending && (
+                                                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-rose-500/5 via-purple-500/5 to-rose-500/5 animate-pulse pointer-events-none" />
+                                                )}
+
                                                 {/* Unread indicator */}
                                                 {!notif.is_read && (
                                                     <div className={`absolute top-4 right-4 w-2 h-2 rounded-full bg-${config.color}-400 animate-pulse`} />
@@ -305,12 +314,12 @@ const NotificationModal = ({ isOpen, onClose, onAcceptInvite, onDeclineInvite })
                                                     <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
                                                         {/* Avatar or Icon */}
                                                         {sender?.avatar_url ? (
-                                                            <div className={`w-11 h-11 rounded-xl bg-gradient-to-br from-${config.color}-500/20 to-purple-500/20 border border-${config.color}-400/20 overflow-hidden`}>
+                                                            <div className={`${isDuelOrMulti && isPending ? 'w-14 h-14 ring-2 ring-rose-500/40' : 'w-11 h-11'} rounded-xl bg-gradient-to-br from-${config.color}-500/20 to-purple-500/20 border border-${config.color}-400/20 overflow-hidden transition-all`}>
                                                                 <img src={sender.avatar_url} alt="" className="w-full h-full object-cover" />
                                                             </div>
                                                         ) : (
-                                                            <div className={`w-11 h-11 rounded-xl bg-${config.color}-500/10 border border-${config.color}-500/20 flex items-center justify-center`}>
-                                                                <IconComponent className={`w-5 h-5 text-${config.color}-400`} />
+                                                            <div className={`${isDuelOrMulti && isPending ? 'w-14 h-14' : 'w-11 h-11'} rounded-xl bg-${config.color}-500/10 border border-${config.color}-500/20 flex items-center justify-center`}>
+                                                                <IconComponent className={`${isDuelOrMulti && isPending ? 'w-7 h-7' : 'w-5 h-5'} text-${config.color}-400`} />
                                                             </div>
                                                         )}
                                                         {/* Rank Badge below avatar */}
@@ -327,8 +336,11 @@ const NotificationModal = ({ isOpen, onClose, onAcceptInvite, onDeclineInvite })
                                                     <div className="flex-1 min-w-0 pr-6">
                                                         <div className="flex items-center gap-2 mb-0.5">
                                                             <span className={`text-[10px] text-${config.color}-400 font-bold uppercase tracking-wider`}>{config.label}</span>
+                                                            {isDuelOrMulti && isPending && (
+                                                                <span className="text-[9px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider animate-pulse">LIVE</span>
+                                                            )}
                                                         </div>
-                                                        <p className="text-sm text-white font-bold truncate">{notif.title}</p>
+                                                        <p className={`${isDuelOrMulti && isPending ? 'text-base' : 'text-sm'} text-white font-bold truncate`}>{notif.title}</p>
                                                         {notif.message && (
                                                             <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{notif.message}</p>
                                                         )}
@@ -346,17 +358,17 @@ const NotificationModal = ({ isOpen, onClose, onAcceptInvite, onDeclineInvite })
 
                                                 {/* Action Buttons (for friend_request and duel_invite) */}
                                                 {isPending && (
-                                                    <div className="flex gap-2 mt-2">
+                                                    <div className={`flex gap-2 mt-2 ${isDuelOrMulti ? 'mt-3' : ''}`}>
                                                         <button
                                                             onClick={() => handleAccept(notif.id)}
-                                                            className="flex-1 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs font-black uppercase tracking-wider rounded-lg transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] active:scale-95 flex items-center justify-center gap-1.5"
+                                                            className={`flex-1 ${isDuelOrMulti ? 'py-3' : 'py-2'} bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs font-black uppercase tracking-wider rounded-lg transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] active:scale-95 flex items-center justify-center gap-1.5`}
                                                         >
                                                             <Check className="w-3.5 h-3.5" />
-                                                            Accept
+                                                            {isDuelOrMulti ? 'Accept Duel' : 'Accept'}
                                                         </button>
                                                         <button
                                                             onClick={() => handleDecline(notif.id)}
-                                                            className="flex-1 py-2 bg-slate-800/80 hover:bg-rose-500/20 border border-white/10 hover:border-rose-500/30 text-slate-400 hover:text-rose-400 text-xs font-black uppercase tracking-wider rounded-lg transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                                                            className={`flex-1 ${isDuelOrMulti ? 'py-3' : 'py-2'} bg-slate-800/80 hover:bg-rose-500/20 border border-white/10 hover:border-rose-500/30 text-slate-400 hover:text-rose-400 text-xs font-black uppercase tracking-wider rounded-lg transition-all active:scale-95 flex items-center justify-center gap-1.5`}
                                                         >
                                                             <XIcon className="w-3.5 h-3.5" />
                                                             Decline

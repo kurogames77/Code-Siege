@@ -585,7 +585,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 const triggerGameStart = async () => {
                     let newBattleId = null;
                     try {
-                        const battleRecord = await battlesAPI.create('1v1 duel', opponentRef.current.id);
+                        const battleRecord = await battlesAPI.create('duel', opponentRef.current.id);
                         newBattleId = battleRecord?.battle?.id || battleRecord?.id || null;
                         setBattleRecordId(newBattleId);
                     } catch (err) {
@@ -741,7 +741,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             const triggerGameStart = async () => {
                 let newBattleId = null;
                 try {
-                    const battleRecord = await battlesAPI.create('1v1 duel', opponent?.id);
+                    const battleRecord = await battlesAPI.create('duel', opponent?.id);
                     newBattleId = battleRecord?.battle?.id || battleRecord?.id || null;
                 } catch (err) {
                     console.error('[DuelLobby] Failed to create battle record:', err);

@@ -46,7 +46,7 @@ router.post('/create', authenticateUser, async (req, res) => {
 
         const battleData = {
             player1_id: req.user.id,
-            mode: mode || '1v1 duel',
+            mode: mode || 'duel',
             status: 'pending',
             created_at: new Date().toISOString()
         };
