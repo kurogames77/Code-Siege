@@ -212,15 +212,18 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
 
             // Initial Bars
             let heroHealthBar = drawBar(startX - 30, startY - 140, 1, 0x00ff00);
+            let heroNameText = null;
             if (playerName) {
-                this.add.text(startX, startY - 155, playerName, { fontSize: '14px', fill: '#00ff00', fontStyle: 'bold' }).setOrigin(0.5).setDepth(30);
+                heroNameText = this.add.text(startX, startY - 155, playerName, { fontSize: '14px', fill: '#00ff00', fontStyle: 'bold' }).setOrigin(0.5).setDepth(30);
             }
             
-            // Array of enemy health bars
-            let enemyHealthBars = enemyGroup.map(d => {
+            // Array of enemy health bars and name labels
+            let enemyNameTexts = [];
+            let enemyHealthBars = enemyGroup.map((d, idx) => {
                 let bar = drawBar(d.x - 30, d.y - 140, 1, 0xff0000);
                 if (opponentName) {
-                    this.add.text(d.x, d.y - 155, opponentName, { fontSize: '14px', fill: '#ff0000', fontStyle: 'bold' }).setOrigin(0.5).setDepth(30);
+                    const txt = this.add.text(d.x, d.y - 155, opponentName, { fontSize: '14px', fill: '#ff0000', fontStyle: 'bold' }).setOrigin(0.5).setDepth(30);
+                    enemyNameTexts[idx] = txt;
                 }
                 return bar;
             });
@@ -272,6 +275,9 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                 if (outcome === 'loss') {
                                     // DEAD
                                     heroHealthBar = updateHealth(heroHealthBar, startX - 30, startY - 140, 0, true);
+                                    if (heroNameText) { heroNameText.destroy(); heroNameText = null; }
+                                    enemyNameTexts.forEach(t => { if (t) t.destroy(); });
+                                    enemyNameTexts = [];
 
                                     this.tweens.killTweensOf(hero);
                                     this.tweens.add({
@@ -332,6 +338,9 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                             if (isLast) {
                                                 if (outcome === 'loss') {
                                                     heroHealthBar = updateHealth(heroHealthBar, startX - 30, startY - 140, 0, true);
+                                                    if (heroNameText) { heroNameText.destroy(); heroNameText = null; }
+                                                    enemyNameTexts.forEach(t => { if (t) t.destroy(); });
+                                                    enemyNameTexts = [];
                                                     this.tweens.killTweensOf(hero);
 
                                                     this.tweens.add({
@@ -490,8 +499,10 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
                                         if (isFirstFinish) {
                                             enemyIdleEvent.remove();
                                             if (heroHealthBar) heroHealthBar.destroy();
+                                            if (heroNameText) heroNameText.destroy();
                                         }
                                         if (enemyHealthBars[tIndex]) enemyHealthBars[tIndex].destroy();
+                                        if (enemyNameTexts[tIndex]) enemyNameTexts[tIndex].destroy();
 
                                         if (isBoss) {
                                             this.tweens.add({ targets: targetEnemy, y: targetEnemy.y + 60, duration: 500, ease: 'Bounce.easeOut' });
