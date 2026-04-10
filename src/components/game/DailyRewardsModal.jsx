@@ -388,9 +388,37 @@ const DailyRewardView = ({ theme, onClaimReward, userId, timeLeft }) => {
         const savedData = localStorage.getItem(`daily_login_${userId}`);
         if (savedData) {
             const parsed = JSON.parse(savedData);
-            setClaimedDays(parsed.claimedDays || []);
-            setCurrentDay(parsed.currentDay || 1); // This is the progress day (e.g. Day 3)
-            setLastClaimDate(parsed.lastClaimDate);
+            let cDays = parsed.claimedDays || [];
+            let cDay = parsed.currentDay || 1;
+            let lDate = parsed.lastClaimDate;
+
+            // Check if user missed a day OR finished the week
+            if (lDate) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const lastDate = new Date(lDate);
+                lastDate.setHours(0, 0, 0, 0);
+
+                const diffTime = today.getTime() - lastDate.getTime();
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                // If more than 1 day has passed, or if they completed the 7-day cycle and it's the next day
+                if (diffDays > 1 || (cDay > 7 && diffDays >= 1)) {
+                    cDays = [];
+                    cDay = 1;
+                    lDate = null;
+
+                    localStorage.setItem(`daily_login_${userId}`, JSON.stringify({
+                        claimedDays: cDays,
+                        currentDay: cDay,
+                        lastClaimDate: lDate
+                    }));
+                }
+            }
+
+            setClaimedDays(cDays);
+            setCurrentDay(cDay); 
+            setLastClaimDate(lDate);
         }
     }, [userId]);
 
