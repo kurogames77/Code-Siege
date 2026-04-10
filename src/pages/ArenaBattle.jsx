@@ -256,18 +256,8 @@ const ArenaBattle = () => {
 
             });
 
-        // Safety timeout: if still on this page after 90s without resolution,
-        // auto-navigate back to prevent being stuck forever
-        const safetyTimeout = setTimeout(() => {
-            if (!isSuccess && !isFailed && !opponentWithdrew && !showPostScene) {
-                console.warn('[ArenaBattle] Safety timeout — auto-navigating home.');
-                navigate('/play', { replace: true, state: { openDuelLobby: true } });
-            }
-        }, 90000);
-
         return () => {
             supabase.removeChannel(channel);
-            clearTimeout(safetyTimeout);
         };
     }, [user, lobbyId]);
 
