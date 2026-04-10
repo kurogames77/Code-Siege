@@ -59,10 +59,17 @@ const ExternalRedirect = ({ to }) => {
   );
 };
 
+import InactivityModal from './components/common/InactivityModal';
+
 // Wrapper component to activate inactivity timeout globally
 const InactivityGuard = ({ children }) => {
-  useInactivityTimeout();
-  return children;
+  const { isLoggedOutDueToInactivity, clearInactivity } = useInactivityTimeout();
+  return (
+    <>
+      {children}
+      <InactivityModal isOpen={isLoggedOutDueToInactivity} onClose={clearInactivity} />
+    </>
+  );
 };
 
 function App() {

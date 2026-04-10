@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 
@@ -10,15 +10,17 @@ const useInactivityTimeout = () => {
     const navigate = useNavigate();
     const timerRef = useRef(null);
     const lastActivityRef = useRef(Date.now());
+    const [isLoggedOutDueToInactivity, setIsLoggedOutDueToInactivity] = useState(false);
 
     const handleLogout = useCallback(async () => {
         await logout();
         navigate('/', { replace: true });
-        // Small delay to ensure navigation completes before alert
-        setTimeout(() => {
-            alert('You have been logged out due to inactivity.');
-        }, 100);
+        setIsLoggedOutDueToInactivity(true);
     }, [logout, navigate]);
+
+    const clearInactivity = useCallback(() => {
+        setIsLoggedOutDueToInactivity(false);
+    }, []);
 
     const resetTimer = useCallback(() => {
         const now = Date.now();
@@ -56,6 +58,8 @@ const useInactivityTimeout = () => {
             });
         };
     }, [isAuthenticated, user, resetTimer, handleLogout]);
+
+    return { isLoggedOutDueToInactivity, clearInactivity };
 };
 
 export default useInactivityTimeout;
