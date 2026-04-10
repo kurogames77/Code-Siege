@@ -8,6 +8,7 @@ import { useUser } from '../../contexts/UserContext';
 import { getRankIcon, getRankName } from '../../utils/rankSystem';
 import RankLegendModal from './RankLegendModal';
 import { useTheme } from '../../contexts/ThemeContext'; // Import ThemeContext
+import { leaderboardAPI } from '../../services/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -29,14 +30,14 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
             setLoading(true);
             setError(null);
             try {
-                const response = await fetch(`${API_URL}/api/users/leaderboard?timeframe=${timeframe}&limit=50`);
-                const data = await response.json();
-
-                if (data.error) {
-                    setError(data.error);
+                let data;
+                if (timeframe === 'weekly') {
+                    data = await leaderboardAPI.getWeekly(50);
                 } else {
-                    setLeaderboard(data.leaderboard || []);
+                    data = await leaderboardAPI.getAll(50);
                 }
+
+                setLeaderboard(data.leaderboard || []);
             } catch (err) {
                 console.error('Failed to fetch leaderboard:', err);
                 setError('Failed to load leaderboard');

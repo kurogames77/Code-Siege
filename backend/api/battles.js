@@ -44,9 +44,13 @@ router.post('/create', authenticateUser, async (req, res) => {
     try {
         const { mode, opponent_id } = req.body;
 
+        let safeMode = mode || '1v1 duel';
+        if (safeMode.toLowerCase() === 'duel') safeMode = '1v1 duel';
+        if (safeMode.toLowerCase() === 'multiplayer') safeMode = 'Multiplayer battle';
+
         const battleData = {
             player1_id: req.user.id,
-            mode: mode || 'duel',
+            mode: safeMode,
             status: 'pending',
             created_at: new Date().toISOString()
         };

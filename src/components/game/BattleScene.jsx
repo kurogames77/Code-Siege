@@ -136,8 +136,8 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
 
             // Position: Base position for enemies
             // Position enemies: in duel/multiplayer, match the same Y baseline as the hero
-            const baseEnemyX = (isDuel || isMultiplayer) ? width * 0.82 : (isBoss ? width * 0.66 : width * 0.62);
-            const baseEnemyY = (isDuel || isMultiplayer) ? startY - 30 : height * 0.52;
+            const baseEnemyX = (isDuel || isMultiplayer) ? width * 0.76 : (isBoss ? width * 0.66 : width * 0.62);
+            const baseEnemyY = (isDuel || isMultiplayer) ? startY - 70 : height * 0.52;
 
             const initialEnemyTexture = (isDuel || isMultiplayer) ? 'heroFront' : (isBoss ? 'bossfirst' : 'enemy22');
 
