@@ -451,7 +451,7 @@ const ArenaBattle = () => {
                 }
                 // Fallback: create a brand new completed battle record
                 try {
-                    const newBattle = await battlesAPI.create('duel', opponentId);
+                    const newBattle = await battlesAPI.create('1v1 duel', opponentId);
                     const newId = newBattle?.battle?.id || newBattle?.id;
                     if (newId) {
                         await battlesAPI.complete(newId, user.id);
