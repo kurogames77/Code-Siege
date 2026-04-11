@@ -502,7 +502,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                         acceptSentRef.current = true;
 
                         setTimeout(async () => {
-                            await channel.send({
+                            const acceptPayload = {
                                 type: 'broadcast',
                                 event: 'duel-accept',
                                 payload: {
@@ -514,7 +514,11 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                     senderRankIcon: currentUser.rankIcon,
                                     senderHeroImageKey: validatedHeroImage
                                 }
-                            });
+                            };
+                            await channel.send(acceptPayload);
+                            // Redundancy payload broadcasts to prevent websocket race condition drops during pairing
+                            setTimeout(() => lobbyChannelRef.current?.send(acceptPayload).catch(() => {}), 1000);
+                            setTimeout(() => lobbyChannelRef.current?.send(acceptPayload).catch(() => {}), 3000);
                         }, 500);
                     }
                 }

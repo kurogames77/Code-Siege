@@ -12,9 +12,10 @@ router.get('/', optionalAuth, async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 100;
 
-        const { data: leaderboard, error } = await supabase
-            .from('users')
-            .select('id, username, avatar_url, level, xp')
+        const { data: progress, error } = await supabase
+            .from('user_progress')
+            .select('level, xp, users(id, username, avatar_url)')
+            .eq('tower_id', 'global')
             .order('xp', { ascending: false })
             .limit(limit);
 
@@ -23,10 +24,14 @@ router.get('/', optionalAuth, async (req, res) => {
         }
 
         // Add rank to each entry
-        const rankedLeaderboard = leaderboard.map((user, index) => ({
-            ...user,
+        const rankedLeaderboard = progress.map((entry, index) => ({
+            id: entry.users?.id,
+            username: entry.users?.username,
+            avatar_url: entry.users?.avatar_url,
+            level: entry.level,
+            xp: entry.xp,
             rank: index + 1
-        }));
+        })).filter(entry => entry.id);
 
         // Find current user's rank if authenticated
         let userRank = null;
@@ -56,9 +61,10 @@ router.get('/weekly', optionalAuth, async (req, res) => {
         const limit = parseInt(req.query.limit) || 50;
 
         // Get users with most XP (simplified - in production you'd track weekly gains)
-        const { data: leaderboard, error } = await supabase
-            .from('users')
-            .select('id, username, avatar_url, level, xp')
+        const { data: progress, error } = await supabase
+            .from('user_progress')
+            .select('level, xp, users(id, username, avatar_url)')
+            .eq('tower_id', 'global')
             .order('xp', { ascending: false })
             .limit(limit);
 
@@ -66,10 +72,14 @@ router.get('/weekly', optionalAuth, async (req, res) => {
             return res.status(400).json({ error: error.message });
         }
 
-        const rankedLeaderboard = leaderboard.map((user, index) => ({
-            ...user,
+        const rankedLeaderboard = progress.map((entry, index) => ({
+            id: entry.users?.id,
+            username: entry.users?.username,
+            avatar_url: entry.users?.avatar_url,
+            level: entry.level,
+            xp: entry.xp,
             rank: index + 1
-        }));
+        })).filter(entry => entry.id);
 
         res.json({ leaderboard: rankedLeaderboard });
     } catch (error) {
