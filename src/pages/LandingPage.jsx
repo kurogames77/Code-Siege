@@ -137,14 +137,11 @@ const LandingPage = () => {
     };
 
     // Interceptor for Google Login to save intended role
-    // This persists the selected role (guest/instructor) so that after
-    // the Google OAuth redirect, the complete_profile form knows which
-    // role to lock to and doesn't show irrelevant role tabs.
+    // This persists the selected role so that after the Google OAuth redirect,
+    // the complete_profile form knows which role to lock to and hides irrelevant tabs.
     const handleGoogleLogin = () => {
-        if (modal?.role === 'guest') {
-            localStorage.setItem('code_siege_intended_role', 'guest');
-        } else if (modal?.role === 'instructor') {
-            localStorage.setItem('code_siege_intended_role', 'instructor');
+        if (modal?.role) {
+            localStorage.setItem('code_siege_intended_role', modal.role);
         } else {
             localStorage.removeItem('code_siege_intended_role');
         }
@@ -247,7 +244,17 @@ const LandingPage = () => {
                 return; // Wait for user to complete the form
             }
 
-            // 3. Normal Complete Profile Check (social login for students missing studentId)
+            // 3. Check for intended student Google login
+            if (intendedRole === 'student' && !user.studentId) {
+                // Show the complete profile modal locked to the student role only
+                if (modal?.type !== 'complete_profile') {
+                    setModal({ type: 'complete_profile', role: 'student', isStudentLocked: true });
+                    setFullName(user.name || user.username || '');
+                }
+                return; // Wait for user to complete the form
+            }
+
+            // 4. Normal Complete Profile Check (social login for users missing studentId, no intended role)
             // Instructors/admins/guests don't need to complete profile
             if (user.role !== 'instructor' && user.role !== 'admin' && user.role !== 'guest' && !user.studentId) {
                 if (modal?.type !== 'complete_profile') {
@@ -1071,8 +1078,8 @@ const LandingPage = () => {
                             </p>
                         </div>
 
-                        {/* Role Tabs: hidden when locked to guest or instructor via Google signup */}
-                        {!modal.isGuestLocked && !modal.isInstructorLocked && (
+                        {/* Role Tabs: hidden when locked to a specific role via Google signup */}
+                        {!modal.isGuestLocked && !modal.isInstructorLocked && !modal.isStudentLocked && (
                             <div className="landing-modal__roles" role="radiogroup" aria-label="Select role">
                                 <button
                                     type="button"
