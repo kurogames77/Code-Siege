@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Lock } from 'lucide-react';
 import { paymongoAPI, userAPI } from '../services/api';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
