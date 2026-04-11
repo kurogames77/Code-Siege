@@ -266,13 +266,7 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                                 <div className={`absolute inset-0 bg-${currentTheme.colors.secondary}-500/20 blur-3xl animate-pulse rounded-full`} />
                                                 <div className={`w-32 h-32 rounded-full border-4 border-${currentTheme.colors.secondary}-400 p-1.5 bg-slate-900 relative z-10 shadow-[0_0_30px_rgba(var(--theme-secondary-rgb),0.2)] group-hover:scale-110 transition-transform duration-500`}>
                                                     <img src={topPlayers[0].avatar} className="w-full h-full object-cover rounded-full" alt="" />
-                                                    <motion.div
-                                                        animate={{ y: [0, -5, 0] }}
-                                                        transition={{ duration: 2, repeat: Infinity }}
-                                                    >
-                                                        <Crown className={`absolute -top-10 left-1/2 -translate-x-1/2 w-12 h-12 text-${currentTheme.colors.secondary}-400 drop-shadow-[0_0_15px_rgba(var(--theme-secondary-rgb),0.6)]`} />
-                                                    </motion.div>
-                                                    <div className={`absolute -top-2 -right-2 w-10 h-10 bg-${currentTheme.colors.secondary}-400 text-slate-950 font-black rounded-full flex items-center justify-center border-4 border-slate-900 text-lg`}>1</div>
+                                                    <div className="absolute -top-2 -right-2 w-10 h-10 bg-emerald-500 text-slate-950 font-black rounded-full flex items-center justify-center border-4 border-slate-900 text-lg">1</div>
                                                 </div>
                                                 <motion.div
                                                     animate={{ scale: [1, 1.2, 1] }}
@@ -370,9 +364,9 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                             <div className="text-right">
                                                 <motion.div
                                                     whileHover={{ scale: 1.1 }}
-                                                    className={`text-lg font-black text-white group-hover:text-${currentTheme.colors.primary}-400`}
+                                                    className={`text-lg font-black text-white group-hover:text-${currentTheme.colors.primary}-400 flex items-baseline justify-end gap-1`}
                                                 >
-                                                    {player.score.toLocaleString()}
+                                                    {player.score.toLocaleString()} <span className="text-[10px] opacity-60 font-mono">EXP</span>
                                                 </motion.div>
                                                 <div className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">Aggregate EXP</div>
                                             </div>

@@ -16,7 +16,7 @@ router.get('/', optionalAuth, async (req, res) => {
 
         const { data: progress, error } = await supabase
             .from('user_progress')
-            .select('level, xp, users(id, username, avatar_url)')
+            .select('level, xp, users(id, username, avatar_url, role)')
             .eq('tower_id', 'global')
             .order('xp', { ascending: false })
             .limit(limit);
@@ -25,8 +25,10 @@ router.get('/', optionalAuth, async (req, res) => {
             return res.status(400).json({ error: error.message });
         }
 
+        const filteredProgress = progress.filter(entry => entry.users?.id && entry.users?.role !== 'instructor');
+
         // Add rank to each entry — map to field names the frontend expects
-        const rankedLeaderboard = progress.map((entry, index) => ({
+        const rankedLeaderboard = filteredProgress.map((entry, index) => ({
             id: entry.users?.id,
             name: entry.users?.username,
             username: entry.users?.username,
@@ -36,7 +38,7 @@ router.get('/', optionalAuth, async (req, res) => {
             xp: entry.xp,
             score: entry.xp,
             rank: index + 1
-        })).filter(entry => entry.id);
+        }));
 
         // Find current user's rank if authenticated
         let userRank = null;
@@ -68,7 +70,7 @@ router.get('/weekly', optionalAuth, async (req, res) => {
         // Get users with most XP (simplified - in production you'd track weekly gains)
         const { data: progress, error } = await supabase
             .from('user_progress')
-            .select('level, xp, users(id, username, avatar_url)')
+            .select('level, xp, users(id, username, avatar_url, role)')
             .eq('tower_id', 'global')
             .order('xp', { ascending: false })
             .limit(limit);
@@ -77,7 +79,9 @@ router.get('/weekly', optionalAuth, async (req, res) => {
             return res.status(400).json({ error: error.message });
         }
 
-        const rankedLeaderboard = progress.map((entry, index) => ({
+        const filteredProgress = progress.filter(entry => entry.users?.id && entry.users?.role !== 'instructor');
+
+        const rankedLeaderboard = filteredProgress.map((entry, index) => ({
             id: entry.users?.id,
             name: entry.users?.username,
             username: entry.users?.username,
@@ -87,7 +91,7 @@ router.get('/weekly', optionalAuth, async (req, res) => {
             xp: entry.xp,
             score: entry.xp,
             rank: index + 1
-        })).filter(entry => entry.id);
+        }));
 
         res.json({ leaderboard: rankedLeaderboard });
     } catch (error) {
