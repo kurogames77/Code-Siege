@@ -1334,7 +1334,7 @@ const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderbo
                                     src={iconMap[feature.iconKey]}
                                     alt={feature.title}
                                     className="feature-icon-img"
-                                    style={{ transform: feature.title === 'Immersive Campaign' ? 'scale(1.4)' : 'none' }}
+                                    style={{ transform: feature.title === 'Immersive Campaign' ? 'scale(2.2)' : 'none' }}
                                 />
                             </motion.div>
 

@@ -352,7 +352,9 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                                 <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
                             ) : (
                                 <div className="w-10 h-10 rounded-xl bg-slate-800/80 flex items-center justify-center border border-white/10">
-                                    <span className="text-xl font-black text-cyan-400 select-none">JD</span>
+                                    <span className="text-xl font-black text-cyan-400 select-none">
+                                        {user.name?.charAt(0).toUpperCase() || 'U'}
+                                    </span>
                                 </div>
                             )}
                         </div>

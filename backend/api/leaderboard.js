@@ -1,5 +1,7 @@
 import express from 'express';
-import supabase from '../lib/supabase.js';
+import { supabaseService, supabase as supabaseDefault } from '../lib/supabase.js';
+
+const supabase = supabaseService || supabaseDefault;
 import { optionalAuth } from '../middleware/auth.js';
 
 const router = express.Router();
