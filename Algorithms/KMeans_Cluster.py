@@ -4,22 +4,36 @@ KMeans_Cluster.py
 K-Means helper utilities used by the matchmaking pipeline. The clustering step
 groups players by their IRT-derived skill vectors so that higher-level logic
 can form fair matches inside each cluster.
+
+Pipeline Role:
+    Second stage of Pipeline 2 (Matchmaking):
+      IRT_Algo.py → KMeans_Cluster.py → SkillBasedMatchMaking.py
+
+    Receives IRT-derived feature vectors (adjusted_theta, probability,
+    success_rate, fail_rate) for a group of players, then clusters them
+    into k groups of similar skill. The cluster assignments are passed to
+    SkillBasedMatchMaking.py for final match pairing.
+
+Algorithm:
+    Standard K-Means with k-means++ initialization and early convergence
+    stopping. All code uses only Python standard library (no numpy/scipy).
 """
 
-import math
 import random
 
 # ---------------------------------------------------------------------------
-# Basic vector math helpers used throughout the clustering routines.
+# Vector Math Helpers
+# These utility functions provide the distance and averaging operations
+# needed by the k-means algorithm without requiring numpy.
 # ---------------------------------------------------------------------------
 
-def euclidean_distance(a, b):
-    """Return Euclidean distance between two numeric vectors."""
-    return math.sqrt(squared_distance(a, b))
-
-
 def squared_distance(a, b):
-    """Return squared Euclidean distance (cheaper than taking sqrt)."""
+    """
+    Return squared Euclidean distance between two numeric vectors.
+    Used instead of euclidean distance throughout the clustering code
+    because sqrt is monotonic — comparisons produce the same ordering
+    without the computational cost of taking the square root.
+    """
     total = 0.0
     for x, y in zip(a, b):
         d = x - y
@@ -28,25 +42,39 @@ def squared_distance(a, b):
 
 
 def compute_centroid(points):
-    """Compute the centroid for a list of k-dimensional points."""
+    """
+    Compute the centroid (mean point) for a list of k-dimensional points.
+    Returns an empty list if no points are provided.
+
+    Uses a single pass through points with a final multiply-by-inverse
+    to avoid repeated floating-point division inside the loop.
+    """
     if not points:
         return []
     count = len(points)
     dim = len(points[0])
-    # Efficient single pass through points; avoids repeatedly dividing inside loop
+    # Accumulate sums per dimension in a single pass
     centroid = [0.0] * dim
     for point in points:
         for i in range(dim):
             centroid[i] += point[i]
+    # Multiply by inverse of count (cheaper than dividing each element)
     inv_count = 1.0 / count
     return [centroid[i] * inv_count for i in range(dim)]
 
 
+# ---------------------------------------------------------------------------
+# Data Normalization
+# ---------------------------------------------------------------------------
+
 def normalize_data(data):
     """
-    Normalize each dimension of the dataset to [0, 1].
-    Keeps clustering stable even when theta/beta/success rates are on
-    different numeric scales.
+    Normalize each dimension of the dataset to [0, 1] range (min-max scaling).
+
+    This is critical for k-means because the features (theta, probability,
+    success_rate, fail_rate) may be on different numeric scales. Without
+    normalization, features with larger ranges would dominate the distance
+    calculation and bias cluster assignments.
     """
     if not data:
         return data
@@ -55,7 +83,7 @@ def normalize_data(data):
     mins = list(data[0])
     maxs = list(data[0])
 
-    # Single pass to find min/max per dimension.
+    # Single pass to find min/max per dimension
     for pt in data[1:]:
         for i in range(dims):
             if pt[i] < mins[i]:
@@ -63,9 +91,11 @@ def normalize_data(data):
             if pt[i] > maxs[i]:
                 maxs[i] = pt[i]
 
+    # Compute range per dimension (used for scaling)
     norm_data = []
     ranges = [maxs[i] - mins[i] for i in range(dims)]
 
+    # Scale each data point to [0, 1]; zero-range dimensions default to 0.0
     for pt in data:
         scaled = [
             0.0 if ranges[i] == 0.0 else (pt[i] - mins[i]) / ranges[i]
@@ -76,21 +106,36 @@ def normalize_data(data):
     return norm_data
 
 
+# ---------------------------------------------------------------------------
+# K-Means++ Initialization
+# ---------------------------------------------------------------------------
+
 def init_kmeans_plus_plus(data, k):
     """
-    Initialize centroids using the k-means++ heuristic; this keeps clusters stable
-    even when player distributions are skewed.
+    Initialize centroids using the k-means++ heuristic.
+
+    Instead of choosing k random centroids (which can lead to poor convergence),
+    k-means++ selects each successive centroid with probability proportional to
+    D(x)² — the squared distance from each point to its nearest existing centroid.
+    This spreads initial centroids apart and produces more stable clusters,
+    especially when player skill distributions are skewed.
+
+    Returns exactly k centroid points (or fewer only if data has < k unique points).
     """
     if not data:
         return []
 
     n = len(data)
+    # Edge case: if we want more clusters than data points, each point is its own centroid
     if k >= n:
         return data.copy()
 
+    # Step 1: Choose the first centroid uniformly at random
     centroids = [random.choice(data)]
 
+    # Step 2: Choose remaining centroids proportional to D(x)²
     while len(centroids) < k:
+        # For each point, compute squared distance to its nearest centroid
         min_dist_sq = []
         for pt in data:
             min_sq = float('inf')
@@ -101,12 +146,15 @@ def init_kmeans_plus_plus(data, k):
             min_dist_sq.append(min_sq)
 
         total = sum(min_dist_sq)
+
+        # Degenerate case: all points coincide with existing centroids
         if total == 0 or total < 1e-10:
             remaining = [pt for pt in data if pt not in centroids]
             if remaining:
                 centroids.append(random.choice(remaining))
             break
 
+        # Weighted random selection: pick next centroid proportional to D(x)²
         r = random.random() * total
         cumulative = 0.0
         for i, d in enumerate(min_dist_sq):
@@ -115,22 +163,44 @@ def init_kmeans_plus_plus(data, k):
                 centroids.append(data[i])
                 break
         else:
+            # Fallback: numerical precision edge case
             centroids.append(data[-1])
+
+    # Safety padding: if we broke out early due to degenerate data,
+    # ensure we still return exactly k centroids by filling with random points.
+    # This prevents IndexError downstream when creating k-sized cluster arrays.
+    while len(centroids) < k:
+        centroids.append(random.choice(data))
 
     return centroids
 
 # ---------------------------------------------------------------------------
-# Main entry point: cluster IRT rows so matchmaking can group similar players.
+# Main Entry Point: Cluster IRT Rows for Matchmaking
 # ---------------------------------------------------------------------------
+
 def kmeans_from_irt(irt_data, k=3, max_iter=100, tol=1e-4, verbose=False):
     """
-    Run k-means over IRT snapshots.
-    Returns centroids + assignments so matchmaking knows which cluster
-    each player belongs to.
+    Run k-means clustering over IRT skill snapshots.
+
+    Each IRT record is converted into a 4-dimensional feature vector:
+      [adjusted_theta, probability, success_rate, fail_rate]
+
+    Returns centroids and cluster assignments so SkillBasedMatchMaking.py
+    knows which cluster each player belongs to.
+
+    Args:
+        irt_data (list[dict]): List of IRT records with skill fields.
+        k (int): Number of clusters to create. Default 3.
+        max_iter (int): Maximum iterations before forced stop. Default 100.
+        tol (float): Convergence tolerance. Stops when centroid shift < tol². Default 1e-4.
+        verbose (bool): Print convergence info to stdout.
+
+    Returns:
+        dict: { centroids, assignments, cluster_count, converged_after }
     """
 
-    # Convert IRT rows into numeric feature vectors composed of
-    # adjusted_theta, probability, success_rate, and fail_rate.
+    # ── Step 1: Convert IRT Rows to Numeric Feature Vectors ──
+    # Extract the four skill dimensions from each IRT record
     data_points = [
         [
             item.get("adjusted_theta", 0.0),
@@ -144,19 +214,23 @@ def kmeans_from_irt(irt_data, k=3, max_iter=100, tol=1e-4, verbose=False):
     if not data_points:
         raise ValueError("IRT data is empty. Cannot perform K-Means clustering.")
 
-    # Normalize features to neutralize scale differences.
+    # ── Step 2: Normalize Features ──
+    # Scale all dimensions to [0, 1] to prevent any single feature
+    # from dominating distance calculations
     data_points = normalize_data(data_points)
 
-    # Initialize centroids via k-means++ for better convergence.
+    # ── Step 3: Initialize Centroids via K-Means++ ──
     centroids = init_kmeans_plus_plus(data_points, k)
 
-    # Standard k-means loop with early stopping when centroids barely move.
+    # ── Step 4: Iterative K-Means Loop ──
+    # Standard Lloyd's algorithm: assign → recompute centroids → check convergence
     assignments = []
     iteration = 0
     for iteration in range(max_iter):
+        # Create empty cluster buckets
         clusters = [[] for _ in range(k)]
         
-        # Assign each data point to the nearest centroid.
+        # Assign each data point to the nearest centroid
         assignments = []
         for pt in data_points:
             min_dist_sq = float('inf')
@@ -169,19 +243,21 @@ def kmeans_from_irt(irt_data, k=3, max_iter=100, tol=1e-4, verbose=False):
             assignments.append(nearest)
             clusters[nearest].append(pt)
 
-        # Rebuild centroids for the new clusters.
+        # Recompute centroids from the new cluster members
         new_centroids = []
         for c in clusters:
             if c:
                 new_centroids.append(compute_centroid(c))
             else:
-                # Empty cluster: reinitialize randomly to keep k clusters alive.
+                # Empty cluster: reinitialize randomly to keep k clusters alive
                 new_centroids.append(random.choice(data_points))
 
-        # Measure shift; if tiny we consider the algorithm converged.
+        # ── Convergence Check ──
+        # Measure total squared shift of all centroids.
+        # If the shift is below tol², the algorithm has converged.
         shift_sq = sum(squared_distance(a, b) for a, b in zip(centroids, new_centroids))
         
-        # Early convergence check.
+        # Primary convergence: centroids barely moved
         if shift_sq < (tol * tol):
             if verbose:
                 print(f"[INFO] K-Means converged after {iteration + 1} iterations")
@@ -189,11 +265,17 @@ def kmeans_from_irt(irt_data, k=3, max_iter=100, tol=1e-4, verbose=False):
 
         centroids = new_centroids
         
-        #Additional early stopping: if shift is very small after few iterations
+        # Relaxed early stopping: after a warm-up period (5 iterations),
+        # accept convergence at a 10× looser tolerance. This catches cases
+        # where centroids are oscillating within a very narrow band.
         if iteration > 5 and shift_sq < (tol * tol * 10):
             break
 
     else:
+        # Python for/else: this block runs ONLY when the for-loop completes
+        # without hitting a 'break', meaning the algorithm did NOT converge
+        # within max_iter iterations. This is informational — the result is
+        # still usable, just not optimal.
         if verbose:
             print("[WARNING] K-Means did not converge within max iterations.")
 
@@ -206,7 +288,9 @@ def kmeans_from_irt(irt_data, k=3, max_iter=100, tol=1e-4, verbose=False):
 
 
 # ---------------------------------------------------------------------------
-# CLI Entrypoint for Node.js backend integration
+# CLI Entrypoint for Node.js Backend Integration
+# Called from algorithm.js via child_process.spawn:
+#   python KMeans_Cluster.py '<json_string>'
 # ---------------------------------------------------------------------------
 if __name__ == '__main__':
     import sys
@@ -228,7 +312,7 @@ if __name__ == '__main__':
             print(json.dumps({"error": "No players provided for matchmaking"}))
             sys.exit(1)
         
-        # Run k-means clustering
+        # Run k-means clustering on the player skill vectors
         result = kmeans_from_irt(players, k=k)
         
         # Attach player IDs to cluster assignments for easier frontend use
