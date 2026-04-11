@@ -211,6 +211,20 @@ const LandingPage = () => {
 
         // Redirect if already authenticated — but NOT right after a logout
         if (isAuthenticated && user) {
+
+            // Guard: If the URL has a Supabase hash (email confirmation, recovery, etc.),
+            // let the hash-handling useEffect process it instead of redirecting here.
+            // Without this, an existing session (e.g., instructor) would immediately
+            // navigate to its dashboard, hijacking the confirmation/recovery flow.
+            if (location.hash && (
+                location.hash.includes('type=signup') ||
+                location.hash.includes('type=invite') ||
+                location.hash.includes('type=recovery') ||
+                location.hash.includes('type=initial_recovery') ||
+                location.hash.includes('error=')
+            )) {
+                return; // Let the hash useEffect handle it
+            }
             
             // 1. Check for intended guest Google login
             const intendedRole = localStorage.getItem('code_siege_intended_role');
