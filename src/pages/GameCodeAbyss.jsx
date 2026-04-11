@@ -11,6 +11,7 @@ import DefeatModal from '../components/game/DefeatModal';
 import BattleScene from '../components/game/BattleScene';
 import { puzzleData, objectives } from '../data/puzzleData';
 import { useUser } from '../contexts/UserContext';
+import { coursesAPI } from '../services/api';
 
 import gameCodeBg from '../assets/gamecodebg.jpg';
 import postSceneVideo from '../assets/postsceneview.mp4';
@@ -44,18 +45,47 @@ const GameCodeAbyss = () => {
     // Configuration State
     const [gameConfig, setGameConfig] = useState({
         gameMode: allowedMode,
-        language: 'HTML' // Default for Abyss
+        language: 'HTML'
     });
 
-    // Interaction State
-    const [openModeDropdown, setOpenModeDropdown] = useState(false);
-    const [openLangDropdown, setOpenLangDropdown] = useState(false);
+    // Level availability
+    const [loadingLevel, setLoadingLevel] = useState(true);
+    const [levelUnavailable, setLevelUnavailable] = useState(false);
+    const [dynamicPuzzle, setDynamicPuzzle] = useState(null);
 
-    const currentPuzzle = puzzleData[towerId]?.[floor] || puzzleData['1']['1'];
-    // Use puzzle description as the objective
+    // Check if course levels exist for MySQL (Tower 5)
+    useEffect(() => {
+        const checkAvailability = async () => {
+            setLoadingLevel(true);
+            try {
+                const courses = await coursesAPI.getCourses();
+                const course = courses.find(c => c.id === 'mysql');
+                if (!course || (course.total_levels || 0) === 0) {
+                    setLevelUnavailable(true);
+                    setLoadingLevel(false);
+                    return;
+                }
+                const floorNum = currentFloor <= 10 ? currentFloor : currentFloor <= 20 ? currentFloor - 10 : currentFloor - 20;
+                const mode = currentFloor <= 10 ? 'Beginner' : currentFloor <= 20 ? 'Intermediate' : 'Advance';
+                let levelData = await coursesAPI.getLevel(course.id, floorNum, mode, 'Easy');
+                if (levelData) {
+                    setDynamicPuzzle(levelData);
+                } else {
+                    setLevelUnavailable(true);
+                }
+            } catch (e) {
+                console.error('Failed to check course availability:', e);
+                setLevelUnavailable(true);
+            }
+            setLoadingLevel(false);
+        };
+        checkAvailability();
+    }, [currentFloor]);
+
+    const currentPuzzle = dynamicPuzzle;
     const currentObjectives = currentPuzzle
         ? [currentPuzzle.description]
-        : (objectives[floor] || objectives['1']);
+        : ['Loading...'];
 
     // Constants
     const gameModes = [
@@ -143,6 +173,35 @@ const GameCodeAbyss = () => {
     };
 
     const isDashboardActive = !showLesson && !showChallenge;
+
+    // Redirect if level is unavailable
+    useEffect(() => {
+        if (levelUnavailable && !loadingLevel) {
+            const timer = setTimeout(() => navigate('/play'), 2500);
+            return () => clearTimeout(timer);
+        }
+    }, [levelUnavailable, loadingLevel, navigate]);
+
+    if (levelUnavailable && !loadingLevel) {
+        return (
+            <div className="min-h-screen bg-slate-950 flex items-center justify-center font-galsb"
+                style={{ backgroundImage: `url(${gameCodeBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+                <div className="relative z-10 text-center space-y-6">
+                    <div className="w-20 h-20 mx-auto bg-amber-500/20 rounded-full flex items-center justify-center border border-amber-500/40">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m0 0v2m0-2h2m-2 0H10m2-6V4m0 0L9 7m3-3l3 3" />
+                        </svg>
+                    </div>
+                    <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter">Tower Closed</h2>
+                    <p className="text-slate-400 font-bold text-sm max-w-sm mx-auto">
+                        The instructor has not generated course levels for this tower yet. Please check back later.
+                    </p>
+                    <p className="text-xs text-slate-500 animate-pulse font-bold uppercase tracking-widest">Redirecting to map...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div

@@ -65,6 +65,7 @@ const GameCode = () => {
 
     const [dynamicPuzzle, setDynamicPuzzle] = useState(null);
     const [loadingLevel, setLoadingLevel] = useState(true);
+    const [levelUnavailable, setLevelUnavailable] = useState(false);
     // Safe User Context
     const { user, loading, updateTowerProgress } = useUser();
     const { updateQuestProgress } = useQuests();
@@ -81,70 +82,78 @@ const GameCode = () => {
     useEffect(() => {
         const fetchLevel = async () => {
             setLoadingLevel(true);
-            if (towerId === '1') { // Only for Eldoria (Python)
-                try {
-                    // 1. Get user's current difficulty preference
-                    let userDifficulty = 'Easy';
-                    if (user?.id) {
-                        try {
-                            const { profile } = await userAPI.getProfile(user.id);
-                            if (profile && profile.current_difficulty) {
-                                userDifficulty = profile.current_difficulty;
-                            }
-                        } catch (err) {
-                            console.warn('Failed to fetch user difficulty, using default', err);
-                        }
-                    }
+            setLevelUnavailable(false);
+            try {
+                // 1. Get all courses to find the matching course
+                const courses = await coursesAPI.getCourses();
+                const matchedCourse = courses.find(c => c.name.toLowerCase().includes('python'));
 
-                    // Force Level 1 to always be 'Easy' (Hello World) for consistency
-                    if (currentFloor === 1) {
-                        userDifficulty = 'Easy';
-                    }
-
-                    setDifficulty(userDifficulty);
-
-                    // 2. Get all courses to find the Python ID
-                    const courses = await coursesAPI.getCourses();
-                    const pythonCourse = courses.find(c => c.name.toLowerCase().includes('python'));
-
-                    if (pythonCourse) {
-                        // 3. Fetch specific level based on floor config AND user difficulty
-                        let levelData = await coursesAPI.getLevel(
-                            pythonCourse.id,
-                            floorConfig.levelOrder,
-                            floorConfig.mode,
-                            userDifficulty // Use adaptive difficulty
-                        );
-
-                        // ROBUSNESS BACKUP: If strict match fails, try 'Easy' difficulty for this mode
-                        if (!levelData) {
-                            console.warn('Strict level match failed, attempting fallback to Easy...');
-                            levelData = await coursesAPI.getLevel(
-                                pythonCourse.id,
-                                floorConfig.levelOrder,
-                                floorConfig.mode,
-                                'Easy'
-                            );
-                        }
-
-                        if (levelData) {
-                            setDynamicPuzzle(levelData);
-                        }
-                    }
-                } catch (e) {
-                    console.error('Failed to load dynamic puzzle:', e);
+                if (!matchedCourse || (matchedCourse.total_levels || 0) === 0) {
+                    // No course or no levels generated — tower is closed
+                    setLevelUnavailable(true);
+                    setLoadingLevel(false);
+                    return;
                 }
+
+                // 2. Get user's current difficulty preference
+                let userDifficulty = 'Easy';
+                if (user?.id) {
+                    try {
+                        const { profile } = await userAPI.getProfile(user.id);
+                        if (profile && profile.current_difficulty) {
+                            userDifficulty = profile.current_difficulty;
+                        }
+                    } catch (err) {
+                        console.warn('Failed to fetch user difficulty, using default', err);
+                    }
+                }
+
+                // Force Level 1 to always be 'Easy' (Hello World) for consistency
+                if (currentFloor === 1) {
+                    userDifficulty = 'Easy';
+                }
+
+                setDifficulty(userDifficulty);
+
+                // 3. Fetch specific level based on floor config AND user difficulty
+                let levelData = await coursesAPI.getLevel(
+                    matchedCourse.id,
+                    floorConfig.levelOrder,
+                    floorConfig.mode,
+                    userDifficulty
+                );
+
+                // ROBUSTNESS BACKUP: If strict match fails, try 'Easy' difficulty for this mode
+                if (!levelData) {
+                    console.warn('Strict level match failed, attempting fallback to Easy...');
+                    levelData = await coursesAPI.getLevel(
+                        matchedCourse.id,
+                        floorConfig.levelOrder,
+                        floorConfig.mode,
+                        'Easy'
+                    );
+                }
+
+                if (levelData) {
+                    setDynamicPuzzle(levelData);
+                } else {
+                    // Level not found in DB for this floor
+                    setLevelUnavailable(true);
+                }
+            } catch (e) {
+                console.error('Failed to load dynamic puzzle:', e);
+                setLevelUnavailable(true);
             }
             setLoadingLevel(false);
         };
         fetchLevel();
     }, [towerId, currentFloor, user?.id]);
 
-    const currentPuzzle = dynamicPuzzle || puzzleData[towerId]?.[floor] || puzzleData['1']['1'];
-    // Merge AI description into objectives if we have a dynamic puzzle OR use static puzzle description
+    const currentPuzzle = dynamicPuzzle;
+    // Merge AI description into objectives if we have a dynamic puzzle
     const currentObjectives = currentPuzzle
         ? [{ id: 1, text: currentPuzzle.description, done: false }]
-        : (objectives[floor] || objectives['1']);
+        : [{ id: 1, text: 'Loading...', done: false }];
 
     // Constants
     const gameModes = [
@@ -277,6 +286,35 @@ const GameCode = () => {
     };
 
     const isDashboardActive = !showLesson && !showChallenge;
+
+    // Redirect if level is unavailable (no course data generated)
+    useEffect(() => {
+        if (levelUnavailable && !loadingLevel) {
+            const timer = setTimeout(() => navigate('/play'), 2500);
+            return () => clearTimeout(timer);
+        }
+    }, [levelUnavailable, loadingLevel, navigate]);
+
+    if (levelUnavailable && !loadingLevel) {
+        return (
+            <div className="min-h-screen bg-slate-950 flex items-center justify-center font-galsb"
+                style={{ backgroundImage: `url(${gameCodeBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+                <div className="relative z-10 text-center space-y-6">
+                    <div className="w-20 h-20 mx-auto bg-amber-500/20 rounded-full flex items-center justify-center border border-amber-500/40">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m0 0v2m0-2h2m-2 0H10m2-6V4m0 0L9 7m3-3l3 3" />
+                        </svg>
+                    </div>
+                    <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter">Tower Closed</h2>
+                    <p className="text-slate-400 font-bold text-sm max-w-sm mx-auto">
+                        The instructor has not generated course levels for this tower yet. Please check back later.
+                    </p>
+                    <p className="text-xs text-slate-500 animate-pulse font-bold uppercase tracking-widest">Redirecting to map...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div

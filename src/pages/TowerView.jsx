@@ -22,7 +22,8 @@ const TowerView = () => {
 
 
     const [dynamicLevels, setDynamicLevels] = useState([]);
-    const [loadingLevels, setLoadingLevels] = useState(false);
+    const [loadingLevels, setLoadingLevels] = useState(true);
+    const [towerClosed, setTowerClosed] = useState(false);
     const [difficultySettings, setDifficultySettings] = useState({
         mode: 'Beginner',
         difficulty: 'Easy'
@@ -46,28 +47,34 @@ const TowerView = () => {
     // Fetch dynamic levels from DB for Tower 1 (Python)
     useEffect(() => {
         const fetchLevels = async () => {
-            if (id === '1') { // Only for Python Tower
-                try {
-                    setLoadingLevels(true);
+            try {
+                setLoadingLevels(true);
 
-                    // 1. Get all courses to find the Python ID
-                    const courses = await coursesAPI.getCourses();
-                    const pythonCourse = courses.find(c => c.name.toLowerCase().includes('python'));
+                const courses = await coursesAPI.getCourses();
+                const pythonCourse = courses.find(c => c.name.toLowerCase().includes('python'));
 
-                    if (pythonCourse) {
-                        // 2. Fetch ALL levels (no filter)
-                        const levels = await coursesAPI.getLevels(
-                            pythonCourse.id,
-                            null, // mode
-                            null  // difficulty
-                        );
-                        setDynamicLevels(levels || []);
-                    }
-                } catch (error) {
-                    console.error('Failed to fetch tower levels:', error);
-                } finally {
+                if (!pythonCourse || (pythonCourse.total_levels || 0) === 0) {
+                    setTowerClosed(true);
                     setLoadingLevels(false);
+                    return;
                 }
+
+                const levels = await coursesAPI.getLevels(
+                    pythonCourse.id,
+                    null,
+                    null
+                );
+
+                if (!levels || levels.length === 0) {
+                    setTowerClosed(true);
+                } else {
+                    setDynamicLevels(levels);
+                }
+            } catch (error) {
+                console.error('Failed to fetch tower levels:', error);
+                setTowerClosed(true);
+            } finally {
+                setLoadingLevels(false);
             }
         };
         fetchLevels();
@@ -126,6 +133,41 @@ const TowerView = () => {
         { floor: 29, top: '35%', left: '32%', label: 'LEVEL 25' },
         { floor: 30, top: '25%', left: '50%', label: 'LEVEL 30' },
     ];
+
+    // Tower Closed overlay
+    if (towerClosed && !loadingLevels) {
+        return (
+            <div className="min-h-screen bg-slate-950 relative"
+                style={{ backgroundImage: `url(${towerPageBg})`, backgroundSize: '100% 100%', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
+                <GameNavbar />
+                <div className="fixed top-0 left-0 right-0 h-48 z-40 pointer-events-none">
+                    <div className="absolute top-26 left-8 pointer-events-auto">
+                        <button onClick={() => { playClick(); navigate('/play'); }}
+                            className="glass-panel px-3 py-1.5 flex items-center gap-2 text-xs font-galsb text-white hover:text-primary transition-all hover:scale-105 border-white/30">
+                            <LayoutGrid className="w-5 h-5" /> BACK TO MAP
+                        </button>
+                    </div>
+                </div>
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-30 flex items-center justify-center">
+                    <div className="text-center space-y-6">
+                        <div className="w-20 h-20 mx-auto bg-amber-500/20 rounded-full flex items-center justify-center border border-amber-500/40">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m0 0v2m0-2h2m-2 0H10m2-6V4m0 0L9 7m3-3l3 3" />
+                            </svg>
+                        </div>
+                        <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter font-galsb">Tower Closed</h2>
+                        <p className="text-slate-400 font-bold text-sm max-w-sm mx-auto">
+                            The instructor has not generated course levels for this tower yet. Please check back later.
+                        </p>
+                        <button onClick={() => { playClick(); navigate('/play'); }}
+                            className="mt-4 px-6 py-2 bg-cyan-500/20 border border-cyan-500/40 rounded-lg text-cyan-400 font-bold text-sm hover:bg-cyan-500/30 transition-all">
+                            Return to Map
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div
