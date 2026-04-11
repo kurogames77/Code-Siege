@@ -189,7 +189,8 @@ const LandingPage = () => {
                 // Navigate with hash so ResetPasswordPage can process the token
                 navigate('/reset-password' + location.hash, { replace: true });
             } else if (isMagicLink) {
-                navigate('/ConfirmationPage');
+                // Pass the hash so Supabase can parse the access_token and replace any stale sessions
+                navigate('/ConfirmationPage' + location.hash, { replace: true });
             }
         }
     }, [location, navigate]);
