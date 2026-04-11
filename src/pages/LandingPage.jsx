@@ -35,6 +35,21 @@ const LandingPage = () => {
     const [instructorCode, setInstructorCode] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
+    // Map student code prefix to course (CS→BSCS, IS→BSIS, IT→BSIT)
+    const CODE_PREFIX_TO_COURSE = { 'CS': 'BSCS', 'IS': 'BSIS', 'IT': 'BSIT' };
+    const ALL_COURSES = ['BSCS', 'BSIS', 'BSIT'];
+
+    // Derive the detected course from the student code prefix
+    const detectedCoursePrefix = instructorCode.trim().split('-')[0]?.toUpperCase() || '';
+    const detectedCourse = CODE_PREFIX_TO_COURSE[detectedCoursePrefix] || null;
+
+    // Auto-select the course when a valid student code prefix is detected
+    useEffect(() => {
+        if (detectedCourse) {
+            setCourse(detectedCourse);
+        }
+    }, [detectedCourse]);
+
     // Forgot password state
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const [forgotEmail, setForgotEmail] = useState('');
@@ -553,9 +568,15 @@ const LandingPage = () => {
                                                     onChange={(e) => setCourse(e.target.value)}
                                                 >
                                                     <option value="" disabled>Select your course</option>
-                                                    <option value="BSCS">BSCS</option>
-                                                    <option value="BSIS">BSIS</option>
-                                                    <option value="BSIT">BSIT</option>
+                                                    {ALL_COURSES.map(c => (
+                                                        <option
+                                                            key={c}
+                                                            value={c}
+                                                            disabled={detectedCourse && c !== detectedCourse}
+                                                        >
+                                                            {c}
+                                                        </option>
+                                                    ))}
                                                 </select>
                                             </div>
                                         </label>
@@ -1131,9 +1152,15 @@ const LandingPage = () => {
                                             onChange={(e) => setCourse(e.target.value)}
                                         >
                                             <option value="" disabled>Select your course</option>
-                                            <option value="BSCS">BSCS</option>
-                                            <option value="BSIS">BSIS</option>
-                                            <option value="BSIT">BSIT</option>
+                                            {ALL_COURSES.map(c => (
+                                                <option
+                                                    key={c}
+                                                    value={c}
+                                                    disabled={detectedCourse && c !== detectedCourse}
+                                                >
+                                                    {c}
+                                                </option>
+                                            ))}
                                         </select>
                                     </div>
                                 </label>
