@@ -122,9 +122,14 @@ const LandingPage = () => {
     };
 
     // Interceptor for Google Login to save intended role
+    // This persists the selected role (guest/instructor) so that after
+    // the Google OAuth redirect, the complete_profile form knows which
+    // role to lock to and doesn't show irrelevant role tabs.
     const handleGoogleLogin = () => {
         if (modal?.role === 'guest') {
             localStorage.setItem('code_siege_intended_role', 'guest');
+        } else if (modal?.role === 'instructor') {
+            localStorage.setItem('code_siege_intended_role', 'instructor');
         } else {
             localStorage.removeItem('code_siege_intended_role');
         }
@@ -203,7 +208,17 @@ const LandingPage = () => {
                 return; // Wait for user to complete the form
             }
 
-            // 2. Normal Complete Profile Check (social login for students missing studentId)
+            // 2. Check for intended instructor Google login
+            if (intendedRole === 'instructor' && user.role !== 'instructor' && !user.instructorId) {
+                // Show the complete profile modal locked to the instructor role only
+                if (modal?.type !== 'complete_profile') {
+                    setModal({ type: 'complete_profile', role: 'instructor', isInstructorLocked: true });
+                    setFullName(user.name || user.username || '');
+                }
+                return; // Wait for user to complete the form
+            }
+
+            // 3. Normal Complete Profile Check (social login for students missing studentId)
             // Instructors/admins/guests don't need to complete profile
             if (user.role !== 'instructor' && user.role !== 'admin' && user.role !== 'guest' && !user.studentId) {
                 if (modal?.type !== 'complete_profile') {
@@ -340,6 +355,9 @@ const LandingPage = () => {
             }
 
             await updateProfile(profileData);
+
+            // Clear intended role from localStorage now that profile is saved
+            localStorage.removeItem('code_siege_intended_role');
 
             toast.success('Profile completed! Welcome to Code Siege.');
             closeModal();
@@ -1018,7 +1036,8 @@ const LandingPage = () => {
                             </p>
                         </div>
 
-                        {!modal.isGuestLocked && (
+                        {/* Role Tabs: hidden when locked to guest or instructor via Google signup */}
+                        {!modal.isGuestLocked && !modal.isInstructorLocked && (
                             <div className="landing-modal__roles" role="radiogroup" aria-label="Select role">
                                 <button
                                     type="button"
