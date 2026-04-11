@@ -250,9 +250,10 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                                 <div className="text-center w-full">
                                                     <h3 className="text-sm font-black text-white uppercase italic truncate mb-0.5">{topPlayers[1].name}</h3>
                                                     <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-2">{topPlayers[1].rankName}</p>
-                                                    <div className={`bg-slate-900/50 border border-white/10 rounded-lg py-1.5 px-3 group hover:border-${currentTheme.colors.primary}-500/50 transition-colors`}>
+                                                    <div className={`bg-slate-900/50 border border-white/10 rounded-lg py-1.5 px-3 group hover:border-${currentTheme.colors.primary}-500/50 transition-colors mb-2`}>
                                                         <span className={`text-xs font-black text-${currentTheme.colors.primary}-400 group-hover:text-white transition-colors`}>{topPlayers[1].score.toLocaleString()} <span className="text-[8px] opacity-60">EXP</span></span>
                                                     </div>
+                                                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{topPlayers[1].battles_won || 0} Battles Won</div>
                                                 </div>
                                             </motion.div>
                                         ) : <div className="flex-1 max-w-[140px]" />}
@@ -279,9 +280,10 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                             <div className="text-center w-full">
                                                 <h3 className={`text-xl font-black text-white uppercase italic truncate mb-1 group-hover:text-${currentTheme.colors.secondary}-400 transition-colors tracking-tight`}>{topPlayers[0].name}</h3>
                                                 <p className={`text-[10px] font-bold text-${currentTheme.colors.secondary}-500/80 uppercase tracking-[0.2em] mb-3`}>{topPlayers[0].rankName}</p>
-                                                <div className={`bg-${currentTheme.colors.secondary}-500/10 border border-${currentTheme.colors.secondary}-500/30 rounded-xl py-2 px-6 shadow-lg shadow-${currentTheme.colors.secondary}-500/5 group hover:bg-${currentTheme.colors.secondary}-500/20 transition-all duration-300`}>
+                                                <div className={`bg-${currentTheme.colors.secondary}-500/10 border border-${currentTheme.colors.secondary}-500/30 rounded-xl py-2 px-6 shadow-lg shadow-${currentTheme.colors.secondary}-500/5 group hover:bg-${currentTheme.colors.secondary}-500/20 transition-all duration-300 mb-2`}>
                                                     <span className={`text-lg font-black text-${currentTheme.colors.secondary}-500 group-hover:text-white transition-colors`}>{topPlayers[0].score.toLocaleString()} <span className="text-xs opacity-60 uppercase font-mono">EXP</span></span>
                                                 </div>
+                                                <div className={`text-[10px] font-bold text-${currentTheme.colors.secondary}-400 uppercase tracking-widest`}>{topPlayers[0].battles_won || 0} Battles Won</div>
                                             </div>
                                         </motion.div>
 
@@ -307,9 +309,10 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                                 <div className="text-center w-full">
                                                     <h3 className="text-sm font-black text-white uppercase italic truncate mb-0.5">{topPlayers[2].name}</h3>
                                                     <p className="text-[9px] font-bold text-orange-400/60 uppercase tracking-wider mb-2">{topPlayers[2].rankName}</p>
-                                                    <div className="bg-slate-900/50 border border-white/10 rounded-lg py-1.5 px-3 group hover:border-orange-500/50 transition-colors">
+                                                    <div className="bg-slate-900/50 border border-white/10 rounded-lg py-1.5 px-3 group hover:border-orange-500/50 transition-colors mb-2">
                                                         <span className="text-xs font-black text-orange-700 group-hover:text-white transition-colors">{topPlayers[2].score.toLocaleString()} <span className="text-[8px] opacity-60">EXP</span></span>
                                                     </div>
+                                                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{topPlayers[2].battles_won || 0} Battles Won</div>
                                                 </div>
                                             </motion.div>
                                         ) : <div className="flex-1 max-w-[140px]" />}
@@ -345,15 +348,6 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-3">
                                                     <h4 className="text-sm font-black text-white uppercase italic group-hover:translate-x-1 transition-transform">{player.name}</h4>
-                                                    {player.trend === 'up' ? (
-                                                        <div className="flex items-center text-[8px] text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                                                            <div className="w-1 h-1 bg-emerald-400 rounded-full mr-1 animate-pulse" /> GAINING
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex items-center text-[8px] text-rose-400 font-bold bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">
-                                                            <div className="w-1 h-1 bg-rose-400 rounded-full mr-1 animate-pulse" /> STALLING
-                                                        </div>
-                                                    )}
                                                 </div>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <img src={player.rankIcon} className="w-5 h-5 object-contain opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all" alt="" />
@@ -368,7 +362,7 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                                 >
                                                     {player.score.toLocaleString()} <span className="text-[10px] opacity-60 font-mono">EXP</span>
                                                 </motion.div>
-                                                <div className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">Aggregate EXP</div>
+                                                <div className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">{player.battles_won || 0} Battles Won</div>
                                             </div>
 
                                             {/* Technical Hover Accent */}

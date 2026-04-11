@@ -27,6 +27,20 @@ router.get('/', optionalAuth, async (req, res) => {
 
         const filteredProgress = progress.filter(entry => entry.users?.id && entry.users?.role !== 'instructor');
 
+        // Fetch battles to compute battles won
+        const { data: battles } = await supabase
+            .from('battles')
+            .select('winner_id')
+            .not('winner_id', 'is', null);
+
+        const winsMap = new Map();
+        battles?.forEach(b => {
+             const wid = b.winner_id;
+             if (wid) {
+                 winsMap.set(wid, (winsMap.get(wid) || 0) + 1);
+             }
+        });
+
         // Add rank to each entry — map to field names the frontend expects
         const rankedLeaderboard = filteredProgress.map((entry, index) => ({
             id: entry.users?.id,
@@ -37,6 +51,7 @@ router.get('/', optionalAuth, async (req, res) => {
             level: entry.level,
             xp: entry.xp,
             score: entry.xp,
+            battles_won: winsMap.get(entry.users?.id) || 0,
             rank: index + 1
         }));
 
@@ -81,6 +96,20 @@ router.get('/weekly', optionalAuth, async (req, res) => {
 
         const filteredProgress = progress.filter(entry => entry.users?.id && entry.users?.role !== 'instructor');
 
+        // Fetch battles to compute battles won
+        const { data: battles } = await supabase
+            .from('battles')
+            .select('winner_id')
+            .not('winner_id', 'is', null);
+
+        const winsMap = new Map();
+        battles?.forEach(b => {
+             const wid = b.winner_id;
+             if (wid) {
+                 winsMap.set(wid, (winsMap.get(wid) || 0) + 1);
+             }
+        });
+
         const rankedLeaderboard = filteredProgress.map((entry, index) => ({
             id: entry.users?.id,
             name: entry.users?.username,
@@ -90,6 +119,7 @@ router.get('/weekly', optionalAuth, async (req, res) => {
             level: entry.level,
             xp: entry.xp,
             score: entry.xp,
+            battles_won: winsMap.get(entry.users?.id) || 0,
             rank: index + 1
         }));
 
