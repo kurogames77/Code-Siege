@@ -322,6 +322,39 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                     }));
                 setOnlineUsers(users);
 
+                // HOST FALLBACK: If we are the host and don't have an opponent yet,
+                // detect any other player in the presence state and capture them.
+                // This is critical when the 'join' event gets missed due to REST fallback.
+                if (!initialOpponent && !opponentRef.current && users.length > 0) {
+                    const guest = users[0];
+                    playSuccess();
+                    setOpponent({
+                        id: guest.id,
+                        name: guest.name,
+                        avatar: guest.avatar,
+                        rankName: guest.rankName,
+                        rankIcon: guest.rankIcon,
+                        heroImage: heroMap[guest.heroImageKey] || hero2Static
+                    });
+                    setMatchState('lobby');
+                    setIsUserReady(false);
+                    setIsOpponentReady(false);
+                    setTimer(60);
+
+                    // Host sends current settings to the guest
+                    channel.send({
+                        type: 'broadcast',
+                        event: 'sync-settings',
+                        payload: {
+                            targetId: guest.id,
+                            language: selectedLanguageRef.current || (courses.length > 0 ? courses[0].name : ''),
+                            difficulty: selectedDifficultyRef.current,
+                            mode: selectedModeRef.current,
+                            wager: selectedWagerRef.current
+                        }
+                    });
+                }
+
             })
             .on('presence', { event: 'join' }, ({ key, newPresences }) => {
                 const guest = newPresences.find(u => String(u.id) !== String(currentUser.id));
@@ -531,22 +564,33 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             return allPlayers.some(p => String(p.id) === String(initialOpponent.id));
         };
 
-        // Give Presence more time to sync — first check at 5s, if host not found retry at 8s
+        // Give Presence more time to sync — REST fallback makes presence inherently slower
+        // First check at 10s, then retry at 15s, then final check at 20s
         const hostCheckTimeout = initialOpponent ? setTimeout(() => {
             if (checkHostPresence()) return; // Host is here, all good
+            if (opponentRef.current) return; // Already connected via duel-accept broadcast
 
-            // Retry once more after 3 seconds (Presence can be slow)
+            // Retry after 5 more seconds (Presence over REST fallback can be very slow)
             const retryTimeout = setTimeout(() => {
                 if (checkHostPresence()) return; // Host appeared on retry
+                if (opponentRef.current) return; // Connected via broadcast
 
-                // Host is truly gone
-                toast.error('Friend is no longer in the lobby (match may have started).');
-                onBack();
-            }, 3000);
+                // Final retry after 5 more seconds
+                const finalRetry = setTimeout(() => {
+                    if (checkHostPresence()) return;
+                    if (opponentRef.current) return;
+
+                    // Host is truly gone
+                    toast.error('Friend is no longer in the lobby (match may have started).');
+                    onBack();
+                }, 5000);
+
+                hostCheckRetryRef.current = finalRetry;
+            }, 5000);
 
             // Store retry timeout for cleanup
             hostCheckRetryRef.current = retryTimeout;
-        }, 5000) : null;
+        }, 10000) : null;
 
 
         return () => {

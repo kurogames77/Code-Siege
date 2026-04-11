@@ -23,13 +23,16 @@ router.get('/', optionalAuth, async (req, res) => {
             return res.status(400).json({ error: error.message });
         }
 
-        // Add rank to each entry
+        // Add rank to each entry — map to field names the frontend expects
         const rankedLeaderboard = progress.map((entry, index) => ({
             id: entry.users?.id,
+            name: entry.users?.username,
             username: entry.users?.username,
+            avatar: entry.users?.avatar_url,
             avatar_url: entry.users?.avatar_url,
             level: entry.level,
             xp: entry.xp,
+            score: entry.xp,
             rank: index + 1
         })).filter(entry => entry.id);
 
@@ -74,10 +77,13 @@ router.get('/weekly', optionalAuth, async (req, res) => {
 
         const rankedLeaderboard = progress.map((entry, index) => ({
             id: entry.users?.id,
+            name: entry.users?.username,
             username: entry.users?.username,
+            avatar: entry.users?.avatar_url,
             avatar_url: entry.users?.avatar_url,
             level: entry.level,
             xp: entry.xp,
+            score: entry.xp,
             rank: index + 1
         })).filter(entry => entry.id);
 
