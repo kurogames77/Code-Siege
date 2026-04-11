@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Plus, RefreshCw, AlertTriangle, Code2, X, ChevronDown, CheckCircle2, Terminal, Cpu, Edit2 } from 'lucide-react';
+import { BookOpen, Plus, RefreshCw, AlertTriangle, Code2, X, ChevronDown, CheckCircle2, Terminal, Cpu, Edit2, Trash2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { instructorAPI, aiAPI, coursesAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
@@ -29,6 +29,10 @@ const PuzzleCourses = ({ theme }) => {
     const [isAddLanguageModalOpen, setIsAddLanguageModalOpen] = useState(false);
     const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
     const [newLangData, setNewLangData] = useState({ name: '', id: '', color: 'cyan' });
+
+    const [isDropLanguageModalOpen, setIsDropLanguageModalOpen] = useState(false);
+    const [isDropLangDropdownOpen, setIsDropLangDropdownOpen] = useState(false);
+    const [dropLangData, setDropLangData] = useState({ id: '', name: '' });
 
     const [formData, setFormData] = useState({
         mode: '',
@@ -246,10 +250,12 @@ const PuzzleCourses = ({ theme }) => {
         setIsOverrideModalOpen(false);
         setIsOverrideModalOpen(false);
         setIsAddLanguageModalOpen(false);
+        setIsDropLanguageModalOpen(false);
         setIsEditLevelModalOpen(false);
         setSelectedCourse(null);
         setSelectedCourse(null);
         setNewLangData({ name: '', id: '', color: 'cyan' });
+        setDropLangData({ id: '', name: '' });
         setGenLogs([]); // Safety clear
     };
 
@@ -269,6 +275,17 @@ const PuzzleCourses = ({ theme }) => {
                 name: selectedLang.name
             }, {
                 onSuccess: () => handleCloseModal()
+            });
+        }
+    };
+
+    const handleDropLanguageSubmit = (e) => {
+        e.preventDefault();
+        if (dropLangData.id) {
+            deleteMutation.mutate(dropLangData.id, {
+                onSuccess: () => {
+                    handleCloseModal();
+                }
             });
         }
     };
@@ -409,6 +426,16 @@ const PuzzleCourses = ({ theme }) => {
                     >
                         <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
                         <span className="text-xs font-black uppercase tracking-widest">Add Language</span>
+                    </button>
+                    <button
+                        onClick={() => setIsDropLanguageModalOpen(true)}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-2xl transition-all group ${theme === 'dark'
+                            ? 'bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-500 hover:text-white shadow-[0_0_20px_rgba(244,63,94,0.1)] hover:shadow-[0_0_30px_rgba(244,63,94,0.3)]'
+                            : 'bg-rose-50 hover:bg-rose-600 border border-rose-200 text-rose-600 hover:text-white shadow-sm hover:shadow-lg'
+                            }`}
+                    >
+                        <Trash2 className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                        <span className="text-xs font-black uppercase tracking-widest">Drop Language</span>
                     </button>
                     <div className={`p-3 border rounded-2xl transition-all duration-500 ${theme === 'dark' ? 'bg-slate-900 border-white/5' : 'bg-white border-slate-200 shadow-sm'
                         }`}>
@@ -1236,6 +1263,95 @@ const PuzzleCourses = ({ theme }) => {
                                     <button onClick={handleAddLanguageSubmit} disabled={!newLangData.name || availableLanguages.length === 0} className={`px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-600 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 transition-all ${(!newLangData.name || availableLanguages.length === 0) ? 'opacity-50 cursor-not-allowed' : 'hover:from-cyan-400 hover:to-cyan-500'}`}>
                                         <Plus className="w-4 h-4" />
                                         Add Language
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Drop Language Modal */}
+            <AnimatePresence>
+                {isDropLanguageModalOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className={`fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4 transition-colors duration-500 ${theme === 'dark' ? 'bg-black/80' : 'bg-slate-900/40'}`}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.95, y: 20 }}
+                            className={`w-full max-w-lg border rounded-3xl shadow-2xl transition-all duration-500 ${theme === 'dark' ? 'bg-[#0B1224] border-white/10' : 'bg-white border-slate-200'}`}
+                        >
+                            <div className={`p-6 border-b rounded-t-3xl flex items-center justify-between transition-colors ${theme === 'dark' ? 'bg-gradient-to-r from-rose-500/10 to-transparent border-white/5' : 'bg-slate-50 border-slate-200'}`}>
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center border transition-colors ${theme === 'dark' ? 'bg-rose-500/20 border-rose-500/30 text-rose-500' : 'bg-white border-rose-200 text-rose-600'}`}>
+                                        <Trash2 className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className={`text-xl font-black italic tracking-tight transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Drop Language</h3>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Remove Curriculum</p>
+                                    </div>
+                                </div>
+                                <button onClick={handleCloseModal}>
+                                    <X className={`w-5 h-5 ${theme === 'dark' ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'}`} />
+                                </button>
+                            </div>
+                            <div className="p-8 space-y-6">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Select Language to Drop</label>
+                                        {courses.length > 0 ? (
+                                            <div className="relative w-full">
+                                                <div
+                                                    onClick={() => setIsDropLangDropdownOpen(!isDropLangDropdownOpen)}
+                                                    className={`w-full border rounded-xl px-4 py-3 text-sm font-bold focus:outline-none transition-all cursor-pointer flex justify-between items-center ${theme === 'dark' ? 'bg-slate-900 border-white/10 text-white focus:border-cyan-500/50 hover:bg-slate-900/80' : 'bg-white border-slate-200 text-slate-900 focus:border-cyan-500'}`}
+                                                >
+                                                    <span className={!dropLangData.name ? 'text-slate-500' : ''}>{dropLangData.name || 'Choose a language...'}</span>
+                                                    <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${isDropLangDropdownOpen ? 'rotate-180' : ''}`} />
+                                                </div>
+
+                                                <AnimatePresence>
+                                                    {isDropLangDropdownOpen && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: -10 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            exit={{ opacity: 0, y: -10 }}
+                                                            className={`absolute top-full left-0 w-full mt-2 border rounded-xl overflow-hidden z-[100] shadow-xl ${theme === 'dark' ? 'bg-[#0B1224] border-white/10' : 'bg-white border-slate-200'}`}
+                                                        >
+                                                            <div className="max-h-56 overflow-y-auto custom-scrollbar flex flex-col">
+                                                                {courses.map(course => (
+                                                                    <div
+                                                                        key={course.id}
+                                                                        onClick={() => {
+                                                                            setDropLangData({ id: course.id, name: course.name });
+                                                                            setIsDropLangDropdownOpen(false);
+                                                                        }}
+                                                                        className={`px-4 py-3 text-sm font-bold cursor-pointer transition-colors ${theme === 'dark' ? 'text-white hover:bg-cyan-500/20' : 'text-slate-900 hover:bg-cyan-50'}`}
+                                                                    >
+                                                                        {course.name}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </div>
+                                        ) : (
+                                            <p className={`text-sm font-bold italic px-4 py-3 rounded-xl ${theme === 'dark' ? 'text-slate-500 bg-slate-900/50' : 'text-slate-400 bg-slate-50'}`}>
+                                                No active languages to drop.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="pt-4 grid grid-cols-2 gap-4">
+                                    <button onClick={handleCloseModal} className={`px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${theme === 'dark' ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}>Cancel</button>
+                                    <button onClick={handleDropLanguageSubmit} disabled={!dropLangData.id || courses.length === 0} className={`px-4 py-3 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-rose-500/20 flex items-center justify-center gap-2 transition-all ${(!dropLangData.id || courses.length === 0) ? 'opacity-50 cursor-not-allowed' : 'hover:from-rose-400 hover:to-rose-500'}`}>
+                                        <Trash2 className="w-4 h-4" />
+                                        Drop Language
                                     </button>
                                 </div>
                             </div>
