@@ -16,6 +16,10 @@ export const authenticateUser = async (req, res, next) => {
         const { data: { user }, error } = await supabase.auth.getUser(token);
 
         if (error || !user) {
+            // Differentiate rate limit errors (429) from invalid/expired tokens (401)
+            if (error?.status === 429) {
+                return res.status(429).json({ error: 'Supabase API rate limit exceeded. Please try again later.' });
+            }
             return res.status(401).json({ error: 'Invalid or expired token' });
         }
 

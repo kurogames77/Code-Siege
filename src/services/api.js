@@ -46,25 +46,27 @@ const apiRequest = async (endpoint, options = {}, _isRetry = false) => {
             try {
                 const { default: supabase } = await import('../lib/supabase');
                 const { data: { session } } = await supabase.auth.getSession();
-                if (session?.access_token) {
+                
+                // If Supabase gave us a DIFFERENT access token, it means a background
+                // refresh occurred! We should use this new token and retry.
+                if (session?.access_token && session.access_token !== token) {
                     setToken(session.access_token);
                     return await apiRequest(endpoint, options, true);
                 }
             } catch (refreshErr) {
-                // Token refresh failed silently
+                console.warn('[API] Silent token refresh check failed', refreshErr);
             }
         }
         
-        // If we reach here, either the retry failed with 401, or getSession() failed.
-        // Token is hopelessly expired! We MUST clear it to prevent ghost sessions.
-        setToken(null);
-        try {
-            const { default: supabase } = await import('../lib/supabase');
-            await supabase.auth.signOut({ scope: 'local' });
-        } catch (e) {}
+        // We DO NOT force signOut or setToken(null) here anymore!
+        // If the token is truly expired, Supabase's own background refresh timer 
+        // will eventually fail and fire a 'SIGNED_OUT' event, which UserContext 
+        // will handle cleanly. Force-clearing the local token here causes
+        // cascading failures during rate-limit events where backend wrongly emits 401.
         
-        // Throw a specific error so the frontend components know why it failed
-        throw new Error('Invalid or expired token. Please log in again.');
+        const error = new Error('Invalid or expired token');
+        error.status = 401;
+        throw error;
     }
 
     const data = await response.json();
