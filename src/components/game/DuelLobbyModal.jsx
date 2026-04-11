@@ -590,6 +590,62 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         };
     }, [isOpen, user?.id, lobbyId]);
 
+    // --- HOST FALLBACK: DB POLLING FOR INVITE ACCEPTANCE ---
+    // When WebSocket/Realtime fails, the host polls the database to detect if the guest accepted
+    useEffect(() => {
+        // Only run for the host (no initialOpponent), only when lobby is open and we have a lobbyId
+        if (!isOpen || !user?.id || !lobbyId || initialOpponent) return;
+
+        const pollInterval = setInterval(async () => {
+            // Stop polling once we already have an opponent
+            if (opponentRef.current) return;
+
+            try {
+                const result = await userAPI.getSentInviteStatus(lobbyId);
+                const accepted = result?.acceptedInvites;
+                if (accepted && accepted.length > 0 && !opponentRef.current) {
+                    const guest = accepted[0].acceptedBy;
+                    if (!guest) return;
+
+                    console.log('[DuelLobby] DB polling detected accepted invite from:', guest.username);
+                    const guestRank = getRankFromExp(guest.xp || 0);
+                    playSuccess();
+                    setOpponent({
+                        id: guest.id,
+                        name: guest.username,
+                        avatar: guest.avatar_url,
+                        rankName: guestRank.name,
+                        rankIcon: guestRank.icon,
+                        heroImage: hero2Static // Default; will be updated from presence if available
+                    });
+                    setMatchState('lobby');
+                    setIsUserReady(false);
+                    setIsOpponentReady(false);
+                    setTimer(60);
+
+                    // Send settings sync to the guest via channel
+                    if (lobbyChannelRef.current) {
+                        lobbyChannelRef.current.send({
+                            type: 'broadcast',
+                            event: 'sync-settings',
+                            payload: {
+                                targetId: guest.id,
+                                language: selectedLanguageRef.current || '',
+                                difficulty: selectedDifficultyRef.current,
+                                mode: selectedModeRef.current,
+                                wager: selectedWagerRef.current
+                            }
+                        });
+                    }
+                }
+            } catch (err) {
+                // Silent fail — polling is a fallback
+            }
+        }, 3000);
+
+        return () => clearInterval(pollInterval);
+    }, [isOpen, user?.id, lobbyId, initialOpponent]);
+
     // --- TIMERS ---
 
     // Lobby Timer (60s -> 0) — only runs when both matchState is 'lobby' AND opponent is present

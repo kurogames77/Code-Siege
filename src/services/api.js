@@ -262,6 +262,10 @@ export const userAPI = {
             body: JSON.stringify({ receiverId, senderName, lobbyId, mode }),
         });
     },
+
+    getSentInviteStatus: async (lobbyId) => {
+        return apiRequest(`/users/sent-invites/status?lobbyId=${encodeURIComponent(lobbyId)}`);
+    },
 };
 
 // ============================================

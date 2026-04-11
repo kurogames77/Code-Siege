@@ -478,6 +478,75 @@ router.delete('/friends/:friendId', authenticateUser, async (req, res) => {
 });
 
 /**
+ * GET /api/users/sent-invites/status
+ * Check if any duel/multiplayer invites sent by the current user have been accepted
+ * Used as a fallback when WebSocket/Realtime fails to deliver the accept broadcast
+ */
+router.get('/sent-invites/status', authenticateUser, async (req, res) => {
+    try {
+        const db = supabaseService || supabase;
+        const { lobbyId } = req.query;
+
+        let query = db
+            .from('notifications')
+            .select(`
+                id,
+                type,
+                receiver_id,
+                action_status,
+                message,
+                created_at,
+                receiver:users!notifications_receiver_id_fkey(
+                    id, username, avatar_url,
+                    user_progress(xp, tower_id)
+                )
+            `)
+            .eq('sender_id', req.user.id)
+            .in('type', ['duel_invite', 'multiplayer_invite'])
+            .eq('action_status', 'accepted')
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+        // Filter by lobbyId if provided (match the LOBBY: tag in the message)
+        if (lobbyId) {
+            query = query.like('message', `%[LOBBY:${lobbyId}]%`);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+            console.error('Sent invites status error:', error);
+            return res.status(400).json({ error: error.message });
+        }
+
+        // Map and enrich with XP
+        const acceptedInvites = (data || []).map(notif => {
+            const receiver = notif.receiver;
+            let xp = 0;
+            if (receiver?.user_progress) {
+                const globalProgress = receiver.user_progress.find(up => up.tower_id === 'global');
+                xp = globalProgress ? globalProgress.xp : 0;
+            }
+            return {
+                notifId: notif.id,
+                acceptedBy: receiver ? {
+                    id: receiver.id,
+                    username: receiver.username,
+                    avatar_url: receiver.avatar_url,
+                    xp
+                } : null,
+                lobbyId: notif.message?.match(/\[LOBBY:([^\]]+)\]/)?.[1] || null
+            };
+        }).filter(inv => inv.acceptedBy);
+
+        res.json({ acceptedInvites });
+    } catch (error) {
+        console.error('Sent invites status error:', error);
+        res.status(500).json({ error: 'Failed to check sent invite status' });
+    }
+});
+
+/**
  * POST /api/users/duel-invite
  * Send a duel or multiplayer invite notification
  * Uses service-role client to bypass RLS
