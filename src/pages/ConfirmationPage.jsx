@@ -1,36 +1,19 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '../contexts/UserContext';
 import { Check, ArrowLeft } from 'lucide-react';
-import supabase from '../lib/supabase';
 import '../styles/landing-page.css'; // Reuse landing page styles for consistency
 
 const ConfirmationPage = () => {
     const navigate = useNavigate();
-    const { isAuthenticated, loading } = useUser();
 
-    useEffect(() => {
-        const checkDirectAuth = async () => {
-            // Wait for context loading first
-            if (loading) return;
-
-            // If context already knows we are authenticated, redirect
-            if (isAuthenticated) {
-                navigate('/', { replace: true });
-                return;
-            }
-
-            // Fallback: Check Supabase directly (in case context hasn't updated yet)
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                navigate('/', { replace: true });
-            }
-        };
-
-        checkDirectAuth();
-    }, [isAuthenticated, loading, navigate]);
+    // No auto-redirect: always show the confirmation message.
+    // The user may have an existing session from a different role (e.g., an
+    // instructor testing student registration). Auto-redirecting would send
+    // them to the wrong dashboard based on the stale session's role.
 
     const handleReturnLogin = () => {
+        // Navigate to landing page with openLogin flag so the login modal opens.
+        // The user can then log in with their newly confirmed credentials.
         navigate('/', { state: { openLogin: true } });
     };
 
