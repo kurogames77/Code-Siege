@@ -725,7 +725,7 @@ router.patch('/:id', authenticateUser, async (req, res) => {
         }
 
         if (selected_hero) {
-            await db.from('user_progress').update({ selected_hero }).eq('user_id', id);
+            await db.from('user_progress').update({ selected_hero }).eq('user_id', id).eq('tower_id', 'global');
             if (profile) profile.selected_hero = selected_hero;
         }
 
@@ -855,11 +855,12 @@ router.patch('/:id/gems', authenticateUser, async (req, res) => {
 
         const newGems = Math.max(0, (progressRow?.gems || 0) + amount);
 
-        // Update all progress rows
+        // Update global progress row
         await supabaseService
             .from('user_progress')
             .update({ gems: newGems })
-            .eq('user_id', id);
+            .eq('user_id', id)
+            .eq('tower_id', 'global');
 
         const { data: userProfile } = await supabaseService
             .from('users')

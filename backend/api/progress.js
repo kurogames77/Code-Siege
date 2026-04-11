@@ -54,14 +54,6 @@ router.post('/complete', authenticateUser, async (req, res) => {
             // Already completed, just return existing record
             result = { data: existing };
         } else {
-            // Get current global stats
-            const { data: latestStats } = await supabase
-                .from('user_progress')
-                .select('level, xp, gems, selected_hero')
-                .eq('user_id', req.user.id)
-                .eq('tower_id', 'global')
-                .single();
-                
             // Insert new
             result = await supabase
                 .from('user_progress')
@@ -70,11 +62,7 @@ router.post('/complete', authenticateUser, async (req, res) => {
                     tower_id,
                     floor,
                     completed: true,
-                    completed_at: new Date().toISOString(),
-                    level: latestStats?.level || 1,
-                    xp: latestStats?.xp || 0,
-                    gems: latestStats?.gems || 0,
-                    selected_hero: latestStats?.selected_hero || '3'
+                    completed_at: new Date().toISOString()
                 })
                 .select()
                 .single();
@@ -120,7 +108,8 @@ router.patch('/xp', authenticateUser, async (req, res) => {
         const { error } = await supabase
             .from('user_progress')
             .update({ xp: newXp, level: newLevel })
-            .eq('user_id', req.user.id);
+            .eq('user_id', req.user.id)
+            .eq('tower_id', 'global');
 
         if (error) {
             return res.status(400).json({ error: error.message });
