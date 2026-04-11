@@ -1087,7 +1087,15 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                                 {/* User Info - Top */}
                                                 <div className="relative z-20 flex flex-col items-center pt-4 pointer-events-none">
                                                     <div className={`w-24 h-24 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md relative mb-3 transition-all duration-500 ${isUserReady || matchState === 'idle' ? 'border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.6)] scale-110' : 'border-slate-500'}`}>
-                                                        <img src={user.avatar} className="w-full h-full object-cover rounded-lg" alt="Avatar" />
+                                                        {user.avatar ? (
+                                                            <img src={user.avatar} className="w-full h-full object-cover rounded-lg" alt="Avatar" />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center rounded-lg bg-slate-800">
+                                                                <span className="text-4xl font-black text-cyan-400 select-none">
+                                                                    {user.name?.charAt(0).toUpperCase() || 'U'}
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                         <div className="absolute -bottom-2.5 -right-2.5 p-0.5">
                                                             <img src={user.rankIcon} className="w-12 h-12 rounded-full object-contain" alt="Rank" />
                                                         </div>
@@ -1153,7 +1161,15 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                                         {/* Info - Top */}
                                                         <div className="relative z-20 flex flex-col items-center pt-4 pointer-events-none w-full">
                                                             <div className={`w-24 h-24 rounded-xl border-2 bg-slate-900/80 backdrop-blur-md relative mb-3 transition-all duration-500 ${isOpponentReady ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.6)] scale-110' : 'border-slate-500'}`}>
-                                                                <img src={opponent.avatar} className="w-full h-full object-cover rounded-lg" alt="Avatar" />
+                                                                {opponent.avatar ? (
+                                                                    <img src={opponent.avatar} className="w-full h-full object-cover rounded-lg" alt="Avatar" />
+                                                                ) : (
+                                                                    <div className="w-full h-full flex items-center justify-center rounded-lg bg-slate-800">
+                                                                        <span className="text-4xl font-black text-rose-400 select-none">
+                                                                            {opponent.name?.charAt(0).toUpperCase() || 'O'}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
                                                                 <div className="absolute -bottom-3 -right-3">
                                                                     <img src={opponent.rankIcon} className="w-16 h-16 object-contain drop-shadow-xl" alt="Rank" />
                                                                 </div>
