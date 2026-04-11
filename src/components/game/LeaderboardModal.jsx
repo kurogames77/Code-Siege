@@ -52,17 +52,19 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
     // Get top 3 players
     const topPlayers = leaderboard.slice(0, 3).map(player => ({
         ...player,
+        score: player.score ?? player.xp ?? 0,
         avatar: player.avatar || heroAsset,
-        rankIcon: getRankIcon(player.score), // Score is EXP
-        rankName: getRankName(player.score)
+        rankIcon: getRankIcon(player.score ?? player.xp ?? 0),
+        rankName: getRankName(player.score ?? player.xp ?? 0)
     }));
 
     // Get remaining players (4th onwards)
     const otherPlayers = leaderboard.slice(3).map(player => ({
         ...player,
+        score: player.score ?? player.xp ?? 0,
         avatar: player.avatar || heroAsset,
-        rankIcon: getRankIcon(player.score),
-        rankName: getRankName(player.score),
+        rankIcon: getRankIcon(player.score ?? player.xp ?? 0),
+        rankName: getRankName(player.score ?? player.xp ?? 0),
         trend: 'up'
     }));
 
@@ -71,17 +73,17 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
     const userRank = userInLeaderboard ? {
         rank: userInLeaderboard.rank,
         name: user?.username || 'You',
-        score: userInLeaderboard.score,
+        score: userInLeaderboard.score ?? userInLeaderboard.xp ?? 0,
         avatar: user?.avatar || heroAsset,
-        rankIcon: getRankIcon(userInLeaderboard.score),
-        rankName: getRankName(userInLeaderboard.score)
+        rankIcon: getRankIcon(userInLeaderboard.score ?? userInLeaderboard.xp ?? 0),
+        rankName: getRankName(userInLeaderboard.score ?? userInLeaderboard.xp ?? 0)
     } : {
         rank: '-',
         name: user?.username || 'You',
-        score: user?.exp || 0,
+        score: user?.exp || user?.xp || 0,
         avatar: user?.avatar || heroAsset,
-        rankIcon: getRankIcon(user?.exp || 0),
-        rankName: getRankName(user?.exp || 0)
+        rankIcon: getRankIcon(user?.exp || user?.xp || 0),
+        rankName: getRankName(user?.exp || user?.xp || 0)
     };
 
     const containerVariants = {

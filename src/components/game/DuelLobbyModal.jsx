@@ -304,8 +304,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             config: {
                 presence: {
                     key: currentUser.id,
-                },
-                broadcast: { ack: true, self: false }
+                }
             },
         });
 
