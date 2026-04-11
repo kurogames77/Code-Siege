@@ -273,21 +273,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             const ch = lobbyChannelRef.current;
             if (ch) {
                 lobbyChannelRef.current = null; // Prevent double-cleanup
-                // Await untrack + broadcast, then clean up channel, then reset state
-                (async () => {
-                    try {
-                        await ch.untrack();
-                        await ch.send({
-                            type: 'broadcast',
-                            event: 'player-leave',
-                            payload: { playerId: user?.id }
-                        });
-                    } catch (e) { /* best effort */ }
-                    // Wait for messages to flush before destroying channel
-                    await new Promise(r => setTimeout(r, 250));
-                    supabase.removeChannel(ch);
-                    resetLobbyState();
-                })();
+                supabase.removeChannel(ch);
+                resetLobbyState();
             } else {
                 resetLobbyState();
             }
@@ -599,20 +586,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             // Skip cleanup if the channel was already cleaned up by isOpen handler
             if (lobbyChannelRef.current !== channel) return;
             lobbyChannelRef.current = null;
-            const ch = channel;
-            // Untrack presence + broadcast leave, then remove channel
-            (async () => {
-                try {
-                    await ch.untrack();
-                    await ch.send({
-                        type: 'broadcast',
-                        event: 'player-leave',
-                        payload: { playerId: currentUser.id }
-                    });
-                } catch (e) { /* best effort */ }
-                await new Promise(r => setTimeout(r, 250));
-                supabase.removeChannel(ch);
-            })();
+            supabase.removeChannel(channel);
         };
     }, [isOpen, user?.id, lobbyId]);
 
