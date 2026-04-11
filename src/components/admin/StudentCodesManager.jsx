@@ -24,10 +24,10 @@ const StudentCodesManager = ({ theme }) => {
 
     const CODE_PREFIXES = ['IT', 'CS', 'IS', 'CS-IS-IT'];
 
-    const fetchCodes = async () => {
+    const fetchCodes = async (fetchPage, fetchSearch) => {
         try {
             setLoading(true);
-            const response = await api.instructor.getStudentCodes(page, 20, search);
+            const response = await api.instructor.getStudentCodes(fetchPage, 20, fetchSearch);
             setCodes(response.codes);
             setTotalPages(response.totalPages);
             setSelectedCodes(new Set()); // Reset selections on page change
@@ -40,7 +40,7 @@ const StudentCodesManager = ({ theme }) => {
     };
 
     useEffect(() => {
-        fetchCodes();
+        fetchCodes(page, search);
     }, [page, search, refreshKey]);
 
     const handleUpload = async () => {
