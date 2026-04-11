@@ -19,6 +19,8 @@ const StudentCodesManager = ({ theme }) => {
     const [autoGenProgress, setAutoGenProgress] = useState(0);
     const [numToGenerate, setNumToGenerate] = useState(10);
     const [codePrefix, setCodePrefix] = useState('IT');
+    // Incremented after mutations (delete/upload/generate) to force a re-fetch
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const CODE_PREFIXES = ['IT', 'CS', 'IS', 'CS-IS-IT'];
 
@@ -39,7 +41,7 @@ const StudentCodesManager = ({ theme }) => {
 
     useEffect(() => {
         fetchCodes();
-    }, [page, search]);
+    }, [page, search, refreshKey]);
 
     const handleUpload = async () => {
         if (!codesInput.trim()) {
@@ -62,9 +64,10 @@ const StudentCodesManager = ({ theme }) => {
             setGenerating(true);
             await api.instructor.uploadStudentCodes(codesArray);
             toast.popup(`Successfully uploaded ${codesArray.length} codes!`);
-            setPage(1);
             setCodesInput('');
-            fetchCodes();
+            // Reset to page 1 and trigger refresh
+            setPage(1);
+            setRefreshKey(k => k + 1);
         } catch (error) {
             console.error('Failed to upload codes:', error);
             toast.popup(error.message || 'Failed to upload codes', 'error');
@@ -79,7 +82,9 @@ const StudentCodesManager = ({ theme }) => {
         try {
             await api.instructor.deleteStudentCode(id);
             toast.popup('Code deleted');
-            fetchCodes();
+            // Reset to page 1 and trigger refresh so remaining codes appear
+            setPage(1);
+            setRefreshKey(k => k + 1);
         } catch (error) {
             console.error('Failed to delete code:', error);
             toast.popup('Failed to delete code', 'error');
@@ -92,10 +97,13 @@ const StudentCodesManager = ({ theme }) => {
 
         try {
             setLoading(true);
+            const deleteCount = selectedCodes.size;
             await api.instructor.bulkDeleteStudentCodes(Array.from(selectedCodes));
-            toast.popup(`Deleted ${selectedCodes.size} codes`);
+            toast.popup(`Deleted ${deleteCount} codes`);
             setSelectedCodes(new Set());
-            fetchCodes();
+            // Reset to page 1 and trigger refresh so remaining codes appear
+            setPage(1);
+            setRefreshKey(k => k + 1);
         } catch (error) {
             console.error('Failed to bulk delete:', error);
             toast.popup('Failed to delete selected codes', 'error');
@@ -136,9 +144,10 @@ const StudentCodesManager = ({ theme }) => {
 
             await api.instructor.uploadStudentCodes(generatedCodes);
             toast.popup(`Successfully auto-generated ${numToGenerate} codes!`);
-            setPage(1);
-            fetchCodes();
             setNumToGenerate(10); // reset
+            // Reset to page 1 and trigger refresh
+            setPage(1);
+            setRefreshKey(k => k + 1);
         } catch (error) {
             console.error('Auto-gen failed:', error);
             toast.popup(error.message || 'Failed to auto-generate codes', 'error');
