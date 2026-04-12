@@ -52,17 +52,21 @@ const Towers = ({ theme }) => {
     const [banReason, setBanReason] = useState('');
     const [banSubmitting, setBanSubmitting] = useState(false);
 
-    // Fetch active students
     const { data: activeStudents = [], isLoading: isStudentsLoading, refetch: refetchStudents } = useQuery({
         queryKey: ['activeStudents'],
         queryFn: async () => {
-            const { data, error } = await supabase
-                .from('users')
-                .select('id, username, student_id, email, is_banned')
-                .in('role', ['user', 'student', 'guest'])
-                .eq('is_banned', false);
-            if (error) throw error;
-            return data || [];
+            try {
+                // Fetch using instructor API to bypass direct DB RLS restrictions
+                const res = await instructorAPI.getUsers(1, 1000, '');
+                const allUsers = res.users || [];
+                return allUsers.filter(u => 
+                    u.is_banned === false && 
+                    ['user', 'student', 'guest'].includes(u.role)
+                );
+            } catch (error) {
+                console.error("Failed to fetch active students:", error);
+                throw error;
+            }
         }
     });
 
