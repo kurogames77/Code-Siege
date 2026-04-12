@@ -64,7 +64,8 @@ export const UserProvider = ({ children }) => {
             towerProgress: profile?.tower_progress || {},
             isBanned: profile?.is_banned || false,
             enrolled_language: profile?.enrolled_language || '',
-            handled_towers: profile?.handled_towers || ''
+            handled_towers: profile?.handled_towers || '',
+            current_difficulty: profile?.current_difficulty || 'Easy'
         };
     };
 

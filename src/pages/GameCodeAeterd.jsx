@@ -121,7 +121,7 @@ const GameCodeAeterd = () => {
         setShowChallenge(true);
     };
 
-    const { updateTowerProgress } = useUser();
+    const { updateTowerProgress, user } = useUser();
 
     const handleChallengeComplete = (result) => {
         if (result.success) {
@@ -258,6 +258,7 @@ const GameCodeAeterd = () => {
                             key={currentFloor}
                             level={currentFloor}
                             outcome={battleOutcome}
+                            playerName={user?.name || ''}
                             onVideoResume={() => {
                                 if (videoRef.current) {
                                     videoRef.current.play();

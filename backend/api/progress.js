@@ -51,8 +51,18 @@ router.post('/complete', authenticateUser, async (req, res) => {
 
         let result;
         if (existing) {
-            // Already completed, just return existing record
-            result = { data: existing };
+            // Already exists, update the completed_at timestamp
+            result = await supabase
+                .from('user_progress')
+                .update({ 
+                    completed: true, 
+                    completed_at: new Date().toISOString() 
+                })
+                .eq('user_id', req.user.id)
+                .eq('tower_id', tower_id)
+                .eq('floor', floor)
+                .select()
+                .single();
         } else {
             // Insert new
             result = await supabase
@@ -92,12 +102,12 @@ router.patch('/xp', authenticateUser, async (req, res) => {
         }
 
         // Get current user stats from user_progress
-        const { data: userStats } = await supabase
+        const { data: userStats, error: fetchError } = await supabase
             .from('user_progress')
             .select('xp, level')
             .eq('user_id', req.user.id)
             .eq('tower_id', 'global')
-            .single();
+            .maybeSingle();
 
         const newXp = (userStats?.xp || 0) + amount;
 
@@ -105,14 +115,35 @@ router.patch('/xp', authenticateUser, async (req, res) => {
         const newLevel = Math.floor(newXp / 100) + 1;
         const leveledUp = newLevel > (userStats?.level || 1);
 
-        const { error } = await supabase
-            .from('user_progress')
-            .update({ xp: newXp, level: newLevel })
-            .eq('user_id', req.user.id)
-            .eq('tower_id', 'global');
+        let operationError = null;
 
-        if (error) {
-            return res.status(400).json({ error: error.message });
+        if (!userStats && !fetchError) {
+            // If the global row doesn't exist, insert it
+            const { error } = await supabase
+                .from('user_progress')
+                .insert({
+                    user_id: req.user.id,
+                    tower_id: 'global',
+                    floor: 0,
+                    completed: true,
+                    level: newLevel,
+                    xp: newXp,
+                    gems: 0,
+                    selected_hero: '3'
+                });
+            operationError = error;
+        } else {
+            // Otherwise, update the existing row
+            const { error } = await supabase
+                .from('user_progress')
+                .update({ xp: newXp, level: newLevel })
+                .eq('user_id', req.user.id)
+                .eq('tower_id', 'global');
+            operationError = error;
+        }
+
+        if (operationError) {
+            return res.status(400).json({ error: operationError.message });
         }
 
         res.json({

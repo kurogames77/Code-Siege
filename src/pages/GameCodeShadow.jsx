@@ -123,7 +123,7 @@ const GameCodeShadow = () => {
         setShowChallenge(true);
     };
 
-    const { updateTowerProgress } = useUser();
+    const { updateTowerProgress, user } = useUser();
 
     const handleChallengeComplete = (result) => {
         if (result.success) {
@@ -266,6 +266,7 @@ const GameCodeShadow = () => {
                             key={currentFloor}
                             level={currentFloor}
                             outcome={battleOutcome}
+                            playerName={user?.name || ''}
                             onVideoResume={() => {
                                 // Resume video playback after enemy defeat (WIN case)
                                 if (videoRef.current) {

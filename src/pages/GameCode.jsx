@@ -121,6 +121,14 @@ const GameCode = () => {
 
                 setDifficulty(userDifficulty);
 
+                // Update URL to ensure it matches the formally resolved difficulty and mode
+                const newQuery = new URLSearchParams(window.location.search);
+                if (newQuery.get('difficulty') !== userDifficulty || newQuery.get('mode') !== floorConfig.mode) {
+                    newQuery.set('mode', floorConfig.mode);
+                    newQuery.set('difficulty', userDifficulty);
+                    window.history.replaceState(null, '', `${window.location.pathname}?${newQuery.toString()}`);
+                }
+
                 // 3. Fetch specific level based on floor config AND user difficulty
                 let levelData = await coursesAPI.getLevel(
                     matchedCourse.id,
@@ -393,7 +401,7 @@ const GameCode = () => {
                             key={currentFloor}
                             level={currentFloor}
                             outcome={battleOutcome}
-                            playerName={user?.username || ''}
+                            playerName={user?.name || ''}
                             onVideoResume={() => {
                                 // Resume video playback after enemy defeat (WIN case)
                                 if (videoRef.current) {

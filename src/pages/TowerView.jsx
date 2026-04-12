@@ -24,11 +24,7 @@ const TowerView = () => {
     const [dynamicLevels, setDynamicLevels] = useState([]);
     const [loadingLevels, setLoadingLevels] = useState(true);
     const [towerClosed, setTowerClosed] = useState(false);
-    const [difficultySettings, setDifficultySettings] = useState({
-        mode: 'Beginner',
-        difficulty: 'Easy'
-    });
-
+    
     // Tower Data
     const towerData = {
         '1': { name: 'Tower of Eldoria', totalFloors: dynamicLevels.length > 0 ? dynamicLevels.length : 30, courseId: 'py' },
@@ -277,7 +273,8 @@ const TowerView = () => {
                                         onClick={() => {
                                             if (isVisibleDefault) {
                                                 playClick();
-                                                const query = id === '1' ? `?mode=${difficultySettings.mode}&difficulty=${difficultySettings.difficulty}` : '';
+                                                const mode = labelNum <= 10 ? 'Beginner' : labelNum <= 20 ? 'Intermediate' : 'Advance';
+                                                const query = id === '1' ? `?mode=${mode}&difficulty=${user?.current_difficulty || 'Easy'}` : '';
                                                 navigate(`/gamecode/${labelNum}/${id}${query}`);
                                             }
                                         }}

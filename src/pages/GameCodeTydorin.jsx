@@ -125,7 +125,7 @@ const GameCodeTydorin = () => {
         setShowChallenge(true);
     };
 
-    const { updateTowerProgress } = useUser();
+    const { updateTowerProgress, user } = useUser();
 
     const handleChallengeComplete = (result) => {
         if (result.success) {
@@ -268,6 +268,7 @@ const GameCodeTydorin = () => {
                             key={currentFloor}
                             level={currentFloor}
                             outcome={battleOutcome}
+                            playerName={user?.name || ''}
                             onVideoResume={() => {
                                 // Resume video playback after enemy defeat (WIN case)
                                 if (videoRef.current) {
