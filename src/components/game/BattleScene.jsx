@@ -219,10 +219,13 @@ const BattleScene = ({ onComplete, onVideoResume, outcome = 'win', onBattleEnd, 
             
             // Array of enemy health bars and name labels
             let enemyNameTexts = [];
+            let opponentNamesArray = Array.isArray(opponentName) ? opponentName : [opponentName];
+
             let enemyHealthBars = enemyGroup.map((d, idx) => {
                 let bar = drawBar(d.x - 30, d.y - 140, 1, 0xff0000);
-                if (opponentName) {
-                    const txt = this.add.text(d.x, d.y - 155, opponentName, { fontSize: '14px', fill: '#ff0000', fontStyle: 'bold' }).setOrigin(0.5).setDepth(30);
+                const currentName = opponentNamesArray[idx] || opponentNamesArray[0];
+                if (currentName) {
+                    const txt = this.add.text(d.x, d.y - 155, currentName, { fontSize: '14px', fill: '#ff0000', fontStyle: 'bold' }).setOrigin(0.5).setDepth(30);
                     enemyNameTexts[idx] = txt;
                 }
                 return bar;

@@ -387,6 +387,8 @@ const GrandArena = () => {
                             isMultiplayer={true}
                             numOpponents={Math.max(1, players.length - 1)} // Number of other players
                             outcome={battleOutcome}
+                            playerName={user?.username || user?.name || 'Player'}
+                            opponentName={players.filter(p => String(p.id) !== String(user?.id)).map(p => p.name || 'Opponent')}
                             onVideoResume={() => {
                                 if (videoRef.current) {
                                     videoRef.current.play();
