@@ -4,6 +4,7 @@ import { Shield, GraduationCap, User, Mail, Lock, BookOpen, ChevronLeft, Loader2
 import { motion, useInView } from 'framer-motion';
 import '../styles/landing-page.css';
 import { authAPI } from '../services/api';
+import supabase from '../lib/supabase';
 import nameImage from '../assets/name.png';
 import gameIcon from '../assets/icongame.png';
 import towerIcon from '../assets/tower11.png';
@@ -377,6 +378,10 @@ const LandingPage = () => {
                 throw new Error('Please select your course');
             }
 
+            if (!password || password.length < 6) {
+                throw new Error('Please enter a password of at least 6 characters');
+            }
+
             const profileData = {
                 role: role,
                 username: fullName.trim(),
@@ -392,6 +397,13 @@ const LandingPage = () => {
             }
 
             await updateProfile(profileData);
+
+            if (password) {
+                const { error: passwordError } = await supabase.auth.updateUser({ password });
+                if (passwordError) {
+                    throw new Error('Profile saved, but failed to set password: ' + (passwordError.message || passwordError));
+                }
+            }
 
             // Clear intended role from localStorage now that profile is saved
             localStorage.removeItem('code_siege_intended_role');
@@ -1187,6 +1199,28 @@ const LandingPage = () => {
                                     </div>
                                 </label>
                             )}
+
+                            <label className="landing-modal__field">
+                                <span className="landing-modal__label">Password</span>
+                                <div className="landing-modal__input">
+                                    <Lock />
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
+                                        required
+                                        placeholder="Set your password (min 6 chars)"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        minLength={6}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="p-1 hover:text-white text-slate-400 transition-colors"
+                                    >
+                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                            </label>
 
                             <button className="landing-modal__submit" type="submit" disabled={loading}>
                                 {loading ? (
