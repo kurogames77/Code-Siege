@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Camera, Trophy, Medal, Target, Swords, User, Users, UserMinus, History, Settings, Info, Image as ImageIcon, CheckCircle2, XCircle, Clock, Book, Bell, Lock, Globe, Edit, Save, Award, Download, Palette, Circle, KeyRound } from 'lucide-react';
+import { X, Camera, Trophy, Medal, Target, Swords, User, Users, UserMinus, History, Settings, Info, Image as ImageIcon, CheckCircle2, XCircle, Clock, Book, Bell, Lock, Globe, Edit, Save, Award, Download, Palette, Circle, KeyRound, Loader } from 'lucide-react';
 
 
 import useSound from '../../hooks/useSound';
@@ -101,6 +101,50 @@ const ProfileModal = ({ isOpen, onClose }) => {
         playSuccess();
     };
 
+    const compressImage = (file, maxWidth = 400, quality = 0.8) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > maxWidth) {
+                            height = Math.round((height *= maxWidth / width));
+                            width = maxWidth;
+                        }
+                    } else {
+                        if (height > maxWidth) {
+                            width = Math.round((width *= maxWidth / height));
+                            height = maxWidth;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob((blob) => {
+                        // Create a new File from the blob
+                        const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", {
+                            type: 'image/webp',
+                            lastModified: Date.now(),
+                        });
+                        resolve(compressedFile);
+                    }, 'image/webp', quality);
+                };
+                img.onerror = (err) => reject(err);
+            };
+            reader.onerror = (err) => reject(err);
+        });
+    };
+
     const handleImageUpload = async (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -112,8 +156,9 @@ const ProfileModal = ({ isOpen, onClose }) => {
 
             setIsUploading(true);
             try {
-                // Pass the File object directly to match the Instructor Terminal logic
-                await updateAvatar(file);
+                // Compress the image to a small WebP before uploading to save massive data and time
+                const compressedFile = await compressImage(file, 400, 0.8);
+                await updateAvatar(compressedFile);
                 toast.success('Profile picture updated!');
                 playSuccess();
             } catch (error) {
@@ -163,10 +208,20 @@ const ProfileModal = ({ isOpen, onClose }) => {
                             )}
                             <button
                                 onClick={triggerFileInput}
-                                className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2"
+                                disabled={isUploading}
+                                className={`absolute inset-0 bg-black/60 transition-opacity flex flex-col items-center justify-center gap-2 ${isUploading ? 'opacity-100 cursor-wait' : 'opacity-0 group-hover:opacity-100 cursor-pointer'}`}
                             >
-                                <Camera className={`w-6 h-6 text-${currentTheme.colors.primary}-400`} />
-                                <span className="text-[10px] text-white font-black uppercase">Edit</span>
+                                {isUploading ? (
+                                    <>
+                                        <Loader className="w-8 h-8 text-cyan-400 animate-spin" />
+                                        <span className="text-[10px] text-cyan-400 font-black uppercase tracking-widest animate-pulse">Uploading</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Camera className={`w-6 h-6 text-${currentTheme.colors.primary}-400`} />
+                                        <span className="text-[10px] text-white font-black uppercase">Edit</span>
+                                    </>
+                                )}
                             </button>
                         </div>
                         <input
