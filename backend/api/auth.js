@@ -416,6 +416,25 @@ router.post('/login', async (req, res) => {
             } else {
                 profile.level = 1; profile.xp = 0; profile.gems = 0; profile.selected_hero = '3';
             }
+
+            // Fetch actual tower progress from user_progress table
+            const { data: floorRecords } = await supabaseService
+                .from('user_progress')
+                .select('tower_id, floor')
+                .eq('user_id', data.user.id)
+                .neq('tower_id', 'global')
+                .order('floor', { ascending: false });
+
+            profile.tower_progress = {};
+            if (floorRecords) {
+                floorRecords.forEach(record => {
+                    if (!profile.tower_progress[record.tower_id]) {
+                        profile.tower_progress[record.tower_id] = record.floor;
+                    } else {
+                        profile.tower_progress[record.tower_id] = Math.max(profile.tower_progress[record.tower_id], record.floor);
+                    }
+                });
+            }
         }
 
         logger.info('AUTH_SERVICE', `User logged in: ${profile?.username || loginEmail} (${profile?.role || 'user'}), Session: ${active_session_id}`);
@@ -511,6 +530,25 @@ router.get('/me', async (req, res) => {
                 profile.selected_hero = currentProgress.selected_hero;
             } else {
                 profile.level = 1; profile.xp = 0; profile.gems = 0; profile.selected_hero = '3';
+            }
+
+            // Fetch actual tower progress from user_progress table
+            const { data: floorRecords } = await supabaseService
+                .from('user_progress')
+                .select('tower_id, floor')
+                .eq('user_id', user.id)
+                .neq('tower_id', 'global')
+                .order('floor', { ascending: false });
+
+            profile.tower_progress = {};
+            if (floorRecords) {
+                floorRecords.forEach(record => {
+                    if (!profile.tower_progress[record.tower_id]) {
+                        profile.tower_progress[record.tower_id] = record.floor;
+                    } else {
+                        profile.tower_progress[record.tower_id] = Math.max(profile.tower_progress[record.tower_id], record.floor);
+                    }
+                });
             }
         }
 
