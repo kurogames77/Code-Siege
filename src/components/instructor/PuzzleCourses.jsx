@@ -40,6 +40,8 @@ const PuzzleCourses = ({ theme }) => {
     });
     const [isGenerating, setIsGenerating] = useState(false);
     const [generationProgress, setGenerationProgress] = useState(0); // Progress percentage 0-100
+    const [generationTime, setGenerationTime] = useState(0);
+    const generationTimerRef = useRef(null);
     const [genLogs, setGenLogs] = useState([]);
     const [courseLevels, setCourseLevels] = useState({}); // Stores levels for each course
     const [selectedLevels, setSelectedLevels] = useState([]); // Levels marked for deletion in Override
@@ -308,6 +310,12 @@ const PuzzleCourses = ({ theme }) => {
         setIsGenerating(true);
         setGenerationProgress(0);
         setGenLogs([]);
+        setGenerationTime(0);
+
+        if (generationTimerRef.current) clearInterval(generationTimerRef.current);
+        generationTimerRef.current = setInterval(() => {
+            setGenerationTime(prev => prev + 1);
+        }, 1000);
 
         const addLog = (message, type = 'info') => {
             setGenLogs(prev => [...prev, {
@@ -392,6 +400,10 @@ const PuzzleCourses = ({ theme }) => {
             toast.error('Failed to generate levels. Please try again.');
         } finally {
             setIsGenerating(false);
+            if (generationTimerRef.current) {
+                clearInterval(generationTimerRef.current);
+                generationTimerRef.current = null;
+            }
         }
     };
 
@@ -680,7 +692,7 @@ const PuzzleCourses = ({ theme }) => {
                                                 className="space-y-1"
                                             >
                                                 <div className="flex justify-between items-end px-1">
-                                                    <span className="text-[10px] font-black text-cyan-500 uppercase tracking-widest">Generating Course Content...</span>
+                                                    <span className="text-[10px] font-black text-cyan-500 uppercase tracking-widest">Generating Course Content... ({generationTime}s)</span>
                                                     <span className="text-[10px] font-bold text-cyan-500">{generationProgress}%</span>
                                                 </div>
                                                 <div className="h-2 w-full bg-slate-200/20 rounded-full overflow-hidden">
