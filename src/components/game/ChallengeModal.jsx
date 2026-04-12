@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Loader2 } from 'lucide-react';
 import { DndContext, useSensor, useSensors, PointerSensor, DragOverlay } from '@dnd-kit/core';
 import { restrictToWindowEdges, restrictToParentElement } from '@dnd-kit/modifiers';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,6 +29,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
     const [isFailed, setIsFailed] = useState(false);
     const [isAnalyzingEntry, setIsAnalyzingEntry] = useState(false);
     const [submitAttempts, setSubmitAttempts] = useState(0);
+    const [isExecuting, setIsExecuting] = useState(false);
     const startTimeRef = useRef(Date.now());
 
     // Hint System State
@@ -267,7 +269,8 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
     };
 
     const handleSubmit = () => {
-        if (isFailed) return;
+        if (isFailed || isExecuting) return;
+        setIsExecuting(true);
 
         // 1. Determine Expected Content Sequence
         const expectedSequenceIDs = puzzle.correctSequence; // e.g. ['b2', 'b1']
@@ -384,6 +387,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
         if (success) {
             setResult({ type: 'success', message: `> Execution Successful.` });
             setIsSuccess(true);
+            setIsExecuting(false);
             setTimeout(() => {
                 const timeConsumed = (Date.now() - startTimeRef.current) / 1000;
                 // Pass the reduced reward (currentReward) instead of the original
@@ -417,6 +421,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                     // AI says YES -> Success!
                     setResult({ type: 'success', message: `> Logic Verified. Execution Successful.` });
                     setIsSuccess(true);
+                    setIsExecuting(false);
                     setTimeout(() => {
                         const timeConsumed = (Date.now() - startTimeRef.current) / 1000;
                         onComplete && onComplete({
@@ -433,6 +438,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                     // AI says NO -> Fail
                     setResult({ type: 'error', message: `> Error: ${verification.message || getRandomWittyError()} (Check terminal for hint)` });
                     setIsSuccess(false);
+                    setIsExecuting(false);
 
                     // Trigger AI Analysis for specific debugging hint logic
                     if (submitAttempts >= 0) {
@@ -443,6 +449,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                 console.error("Verification failed", err);
                 setResult({ type: 'error', message: `> Error: System Check Failed. Please retry.` });
                 setIsSuccess(false);
+                setIsExecuting(false);
             });
             // --- FLEXIBLE AI VERIFICATION END ---
         }
@@ -815,17 +822,23 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                 <div className={`p-6 border-t transition-colors duration-500 ${theme === 'dark' ? 'bg-[#0c1221] border-cyan-500/20' : 'bg-white border-slate-200'}`}>
                                     <Button
                                         onClick={handleSubmit}
-                                        disabled={isSuccess}
+                                        disabled={isSuccess || isExecuting}
                                         className={`w-full py-3 text-sm font-black tracking-widest uppercase flex items-center justify-center gap-3 relative overflow-hidden group transition-all duration-300
                                             ${isSuccess
                                                 ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/50'
-                                                : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_30px_rgba(8,145,178,0.4)]'
+                                                : isExecuting
+                                                    ? 'bg-cyan-700 text-cyan-200 cursor-wait'
+                                                    : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_30px_rgba(8,145,178,0.4)]'
                                             }`}
                                     >
-                                        <Play className={`w-5 h-5 fill-current ${isSuccess ? '' : 'group-hover:scale-110 transition-transform'}`} />
-                                        {isSuccess ? 'SEQUENCE COMPLETE' : 'EXECUTE'}
+                                        {isExecuting ? (
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                        ) : (
+                                            <Play className={`w-5 h-5 fill-current ${isSuccess ? '' : 'group-hover:scale-110 transition-transform'}`} />
+                                        )}
+                                        {isSuccess ? 'SEQUENCE COMPLETE' : isExecuting ? 'EXECUTING...' : 'EXECUTE'}
 
-                                        {!isSuccess && <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />}
+                                        {!isSuccess && !isExecuting && <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />}
                                     </Button>
 
                                     {/* AI Debug Button Removed */}

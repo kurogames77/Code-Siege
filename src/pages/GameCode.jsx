@@ -68,7 +68,7 @@ const GameCode = () => {
     const [loadingLevel, setLoadingLevel] = useState(true);
     const [levelUnavailable, setLevelUnavailable] = useState(false);
     // Safe User Context
-    const { user, loading, updateTowerProgress } = useUser();
+    const { user, loading, updateTowerProgress, updateExp } = useUser();
     const { updateQuestProgress } = useQuests();
 
     // Hero handling
@@ -203,6 +203,11 @@ const GameCode = () => {
         if (result.success) {
             setCompletedRewards(result.rewards);
             updateTowerProgress(towerId, currentFloor);
+
+            // Award EXP to the player
+            const expReward = result.rewards?.exp || 100;
+            updateExp(expReward);
+
             setBattleOutcome('win');
             setShowChallenge(false);
             setShowPostScene(true);
@@ -388,6 +393,7 @@ const GameCode = () => {
                             key={currentFloor}
                             level={currentFloor}
                             outcome={battleOutcome}
+                            playerName={user?.username || ''}
                             onVideoResume={() => {
                                 // Resume video playback after enemy defeat (WIN case)
                                 if (videoRef.current) {
