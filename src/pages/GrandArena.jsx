@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DndContext, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
-import { Swords, Trophy, Clock, X, User, Shield, Zap, Play, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
+import { Swords, Trophy, Clock, X, User, Shield, Zap, Play, ZoomIn, ZoomOut, Maximize, Sun, Moon } from 'lucide-react';
 import PuzzleBlock from '../components/game/PuzzleBlock';
 import CodeTimer from '../components/game/CodeTimer';
 import Button from '../components/ui/Button';
@@ -13,6 +13,10 @@ import supabase from '../lib/supabase';
 import gameCodeBg from '../assets/gamecodebg.jpg';
 import gemIcon from '../assets/gem.png';
 import heroAsset from '../assets/hero1.png';
+import hero1aStatic from '../assets/hero1a.png';
+import hero2Static from '../assets/hero2.png';
+import hero3Static from '../assets/hero3.png';
+import hero4Static from '../assets/hero4.png';
 import expIcon from '../assets/exp.png';
 import postSceneVideo from '../assets/postsceneview.mp4';
 
@@ -35,22 +39,34 @@ const GrandArena = () => {
     // Components for the 5-player layout
     const [players, setPlayers] = useState([]);
 
+    const [theme, setTheme] = useState('dark');
+
+    const heroMap = {
+        'hero1a.png': hero1aStatic,
+        'hero2.png': hero2Static,
+        'hero3.png': hero3Static,
+        'hero4.png': hero4Static,
+        'hero1.png': heroAsset
+    };
+
     // Initialize players state from location state
     useEffect(() => {
         if (location.state?.opponents && location.state.opponents.length > 0) {
+            const userHeroImageKey = localStorage.getItem('selectedHeroImage') || 'hero2.png';
+            const userHeroImage = heroMap[userHeroImageKey] || hero2Static;
             const selfPlayer = {
                 id: user?.id || 1,
                 name: user?.name || 'OPERATIVE',
                 progress: 0,
                 isWin: false,
-                avatar: user?.avatar_url || user?.avatar || heroAsset,
+                avatar: user?.avatar_url || user?.avatar || userHeroImage,
                 rankName: getRankData(user?.xp || 0).name || 'OPERATIVE'
             };
             const others = location.state.opponents.map(o => ({
                 ...o,
                 progress: 0,
                 isWin: false,
-                avatar: o.avatar || heroAsset
+                avatar: o.avatar || o.heroImage || (o.heroImageKey ? heroMap[o.heroImageKey] : null) || heroAsset
             }));
             setPlayers([selfPlayer, ...others]);
         } else {
@@ -401,7 +417,7 @@ const GrandArena = () => {
             ) : (
                 <>
                     {/* Arena Header (5-Player Dashboard) */}
-                    <header className="relative z-50 bg-[#050810] border-b border-cyan-500/20 px-4 h-16 flex items-center shrink-0">
+                    <header className={`relative z-50 ${theme === 'dark' ? 'bg-[#050810] border-cyan-500/20' : 'bg-white border-slate-300 shadow-sm'} border-b px-4 h-16 flex items-center shrink-0`}>
                         <div className="flex items-center gap-6">
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-cyan-500 rounded-full animate-ping" />
@@ -422,10 +438,10 @@ const GrandArena = () => {
                                         </div>
                                         <div className="flex flex-col min-w-[100px]">
                                             <div className="flex items-baseline gap-1.5 mb-0.5">
-                                                <span className={`font-galsb text-[8px] tracking-wider uppercase ${isSelf ? 'text-cyan-400' : 'text-slate-500'}`}>
+                                                <span className={`font-galsb text-[8px] tracking-wider uppercase ${isSelf ? (theme === 'dark' ? 'text-cyan-400' : 'text-cyan-700') : (theme === 'dark' ? 'text-slate-500' : 'text-slate-400')}`}>
                                                     {player.rankName || (isSelf ? 'NOVICE' : 'AGENT')}
                                                 </span>
-                                                <span className={`font-galsb text-[10px] tracking-widest uppercase truncate max-w-[80px] ${isSelf ? 'text-white' : 'text-slate-300'}`}>
+                                                <span className={`font-galsb text-[10px] tracking-widest uppercase truncate max-w-[80px] ${isSelf ? (theme === 'dark' ? 'text-white' : 'text-slate-900') : (theme === 'dark' ? 'text-slate-300' : 'text-slate-500')}`}>
                                                     {player.name}
                                                 </span>
                                             </div>
@@ -445,25 +461,36 @@ const GrandArena = () => {
                         {/* Controls - Withdraw */}
                         <div className="flex items-center gap-4">
                             <button
+                                onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+                                className={`p-2 rounded-full transition-all duration-300 ${
+                                    theme === 'dark'
+                                        ? 'text-amber-400 hover:bg-amber-400/20 hover:shadow-[0_0_15px_rgba(251,191,36,0.3)]'
+                                        : 'text-indigo-600 hover:bg-indigo-100 hover:shadow-md'
+                                }`}
+                                title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+                            >
+                                {theme === 'dark' ? <Sun className="w-6 h-6 animate-spin-slow" /> : <Moon className="w-6 h-6" />}
+                            </button>
+                            <button
                                 onClick={handleWithdrawClick}
-                                className="text-slate-500 hover:text-white transition-colors"
+                                className={`transition-colors p-2 rounded-full flex items-center gap-2 ${theme === 'dark' ? 'text-slate-500 hover:text-white' : 'text-slate-500 hover:text-slate-800'}`}
                             >
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
                     </header>
 
-                    <main className="relative z-10 flex-1 flex h-[calc(100vh-105px)] overflow-hidden">
+                    <main className={`relative z-10 flex-1 flex h-[calc(100vh-105px)] overflow-hidden ${theme === 'dark' ? 'bg-[#0a0f1c] text-white' : 'bg-[#e2e8f0] text-slate-900'}`}>
                         {/* Left: Coding Area */}
-                        <div className="flex-1 relative overflow-hidden" ref={containerRef}>
+                        <div className={`flex-1 relative overflow-hidden ${theme === 'dark' ? 'bg-[#0c1221]' : 'bg-[#f4f7fc]'}`} ref={containerRef}>
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(34,211,238,0.03)_1px,_transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
 
                             <div className="w-full p-6 z-20 relative shrink-0">
-                                <div className="bg-slate-900/80 backdrop-blur-md border-l-4 border-cyan-500 p-4 max-w-2xl shadow-lg ring-1 ring-white/5">
-                                    <h3 className="text-cyan-500 uppercase tracking-widest text-[10px] font-bold mb-1 flex items-center gap-2">
-                                        <span className="w-1.5 h-1.5 bg-cyan-500" /> DIRECTIVE
+                                <div className={`${theme === 'dark' ? 'bg-slate-900/80 backdrop-blur-md border-cyan-500 shadow-lg ring-white/5' : 'bg-white border-cyan-600 shadow-md ring-slate-200'} border-l-4 p-4 max-w-2xl ring-1`}>
+                                    <h3 className={`${theme === 'dark' ? 'text-cyan-500' : 'text-cyan-700'} uppercase tracking-widest text-[10px] font-bold mb-1 flex items-center gap-2`}>
+                                        <span className={`w-1.5 h-1.5 ${theme === 'dark' ? 'bg-cyan-500' : 'bg-cyan-600'}`} /> DIRECTIVE
                                     </h3>
-                                    <p className="text-cyan-100 text-lg font-medium leading-relaxed font-mono">
+                                    <p className={`${theme === 'dark' ? 'text-cyan-100' : 'text-slate-700'} text-lg font-medium leading-relaxed font-mono`}>
                                         {puzzle.description}
                                     </p>
                                 </div>
@@ -515,24 +542,24 @@ const GrandArena = () => {
                         </div>
 
                         {/* Control Console */}
-                        <div className="w-[380px] bg-[#080b14] border-l border-white/10 p-6 flex flex-col gap-6 shadow-[-20px_0_50px_rgba(0,0,0,0.5)] relative z-40">
+                        <div className={`w-[380px] ${theme === 'dark' ? 'bg-[#080b14] border-white/10 shadow-[-20px_0_50px_rgba(0,0,0,0.5)]' : 'bg-slate-50 border-slate-300 shadow-[[-10px_0_30px_rgba(0,0,0,0.05)]'} border-l p-6 flex flex-col gap-6 relative z-40`}>
                             {/* Target Output */}
                             <div className="space-y-2">
-                                <h3 className="text-cyan-600 uppercase tracking-widest text-[10px] font-bold flex items-center gap-2">
+                                <h3 className={`${theme === 'dark' ? 'text-cyan-600' : 'text-emerald-700'} uppercase tracking-widest text-[10px] font-bold flex items-center gap-2`}>
                                     <Trophy className="w-3 h-3" /> Target Signature
                                 </h3>
-                                <div className="bg-black/60 border border-emerald-500/20 p-4 font-mono text-lg font-bold text-emerald-400 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)] relative overflow-hidden">
+                                <div className={`${theme === 'dark' ? 'bg-black/60 border-emerald-500/20 text-emerald-400 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]' : 'bg-emerald-100/50 border-emerald-300 text-emerald-700 shadow-inner'} border p-4 font-mono text-lg font-bold relative overflow-hidden`}>
                                     {puzzle.expectedOutput}
-                                    <div className="absolute top-0 left-0 right-0 h-px bg-emerald-500/20 animate-scan-fast" />
+                                    <div className={`absolute top-0 left-0 right-0 h-px ${theme === 'dark' ? 'bg-emerald-500/20' : 'bg-emerald-400/20'} animate-scan-fast`} />
                                 </div>
                             </div>
 
                             {/* Battle Log / Terminal */}
-                            <div className="flex-1 bg-black border border-white/5 p-4 font-mono text-xs text-slate-500 relative overflow-hidden flex flex-col">
-                                <div className="absolute top-0 left-0 px-2 py-0.5 bg-slate-800 text-[9px] uppercase tracking-wider text-slate-300">Terminal</div>
-                                <div className="mt-4 space-y-1">
+                            <div className={`flex-1 ${theme === 'dark' ? 'bg-black border-white/5 text-slate-500' : 'bg-white border-slate-300 text-slate-600 shadow-inner'} border p-4 font-mono text-xs relative overflow-hidden flex flex-col`}>
+                                <div className={`absolute top-0 left-0 px-2 py-0.5 text-[9px] uppercase tracking-wider ${theme === 'dark' ? 'bg-slate-800 text-slate-300' : 'bg-slate-200 text-slate-700'}`}>Terminal</div>
+                                <div className="mt-4 space-y-1 overflow-auto">
                                     {terminalLogs.map((log, i) => (
-                                        <div key={i} className="text-[11px] opacity-60">
+                                        <div key={i} className={`text-[11px] ${log.includes('ERROR') ? 'text-red-500' : (theme === 'dark' ? 'opacity-60' : 'text-slate-600')}`}>
                                             {log}
                                         </div>
                                     ))}

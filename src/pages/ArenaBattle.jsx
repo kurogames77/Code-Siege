@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { DndContext, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, X, Trophy, ZoomIn, ZoomOut, Maximize, Loader2 } from 'lucide-react';
+import { Play, X, Trophy, ZoomIn, ZoomOut, Maximize, Loader2, Sun, Moon } from 'lucide-react';
 import PuzzleBlock from '../components/game/PuzzleBlock';
 import CodeTimer from '../components/game/CodeTimer';
 import Button from '../components/ui/Button';
@@ -12,6 +12,11 @@ import useSound from '../hooks/useSound';
 // Assets
 import expIcon from '../assets/exp.png';
 import postSceneVideo from '../assets/postsceneview.mp4';
+import heroAsset from '../assets/hero1.png';
+import hero1aStatic from '../assets/hero1a.png';
+import hero2Static from '../assets/hero2.png';
+import hero3Static from '../assets/hero3.png';
+import hero4Static from '../assets/hero4.png';
 
 // Components
 import BattleScene from '../components/game/BattleScene';
@@ -26,7 +31,17 @@ import supabase from '../lib/supabase';
 const ArenaBattle = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { opponent = 'Unknown Recruiter', opponentId, opponentAvatar, opponentRankName, opponentRankIcon, language = 'JavaScript', wager = '100', mode: lobbyMode = 'Puzzle Blocks', difficulty, lobbyId } = location.state || {};
+    const { opponent = 'Unknown Recruiter', opponentId, opponentAvatar, opponentHeroImage, opponentRankName, opponentRankIcon, language = 'JavaScript', wager = '100', mode: lobbyMode = 'Puzzle Blocks', difficulty, lobbyId } = location.state || {};
+
+    const [theme, setTheme] = useState('dark');
+
+    const heroMap = {
+        'hero1a.png': hero1aStatic,
+        'hero2.png': hero2Static,
+        'hero3.png': hero3Static,
+        'hero4.png': hero4Static,
+        'hero1.png': heroAsset
+    };
 
     // Mimic ChallengeModal State
     const [blocks, setBlocks] = useState([]);
@@ -550,8 +565,13 @@ const ArenaBattle = () => {
         navigate('/play', { state: { openDuelLobby: true } });
     };
 
+    const userHeroImageKey = localStorage.getItem('selectedHeroImage') || 'hero2.png';
+    const userHeroImage = heroMap[userHeroImageKey] || hero2Static;
+    const userDisplayAvatar = user?.avatar_url || user?.avatar || userHeroImage;
+    const opponentDisplayAvatar = opponentAvatar || opponentHeroImage || heroAsset;
+
     return (
-        <div className="w-full h-screen bg-[#0a0f1c] text-slate-200 overflow-hidden relative flex flex-col font-inter">
+        <div className={`w-full h-screen ${theme === 'dark' ? 'bg-[#0a0f1c] text-slate-200' : 'bg-[#f4f7fc] text-slate-900'} overflow-hidden relative flex flex-col font-inter`}>
             {/* --- POST-GAME SCENE LAYER --- */}
             {showPostScene ? (
                 <motion.div
@@ -672,7 +692,7 @@ const ArenaBattle = () => {
                     <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[size:100%_2px,3px_100%] pointer-events-none z-50 opacity-20" />
 
                     {/* Top HUD Bar */}
-                    <div className="h-16 bg-[#050810] flex items-center justify-between px-6 border-b border-cyan-500/20 shrink-0 relative z-40">
+                    <div className={`h-16 ${theme === 'dark' ? 'bg-[#050810] border-cyan-500/20' : 'bg-white border-slate-300 shadow-sm'} flex items-center justify-between px-6 border-b shrink-0 relative z-40`}>
                         <div className="flex items-center gap-8">
                             <CodeTimer
                                 onExpire={handleTimeout}
@@ -688,7 +708,7 @@ const ArenaBattle = () => {
                                     <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-cyan-500" />
                                     <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-cyan-500" />
                                     <img
-                                        src={user?.avatar}
+                                        src={userDisplayAvatar}
                                         alt="Player"
                                         className="w-full h-full object-cover"
                                     />
@@ -696,8 +716,8 @@ const ArenaBattle = () => {
                                 {user?.rankIcon && <img src={user.rankIcon} alt="Rank" className="w-8 h-8 object-contain" />}
                                 <div className="flex flex-col items-end">
                                     <div className="flex items-baseline gap-2">
-                                        <span className="font-galsb text-[10px] text-cyan-300 tracking-wider uppercase">{user?.rankName || 'Novice'}</span>
-                                        <span className="font-galsb text-sm text-white tracking-widest uppercase">{user?.name || 'Player'}</span>
+                                        <span className={`font-galsb text-[10px] tracking-wider uppercase ${theme === 'dark' ? 'text-cyan-300' : 'text-cyan-700'}`}>{user?.rankName || 'Novice'}</span>
+                                        <span className={`font-galsb text-sm tracking-widest uppercase ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{user?.name || 'Player'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -706,8 +726,8 @@ const ArenaBattle = () => {
                             <div className="flex items-center gap-3">
                                 <div className="flex flex-col items-start">
                                     <div className="flex items-baseline gap-2">
-                                        <span className="font-galsb text-sm text-white tracking-widest uppercase">{opponent}</span>
-                                        <span className="font-galsb text-[10px] text-red-400 tracking-wider uppercase">{opponentRankName || 'Novice'}</span>
+                                        <span className={`font-galsb text-sm tracking-widest uppercase ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{opponent}</span>
+                                        <span className={`font-galsb text-[10px] tracking-wider uppercase ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>{opponentRankName || 'Novice'}</span>
                                     </div>
                                 </div>
                                 {opponentRankIcon && <img src={opponentRankIcon} alt="Rank" className="w-8 h-8 object-contain" />}
@@ -715,7 +735,7 @@ const ArenaBattle = () => {
                                     <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-red-500" />
                                     <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-red-500" />
                                     <img
-                                        src={opponentAvatar}
+                                        src={opponentDisplayAvatar}
                                         alt="Opponent"
                                         className="w-full h-full object-cover"
                                     />
@@ -723,10 +743,21 @@ const ArenaBattle = () => {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+                                className={`p-2 rounded-full transition-all duration-300 ${
+                                    theme === 'dark'
+                                        ? 'text-amber-400 hover:bg-amber-400/20 hover:shadow-[0_0_15px_rgba(251,191,36,0.3)]'
+                                        : 'text-indigo-600 hover:bg-indigo-100 hover:shadow-md'
+                                }`}
+                                title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+                            >
+                                {theme === 'dark' ? <Sun className="w-6 h-6 animate-spin-slow" /> : <Moon className="w-6 h-6" />}
+                            </button>
                             <button
                                 onClick={handleWithdraw}
-                                className="text-cyan-700 hover:text-cyan-400 transition-colors p-2 hover:bg-cyan-900/20 rounded-full group flex items-center gap-2"
+                                className={`transition-colors p-2 rounded-full group flex items-center gap-2 ${theme === 'dark' ? 'text-cyan-700 hover:text-cyan-400 hover:bg-cyan-900/20' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200'}`}
                                 title="Withdraw"
                             >
                                 <span className="text-[10px] uppercase font-bold tracking-widest hidden group-hover:inline-block">Withdraw</span>
@@ -737,7 +768,7 @@ const ArenaBattle = () => {
 
                     <div className="flex-1 flex overflow-hidden relative z-30">
                         {/* Puzzle Area */}
-                        <div className="flex-[3] bg-[#0c1221] relative overflow-hidden flex flex-col" ref={containerRef}>
+                        <div className={`flex-[3] ${theme === 'dark' ? 'bg-[#0c1221]' : 'bg-[#f4f7fc]'} relative overflow-hidden flex flex-col`} ref={containerRef}>
                             <div className="absolute inset-0 opacity-10 pointer-events-none"
                                 style={{
                                     backgroundImage: 'linear-gradient(rgba(6,182,212,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(6,182,212,0.3) 1px, transparent 1px)',
@@ -745,11 +776,11 @@ const ArenaBattle = () => {
                                 }}
                             />
                             <div className="w-full p-6 z-10 relative shrink-0">
-                                <div className="bg-slate-900/80 backdrop-blur-md border-l-4 border-cyan-500 p-4 max-w-3xl shadow-lg">
-                                    <h2 className="text-cyan-500 uppercase tracking-widest text-xs font-bold mb-1 flex items-center gap-2">
-                                        <span className="w-2 h-2 bg-cyan-500" /> Directive
+                                <div className={`${theme === 'dark' ? 'bg-slate-900/80 backdrop-blur-md border-cyan-500 shadow-lg' : 'bg-white border-cyan-600 shadow-md'} border-l-4 p-4 max-w-3xl`}>
+                                    <h2 className={`${theme === 'dark' ? 'text-cyan-500' : 'text-cyan-700'} uppercase tracking-widest text-xs font-bold mb-1 flex items-center gap-2`}>
+                                        <span className={`w-2 h-2 ${theme === 'dark' ? 'bg-cyan-500' : 'bg-cyan-600'}`} /> Directive
                                     </h2>
-                                    <p className="text-cyan-100 text-lg font-medium leading-relaxed font-mono">{puzzle?.description}</p>
+                                    <p className={`${theme === 'dark' ? 'text-cyan-100' : 'text-slate-700'} text-lg font-medium leading-relaxed font-mono`}>{puzzle?.description}</p>
                                 </div>
                             </div>
                             {mode === 'code' ? (
@@ -840,38 +871,38 @@ const ArenaBattle = () => {
                         </div>
 
                         {/* Control Console */}
-                        <div className="flex-1 min-w-[350px] max-w-[400px] bg-[#080b14] border-l border-cyan-500/20 flex flex-col relative z-40 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]">
+                        <div className={`flex-1 min-w-[350px] max-w-[400px] ${theme === 'dark' ? 'bg-[#080b14] border-cyan-500/20 bg-[url(\'https://www.transparenttextures.com/patterns/dark-matter.png\')]' : 'bg-slate-50 border-slate-300'} border-l flex flex-col relative z-40`}>
                             <div className="p-6 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
-                                <div className="bg-cyan-950/10 border border-cyan-500/20 p-4 relative group">
-                                    <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-cyan-500/50" />
-                                    <div className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-cyan-500/50" />
+                                <div className={`${theme === 'dark' ? 'bg-cyan-950/10 border-cyan-500/20' : 'bg-amber-100/50 border-amber-300'} border p-4 relative group`}>
+                                    <div className={`absolute top-0 right-0 w-3 h-3 border-t border-r ${theme === 'dark' ? 'border-cyan-500/50' : 'border-amber-500'}`} />
+                                    <div className={`absolute bottom-0 left-0 w-3 h-3 border-b border-l ${theme === 'dark' ? 'border-cyan-500/50' : 'border-amber-500'}`} />
                                     <div className="flex items-center gap-4">
                                         <div className="relative">
                                             <div className="absolute inset-0 bg-yellow-500/20 blur-md rounded-full" />
                                             <img src={expIcon} className="w-12 h-12 object-contain relative z-10" alt="EXP" />
                                         </div>
                                         <div>
-                                            <div className="text-cyan-500 text-[10px] uppercase tracking-widest font-bold">EXP WAGER</div>
-                                            <div className="text-white font-mono text-xl font-bold">+ {currentReward} EXP</div>
+                                            <div className={`${theme === 'dark' ? 'text-cyan-500' : 'text-amber-600'} text-[10px] uppercase tracking-widest font-bold`}>EXP WAGER</div>
+                                            <div className={`${theme === 'dark' ? 'text-white' : 'text-slate-900'} font-mono text-xl font-bold`}>+ {currentReward} EXP</div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <h3 className="text-cyan-600 uppercase tracking-widest text-[10px] font-bold flex items-center gap-2">
+                                    <h3 className={`${theme === 'dark' ? 'text-cyan-600' : 'text-emerald-700'} uppercase tracking-widest text-[10px] font-bold flex items-center gap-2`}>
                                         <Trophy className="w-3 h-3" /> Target Signature
                                     </h3>
-                                    <div className="font-mono text-emerald-400 text-lg font-bold bg-black/60 p-4 border border-emerald-500/20 shadow-[inset_0_0_20px_rgba(16,185,129,0.1)] relative overflow-hidden">
+                                    <div className={`font-mono text-lg font-bold p-4 border relative overflow-hidden ${theme === 'dark' ? 'text-emerald-400 bg-black/60 border-emerald-500/20 shadow-[inset_0_0_20px_rgba(16,185,129,0.1)]' : 'text-emerald-700 bg-emerald-100/50 border-emerald-300 shadow-inner'}`}>
                                         <div className="relative z-10">{puzzle?.expectedOutput}</div>
-                                        <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500/20 animate-scan-fast pointer-events-none" />
+                                        <div className={`absolute top-0 left-0 right-0 h-1 ${theme === 'dark' ? 'bg-emerald-500/20' : 'bg-emerald-400/20'} animate-scan-fast pointer-events-none`} />
                                     </div>
                                 </div>
 
-                                <div className="flex-1 min-h-[150px] bg-black border border-slate-800 p-4 font-mono text-xs text-slate-400 relative overflow-hidden">
-                                    <div className="absolute top-0 left-0 px-2 py-0.5 bg-slate-800 text-[9px] uppercase tracking-wider text-slate-300">Terminal</div>
-                                    <div className="mt-4 space-y-1">
+                                <div className={`flex-1 min-h-[150px] p-4 font-mono text-xs relative overflow-hidden flex flex-col ${theme === 'dark' ? 'bg-black border border-slate-800 text-slate-400' : 'bg-white border border-slate-300 text-slate-600 shadow-inner'}`}>
+                                    <div className={`absolute top-0 left-0 px-2 py-0.5 text-[9px] uppercase tracking-wider ${theme === 'dark' ? 'bg-slate-800 text-slate-300' : 'bg-slate-200 text-slate-700'}`}>Terminal</div>
+                                    <div className="mt-4 space-y-1 overflow-auto">
                                         {terminalLogs.map((log, i) => (
-                                            <div key={i} className={`font-mono text-[11px] ${log.includes('ERROR') ? 'text-red-400' : 'text-slate-500'}`}>
+                                            <div key={i} className={`font-mono text-[11px] ${log.includes('ERROR') ? 'text-red-500' : (theme === 'dark' ? 'text-slate-500' : 'text-slate-600')}`}>
                                                 {log}
                                             </div>
                                         ))}
@@ -893,7 +924,7 @@ const ArenaBattle = () => {
                                 </div>
                             </div>
 
-                            <div className="p-6 bg-[#0c1221] border-t border-cyan-500/20">
+                            <div className={`p-6 border-t ${theme === 'dark' ? 'bg-[#0c1221] border-cyan-500/20' : 'bg-slate-50 border-slate-300'}`}>
                                 <Button
                                     onClick={handleSubmit}
                                     disabled={isSuccess}

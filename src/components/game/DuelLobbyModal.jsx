@@ -780,6 +780,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                         opponent: opponent.name,
                         opponentId: opponent.id,
                         opponentAvatar: opponent.avatar,
+                        opponentHeroImage: opponent.heroImage,
                         opponentRankName: opponent.rankName,
                         opponentRankIcon: opponent.rankIcon,
                         language: selectedLanguage,
