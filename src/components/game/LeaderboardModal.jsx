@@ -72,14 +72,14 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
     const userInLeaderboard = leaderboard.find(p => p.id === user?.id);
     const userRank = userInLeaderboard ? {
         rank: userInLeaderboard.rank,
-        name: user?.username || 'You',
+        name: user?.name || user?.username || 'You',
         score: userInLeaderboard.score ?? userInLeaderboard.xp ?? 0,
         avatar: user?.avatar || heroAsset,
         rankIcon: getRankIcon(userInLeaderboard.score ?? userInLeaderboard.xp ?? 0),
         rankName: getRankName(userInLeaderboard.score ?? userInLeaderboard.xp ?? 0)
     } : {
         rank: '-',
-        name: user?.username || 'You',
+        name: user?.name || user?.username || 'You',
         score: user?.exp || user?.xp || 0,
         avatar: user?.avatar || heroAsset,
         rankIcon: getRankIcon(user?.exp || user?.xp || 0),
@@ -397,8 +397,7 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
 
                                         <div className="flex-1">
                                             <div className="flex items-center gap-3">
-                                                <h4 className="text-base font-black text-white uppercase italic tracking-tighter line-clamp-1">{userRank.name} (YOU)</h4>
-                                                <span className="px-2 py-0.5 bg-white/20 rounded text-[9px] font-black uppercase tracking-widest border border-white/30 text-white shrink-0 animate-pulse">Your Rank</span>
+                                                <h4 className="text-base font-black text-white uppercase italic tracking-tighter line-clamp-1">{userRank.name}</h4>
                                             </div>
                                             <div className="flex items-center gap-2 mt-1">
                                                 <img src={userRank.rankIcon} className="w-7 h-7 object-contain" alt="" />
