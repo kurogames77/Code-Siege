@@ -234,7 +234,19 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             if (Math.abs(a.position.y - b.position.y) > 40) return a.position.y - b.position.y;
             return a.position.x - b.position.x;
         });
-        return sorted.map(b => b.content).join('\n');
+        
+        let code = "";
+        for (let i = 0; i < sorted.length; i++) {
+            if (i > 0) {
+                if (Math.abs(sorted[i].position.y - sorted[i-1].position.y) <= 40) {
+                    code += " ";
+                } else {
+                    code += "\n";
+                }
+            }
+            code += sorted[i].content;
+        }
+        return code;
     };
 
     const handleAIAnalysis = async (userCode) => {

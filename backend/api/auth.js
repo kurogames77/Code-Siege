@@ -92,30 +92,32 @@ router.post('/register', async (req, res) => {
             });
         }
 
-        // STUDENT REGISTRATION: Validate student code first
-        if (student_code) {
-            student_code = student_code.trim();
-        }
-        if (!student_code) {
-            return res.status(400).json({ error: 'Student code is required to register.' });
-        }
+        // STUDENT REGISTRATION: Normal flow with immediate signup
+        if (role !== 'guest') {
+            if (student_code) {
+                student_code = student_code.trim();
+            }
+            if (!student_code) {
+                return res.status(400).json({ error: 'Student code is required to register.' });
+            }
 
-        // Check if the code exists and is valid (not used)
-        const { data: codeRecord, error: codeError } = await supabaseService
-            .from('student_codes')
-            .select('id, is_used')
-            .eq('code', student_code)
-            .single();
+            // Check if the code exists and is valid (not used)
+            const { data: codeRecord, error: codeError } = await supabaseService
+                .from('student_codes')
+                .select('id, is_used')
+                .eq('code', student_code)
+                .single();
 
-        if (codeError || !codeRecord) {
-            return res.status(400).json({ error: 'Invalid student code.' });
+            if (codeError || !codeRecord) {
+                return res.status(400).json({ error: 'Invalid student code.' });
+            }
+
+            if (codeRecord.is_used) {
+                return res.status(400).json({ error: 'This student code has already been used.' });
+            }
+
+            console.log(`[Auth] Student registration code validated: "${student_code}"`);
         }
-
-        if (codeRecord.is_used) {
-            return res.status(400).json({ error: 'This student code has already been used.' });
-        }
-
-        console.log(`[Auth] Student registration code validated: "${student_code}"`);
 
         // STUDENT REGISTRATION: Normal flow with immediate signup
         const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -240,19 +242,21 @@ router.post('/register', async (req, res) => {
         }
 
         // Mark the student code as used
-        const { error: markCodeError } = await supabaseService
-            .from('student_codes')
-            .update({
-                is_used: true,
-                used_by: authData.user.id
-            })
-            .eq('code', student_code);
+        if (role !== 'guest' && student_code) {
+            const { error: markCodeError } = await supabaseService
+                .from('student_codes')
+                .update({
+                    is_used: true,
+                    used_by: authData.user.id
+                })
+                .eq('code', student_code);
 
-        if (markCodeError) {
-            console.error('[Auth] Failed to mark student code as used:', markCodeError);
-            // We don't fail the registration here, but log it
-        } else {
-            console.log(`[Auth] Marked student code ${student_code} as used by ${authData.user.id}`);
+            if (markCodeError) {
+                console.error('[Auth] Failed to mark student code as used:', markCodeError);
+                // We don't fail the registration here, but log it
+            } else {
+                console.log(`[Auth] Marked student code ${student_code} as used by ${authData.user.id}`);
+            }
         }
 
         logger.info('AUTH_SERVICE', `New student registered: ${username} (${email}), student_id: ${student_id}`);
