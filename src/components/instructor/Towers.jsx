@@ -59,7 +59,7 @@ const Towers = ({ theme }) => {
             const { data, error } = await supabase
                 .from('users')
                 .select('id, username, student_id, email, is_banned')
-                .in('role', ['user', 'student'])
+                .in('role', ['user', 'student', 'guest'])
                 .eq('is_banned', false);
             if (error) throw error;
             return data || [];
