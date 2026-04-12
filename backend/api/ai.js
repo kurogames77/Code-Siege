@@ -54,6 +54,61 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
 
         const isAdvance = mode.toLowerCase().includes('advance');
 
+        // Language-specific syntax rules for smarter generation
+        const LANGUAGE_SYNTAX_RULES = {
+            'Python': `
+    - Use PEP 8 style: spaces around = in assignments (x = 5, NOT x=5)
+    - Each statement must be on its own line (x = 5\\ny = 2, NOT x=5,y=2)
+    - Use snake_case for variable names
+    - String quotes: use consistent double quotes
+    - Function calls use parentheses: print("hello") NOT print "hello"
+    - For loops: for i in range(n): with proper colon and 4-space indentation
+    - Use proper Python built-ins: print(), input(), len(), range(), int(), str()`,
+            'C#': `
+    - Use PascalCase for methods and classes, camelCase for local variables
+    - All statements end with semicolons (;)
+    - Use curly braces for code blocks: if (x > 0) { ... }
+    - String interpolation: $"Hello {name}" or concatenation "Hello " + name
+    - Console output: Console.WriteLine("text"); or Console.Write("text");
+    - Type declarations required: int x = 5; string name = "test"; bool flag = true;
+    - Use 'using System;' for namespace imports`,
+            'C++': `
+    - Include directives: #include <iostream> for I/O, #include <string> for strings
+    - Use 'using namespace std;' or prefix with std::
+    - All statements end with semicolons (;)
+    - Output: cout << "text" << endl; or std::cout << "text" << std::endl;
+    - Variable declarations: int x = 5; string s = "test"; double d = 3.14;
+    - Use curly braces for code blocks
+    - Main function: int main() { ... return 0; }`,
+            'JavaScript': `
+    - Use camelCase for variables and functions
+    - Use const for constants, let for variables (NEVER var)
+    - Template literals for string interpolation: \\\`Hello \\\${name}\\\`
+    - Console output: console.log("text");
+    - Arrow functions: const fn = (x) => x * 2;
+    - All statements end with semicolons (;)
+    - Array methods: .map(), .filter(), .forEach(), .reduce()`,
+            'PHP': `
+    - All variables start with $: $x = 5; $name = "test";
+    - All statements end with semicolons (;)
+    - String concatenation uses dot operator: $x . " text"
+    - String interpolation in double quotes: "Hello $name" or "Hello {$name}"
+    - Output: echo "text"; or print("text");
+    - Arrays: $arr = [1, 2, 3]; or $arr = array(1, 2, 3);
+    - Opening tag: <?php (include in solution if standalone script)`,
+            'MySQL': `
+    - SQL keywords in UPPERCASE: SELECT, FROM, WHERE, INSERT INTO, UPDATE, DELETE
+    - Table and column names in lowercase or snake_case
+    - String values in single quotes: 'value'
+    - Statements end with semicolons (;)
+    - Use proper JOIN syntax: INNER JOIN table_name ON condition
+    - Use aliases: SELECT t.column FROM table_name AS t
+    - Aggregates: COUNT(), SUM(), AVG(), MAX(), MIN() in UPPERCASE
+    - Clauses order: SELECT ... FROM ... WHERE ... GROUP BY ... ORDER BY ... LIMIT`
+        };
+
+        const syntaxRules = LANGUAGE_SYNTAX_RULES[language] || `- Use proper syntax conventions for ${language}. Follow the language's official style guide.`;
+
         const prompt = `
         You are an expert coding instructor designed to generate educational coding puzzles.
         Generate 10 progressive coding puzzle levels for a course with the following settings:
@@ -63,6 +118,9 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
 
         Each level should teach a concept appropriate for the difficulty.
         
+        LANGUAGE-SPECIFIC SYNTAX RULES FOR ${language}:
+        ${syntaxRules}
+
         CRITICAL RULES FOR DIFFICULTY SCALING:
         1. Maintain difficulty WITHIN the scope of the '${mode}' mode.
         2. A 'Hard' level in '${mode}' should still be conceptually simpler than an 'Easy' level in the next higher mode.
@@ -72,6 +130,12 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
            - Advance: Complex logic, optimization, data structures (Pure Code focus)
         4. If ${difficulty} is 'Hard', make it challenging relative to OTHER ${mode} levels, but not impossible for a ${mode} student.
 
+        PROGRESSIVE TEACHING ORDER (Levels 1-10 must follow this sequence):
+        - Levels 1-3: Foundational syntax (output, variables, basic operations)
+        - Levels 4-6: Control flow (conditionals, simple loops)
+        - Levels 7-8: Functions/methods or data structures basics
+        - Levels 9-10: Combining concepts from earlier levels
+
         Return the response strictly as a JSON array of objects. Do not wrap in markdown code blocks.
         The JSON structure for each level object should be:
         {
@@ -80,7 +144,7 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
             "description": "Clear instruction of what to do",
             "initialCode": "Starter code snippet (optional)",
             "expectedOutput": "The expected result string",
-            "solution": "The correct code solution",
+            "solution": "The correct code solution using PROPER ${language} syntax",
             "hints": [
                 { "text": "Hint 1", "cost": 10 },
                 { "text": "Hint 2", "cost": 20 }
@@ -108,6 +172,20 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
         - Focus on 'initialCode', 'solution', and 'expectedOutput'.
         ` : `
         Note: For 'initialBlocks', provide 3-4 blocks.
+
+        CRITICAL BLOCK CONTENT RULES:
+        - Each block's 'content' must be a syntactically valid FRAGMENT of ${language} code.
+        - When blocks are concatenated in 'correctSequence' order, they MUST form a complete, runnable program that produces the 'expectedOutput'.
+        - Do NOT split mid-keyword (e.g., "pri" + "nt" is WRONG).
+        - Do NOT split mid-string-literal (e.g., '"Hel' + 'lo"' is WRONG).
+        - Split at LOGICAL code boundaries:
+          * Function name + opening paren: "print(" | arguments: '"Hello")'
+          * Assignment left side: "x = " | right side: "5"
+          * For multi-line solutions, each line should be its own block
+        - Example for Python print("Hello"): Block 1 content: 'print(' | Block 2 content: '"Hello")'
+        - Example for JS console.log(42): Block 1 content: 'console.log(' | Block 2 content: '42)'
+        - Example for C++ cout << "Hi": Block 1 content: 'cout << ' | Block 2 content: '"Hi" << endl;'
+
         CRITICAL: Visual Interlocking Rules (connectors: 0=None, 1=Out/Tab, 2=In/Slot):
         - You MUST define 'connectors' for every block so they snap together logically in the 'correctSequence'.
         - If Block A is followed by Block B: Block A 'right' must be 1 (Tab), and Block B 'left' must be 2 (Slot).
@@ -126,6 +204,7 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
         - Ensure the 'id' is just the number (1 to 10).
         - REWARDS MUST BE STRICTLY: { "exp": 100, "coins": 0 }. Do not scale rewards.
         - Ensure difficulty scales slightly with each level.
+        - ALL code in 'solution' MUST follow the ${language} syntax rules listed above exactly.
         `;
 
         const result = await model.generateContent(prompt);

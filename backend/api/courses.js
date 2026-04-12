@@ -72,6 +72,7 @@ router.get('/:courseId/levels', authenticateUser, async (req, res) => {
 /**
  * GET /api/courses/:courseId/levels/:levelOrder
  * Get a specific level details
+ * Auto-syncs blocks if solution was updated outside the app (e.g. direct DB edit)
  */
 router.get('/:courseId/levels/:levelOrder', authenticateUser, async (req, res) => {
     try {
@@ -91,6 +92,45 @@ router.get('/:courseId/levels/:levelOrder', authenticateUser, async (req, res) =
 
         if (error) {
             return res.status(404).json({ error: 'Level not found' });
+        }
+
+        // Auto-sync: Check if blocks match the current solution
+        const courseMode = level.course_mode || 'Beginner';
+        const isAdvance = courseMode === 'Advance' || courseMode === 'Advanced';
+
+        if (!isAdvance && level.solution) {
+            try {
+                const { blocksMatchSolution, generateBlocksFromSolution } = await import('../utils/blockGenerator.js');
+
+                let existingBlocks = level.initial_blocks;
+                if (typeof existingBlocks === 'string') {
+                    try { existingBlocks = JSON.parse(existingBlocks); } catch { existingBlocks = []; }
+                }
+
+                if (!blocksMatchSolution(existingBlocks, level.solution)) {
+                    console.log(`[Block Sync] Mismatch detected for level ${level.id}, regenerating blocks...`);
+                    const blockData = generateBlocksFromSolution(level.solution, courseMode);
+
+                    if (blockData) {
+                        // Save regenerated blocks back to DB
+                        const { error: syncError } = await supabase
+                            .from('course_levels')
+                            .update({
+                                initial_blocks: JSON.stringify(blockData.initialBlocks),
+                                correct_sequence: JSON.stringify(blockData.correctSequence)
+                            })
+                            .eq('id', level.id);
+
+                        if (!syncError) {
+                            level.initial_blocks = blockData.initialBlocks;
+                            level.correct_sequence = blockData.correctSequence;
+                            console.log(`[Block Sync] Successfully synced ${blockData.initialBlocks.length} blocks`);
+                        }
+                    }
+                }
+            } catch (syncErr) {
+                console.warn('[Block Sync] Non-fatal sync error:', syncErr.message);
+            }
         }
 
         res.json(level);

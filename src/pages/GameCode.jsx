@@ -56,7 +56,8 @@ const GameCode = () => {
     });
 
     // Adaptive Difficulty State
-    const [difficulty, setDifficulty] = useState('Easy');
+    const [difficulty, setDifficulty] = useState(urlDifficulty || 'Easy');
+    const [nextDifficulty, setNextDifficulty] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     // Interaction State
@@ -106,6 +107,11 @@ const GameCode = () => {
                     } catch (err) {
                         console.warn('Failed to fetch user difficulty, using default', err);
                     }
+                }
+
+                // Use URL difficulty if present (e.g., from DDA propagation), else use DB profile
+                if (urlDifficulty && urlDifficulty !== 'Easy') {
+                    userDifficulty = urlDifficulty;
                 }
 
                 // Force Level 1 to always be 'Easy' (Hello World) for consistency
@@ -226,14 +232,18 @@ const GameCode = () => {
             if (result.metrics && user?.id) {
                 setIsAnalyzing(true);
                 try {
-                    await algorithmAPI.fullAnalysis(
+                    const analysisResult = await algorithmAPI.fullAnalysis(
                         user.id,
                         result.metrics.time,
                         result.metrics.errors,
                         result.metrics.hints,
                         difficulty // Current difficulty
                     );
-                    // Difficulty for NEXT level is now updated in DB
+                    // Capture the new difficulty from DDA result for next level
+                    if (analysisResult?.dda?.new_difficulty) {
+                        setNextDifficulty(analysisResult.dda.new_difficulty);
+                        console.log(`[DDA] Next difficulty: ${analysisResult.dda.new_difficulty}`);
+                    }
                 } catch (error) {
                     console.error('Adaptive analysis failed:', error);
                 } finally {
@@ -257,12 +267,14 @@ const GameCode = () => {
             return;
         }
 
-        // Navigate to next floor
+        // Navigate to next floor with mode + difficulty from DDA
         const nextFloor = currentFloor + 1;
-        // Simple navigation assumption, ideally check max floors
-        navigate(`/gamecode/${nextFloor}/${towerId}`);
-        // Force reload or state reset if component doesn't unmount (depends on router)
-        // window.location.reload();
+        const nextConfig = getFloorConfig(nextFloor);
+        const nextMode = nextConfig.mode;
+        const nextDiff = nextDifficulty || difficulty; // Use DDA result or current difficulty
+        navigate(`/gamecode/${nextFloor}/${towerId}?mode=${nextMode}&difficulty=${nextDiff}`);
+        // Reset nextDifficulty for the following level
+        setNextDifficulty(null);
     };
 
     const handleReplay = () => {

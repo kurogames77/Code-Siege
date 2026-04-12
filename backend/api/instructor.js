@@ -1065,13 +1065,15 @@ router.post('/courses/:id/levels', async (req, res) => {
 /**
  * PATCH /api/instructor/courses/levels/:id
  * Update a single level
+ * Auto-regenerates initial_blocks & correct_sequence when solution changes
  */
 router.patch('/courses/levels/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const updates = req.body;
 
-        const { data, error } = await supabaseService
+        // Step 1: Apply the instructor's updates first
+        const { data: updatedLevel, error } = await supabaseService
             .from('course_levels')
             .update(updates)
             .eq('id', id)
@@ -1082,7 +1084,42 @@ router.patch('/courses/levels/:id', async (req, res) => {
             return res.status(400).json({ error: error.message });
         }
 
-        res.json({ message: 'Level updated', level: data });
+        // Step 2: If solution was changed, auto-regenerate blocks for non-Advance modes
+        if (updates.solution && updatedLevel) {
+            const mode = updatedLevel.course_mode || 'Beginner';
+            const isAdvance = mode === 'Advance' || mode === 'Advanced';
+
+            if (!isAdvance) {
+                try {
+                    const { generateBlocksFromSolution } = await import('../utils/blockGenerator.js');
+                    const blockData = generateBlocksFromSolution(updates.solution, mode);
+
+                    if (blockData) {
+                        const { data: syncedLevel, error: syncError } = await supabaseService
+                            .from('course_levels')
+                            .update({
+                                initial_blocks: JSON.stringify(blockData.initialBlocks),
+                                correct_sequence: JSON.stringify(blockData.correctSequence)
+                            })
+                            .eq('id', id)
+                            .select()
+                            .single();
+
+                        if (syncError) {
+                            console.error('[Block Sync] Failed to auto-sync blocks:', syncError);
+                        } else {
+                            console.log(`[Block Sync] Auto-regenerated ${blockData.initialBlocks.length} blocks for level ${id}`);
+                            return res.json({ message: 'Level updated (blocks auto-synced)', level: syncedLevel });
+                        }
+                    }
+                } catch (blockErr) {
+                    console.error('[Block Sync] Block generation error:', blockErr);
+                    // Non-fatal: return the original update result even if block sync fails
+                }
+            }
+        }
+
+        res.json({ message: 'Level updated', level: updatedLevel });
     } catch (error) {
         console.error('Update level error:', error);
         res.status(500).json({ error: 'Failed to update level' });

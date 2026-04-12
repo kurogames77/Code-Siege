@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { DndContext, useSensor, useSensors, PointerSensor, DragOverlay } from '@dnd-kit/core';
 import { restrictToWindowEdges, restrictToParentElement } from '@dnd-kit/modifiers';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Lightbulb, X, Trophy, Bug, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
+import { Play, Lightbulb, X, Trophy, Bug, ZoomIn, ZoomOut, Maximize, Sun, Moon } from 'lucide-react';
 import PuzzleBlock from './PuzzleBlock';
 import CodeTimer from './CodeTimer';
 import Button from '../ui/Button';
@@ -37,6 +37,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
     const [codeValue, setCodeValue] = useState(''); // For 'code' mode
     const [showHintConfirm, setShowHintConfirm] = useState(false);
     const [glowingBlocks, setGlowingBlocks] = useState([]); // Block IDs that should glow (Hint tier 2)
+    const [theme, setTheme] = useState('dark'); // Light/Dark mode toggle
 
     // Use config mode if available, fallback to level-based for legacy
     const getActiveMode = () => {
@@ -572,16 +573,16 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="w-full max-w-[90vw] h-[85vh] bg-[#0a0f1c] border border-cyan-500/30 rounded-lg shadow-[0_0_80px_rgba(8,145,178,0.2)] flex flex-col relative overflow-hidden group"
+                        className={`w-full max-w-[90vw] h-[85vh] border rounded-lg flex flex-col relative overflow-hidden group transition-colors duration-500 ${theme === 'dark' ? 'bg-[#0a0f1c] border-cyan-500/30 shadow-[0_0_80px_rgba(8,145,178,0.2)]' : 'bg-white border-slate-200 shadow-2xl'}`}
                     >
                         {/* CRT Scanline Effect */}
-                        <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[size:100%_2px,3px_100%] pointer-events-none z-50 opacity-20" />
+                        {theme === 'dark' && <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[size:100%_2px,3px_100%] pointer-events-none z-50 opacity-20" />}
 
                         {/* Decorative Corners */}
-                        <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-cyan-400 z-40" />
-                        <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-cyan-400 z-40" />
-                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-cyan-400 z-40" />
-                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-cyan-400 z-40" />
+                        <div className={`absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 z-40 ${theme === 'dark' ? 'border-cyan-400' : 'border-cyan-300'}`} />
+                        <div className={`absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 z-40 ${theme === 'dark' ? 'border-cyan-400' : 'border-cyan-300'}`} />
+                        <div className={`absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 z-40 ${theme === 'dark' ? 'border-cyan-400' : 'border-cyan-300'}`} />
+                        <div className={`absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 z-40 ${theme === 'dark' ? 'border-cyan-400' : 'border-cyan-300'}`} />
 
                         {/* Timeout / Failure Overlay */}
                         {isFailed && (
@@ -596,11 +597,11 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                         )}
 
                         {/* Top HUD Bar */}
-                        <div className="h-16 bg-[#050810] flex items-center justify-between px-6 border-b border-cyan-500/20 shrink-0 relative z-40">
+                        <div className={`h-16 flex items-center justify-between px-6 border-b shrink-0 relative z-40 transition-colors duration-500 ${theme === 'dark' ? 'bg-[#050810] border-cyan-500/20' : 'bg-slate-100 border-slate-200'}`}>
                             <div className="flex items-center gap-8">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 bg-cyan-500 rounded-full animate-ping" />
-                                    <span className="text-cyan-500 font-mono text-xs tracking-[0.2em] uppercase">Simloop_Active</span>
+                                    <div className={`w-2 h-2 rounded-full animate-ping ${theme === 'dark' ? 'bg-cyan-500' : 'bg-cyan-600'}`} />
+                                    <span className={`font-mono text-xs tracking-[0.2em] uppercase ${theme === 'dark' ? 'text-cyan-500' : 'text-cyan-700'}`}>Simloop_Active</span>
                                 </div>
                                 <div className="h-8 w-px bg-cyan-900/50" />
                                 <CodeTimer
@@ -640,12 +641,26 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                 </div>
                             </div>
 
-                            <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-cyan-950/30 px-6 py-1 border-b border-x border-cyan-500/30 rounded-b-lg">
-                                <span className="text-cyan-400 font-black tracking-[0.3em] text-xs uppercase">Level {level}</span>
+                            <div className={`absolute left-1/2 -translate-x-1/2 top-0 px-6 py-1 border-b border-x rounded-b-lg transition-colors duration-500 ${theme === 'dark' ? 'bg-cyan-950/30 border-cyan-500/30' : 'bg-cyan-50 border-cyan-200'}`}>
+                                <span className={`font-black tracking-[0.3em] text-xs uppercase ${theme === 'dark' ? 'text-cyan-400' : 'text-cyan-700'}`}>Level {level}</span>
                             </div>
 
-                            <div className="flex items-center gap-6">
-                                <button onClick={onClose} className="text-cyan-700 hover:text-cyan-400 p-2 hover:bg-cyan-900/20 rounded-full transition-all duration-500 hover:rotate-180"><X className="w-6 h-6" /></button>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+                                    className={`p-2 rounded-xl border transition-all duration-300 flex items-center justify-center group/theme ${theme === 'dark'
+                                        ? 'bg-slate-900 border-white/5 text-yellow-400 hover:border-yellow-400/50 hover:shadow-[0_0_15px_rgba(250,204,21,0.2)]'
+                                        : 'bg-white border-slate-200 text-slate-600 hover:border-cyan-500 hover:text-cyan-500 shadow-sm'
+                                    }`}
+                                    title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                                >
+                                    {theme === 'dark' ? (
+                                        <Sun className="w-4 h-4 group-hover/theme:rotate-90 transition-transform duration-500" />
+                                    ) : (
+                                        <Moon className="w-4 h-4 group-hover/theme:-rotate-12 transition-transform duration-500" />
+                                    )}
+                                </button>
+                                <button onClick={onClose} className={`p-2 rounded-full transition-all duration-500 hover:rotate-180 ${theme === 'dark' ? 'text-cyan-700 hover:text-cyan-400 hover:bg-cyan-900/20' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200'}`}><X className="w-6 h-6" /></button>
                             </div>
                         </div>
 
@@ -653,22 +668,22 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                         <div className="flex-1 flex overflow-hidden relative z-30">
 
                             {/* LEFT: Puzzle Area (Blueprint Style) */}
-                            <div className="flex-[3] bg-[#0c1221] relative overflow-hidden flex flex-col" ref={containerRef}>
+                            <div className={`flex-[3] relative overflow-hidden flex flex-col transition-colors duration-500 ${theme === 'dark' ? 'bg-[#0c1221]' : 'bg-slate-50'}`} ref={containerRef}>
                                 {/* Grid Background */}
-                                <div className="absolute inset-0 opacity-10 pointer-events-none"
+                                <div className={`absolute inset-0 pointer-events-none ${theme === 'dark' ? 'opacity-10' : 'opacity-5'}`}
                                     style={{
-                                        backgroundImage: 'linear-gradient(rgba(6,182,212,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(6,182,212,0.3) 1px, transparent 1px)',
+                                        backgroundImage: theme === 'dark' ? 'linear-gradient(rgba(6,182,212,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(6,182,212,0.3) 1px, transparent 1px)' : 'radial-gradient(circle at 2px 2px, rgba(6,182,212,0.4) 1px, transparent 0)',
                                         backgroundSize: '40px 40px'
                                     }}
                                 />
 
                                 {/* Problem Header - Now Relative to prevent overlap */}
                                 <div className="w-full p-6 z-10 relative shrink-0">
-                                    <div className="bg-slate-900/80 backdrop-blur-md border-l-4 border-cyan-500 p-4 max-w-3xl shadow-lg">
-                                        <h2 className="text-cyan-500 uppercase tracking-widest text-xs font-bold mb-1 flex items-center gap-2">
-                                            <span className="w-2 h-2 bg-cyan-500" /> Objective
+                                    <div className={`backdrop-blur-md border-l-4 p-4 max-w-3xl shadow-lg transition-colors duration-500 ${theme === 'dark' ? 'bg-slate-900/80 border-cyan-500' : 'bg-white/90 border-cyan-500 shadow-md'}`}>
+                                        <h2 className={`uppercase tracking-widest text-xs font-bold mb-1 flex items-center gap-2 ${theme === 'dark' ? 'text-cyan-500' : 'text-cyan-600'}`}>
+                                            <span className={`w-2 h-2 ${theme === 'dark' ? 'bg-cyan-500' : 'bg-cyan-600'}`} /> Objective
                                         </h2>
-                                        <p className="text-cyan-100 text-sm font-medium leading-relaxed font-mono">{puzzle?.description}</p>
+                                        <p className={`text-sm font-medium leading-relaxed font-mono ${theme === 'dark' ? 'text-cyan-100' : 'text-slate-700'}`}>{puzzle?.description}</p>
                                     </div>
                                 </div>
 
@@ -677,7 +692,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                         <textarea
                                             value={codeValue}
                                             onChange={(e) => setCodeValue(e.target.value)}
-                                            className="w-full h-full bg-[#0a0f1c]/50 border border-cyan-500/30 rounded-lg p-4 text-cyan-100 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 placeholder-cyan-800/50 resize-none custom-scrollbar focus:placeholder-transparent"
+                                            className={`w-full h-full border rounded-lg p-4 focus:outline-none focus:ring-1 resize-none custom-scrollbar focus:placeholder-transparent transition-colors duration-500 ${theme === 'dark' ? 'bg-[#0a0f1c]/50 border-cyan-500/30 text-cyan-100 focus:border-cyan-400 focus:ring-cyan-400 placeholder-cyan-800/50' : 'bg-white border-slate-300 text-slate-800 focus:border-cyan-500 focus:ring-cyan-500 placeholder-slate-400'}`}
                                             placeholder="# Enter your code here..."
                                             spellCheck={false}
                                         />
@@ -734,13 +749,13 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                             </div>
 
                             {/* RIGHT: Control Console */}
-                            <div className="flex-1 min-w-[350px] max-w-[400px] bg-[#080b14] border-l border-cyan-500/20 flex flex-col relative z-40 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]">
+                            <div className={`flex-1 min-w-[350px] max-w-[400px] border-l flex flex-col relative z-40 transition-colors duration-500 ${theme === 'dark' ? 'bg-[#080b14] border-cyan-500/20' : 'bg-slate-100 border-slate-200'}`} style={theme === 'dark' ? { backgroundImage: "url('https://www.transparenttextures.com/patterns/dark-matter.png')" } : {}}>
 
                                 {/* Info Modules */}
                                 <div className="p-6 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
 
                                     {/* Rewards Module */}
-                                    <div className="bg-cyan-950/10 border border-cyan-500/20 p-4 relative group">
+                                    <div className={`p-4 relative group border transition-colors duration-500 ${theme === 'dark' ? 'bg-cyan-950/10 border-cyan-500/20' : 'bg-white border-slate-200 shadow-sm rounded-lg'}`}>
                                         <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-cyan-500/50" />
                                         <div className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-cyan-500/50" />
                                         <div className="flex items-center gap-4">
@@ -749,27 +764,27 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                 <img src={expIcon} className="w-9 h-9 object-contain relative z-10" alt="EXP" />
                                             </div>
                                             <div>
-                                                <div className="text-cyan-500 text-[10px] uppercase tracking-widest font-bold">EXP REWARD</div>
-                                                <div className="text-white font-mono text-base font-bold">+ {currentReward} EXP</div>
+                                                <div className={`text-[10px] uppercase tracking-widest font-bold ${theme === 'dark' ? 'text-cyan-500' : 'text-cyan-600'}`}>EXP REWARD</div>
+                                                <div className={`font-mono text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>+ {currentReward} EXP</div>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Target Output Module */}
                                     <div className="space-y-2">
-                                        <h3 className="text-cyan-600 uppercase tracking-widest text-[10px] font-bold flex items-center gap-2">
+                                        <h3 className={`uppercase tracking-widest text-[10px] font-bold flex items-center gap-2 ${theme === 'dark' ? 'text-cyan-600' : 'text-cyan-700'}`}>
                                             <Trophy className="w-3 h-3" /> Target Output
                                         </h3>
-                                        <div className="font-mono text-emerald-400 text-sm font-bold bg-black/60 p-3 border border-emerald-500/20 shadow-[inset_0_0_20px_rgba(16,185,129,0.1)] relative overflow-hidden">
+                                        <div className={`font-mono text-sm font-bold p-3 border relative overflow-hidden transition-colors duration-500 ${theme === 'dark' ? 'text-emerald-400 bg-black/60 border-emerald-500/20 shadow-[inset_0_0_20px_rgba(16,185,129,0.1)]' : 'text-emerald-700 bg-emerald-50 border-emerald-200 rounded-lg'}`}>
                                             <div className="relative z-10">{puzzle?.expectedOutput}</div>
                                             {/* Scanline */}
-                                            <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500/20 animate-scan-fast pointer-events-none" />
+                                            {theme === 'dark' && <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500/20 animate-scan-fast pointer-events-none" />}
                                         </div>
                                     </div>
 
                                     {/* Console Output */}
-                                    <div className="flex-1 min-h-[150px] bg-black border border-slate-800 p-4 font-mono text-xs text-slate-400 relative overflow-hidden">
-                                        <div className="absolute top-0 left-0 px-2 py-0.5 bg-slate-800 text-[9px] uppercase tracking-wider text-slate-300">Terminal</div>
+                                    <div className={`flex-1 min-h-[150px] border p-4 font-mono text-xs relative overflow-hidden transition-colors duration-500 ${theme === 'dark' ? 'bg-black border-slate-800 text-slate-400' : 'bg-slate-800 border-slate-300 text-slate-400 rounded-lg'}`}>
+                                        <div className={`absolute top-0 left-0 px-2 py-0.5 text-[9px] uppercase tracking-wider ${theme === 'dark' ? 'bg-slate-800 text-slate-300' : 'bg-slate-700 text-slate-200 rounded-br-md'}`}>Terminal</div>
                                         <div className="mt-4 space-y-1">
                                             {/* Dynamic Logs */}
                                             {terminalLogs.map((log, i) => (
@@ -797,7 +812,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                 </div>
 
                                 {/* Action Bar */}
-                                <div className="p-6 bg-[#0c1221] border-t border-cyan-500/20">
+                                <div className={`p-6 border-t transition-colors duration-500 ${theme === 'dark' ? 'bg-[#0c1221] border-cyan-500/20' : 'bg-white border-slate-200'}`}>
                                     <Button
                                         onClick={handleSubmit}
                                         disabled={isSuccess}

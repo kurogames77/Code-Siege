@@ -7,7 +7,7 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
     // Determinstic random configuration for connectors
     // 0: none, 1: out (tab), 2: in (slot)
     const connectors = useMemo(() => {
-        // If connectors are explicitly provided (e.g. from AI), use them
+        // If connectors are explicitly provided (e.g. from AI or block generator), use them
         if (propConnectors) {
             return propConnectors;
         }
@@ -24,29 +24,10 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
             return ((h ^= h >>> 16) >>> 0) / 4294967296;
         };
 
-        // Helper to get random 1 (Tab) or 2 (Slot), minimizing 0
+        // Helper to get random 1 (Tab) or 2 (Slot), never 0
         const getConnector = () => (rand() > 0.5 ? 1 : 2);
 
-        // For level 1-1 ("print" and "Hello World"), preserve the functional connection (Right -> Left)
-        // but add "confusing" grooves on other sides to make it look complex.
-        if (content === 'print') {
-            return {
-                top: getConnector(),    // Decoy
-                bottom: getConnector(), // Decoy
-                left: getConnector(),   // Decoy
-                right: 1                // Functional: Tab out to right
-            };
-        }
-        if (content.includes('Hello World')) {
-            return {
-                top: getConnector(),    // Decoy
-                bottom: getConnector(), // Decoy
-                left: 2,                // Functional: Slot in from left
-                right: getConnector()   // Decoy
-            };
-        }
-
-        // Default: Chaos! Grooves everywhere.
+        // Default: Grooves everywhere, all dynamically generated
         return {
             top: getConnector(),
             bottom: getConnector(),
