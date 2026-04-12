@@ -74,14 +74,17 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     const [selectedWager, setSelectedWager] = useState(100);
     
     // Level Validation State
-    const [hasLevels, setHasLevels] = useState(true);
+    const [hasLevels, setHasLevels] = useState(false);
     const [isCheckingLevels, setIsCheckingLevels] = useState(false);
 
     const [courses, setCourses] = useState([]);
 
     useEffect(() => {
         const checkLevels = async () => {
-            if (!selectedLanguage || courses.length === 0) return;
+            if (!selectedLanguage || courses.length === 0) {
+                setHasLevels(false);
+                return;
+            }
             setIsCheckingLevels(true);
             try {
                 const matchingCourse = courses.find(c => c.name === selectedLanguage);

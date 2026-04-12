@@ -29,12 +29,15 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     const [selectedWager, setSelectedWager] = useState('100');
     
     // Level Validation State
-    const [hasLevels, setHasLevels] = useState(true);
+    const [hasLevels, setHasLevels] = useState(false);
     const [isCheckingLevels, setIsCheckingLevels] = useState(false);
 
     useEffect(() => {
         const checkLevels = async () => {
-            if (!selectedLanguage || courses.length === 0) return;
+            if (!selectedLanguage || courses.length === 0) {
+                setHasLevels(false);
+                return;
+            }
             setIsCheckingLevels(true);
             try {
                 const matchingCourse = courses.find(c => c.name === selectedLanguage);
@@ -301,7 +304,15 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             const ch = lobbyChannelRef.current;
             if (ch) {
                 lobbyChannelRef.current = null; // Prevent double-cleanup
-                supabase.removeChannel(ch);
+                // Broadcast explicit player-leave BEFORE removing the channel
+                ch.send({
+                    type: 'broadcast',
+                    event: 'player-leave',
+                    payload: { playerId: user?.id }
+                }).catch(() => {});
+                ch.untrack().catch(() => {});
+                // Delay channel removal to allow the broadcast to propagate
+                setTimeout(() => supabase.removeChannel(ch), 500);
                 resetLobbyState();
             } else {
                 resetLobbyState();
@@ -684,6 +695,11 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 setTimer((prev) => prev - 1);
             }, 1000);
         } else if (matchState === 'lobby' && timer === 0 && opponentRef.current && opponent) {
+            // GUARD: Do NOT auto-start if no course levels exist
+            if (!hasLevels) {
+                console.warn('[DuelLobby] Timer expired but no course levels — aborting auto-start.');
+                return;
+            }
             // SAFETY: Timer expired. If we are the Host (we didn't receive initialOpponent), we auto-start.
             if (!initialOpponent) {
 
@@ -713,6 +729,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 triggerGameStart();
             } else {
                 // Guest fallback: if host fails or is delayed in sending game-start, guest forces start after 2.5s
+                // But ONLY if levels exist
                 const fallbackTimeout = setTimeout(() => {
                     if (matchStateRef.current === 'lobby') {
                         setBattleRecordId(Math.floor(Math.random() * 9000) + 1000);
@@ -724,7 +741,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             }
         }
         return () => clearInterval(interval);
-    }, [matchState, timer, opponent]);
+    }, [matchState, timer, opponent, hasLevels]);
 
     // Launch Countdown (5s -> 0)
     useEffect(() => {
@@ -824,6 +841,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
 
     const handleReadyClick = () => {
         if (!opponent) return;
+        if (!hasLevels) return; // Block ready if no levels
         playSuccess();
         setIsUserReady(true);
 

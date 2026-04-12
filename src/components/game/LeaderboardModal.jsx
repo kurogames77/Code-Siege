@@ -53,7 +53,7 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
     const topPlayers = leaderboard.slice(0, 3).map(player => ({
         ...player,
         score: player.score ?? player.xp ?? 0,
-        avatar: player.avatar || heroAsset,
+        avatar: player.avatar || null,
         rankIcon: getRankIcon(player.score ?? player.xp ?? 0),
         rankName: getRankName(player.score ?? player.xp ?? 0)
     }));
@@ -62,7 +62,7 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
     const otherPlayers = leaderboard.slice(3).map(player => ({
         ...player,
         score: player.score ?? player.xp ?? 0,
-        avatar: player.avatar || heroAsset,
+        avatar: player.avatar || null,
         rankIcon: getRankIcon(player.score ?? player.xp ?? 0),
         rankName: getRankName(player.score ?? player.xp ?? 0),
         trend: 'up'
@@ -74,17 +74,30 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
         rank: userInLeaderboard.rank,
         name: user?.name || user?.username || 'You',
         score: userInLeaderboard.score ?? userInLeaderboard.xp ?? 0,
-        avatar: user?.avatar || heroAsset,
+        avatar: user?.avatar || null,
         rankIcon: getRankIcon(userInLeaderboard.score ?? userInLeaderboard.xp ?? 0),
         rankName: getRankName(userInLeaderboard.score ?? userInLeaderboard.xp ?? 0)
     } : {
         rank: '-',
         name: user?.name || user?.username || 'You',
         score: user?.exp || user?.xp || 0,
-        avatar: user?.avatar || heroAsset,
+        avatar: user?.avatar || null,
         rankIcon: getRankIcon(user?.exp || user?.xp || 0),
         rankName: getRankName(user?.exp || user?.xp || 0)
     };
+
+    // Helper: render avatar or letter initial fallback
+    const AvatarOrInitial = ({ src, name, size = 'w-full h-full', textSize = 'text-xl', className = '' }) => (
+        src ? (
+            <img src={src} className={`${size} object-cover rounded-full ${className}`} alt="" />
+        ) : (
+            <div className={`${size} flex items-center justify-center rounded-full bg-slate-800 ${className}`}>
+                <span className={`${textSize} font-black text-cyan-400 uppercase select-none`}>
+                    {name?.charAt(0) || '?'}
+                </span>
+            </div>
+        )
+    );
 
     const containerVariants = {
         hidden: { opacity: 0, scale: 0.95 },
@@ -236,7 +249,7 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                             >
                                                 <div className="relative mb-6 group cursor-pointer">
                                                     <div className="w-24 h-24 rounded-full border-2 border-slate-400 p-1 bg-slate-900 relative z-10 group-hover:scale-110 transition-transform duration-500">
-                                                        <img src={topPlayers[1].avatar} className="w-full h-full object-cover rounded-full" alt="" />
+                                                        <AvatarOrInitial src={topPlayers[1].avatar} name={topPlayers[1].name} textSize="text-2xl" />
                                                         <div className="absolute -top-2 -right-2 w-8 h-8 bg-slate-400 text-slate-950 font-black rounded-full flex items-center justify-center border-2 border-slate-900 text-sm">2</div>
                                                     </div>
                                                     <motion.div
@@ -266,7 +279,7 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                             <div className="relative mb-8 group cursor-pointer">
                                                 <div className={`absolute inset-0 bg-${currentTheme.colors.secondary}-500/20 blur-3xl animate-pulse rounded-full`} />
                                                 <div className={`w-32 h-32 rounded-full border-4 border-${currentTheme.colors.secondary}-400 p-1.5 bg-slate-900 relative z-10 shadow-[0_0_30px_rgba(var(--theme-secondary-rgb),0.2)] group-hover:scale-110 transition-transform duration-500`}>
-                                                    <img src={topPlayers[0].avatar} className="w-full h-full object-cover rounded-full" alt="" />
+                                                    <AvatarOrInitial src={topPlayers[0].avatar} name={topPlayers[0].name} textSize="text-3xl" />
                                                     <div className="absolute -top-2 -right-2 w-10 h-10 bg-emerald-500 text-slate-950 font-black rounded-full flex items-center justify-center border-4 border-slate-900 text-lg">1</div>
                                                 </div>
                                                 <motion.div
@@ -295,7 +308,7 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                             >
                                                 <div className="relative mb-6 group cursor-pointer">
                                                     <div className="w-24 h-24 rounded-full border-2 border-orange-700 p-1 bg-slate-900 relative z-10 group-hover:scale-110 transition-transform duration-500">
-                                                        <img src={topPlayers[2].avatar} className="w-full h-full object-cover rounded-full" alt="" />
+                                                        <AvatarOrInitial src={topPlayers[2].avatar} name={topPlayers[2].name} textSize="text-2xl" />
                                                         <div className="absolute -top-2 -right-2 w-8 h-8 bg-orange-700 text-orange-50 font-black rounded-full flex items-center justify-center border-2 border-slate-900 text-sm">3</div>
                                                     </div>
                                                     <motion.div
@@ -342,7 +355,7 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                             </div>
 
                                             <div className={`w-12 h-12 rounded-full border border-white/10 bg-slate-900 p-0.5 shrink-0 group-hover:border-${currentTheme.colors.primary}-500 transition-all duration-300 group-hover:scale-105`}>
-                                                <img src={player.avatar} className="w-full h-full object-cover rounded-full" alt="" />
+                                                <AvatarOrInitial src={player.avatar} name={player.name} textSize="text-lg" />
                                             </div>
 
                                             <div className="flex-1 min-w-0">
@@ -392,7 +405,7 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                         </div>
 
                                         <div className="w-14 h-14 rounded-full border-2 border-white/40 p-1 bg-slate-900 shrink-0 group-hover:rotate-6 transition-transform">
-                                            <img src={userRank.avatar} className="w-full h-full object-cover rounded-full" alt="" />
+                                            <AvatarOrInitial src={userRank.avatar} name={userRank.name} textSize="text-xl" />
                                         </div>
 
                                         <div className="flex-1">
