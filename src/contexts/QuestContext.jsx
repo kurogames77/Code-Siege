@@ -193,11 +193,41 @@ export const QuestProvider = ({ children }) => {
         return quest.reward;
     };
 
+    // 4. Claim All Quests
+    const claimAllQuests = (questIds) => {
+        const validQuests = quests.filter(q => q.isCompleted && questIds.includes(q.id) && !claimedQuests.includes(q.id));
+        if (validQuests.length === 0) return null;
+
+        const newClaimed = [...claimedQuests, ...validQuests.map(q => q.id)];
+        setClaimedQuests(newClaimed);
+
+        const today = new Date();
+        const dateStr = `${today.getFullYear()}${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getDate().toString().padStart(2, '0')}`;
+        const storageKey = `daily_quests_v3_${user.id}_${dateStr}`;
+        localStorage.setItem(storageKey, JSON.stringify({
+            quests: quests,
+            claimed: newClaimed
+        }));
+
+        let totalExp = 0;
+        let totalGold = 0;
+        validQuests.forEach(quest => {
+            if (quest.reward.exp > 0) totalExp += quest.reward.exp;
+            if (quest.reward.gold > 0) totalGold += quest.reward.gold;
+        });
+
+        if (totalExp > 0) updateExp(totalExp);
+        if (totalGold > 0) updateGems(totalGold);
+
+        return { exp: totalExp, gold: totalGold };
+    };
+
     const value = {
         quests,
         claimedQuests,
         updateQuestProgress,
-        claimQuest
+        claimQuest,
+        claimAllQuests
     };
 
     return (

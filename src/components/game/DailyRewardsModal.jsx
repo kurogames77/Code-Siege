@@ -15,7 +15,7 @@ const DailyRewardsModal = ({ isOpen, onClose }) => {
     const { playClick, playCancel, playSelect, playSuccess } = useSound();
     const { currentTheme } = useTheme(); // Use ThemeContext
     const { user } = useUser(); // Get update functions
-    const { quests = [], claimedQuests = [], claimQuest } = useQuests();
+    const { quests = [], claimedQuests = [], claimQuest, claimAllQuests } = useQuests();
     const [rewardPopups, setRewardPopups] = useState([]); // Array of { id, x, y, amount, type }
 
     const tasks = quests || []; // Map context quests to local variable for compatibility
@@ -102,23 +102,15 @@ const DailyRewardsModal = ({ isOpen, onClose }) => {
         const claimable = quests.filter(t => t.isCompleted && !claimedQuests.includes(t.id));
 
         if (claimable.length > 0) {
-            let totalExp = 0;
-            let totalGems = 0;
-
-            claimable.forEach(t => {
-                const reward = claimQuest(t.id);
-                if (reward) {
-                    totalExp += reward.exp;
-                    totalGems += reward.gold;
+            const reward = claimAllQuests(claimable.map(t => t.id));
+            if (reward) {
+                // Display accumulated popups
+                if (reward.exp > 0) {
+                    addPopup(e.clientX, e.clientY, reward.exp, 'EXP');
                 }
-            });
-
-            // Display accumulated popups
-            if (totalExp > 0) {
-                addPopup(e.clientX, e.clientY, totalExp, 'EXP');
-            }
-            if (totalGems > 0) {
-                setTimeout(() => addPopup(e.clientX, e.clientY - 30, totalGems, 'GEMS'), 200);
+                if (reward.gold > 0) {
+                    setTimeout(() => addPopup(e.clientX, e.clientY - 30, reward.gold, 'GEMS'), 200);
+                }
             }
         }
     };

@@ -387,7 +387,7 @@ const HeroesModal = ({ isOpen, onClose }) => {
                                     <div className="grid grid-cols-2 gap-x-8 gap-y-4 pt-2">
                                         <StatBar label="Power Output" value={detailedHero.stats.power} color={`bg-${currentTheme.colors.primary}-500`} />
                                         <StatBar label="Neural Speed" value={detailedHero.stats.speed} color={`bg-${currentTheme.colors.secondary}-500`} />
-                                        <StatBar label="Cyber Armor" value={detailedHero.stats.defense} color="bg-indigo-500" />
+                                        <StatBar label="Magic Armor" value={detailedHero.stats.defense} color="bg-indigo-500" />
                                         <StatBar label="System Logic" value={detailedHero.stats.utility} color="bg-amber-500" />
                                     </div>
                                 </div>
