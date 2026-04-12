@@ -131,7 +131,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
             const totalGems = selectedPackage.gems + (selectedPackage.bonus || 0) + (selectedPackage.prevBonus || 0);
 
             // In a real app, verify 'details.id' on backend. Here we trust the client sandbox callback.
-            await userAPI.updateGems(user.id, totalGems);
+            await userAPI.updateGems(user.id, totalGems, 'paypal', 'testpaid');
 
             if (refreshUser) await refreshUser();
 

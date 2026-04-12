@@ -841,7 +841,7 @@ router.patch('/:id/avatar', authenticateUser, async (req, res) => {
 router.patch('/:id/gems', authenticateUser, async (req, res) => {
     try {
         const { id } = req.params;
-        const { amount } = req.body;
+        const { amount, method, remarks } = req.body;
 
         if (req.user.id !== id) {
             return res.status(403).json({ error: 'Unauthorized' });
@@ -872,6 +872,20 @@ router.patch('/:id/gems', authenticateUser, async (req, res) => {
             
         if (userProfile) {
             userProfile.gems = newGems;
+        }
+
+        // Log the purchase if there is an amount added and method specified
+        if (amount > 0 && method) {
+            const { error: purchaseError } = await supabaseService
+                .from('user_purchases')
+                .insert({
+                    user_id: id,
+                    remarks: remarks || 'testpaid'
+                });
+
+            if (purchaseError) {
+                console.warn('Failed to log purchase in user_purchases:', purchaseError.message);
+            }
         }
 
         res.json({ message: 'Gems updated', gems: newGems, profile: userProfile });

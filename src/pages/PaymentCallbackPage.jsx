@@ -77,7 +77,7 @@ const PaymentCallbackPage = () => {
                 // 3. Credit Gems
                 setMessage('Crediting gems...');
                 const totalGems = paymentData.gems + (paymentData.bonus || 0) + (paymentData.prevBonus || 0);
-                await userAPI.updateGems(user.id, totalGems);
+                await userAPI.updateGems(user.id, totalGems, paymentData.method || 'paymongo', 'testpaid');
 
 
                 if (refreshUser) await refreshUser();

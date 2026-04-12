@@ -203,10 +203,10 @@ export const userAPI = {
         return apiRequest(`/users/profile/${userId}`);
     },
 
-    updateGems: async (userId, amount) => {
+    updateGems: async (userId, amount, method = null, remarks = null) => {
         return apiRequest(`/users/${userId}/gems`, {
             method: 'PATCH',
-            body: JSON.stringify({ amount }),
+            body: JSON.stringify({ amount, method, remarks }),
         });
     },
 
