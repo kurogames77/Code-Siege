@@ -611,13 +611,16 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                     p.status === 'searching' && 
                     p.language === selectedLanguage && 
                     p.mode === selectedMode &&
-                    p.wager === selectedWager
+                    String(p.wager) === String(selectedWager)
                 );
 
                 // We need at least 2 players (including us) to form a match
                 if (validCandidates.length >= 2) {
                     const candidateIds = validCandidates.map(p => p.id);
                     candidateIds.sort(); // Sort to deterministically pick a "host"
+                    // Send only OTHER players as candidates to the backend
+                    // (the backend already fetches and adds the requesting user separately)
+                    const otherCandidateIds = candidateIds.filter(id => id !== user.id);
 
                     // Am I the host? (First ID alphabetically)
                     if (candidateIds[0] === user.id) {
@@ -626,7 +629,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                             // Call K-Means Backend
                             // We ask for k=1 initially if low pop, but the algorithm auto-handles k limits
                             // We pass only the candidate IDs actually searching right now
-                            const result = await algorithmAPI.matchmaking(user.id, 2, candidateIds);
+                            const result = await algorithmAPI.matchmaking(user.id, 2, otherCandidateIds);
                             
                             if (result.status === 'success' && result.suggested_opponents.length > 0) {
 

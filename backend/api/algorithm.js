@@ -302,7 +302,10 @@ router.post('/matchmaking', authenticateUser, async (req, res) => {
             return res.status(500).json({ error: 'Failed to fetch players' });
         }
 
-        if (!players || players.length < 2) {
+        // When candidateIds are explicitly provided, the frontend presence queue
+        // already verified enough searching players exist — we only need 1 opponent.
+        const minRequired = (candidateIds && candidateIds.length > 0) ? 1 : 2;
+        if (!players || players.length < minRequired) {
             return res.json({
                 status: 'no_match',
                 message: 'Not enough players online for matchmaking',
