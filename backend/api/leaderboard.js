@@ -27,6 +27,16 @@ router.get('/', optionalAuth, async (req, res) => {
 
         const filteredProgress = progress.filter(entry => entry.users?.id && entry.users?.role !== 'instructor');
 
+        // Also fetch ALL non-instructor users to include those without a global progress row
+        const { data: allUsers } = await supabase
+            .from('users')
+            .select('id, username, avatar_url, role')
+            .neq('role', 'instructor');
+
+        // Merge: users with progress + users without progress (0 XP)
+        const progressUserIds = new Set(filteredProgress.map(e => e.users?.id));
+        const usersWithoutProgress = (allUsers || []).filter(u => u.id && !progressUserIds.has(u.id));
+
         // Fetch battles to compute battles won
         const { data: battles } = await supabase
             .from('battles')
@@ -42,7 +52,7 @@ router.get('/', optionalAuth, async (req, res) => {
         });
 
         // Add rank to each entry — map to field names the frontend expects
-        const rankedLeaderboard = filteredProgress.map((entry, index) => ({
+        const rankedFromProgress = filteredProgress.map(entry => ({
             id: entry.users?.id,
             name: entry.users?.username,
             username: entry.users?.username,
@@ -52,8 +62,25 @@ router.get('/', optionalAuth, async (req, res) => {
             xp: entry.xp,
             score: entry.xp,
             battles_won: winsMap.get(entry.users?.id) || 0,
-            rank: index + 1
+            rank: 0 // will be set below
         }));
+
+        const rankedFromUsers = usersWithoutProgress.map(u => ({
+            id: u.id,
+            name: u.username,
+            username: u.username,
+            avatar: u.avatar_url,
+            avatar_url: u.avatar_url,
+            level: 1,
+            xp: 0,
+            score: 0,
+            battles_won: winsMap.get(u.id) || 0,
+            rank: 0
+        }));
+
+        const combined = [...rankedFromProgress, ...rankedFromUsers];
+        combined.sort((a, b) => b.xp - a.xp);
+        const rankedLeaderboard = combined.map((entry, index) => ({ ...entry, rank: index + 1 }));
 
         // Find current user's rank if authenticated
         let userRank = null;
@@ -96,6 +123,16 @@ router.get('/weekly', optionalAuth, async (req, res) => {
 
         const filteredProgress = progress.filter(entry => entry.users?.id && entry.users?.role !== 'instructor');
 
+        // Also fetch ALL non-instructor users to include those without a global progress row
+        const { data: allUsers } = await supabase
+            .from('users')
+            .select('id, username, avatar_url, role')
+            .neq('role', 'instructor');
+
+        // Merge: users with progress + users without progress (0 XP)
+        const progressUserIds = new Set(filteredProgress.map(e => e.users?.id));
+        const usersWithoutProgress = (allUsers || []).filter(u => u.id && !progressUserIds.has(u.id));
+
         // Fetch battles to compute battles won
         const { data: battles } = await supabase
             .from('battles')
@@ -110,7 +147,7 @@ router.get('/weekly', optionalAuth, async (req, res) => {
              }
         });
 
-        const rankedLeaderboard = filteredProgress.map((entry, index) => ({
+        const rankedFromProgress = filteredProgress.map(entry => ({
             id: entry.users?.id,
             name: entry.users?.username,
             username: entry.users?.username,
@@ -120,8 +157,25 @@ router.get('/weekly', optionalAuth, async (req, res) => {
             xp: entry.xp,
             score: entry.xp,
             battles_won: winsMap.get(entry.users?.id) || 0,
-            rank: index + 1
+            rank: 0
         }));
+
+        const rankedFromUsers = usersWithoutProgress.map(u => ({
+            id: u.id,
+            name: u.username,
+            username: u.username,
+            avatar: u.avatar_url,
+            avatar_url: u.avatar_url,
+            level: 1,
+            xp: 0,
+            score: 0,
+            battles_won: winsMap.get(u.id) || 0,
+            rank: 0
+        }));
+
+        const combined = [...rankedFromProgress, ...rankedFromUsers];
+        combined.sort((a, b) => b.xp - a.xp);
+        const rankedLeaderboard = combined.map((entry, index) => ({ ...entry, rank: index + 1 }));
 
         res.json({ leaderboard: rankedLeaderboard });
     } catch (error) {

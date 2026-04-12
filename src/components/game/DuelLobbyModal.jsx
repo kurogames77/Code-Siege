@@ -305,14 +305,18 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             if (ch) {
                 lobbyChannelRef.current = null; // Prevent double-cleanup
                 // Broadcast explicit player-leave BEFORE removing the channel
-                ch.send({
+                const leavePayload = {
                     type: 'broadcast',
                     event: 'player-leave',
                     payload: { playerId: user?.id }
-                }).catch(() => {});
+                };
+                // Send leave broadcast multiple times to ensure delivery
+                ch.send(leavePayload).catch(() => {});
+                setTimeout(() => ch.send(leavePayload).catch(() => {}), 300);
+                setTimeout(() => ch.send(leavePayload).catch(() => {}), 800);
                 ch.untrack().catch(() => {});
-                // Delay channel removal to allow the broadcast to propagate
-                setTimeout(() => supabase.removeChannel(ch), 500);
+                // Delay channel removal to allow the broadcasts to propagate
+                setTimeout(() => supabase.removeChannel(ch), 1500);
                 resetLobbyState();
             } else {
                 resetLobbyState();
@@ -687,10 +691,10 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
 
     // --- TIMERS ---
 
-    // Lobby Timer (60s -> 0) — only runs when both matchState is 'lobby' AND opponent is present
+    // Lobby Timer (60s -> 0) — only runs when both matchState is 'lobby' AND opponent is present AND levels exist
     useEffect(() => {
         let interval;
-        if (matchState === 'lobby' && timer > 0 && opponent) {
+        if (matchState === 'lobby' && timer > 0 && opponent && hasLevels) {
             interval = setInterval(() => {
                 setTimer((prev) => prev - 1);
             }, 1000);
@@ -1005,11 +1009,17 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                 {matchState === 'lobby' || matchState === 'starting' ? (
                                     <div className="flex flex-col items-center animate-in fade-in duration-300">
                                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
-                                            {matchState === 'starting' ? 'Game Starting' : 'Auto-Start In'}
+                                            {matchState === 'starting' ? 'Game Starting' : !hasLevels ? 'Waiting For Levels' : 'Auto-Start In'}
                                         </span>
-                                        <span className={`text-2xl font-black tracking-wider ${matchState === 'starting' ? (startCountdown < 10 ? 'text-rose-500' : 'text-slate-200') : (timer < 10 ? 'text-rose-500' : 'text-slate-200')}`}>
-                                            {formatTime(matchState === 'starting' ? startCountdown : timer)}
-                                        </span>
+                                        {!hasLevels && matchState !== 'starting' ? (
+                                            <span className="text-lg font-black text-rose-500 uppercase tracking-wider animate-pulse">
+                                                PAUSED
+                                            </span>
+                                        ) : (
+                                            <span className={`text-2xl font-black tracking-wider ${matchState === 'starting' ? (startCountdown < 10 ? 'text-rose-500' : 'text-slate-200') : (timer < 10 ? 'text-rose-500' : 'text-slate-200')}`}>
+                                                {formatTime(matchState === 'starting' ? startCountdown : timer)}
+                                            </span>
+                                        )}
                                     </div>
                                 ) : (
                                     <>
@@ -1587,13 +1597,17 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                                             const ch = lobbyChannelRef.current;
                                                             lobbyChannelRef.current = null;
                                                             try {
-                                                                ch.send({
+                                                                const leavePayload = {
                                                                     type: 'broadcast',
                                                                     event: 'player-leave',
                                                                     payload: { playerId: user?.id }
-                                                                }).catch(() => {});
+                                                                };
+                                                                // Send leave broadcast multiple times to ensure delivery
+                                                                ch.send(leavePayload).catch(() => {});
+                                                                setTimeout(() => ch.send(leavePayload).catch(() => {}), 300);
+                                                                setTimeout(() => ch.send(leavePayload).catch(() => {}), 800);
                                                                 ch.untrack().catch(() => {});
-                                                                setTimeout(() => supabase.removeChannel(ch), 500);
+                                                                setTimeout(() => supabase.removeChannel(ch), 1500);
                                                             } catch (e) { /* best effort */ }
                                                         }
                                                         resetLobbyState();
