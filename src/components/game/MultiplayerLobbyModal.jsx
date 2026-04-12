@@ -1006,7 +1006,6 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                                 }
                                                 startReadyPhase();
                                             }}
-                                            }}
                                             disabled={!!initialInviter || !hasLevels || isCheckingLevels}
                                             className={`w-full h-11 rounded-xl border-2 flex items-center justify-center gap-2 transition-all text-xs font-black uppercase tracking-widest ${
                                                 !!initialInviter || !hasLevels || isCheckingLevels
