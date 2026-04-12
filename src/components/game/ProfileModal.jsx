@@ -75,14 +75,14 @@ const ProfileModal = ({ isOpen, onClose }) => {
 
 
     // Hero selection logic
-    const selectedHeroId = localStorage.getItem('selectedHeroId') || '3';
+    const selectedHeroId = localStorage.getItem('selectedHeroId') || '4';
     const heroInfoMap = {
         '1': { name: 'Ignis', image: hero3Static },
         '2': { name: 'Daemon', image: hero4Static },
         '3': { name: 'Valerius', image: hero1aStatic },
         '4': { name: 'Nyx', image: hero2Static }
     };
-    const activeHero = heroInfoMap[selectedHeroId] || heroInfoMap['3'];
+    const activeHero = heroInfoMap[selectedHeroId] || heroInfoMap['4'];
 
     const handleEditClick = () => {
         setEditForm({

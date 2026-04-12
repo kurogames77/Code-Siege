@@ -25,17 +25,21 @@ router.get('/', optionalAuth, async (req, res) => {
             return res.status(400).json({ error: error.message });
         }
 
-        const filteredProgress = progress.filter(entry => entry.users?.id && entry.users?.role !== 'instructor');
+        const isEligible = (role) => {
+            const r = (role || 'student').toLowerCase();
+            return ['student', 'guest', 'user'].includes(r);
+        };
 
-        // Also fetch ALL non-instructor users to include those without a global progress row
+        const filteredProgress = progress.filter(entry => entry.users?.id && isEligible(entry.users?.role));
+
+        // Also fetch ALL users to include those without a global progress row, then filter
         const { data: allUsers } = await supabase
             .from('users')
-            .select('id, username, avatar_url, role')
-            .neq('role', 'instructor');
+            .select('id, username, avatar_url, role');
 
         // Merge: users with progress + users without progress (0 XP)
         const progressUserIds = new Set(filteredProgress.map(e => e.users?.id));
-        const usersWithoutProgress = (allUsers || []).filter(u => u.id && !progressUserIds.has(u.id));
+        const usersWithoutProgress = (allUsers || []).filter(u => u.id && !progressUserIds.has(u.id) && isEligible(u.role));
 
         // Fetch battles to compute battles won
         const { data: battles } = await supabase
@@ -121,17 +125,21 @@ router.get('/weekly', optionalAuth, async (req, res) => {
             return res.status(400).json({ error: error.message });
         }
 
-        const filteredProgress = progress.filter(entry => entry.users?.id && entry.users?.role !== 'instructor');
+        const isEligible = (role) => {
+            const r = (role || 'student').toLowerCase();
+            return ['student', 'guest', 'user'].includes(r);
+        };
 
-        // Also fetch ALL non-instructor users to include those without a global progress row
+        const filteredProgress = progress.filter(entry => entry.users?.id && isEligible(entry.users?.role));
+
+        // Also fetch ALL users to include those without a global progress row, then filter
         const { data: allUsers } = await supabase
             .from('users')
-            .select('id, username, avatar_url, role')
-            .neq('role', 'instructor');
+            .select('id, username, avatar_url, role');
 
         // Merge: users with progress + users without progress (0 XP)
         const progressUserIds = new Set(filteredProgress.map(e => e.users?.id));
-        const usersWithoutProgress = (allUsers || []).filter(u => u.id && !progressUserIds.has(u.id));
+        const usersWithoutProgress = (allUsers || []).filter(u => u.id && !progressUserIds.has(u.id) && isEligible(u.role));
 
         // Fetch battles to compute battles won
         const { data: battles } = await supabase

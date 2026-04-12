@@ -443,6 +443,11 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                     const opponentLeft = leftPresences.some(p => String(p.id) === String(currentOpponent.id)) ||
                         String(key) === String(currentOpponent.id);
                     if (opponentLeft) {
+                        if (initialOpponent) {
+                            toast.error("Host abandoned the lobby. Returning to menu.");
+                            onBack();
+                            return;
+                        }
                         setOpponent(null);
                         setMatchState('idle');
                         setIsUserReady(false);
@@ -458,7 +463,11 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
 
                 const currentOpponent = opponentRef.current;
                 if (currentOpponent && String(payload.playerId) === String(currentOpponent.id)) {
-
+                    if (initialOpponent) {
+                        toast.error("Host abandoned the lobby. Returning to menu.");
+                        onBack();
+                        return;
+                    }
                     setOpponent(null);
                     setMatchState('idle');
                     setIsUserReady(false);
