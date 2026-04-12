@@ -588,6 +588,40 @@ router.post('/duel-invite', authenticateUser, async (req, res) => {
 });
 
 /**
+ * PATCH /api/users/duel-invite/expire
+ * Expire all accepted duel/multiplayer invites for a specific lobbyId
+ * Called by the host when the guest leaves the lobby, so the DB polling
+ * fallback does not re-detect the stale "accepted" invite and ghost-add the opponent
+ */
+router.patch('/duel-invite/expire', authenticateUser, async (req, res) => {
+    try {
+        const { lobbyId } = req.body;
+        if (!lobbyId) {
+            return res.status(400).json({ error: 'lobbyId is required' });
+        }
+        const db = supabaseService || supabase;
+
+        const { error } = await db
+            .from('notifications')
+            .update({ action_status: 'expired', is_read: true })
+            .eq('sender_id', req.user.id)
+            .in('type', ['duel_invite', 'multiplayer_invite'])
+            .eq('action_status', 'accepted')
+            .like('message', `%[LOBBY:${lobbyId}]%`);
+
+        if (error) {
+            console.error('Expire duel invite error:', error);
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json({ status: 'expired' });
+    } catch (error) {
+        console.error('Expire duel invite error:', error);
+        res.status(500).json({ error: 'Failed to expire duel invite' });
+    }
+});
+
+/**
  * GET /api/users/leaderboard
  * Get top users sorted by PvP wins (1v1 duel and multiplayer) for leaderboard
  */

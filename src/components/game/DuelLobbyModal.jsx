@@ -133,6 +133,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         if (hostCheckRetryRef.current) { clearTimeout(hostCheckRetryRef.current); hostCheckRetryRef.current = null; }
         opponentRef.current = null;
         matchStateRef.current = 'idle';
+        consumedInviteIdsRef.current = new Set();
     }, []);
 
     // Set initial opponent and lobby from prop (when accepting a duel invite)
@@ -294,6 +295,9 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     const lobbyChannelRef = React.useRef(null);
     const acceptSentRef = React.useRef(false);
     const hostCheckRetryRef = React.useRef(null);
+    // Track invite notification IDs that have already been consumed (opponent joined then left)
+    // This prevents DB polling from re-detecting stale "accepted" invites and ghost-adding the opponent
+    const consumedInviteIdsRef = React.useRef(new Set());
 
     // Full reset when modal is closed (isOpen → false)
     useEffect(() => {
@@ -448,6 +452,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                             onBack();
                             return;
                         }
+                        // Expire the accepted invite in the DB so polling won't re-detect it
+                        userAPI.expireDuelInvite(lobbyId).catch(() => {});
                         setOpponent(null);
                         setMatchState('idle');
                         setIsUserReady(false);
@@ -468,6 +474,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                         onBack();
                         return;
                     }
+                    // Expire the accepted invite in the DB so polling won't re-detect it
+                    userAPI.expireDuelInvite(lobbyId).catch(() => {});
                     setOpponent(null);
                     setMatchState('idle');
                     setIsUserReady(false);
@@ -656,8 +664,16 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 const result = await userAPI.getSentInviteStatus(lobbyId);
                 const accepted = result?.acceptedInvites;
                 if (accepted && accepted.length > 0 && !opponentRef.current) {
-                    const guest = accepted[0].acceptedBy;
+                    // Filter out invites that have already been consumed (opponent joined then left)
+                    const fresh = accepted.filter(inv => !consumedInviteIdsRef.current.has(inv.notifId));
+                    if (fresh.length === 0) return;
+
+                    const invite = fresh[0];
+                    const guest = invite.acceptedBy;
                     if (!guest) return;
+
+                    // Mark this invite as consumed to prevent re-detection
+                    consumedInviteIdsRef.current.add(invite.notifId);
 
                     console.log('[DuelLobby] DB polling detected accepted invite from:', guest.username);
                     const guestRank = getRankFromExp(guest.xp || 0);

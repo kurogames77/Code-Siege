@@ -268,6 +268,13 @@ export const userAPI = {
     getSentInviteStatus: async (lobbyId) => {
         return apiRequest(`/users/sent-invites/status?lobbyId=${encodeURIComponent(lobbyId)}`);
     },
+
+    expireDuelInvite: async (lobbyId) => {
+        return apiRequest('/users/duel-invite/expire', {
+            method: 'PATCH',
+            body: JSON.stringify({ lobbyId }),
+        });
+    },
 };
 
 // ============================================
