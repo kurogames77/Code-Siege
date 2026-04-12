@@ -23,7 +23,7 @@ export const UserProvider = ({ children }) => {
     const formatUser = (profile, authUser = null) => {
         if (!profile && !authUser) return null;
 
-        const exp = profile?.xp || 0;
+        const exp = (profile?.xp !== undefined && profile?.xp !== null) ? profile.xp : (authUser?.exp || 0);
         const currentRank = getRankFromExp(exp);
         const nextRank = getNextRank(exp);
         const progress = getRankProgress(exp);
@@ -44,8 +44,8 @@ export const UserProvider = ({ children }) => {
             avatar: profile?.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture,
             level: currentRank.id,
             exp: exp,
-            gems: profile?.gems || 0,
-            role: profile?.role || 'student',
+            gems: (profile?.gems !== undefined && profile?.gems !== null) ? profile.gems : (authUser?.gems || 0),
+            role: profile?.role || authUser?.role || 'student',
             rank: currentRank.name,
             rankName: currentRank.name,
             rankIcon: currentRank.icon,

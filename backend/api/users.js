@@ -814,7 +814,9 @@ router.patch('/:id/avatar', authenticateUser, async (req, res) => {
             return res.status(403).json({ error: 'Unauthorized' });
         }
 
-        const { data: profile, error } = await supabase
+        const db = supabaseService || supabase;
+
+        const { data: profile, error } = await db
             .from('users')
             .update({ avatar_url })
             .eq('id', id)

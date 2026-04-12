@@ -72,8 +72,36 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     const [selectedLanguage, setSelectedLanguage] = useState('');
     const [selectedMode, setSelectedMode] = useState('Puzzle Blocks');
     const [selectedWager, setSelectedWager] = useState(100);
+    
+    // Level Validation State
+    const [hasLevels, setHasLevels] = useState(true);
+    const [isCheckingLevels, setIsCheckingLevels] = useState(false);
 
     const [courses, setCourses] = useState([]);
+
+    useEffect(() => {
+        const checkLevels = async () => {
+            if (!selectedLanguage || courses.length === 0) return;
+            setIsCheckingLevels(true);
+            try {
+                const matchingCourse = courses.find(c => c.name === selectedLanguage);
+                if (matchingCourse) {
+                    const dbMode = selectedMode === 'Puzzle Blocks' ? 'Beginner' : selectedMode === 'Blocks' ? 'Intermediate' : 'Advance';
+                    const levels = await coursesAPI.getLevels(matchingCourse.id, dbMode, 'Medium');
+                    setHasLevels(levels && levels.length > 0);
+                } else {
+                    setHasLevels(false);
+                }
+            } catch (err) {
+                setHasLevels(false);
+            } finally {
+                setIsCheckingLevels(false);
+            }
+        };
+        if (isOpen) {
+            checkLevels();
+        }
+    }, [selectedLanguage, selectedMode, courses, isOpen]);
     
     // Fetch courses from API instead of direct Supabase query
     useEffect(() => {
@@ -931,6 +959,11 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                         <p className="text-[9px] font-bold text-slate-500 uppercase">Time Limit</p>
                                         <p className="text-lg font-black text-white">10:00</p>
                                     </div>
+                                    {!hasLevels && !isCheckingLevels && (
+                                        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-500 font-bold text-xs uppercase text-center animate-pulse mt-2 shadow-[0_0_15px_rgba(239,68,68,0.2)]">
+                                            No course levels generated for these settings
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* FIND MATCH / READY CHECK BUTTON — pinned to sidebar bottom */}
@@ -973,28 +1006,29 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                                 }
                                                 startReadyPhase();
                                             }}
-                                            disabled={!!initialInviter}
+                                            }}
+                                            disabled={!!initialInviter || !hasLevels || isCheckingLevels}
                                             className={`w-full h-11 rounded-xl border-2 flex items-center justify-center gap-2 transition-all text-xs font-black uppercase tracking-widest ${
-                                                !!initialInviter
-                                                ? 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'
+                                                !!initialInviter || !hasLevels || isCheckingLevels
+                                                ? 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed opacity-50'
                                                 : 'bg-gradient-to-b from-blue-500 to-indigo-600 border-indigo-400 text-white hover:scale-105 shadow-[0_0_20px_rgba(99,102,241,0.5)]'
                                             }`}
                                         >
-                                            {!!initialInviter ? 'Waiting for Host...' : 'Start Match'}
+                                            {!!initialInviter ? 'Waiting for Host...' : !hasLevels ? 'LEVELS MISSING' : isCheckingLevels ? 'CHECKING...' : 'Start Match'}
                                         </button>
                                     ) : (
                                         <button
                                             onClick={handleFindMatch}
-                                            disabled={matchState === 'searching' || !!initialInviter}
+                                            disabled={matchState === 'searching' || !!initialInviter || !hasLevels || isCheckingLevels}
                                             className={`w-full h-11 rounded-xl border-2 flex items-center justify-center gap-2 transition-all text-xs font-black uppercase tracking-widest ${
-                                                !!initialInviter
-                                                ? 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'
+                                                !!initialInviter || !hasLevels || isCheckingLevels
+                                                ? 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed opacity-50'
                                                 : matchState === 'searching'
                                                 ? 'bg-slate-700 border-slate-500 text-slate-300'
                                                 : 'bg-gradient-to-b from-yellow-300 to-amber-500 border-yellow-200/50 shadow-[0_0_20px_rgba(245,158,11,0.4)] text-black hover:scale-105'
                                                 }`}
                                         >
-                                            {!!initialInviter ? 'Waiting for Host...' : matchState === 'searching' ? 'Searching...' : 'Find Match'}
+                                            {!!initialInviter ? 'Waiting for Host...' : !hasLevels ? 'LEVELS MISSING' : isCheckingLevels ? 'CHECKING...' : matchState === 'searching' ? 'Searching...' : 'Find Match'}
                                         </button>
                                     )}
                                 </div>

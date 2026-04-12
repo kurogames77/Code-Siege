@@ -27,6 +27,34 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     const [selectedDifficulty, setSelectedDifficulty] = useState('Medium');
     const [selectedMode, setSelectedMode] = useState('Puzzle Blocks');
     const [selectedWager, setSelectedWager] = useState('100');
+    
+    // Level Validation State
+    const [hasLevels, setHasLevels] = useState(true);
+    const [isCheckingLevels, setIsCheckingLevels] = useState(false);
+
+    useEffect(() => {
+        const checkLevels = async () => {
+            if (!selectedLanguage || courses.length === 0) return;
+            setIsCheckingLevels(true);
+            try {
+                const matchingCourse = courses.find(c => c.name === selectedLanguage);
+                if (matchingCourse) {
+                    const dbMode = selectedMode === 'Puzzle Blocks' ? 'Beginner' : selectedMode === 'Blocks' ? 'Intermediate' : 'Advance';
+                    const levels = await coursesAPI.getLevels(matchingCourse.id, dbMode, selectedDifficulty);
+                    setHasLevels(levels && levels.length > 0);
+                } else {
+                    setHasLevels(false);
+                }
+            } catch (err) {
+                setHasLevels(false);
+            } finally {
+                setIsCheckingLevels(false);
+            }
+        };
+        if (isOpen) {
+            checkLevels();
+        }
+    }, [selectedLanguage, selectedMode, selectedDifficulty, courses, isOpen]);
     const { playClick, playSuccess, playCancel, playSelect, playCountdownVoice } = useSound();
     const { user, onlineUserIds } = useUser();
 
@@ -1098,6 +1126,11 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                                         <p className="text-[10px] font-bold text-slate-500 uppercase">Time Limit</p>
                                         <p className="text-xl font-black text-white">10:00</p>
                                     </div>
+                                    {!hasLevels && !isCheckingLevels && (
+                                        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-500 font-bold text-xs uppercase text-center animate-pulse mt-2 shadow-[0_0_15px_rgba(239,68,68,0.2)]">
+                                            No course levels generated for these settings
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -1434,17 +1467,19 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                             {/* READY / START BUTTON */}
                             <button
                                 onClick={handleReadyClick}
-                                disabled={isUserReady || !opponent || matchState === 'starting'}
+                                disabled={isUserReady || !opponent || matchState === 'starting' || !hasLevels || isCheckingLevels}
                                 className={`h-14 px-16 rounded-full border-2 flex items-center justify-center gap-2 transition-all ${isUserReady
                                     ? 'bg-emerald-600 border-emerald-400 text-white cursor-default'
                                     : opponent
-                                        ? 'bg-gradient-to-b from-amber-400 to-orange-500 border-amber-300 text-amber-950 font-black hover:scale-105 shadow-[0_0_30px_rgba(245,158,11,0.6)] cursor-pointer'
+                                        ? (!hasLevels || isCheckingLevels)
+                                            ? 'bg-slate-800 border-slate-600 text-slate-500 cursor-not-allowed opacity-50'
+                                            : 'bg-gradient-to-b from-amber-400 to-orange-500 border-amber-300 text-amber-950 font-black hover:scale-105 shadow-[0_0_30px_rgba(245,158,11,0.6)] cursor-pointer'
                                         : 'bg-slate-800 border-slate-600 text-slate-500 cursor-not-allowed'
                                     }`}
                             >
-                                <Swords className={`w-6 h-6 ${isUserReady || matchState === 'starting' ? '' : 'animate-pulse'}`} />
+                                <Swords className={`w-6 h-6 ${isUserReady || matchState === 'starting' || !hasLevels ? '' : 'animate-pulse'}`} />
                                 <span className="font-black uppercase tracking-widest text-lg">
-                                    {matchState === 'starting' ? 'STARTING...' : isUserReady ? 'READY!' : opponent ? 'CLICK TO READY' : 'WAITING FOR PLAYER'}
+                                    {matchState === 'starting' ? 'STARTING...' : isUserReady ? 'READY!' : !hasLevels ? 'LEVELS MISSING' : isCheckingLevels ? 'CHECKING...' : opponent ? 'CLICK TO READY' : 'WAITING FOR PLAYER'}
                                 </span>
                             </button>
                         </div>
