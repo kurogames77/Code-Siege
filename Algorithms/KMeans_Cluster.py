@@ -178,7 +178,7 @@ def init_kmeans_plus_plus(data, k):
 # Main Entry Point: Cluster IRT Rows for Matchmaking
 # ---------------------------------------------------------------------------
 
-def kmeans_from_irt(irt_data, k=3, max_iter=100, tol=1e-4, verbose=False):
+def kmeans_from_irt(irt_data, k=3, max_iter=30, tol=1e-4, verbose=False):
     """
     Run k-means clustering over IRT skill snapshots.
 
@@ -191,7 +191,7 @@ def kmeans_from_irt(irt_data, k=3, max_iter=100, tol=1e-4, verbose=False):
     Args:
         irt_data (list[dict]): List of IRT records with skill fields.
         k (int): Number of clusters to create. Default 3.
-        max_iter (int): Maximum iterations before forced stop. Default 100.
+        max_iter (int): Maximum iterations before forced stop. Default 30.
         tol (float): Convergence tolerance. Stops when centroid shift < tol². Default 1e-4.
         verbose (bool): Print convergence info to stdout.
 
@@ -218,6 +218,18 @@ def kmeans_from_irt(irt_data, k=3, max_iter=100, tol=1e-4, verbose=False):
     # Scale all dimensions to [0, 1] to prevent any single feature
     # from dominating distance calculations
     data_points = normalize_data(data_points)
+
+    # ── FAST PATH: k=1 ──
+    # When k=1, every player belongs to the same cluster. Skip all
+    # iterative computation — just compute the centroid as the mean.
+    if k == 1:
+        centroid = compute_centroid(data_points)
+        return {
+            "centroids": [centroid],
+            "assignments": [0] * len(data_points),
+            "cluster_count": 1,
+            "converged_after": 0
+        }
 
     # ── Step 3: Initialize Centroids via K-Means++ ──
     centroids = init_kmeans_plus_plus(data_points, k)
@@ -265,10 +277,10 @@ def kmeans_from_irt(irt_data, k=3, max_iter=100, tol=1e-4, verbose=False):
 
         centroids = new_centroids
         
-        # Relaxed early stopping: after a warm-up period (5 iterations),
+        # Relaxed early stopping: after a short warm-up (2 iterations),
         # accept convergence at a 10× looser tolerance. This catches cases
         # where centroids are oscillating within a very narrow band.
-        if iteration > 5 and shift_sq < (tol * tol * 10):
+        if iteration > 2 and shift_sq < (tol * tol * 10):
             break
 
     else:

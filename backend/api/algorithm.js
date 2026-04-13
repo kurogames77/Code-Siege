@@ -279,6 +279,46 @@ router.post('/matchmaking', authenticateUser, async (req, res) => {
             return res.status(400).json({ error: 'userId is required' });
         }
 
+        // ─── FAST PATH: Direct match for small candidate pools ───
+        // When the frontend explicitly provides candidateIds and there are ≤3,
+        // skip the full KMeans pipeline entirely. The presence queue already
+        // verified they share the same settings — clustering is unnecessary.
+        if (candidateIds && Array.isArray(candidateIds) && candidateIds.length > 0 && candidateIds.length <= 3) {
+            console.log('[Matchmaking] Fast path: returning', candidateIds.length, 'candidates directly (skipping KMeans)');
+
+            // Fetch candidate user data for the response
+            const { data: fastPlayers, error: fastErr } = await supabase
+                .from('users')
+                .select('id, username, exp, rank, avatar_url')
+                .in('id', candidateIds);
+
+            if (fastErr || !fastPlayers || fastPlayers.length === 0) {
+                return res.json({
+                    status: 'no_match',
+                    message: 'Candidate players not found',
+                    players: []
+                });
+            }
+
+            const suggestedOpponents = fastPlayers.map(p => ({
+                player_id: p.id,
+                cluster: 0,
+                rank: p.rank || 'Unranked',
+                username: p.username,
+                avatar_url: p.avatar_url,
+                exp: p.exp
+            }));
+
+            return res.json({
+                status: 'success',
+                cluster: 0,
+                cluster_count: 1,
+                suggested_opponents: suggestedOpponents
+            });
+        }
+
+        // ─── STANDARD PATH: Full KMeans clustering ───
+
         // Fetch all active players with their IRT-related metrics
         // We use rank (EXP-based), win_rate, and games_played as skill indicators
         // Build query for players (excluding requesting user)
@@ -375,12 +415,12 @@ router.post('/matchmaking', authenticateUser, async (req, res) => {
             };
         });
 
-        // Determine K
+        // Determine K — ALWAYS force 1 cluster for ≤5 players
+        // This is the definitive override; the frontend may also send k=1,
+        // but we enforce it here to guarantee small pools never get split.
         let kValue = k;
-
-        // RELAXED MATCHMAKING: If low population (< 6 players), force 1 cluster
-        if (playersForKmeans.length < 6) {
-            console.log('[Matchmaking] Low population detected ( < 6 players). Relaxing rules: Grouping all ranks together.');
+        if (playersForKmeans.length <= 5) {
+            console.log('[Matchmaking] Small pool (≤5 players). Forcing k=1 to keep all in one cluster.');
             kValue = 1;
         } else {
             kValue = Math.min(k, Math.floor(playersForKmeans.length / 2));

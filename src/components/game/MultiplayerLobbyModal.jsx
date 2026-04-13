@@ -429,7 +429,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                     if (hostMatchState && hostMatchState !== matchStateRef.current) {
                         if (hostMatchState === 'searching') {
                             setMatchState('searching');
-                            setTimer(60);
+                            setTimer(20);
                         } else if (hostMatchState === 'idle') {
                             setMatchState('idle');
                             setTimer(0);
@@ -599,24 +599,30 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
     // 1. Finding Match Loop (during 'searching')
     useEffect(() => {
         if (matchState === 'searching') {
-            // Check for matches every 3 seconds while searching
+            // Check for matches every 1.5 seconds while searching for snappy matching
             matchmakingIntervalRef.current = setInterval(async () => {
                 if (!user || !user.id) return;
 
                 // Only the "Host" of a potential match group should trigger the backend to avoid duplicate requests.
                 // We determine the host simply by sorting the available IDs.
                 
-                // Find online players looking for the same settings
-                const validCandidates = Object.values(matchmakingQueue).filter(p => 
+                // Find online players looking for the same settings.
+                // IMPORTANT: We filter OTHER players from the queue, then always
+                // include ourselves. This avoids the bug where our own presence
+                // state hasn't propagated yet (still shows 'idle'), causing us
+                // to be excluded from the candidate list entirely.
+                const otherSearching = Object.values(matchmakingQueue).filter(p => 
+                    String(p.id) !== String(user.id) &&
                     p.status === 'searching' && 
                     p.language === selectedLanguage && 
                     p.mode === selectedMode &&
                     String(p.wager) === String(selectedWager)
                 );
 
-                // We need at least 2 players (including us) to form a match
-                if (validCandidates.length >= 2) {
-                    const candidateIds = validCandidates.map(p => p.id);
+                // We need at least 1 OTHER player searching with same settings
+                if (otherSearching.length >= 1) {
+                    // Build full candidate list: always include ourselves
+                    const candidateIds = [user.id, ...otherSearching.map(p => p.id)];
                     candidateIds.sort(); // Sort to deterministically pick a "host"
                     // Send only OTHER players as candidates to the backend
                     // (the backend already fetches and adds the requesting user separately)
@@ -624,6 +630,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
 
                     // Am I the host? (First ID alphabetically)
                     if (candidateIds[0] === user.id) {
+                        console.log('[Matchmaking] I am host. Candidates:', otherCandidateIds.length);
 
                         try {
                             // Call K-Means Backend
@@ -633,11 +640,16 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                             const result = await algorithmAPI.matchmaking(user.id, kValue, otherCandidateIds);
                             
                             if (result.status === 'success' && result.suggested_opponents.length > 0) {
+                                console.log('[Matchmaking] Match found!', result.suggested_opponents.length, 'opponents');
 
                                 // Build the final player list from the cluster
                                 const clusterPlayerIds = [user.id, ...result.suggested_opponents.map(o => o.player_id || o.id)];
                                 
                                 const finalPlayers = clusterPlayerIds.map(id => {
+                                    // For ourselves, use currentUser data directly
+                                    if (id === user.id) {
+                                        return { ...currentUser, isReady: false };
+                                    }
                                     const queueData = matchmakingQueue[id]?.playerData;
                                     if (queueData) {
                                         return { ...queueData, isReady: false };
@@ -658,8 +670,8 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                 if (channelRef.current) {
                                     channelRef.current.send(matchPayload);
                                     // Redundancy broadcasts with staggered delays
-                                    setTimeout(() => channelRef.current?.send(matchPayload).catch(() => {}), 800);
-                                    setTimeout(() => channelRef.current?.send(matchPayload).catch(() => {}), 2000);
+                                    setTimeout(() => channelRef.current?.send(matchPayload).catch(() => {}), 500);
+                                    setTimeout(() => channelRef.current?.send(matchPayload).catch(() => {}), 1200);
                                 }
 
                                 // Update my own UI
@@ -669,9 +681,11 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                         } catch (err) {
                             console.error('[Matchmaking] Backend Error:', err);
                         }
+                    } else {
+                        console.log('[Matchmaking] Not host, waiting for', candidateIds[0], 'to trigger match');
                     }
                 }
-            }, 3000);
+            }, 1500);
 
             return () => clearInterval(matchmakingIntervalRef.current);
         }
@@ -689,7 +703,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
 
     const startReadyPhase = () => {
         setMatchState('ready_check');
-        setTimer(60); // Restart to 1 minute
+        setTimer(20); // 20s ready check — fast-paced lobby
         setPlayers(prev => prev.map(p => ({ ...p, isReady: false })));
     };
 
@@ -699,7 +713,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
         playClick();
         if (matchState === 'idle' || matchState === 'search_timeout') {
             setMatchState('searching');
-            setTimer(60); // Set to 1 minute search timeout
+            setTimer(20); // 20s search window — fast matching
         } else if (matchState === 'searching') {
             // Cancel Search
             setMatchState('idle');

@@ -112,14 +112,24 @@ def assign_clusters(data_points: List[List[float]], centroids: List[List[float]]
 
 
 # ---------------------------------------------------------------------------
-# Shared Algorithm Instances
-# WARNING: These are instantiated at module import time. StudentPerformanceAnalyzer's
-# __init__ reads .env files and environment variables, so importing this module
-# triggers file I/O as a side effect. This is intentional — keeping shared state
-# between matchmaking requests avoids repeated initialization overhead.
+# Shared Algorithm Instances (Lazy Singletons)
+# Deferred initialization avoids file I/O at import time.
+# The first call to _get_irt() / _get_dda() triggers initialization.
 # ---------------------------------------------------------------------------
-_irt_analyzer = StudentPerformanceAnalyzer()
-_dda_adjuster = DifficultyAdjuster()
+_irt_analyzer = None
+_dda_adjuster = None
+
+def _get_irt():
+    global _irt_analyzer
+    if _irt_analyzer is None:
+        _irt_analyzer = StudentPerformanceAnalyzer()
+    return _irt_analyzer
+
+def _get_dda():
+    global _dda_adjuster
+    if _dda_adjuster is None:
+        _dda_adjuster = DifficultyAdjuster()
+    return _dda_adjuster
 
 
 def find_best_match(
@@ -162,50 +172,52 @@ def find_best_match(
             "cluster": None
         }
 
-    # ── Step 2: IRT Re-Analysis ──
-    # Re-invoke IRT to get the latest struggling status for this player.
-    # Note: time_consumed and hints_used are set to 0 because matchmaking
-    # operates on aggregate stats, not live puzzle data. Only fail_count
-    # (mapped to error_count) carries real data. This means only the
-    # error threshold in IRT will trigger — time and hint thresholds won't.
+    # ── Step 2: IRT Re-Analysis & DDA Difficulty Adjustment ──
     theta = data_points[player_index][0]
     beta_old = data_points[player_index][1] if len(data_points[player_index]) > 1 else 0.0
 
-    irt_result = _irt_analyzer.analyze(
-        user_id=f"player_{player_index}",
-        time_consumed=0,
-        error_count=fail_count,
-        hints_used=0
-    )
+    # FAST PATH: For small pools (≤3 players), skip the expensive IRT/DDA
+    # re-analysis. Everyone will match anyway, and the overhead of spawning
+    # sub-algorithms is wasted. Use raw theta/beta directly.
+    if len(data_points) <= 3:
+        adjusted_theta = theta
+        adjusted_beta = beta_old
+    else:
+        # Re-invoke IRT to get the latest struggling status for this player.
+        # Note: time_consumed and hints_used are set to 0 because matchmaking
+        # operates on aggregate stats, not live puzzle data. Only fail_count
+        # (mapped to error_count) carries real data.
+        irt_result = _get_irt().analyze(
+            user_id=f"player_{player_index}",
+            time_consumed=0,
+            error_count=fail_count,
+            hints_used=0
+        )
 
-    # ── Step 3: DDA Difficulty Adjustment ──
-    # Run DDA to derive a beta (difficulty) value for match scoring.
-    # Note: current_difficulty is hardcoded to "Medium" because matchmaking
-    # doesn't track per-player puzzle difficulty. DDA is used here solely
-    # to map the IRT status into a numeric beta value for scoring.
-    dda_result = _dda_adjuster.adjust(
-        irt_status=irt_result["status"],
-        current_difficulty="Medium",
-        metrics={"time": 0, "errors": fail_count, "hints": 0},
-        history={"trend": "stable", "recentCount": success_count + fail_count}
-    )
+        # Run DDA to derive a beta (difficulty) value for match scoring.
+        dda_result = _get_dda().adjust(
+            irt_status=irt_result["status"],
+            current_difficulty="Medium",
+            metrics={"time": 0, "errors": fail_count, "hints": 0},
+            history={"trend": "stable", "recentCount": success_count + fail_count}
+        )
 
-    # Use original theta since IRT analyzer returns status, not adjusted values
-    adjusted_theta = theta
-    # Map DDA's difficulty string to a numeric beta value for scoring
-    difficulty_map = {"Easy": 0.3, "Medium": 0.5, "Hard": 0.8}
-    adjusted_beta = difficulty_map.get(dda_result["new_difficulty"], beta_old)
+        # Use original theta since IRT analyzer returns status, not adjusted values
+        adjusted_theta = theta
+        # Map DDA's difficulty string to a numeric beta value for scoring
+        difficulty_map = {"Easy": 0.3, "Medium": 0.5, "Hard": 0.8}
+        adjusted_beta = difficulty_map.get(dda_result["new_difficulty"], beta_old)
 
-    # ── Step 4: Cluster Lookup — Find Same-Cluster Opponents ──
-    # Use assign_clusters() to get the full cluster map, then derive
-    # the requesting player's cluster from the result.
+    # ── Step 3: Cluster Lookup — Find Same-Cluster Opponents ──
     clusters = assign_clusters(data_points, centroids)
 
-    # Look up which cluster this player belongs to from the assignment map
-    player_cluster = next(
-        c_idx for c_idx, members in clusters.items()
-        if player_index in members
-    )
+    # Build a reverse lookup: player_index → cluster_index (O(1) access)
+    player_to_cluster = {}
+    for c_idx, members in clusters.items():
+        for m in members:
+            player_to_cluster[m] = c_idx
+
+    player_cluster = player_to_cluster.get(player_index, 0)
 
     # Primary candidates: other players in the same cluster (exclude self)
     candidates = [idx for idx in clusters[player_cluster] if idx != player_index]
@@ -237,9 +249,7 @@ def find_best_match(
             "cluster": player_cluster
         }
 
-    # ── Step 5: Adaptive Weight Calculation ──
-    # Derive player consistency from their win rate (success / total).
-    # This determines how much weight to give theta vs beta in scoring.
+    # ── Step 4: Adaptive Weight Calculation ──
     total_attempts = success_count + fail_count
     if total_attempts > 0:
         consistency = normalize(success_count / total_attempts, 0.0, 1.0)
@@ -248,8 +258,7 @@ def find_best_match(
 
     w_theta, w_beta = adaptive_weights(consistency)
 
-    # ── Step 6: Scoring Loop — Find Best Opponent ──
-    # Score each candidate against the requesting player and pick the highest
+    # ── Step 5: Scoring Loop — Find Best Opponent ──
     best_match, best_score = None, -1.0
     for idx in candidates:
         c_theta = data_points[idx][0]
