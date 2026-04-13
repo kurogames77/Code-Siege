@@ -310,6 +310,12 @@ export const achievementsAPI = {
         return apiRequest('/achievements');
     },
 
+    init: async () => {
+        return apiRequest('/achievements/init', {
+            method: 'POST'
+        });
+    },
+
     updateProgress: async (achievementId, progress) => {
         return apiRequest(`/achievements/${achievementId}`, {
             method: 'PATCH',
