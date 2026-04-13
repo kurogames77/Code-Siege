@@ -362,6 +362,17 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                     }));
                 setOnlineUsers(users);
 
+                // PRESENCE-BASED READY STATE SYNC
+                // Read the opponent's isReady from their presence data.
+                // This is more reliable than broadcasts which can be silently dropped.
+                const currentOpp = opponentRef.current;
+                if (currentOpp && matchStateRef.current === 'lobby') {
+                    const oppPresence = users.find(u => String(u.id) === String(currentOpp.id));
+                    if (oppPresence && oppPresence.isReady === true) {
+                        setIsOpponentReady(true);
+                    }
+                }
+
                 // HOST FALLBACK: If we are the host and don't have an opponent yet,
                 // detect any other player in the presence state and capture them.
                 // This is critical when the 'join' event gets missed due to REST fallback.
@@ -586,6 +597,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                         rankName: currentUser.rankName,
                         rankIcon: currentUser.rankIcon,
                         heroImageKey: validatedHeroImage,
+                        isReady: false,
                         online_at: new Date().toISOString(),
                     });
 
@@ -888,7 +900,22 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         playSuccess();
         setIsUserReady(true);
 
-        // Broadcast ready state with redundancy to prevent dropped WebSocket messages
+        // PRIMARY: Update Presence with isReady:true — this is server-persistent
+        // and will trigger a presence sync on the opponent's side automatically
+        if (lobbyChannelRef.current) {
+            lobbyChannelRef.current.track({
+                id: user.id,
+                name: user.name,
+                avatar: user.avatar,
+                rankName: user.rankName,
+                rankIcon: user.rankIcon,
+                heroImageKey: validatedHeroImage,
+                isReady: true,
+                online_at: new Date().toISOString(),
+            }).catch(() => {});
+        }
+
+        // SECONDARY: Also send broadcast for instant delivery (fire-and-forget)
         const readyPayload = {
             type: 'broadcast',
             event: 'player-ready',
@@ -899,7 +926,6 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         };
         if (lobbyChannelRef.current) {
             lobbyChannelRef.current.send(readyPayload);
-            // Redundancy broadcasts to ensure delivery
             setTimeout(() => lobbyChannelRef.current?.send(readyPayload).catch(() => {}), 500);
             setTimeout(() => lobbyChannelRef.current?.send(readyPayload).catch(() => {}), 1500);
         }
