@@ -744,7 +744,7 @@ const LandingPage = () => {
                                     className={`landing-modal__role ${modal.role === 'instructor' ? 'is-active' : ''}`}
                                     onClick={() => updateRole('instructor')}
                                 >
-                                    <User />
+                                    <Shield />
                                     Instructor
                                 </button>
                                 <button
@@ -752,7 +752,7 @@ const LandingPage = () => {
                                     className={`landing-modal__role ${modal.role === 'guest' ? 'is-active' : ''}`}
                                     onClick={() => updateRole('guest')}
                                 >
-                                    <Shield />
+                                    <User />
                                     Guest
                                 </button>
                             </div>
@@ -1080,7 +1080,7 @@ const LandingPage = () => {
                                     className={`landing-modal__role ${modal.role === 'instructor' ? 'is-active' : ''}`}
                                     onClick={() => updateRole('instructor')}
                                 >
-                                    <User />
+                                    <Shield />
                                     Instructor
                                 </button>
                                 <button
@@ -1088,7 +1088,7 @@ const LandingPage = () => {
                                     className={`landing-modal__role ${modal.role === 'guest' ? 'is-active' : ''}`}
                                     onClick={() => updateRole('guest')}
                                 >
-                                    <Shield />
+                                    <User />
                                     Guest
                                 </button>
                             </div>
