@@ -116,10 +116,26 @@ router.patch('/:achievementId', authenticateUser, async (req, res) => {
 
             // Award gems if newly completed
             if (achievement.gem_reward) {
+                // Keep RPC call as a backup source of truth on users
                 await supabase.rpc('add_gems', {
                     user_id_param: req.user.id,
                     amount_param: achievement.gem_reward
                 });
+
+                // Retrieve current globals to update the user_progress directly for frontend synchronization
+                const { data: globalProgress } = await supabase
+                    .from('user_progress')
+                    .select('id, gems')
+                    .eq('user_id', req.user.id)
+                    .eq('tower_id', 'global')
+                    .single();
+
+                if (globalProgress) {
+                    await supabase
+                        .from('user_progress')
+                        .update({ gems: (globalProgress.gems || 0) + achievement.gem_reward })
+                        .eq('id', globalProgress.id);
+                }
             }
         }
 

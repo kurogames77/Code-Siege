@@ -321,7 +321,7 @@ const Towers = ({ theme }) => {
                                         title="Request to Ban/Disable a Student"
                                     >
                                         <UserX className="w-5 h-5 mb-0.5" />
-                                        <span className="text-[8px] font-black tracking-tighter uppercase">BAN</span>
+                                        <span className="text-[8px] font-black tracking-tighter uppercase">REPORT</span>
                                     </button>
                                 </div>
                             </div>
@@ -526,7 +526,7 @@ const Towers = ({ theme }) => {
                                     className="flex-1 py-2.5 rounded-xl font-bold text-sm bg-amber-500 hover:bg-amber-400 text-black shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                                 >
                                     {banSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                                    Submit Ban Request
+                                    Submit
                                 </button>
                             </div>
                         </motion.div>
