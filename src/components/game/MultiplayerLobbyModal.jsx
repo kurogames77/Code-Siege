@@ -228,11 +228,11 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
         if (!isHostRef.current || !channelRef.current || players.length <= 1) return;
         
         const playerIds = players.map(p => p.id);
-        channelRef.current.send({
+        const syncPayload = {
             type: 'broadcast',
             event: 'party-sync',
             payload: {
-                hostId: user.id,
+                hostId: user?.id,
                 playerIds,
                 players: players,
                 matchState: matchState,
@@ -242,8 +242,92 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                     wager: selectedWager
                 }
             }
-        });
-    }, [players, user, selectedLanguage, selectedMode, selectedWager, matchState]);
+        };
+        channelRef.current.send(syncPayload);
+        // Redundancy broadcast for reliability
+        setTimeout(() => channelRef.current?.send(syncPayload).catch?.(() => {}), 800);
+    }, [players, user?.id, selectedLanguage, selectedMode, selectedWager, matchState]);
+
+    // --- INVITE ACCEPT: Separate effect for sending accept broadcast ---
+    // Moved out of subscribe callback to avoid stale closure on initialInviter
+    // and to retry aggressively regardless of channel subscription timing.
+    const acceptSentRef = React.useRef(false);
+    useEffect(() => {
+        if (!initialInviter?.id || !user?.id || acceptSentRef.current) return;
+
+        const sendAcceptBroadcast = () => {
+            if (!channelRef.current) return;
+            const acceptPayload = {
+                type: 'broadcast',
+                event: 'multi-invite-accept',
+                payload: {
+                    targetId: initialInviter.id,
+                    senderId: user.id,
+                    senderName: user.name,
+                    senderAvatar: user.avatar_url || currentUser.avatar,
+                    senderRankName: currentUser.rankName,
+                    senderRankIcon: currentUser.rankIcon,
+                    senderHeroImageKey: validatedHeroImage
+                }
+            };
+            console.log('[Invite] Sending accept broadcast to host:', initialInviter.id?.substring(0,8));
+            channelRef.current.send(acceptPayload).catch?.(() => {});
+        };
+
+        // Send multiple times with increasing delays to guarantee delivery
+        const t1 = setTimeout(sendAcceptBroadcast, 500);
+        const t2 = setTimeout(sendAcceptBroadcast, 1500);
+        const t3 = setTimeout(sendAcceptBroadcast, 3000);
+        const t4 = setTimeout(sendAcceptBroadcast, 5000);
+        const t5 = setTimeout(sendAcceptBroadcast, 8000);
+        acceptSentRef.current = true;
+
+        return () => {
+            [t1, t2, t3, t4, t5].forEach(clearTimeout);
+        };
+    }, [initialInviter?.id, user?.id]);
+
+    // --- INVITE FALLBACK: Detect invited friends via Presence queue ---
+    // If the broadcast is missed, the host can still detect the friend
+    // by their appearance in the matchmakingQueue with matching ID.
+    const detectedInvitesRef = React.useRef(new Set());
+    useEffect(() => {
+        if (!isHostRef.current && !successInviteIds.size) return;
+        
+        for (const friendId of successInviteIds) {
+            // Skip if we already detected and added this friend
+            if (detectedInvitesRef.current.has(friendId)) continue;
+            // Skip if friend is already in the party
+            if (playersRef.current.some(p => p.id === friendId)) continue;
+            
+            // Check if this invited friend appeared in the presence queue
+            if (matchmakingQueue[friendId]) {
+                console.log('[Invite Fallback] Detected invited friend in queue:', friendId.substring(0,8));
+                detectedInvitesRef.current.add(friendId);
+                isHostRef.current = true;
+                
+                const friendData = matchmakingQueue[friendId].playerData;
+                setPlayers(prev => {
+                    if (prev.some(p => p.id === friendId)) return prev;
+                    return [...prev, {
+                        id: friendId,
+                        name: friendData?.name || 'Player',
+                        level: friendData?.level || 1,
+                        status: 'ready',
+                        avatar: friendData?.avatar || null,
+                        heroImage: friendData?.heroImage || hero2Static,
+                        rankName: friendData?.rankName || '',
+                        rankIcon: friendData?.rankIcon || '',
+                        rankId: null,
+                        achievements: 0,
+                        ms: '—',
+                        logo: ccsLogo,
+                        isReady: true
+                    }];
+                });
+            }
+        }
+    }, [matchmakingQueue, successInviteIds]);
 
     // --- TIMERS & STATE MANAGEMENT ---
 
@@ -387,9 +471,10 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             .on('broadcast', { event: 'multi-invite-accept' }, (payload) => {
                 // If we are the host who invited them
                 if (payload.payload.targetId === user.id) {
+                    console.log('[Invite] ✅ Received accept from:', payload.payload.senderId?.substring(0,8));
                     isHostRef.current = true;
 
-                    // Add them to our party UI
+                    // Add them to our party UI (idempotent — skips duplicates)
                     setPlayers(prev => {
                         if (prev.some(p => p.id === payload.payload.senderId)) return prev;
                         
@@ -457,27 +542,9 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                     } catch (trackErr) {
                         console.error('[Matchmaking Channel] ❌ Track failed:', trackErr);
                     }
-
-                    if (initialInviter && initialInviter.id) {
-                        const acceptPayload = {
-                            type: 'broadcast',
-                            event: 'multi-invite-accept',
-                            payload: {
-                                targetId: initialInviter.id,
-                                senderId: user.id,
-                                senderName: user.name,
-                                senderAvatar: user.avatar_url || currentUser.avatar,
-                                senderRankName: currentUser.rankName,
-                                senderRankIcon: currentUser.rankIcon,
-                                senderHeroImageKey: validatedHeroImage
-                            }
-                        };
-                        
-                        await channel.send(acceptPayload);
-                        // Redundancy payload broadcasts to prevent websocket race condition drops during cluster pairing
-                        setTimeout(() => channelRef.current?.send(acceptPayload), 1000);
-                        setTimeout(() => channelRef.current?.send(acceptPayload), 3000);
-                    }
+                    // NOTE: invite accept broadcast is handled by the separate
+                    // acceptSentRef useEffect — no longer sent here to avoid
+                    // stale closure issues with initialInviter.
                 }
             });
 
@@ -577,11 +644,12 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             console.error('[MultiplayerLobby] Error fetching friends:', err);
             setAllFriends([]);
         }
-    }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id]);
 
     // Fetch friends on open and when the refresh trigger changes
     useEffect(() => {
-        if (!isOpen || !user) return;
+        if (!isOpen || !user?.id) return;
         fetchFriends();
 
         // Periodically re-fetch friends to get fresh last_active_at values
@@ -590,11 +658,11 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
         }, 15000); // every 15 seconds
 
         return () => clearInterval(refreshInterval);
-    }, [isOpen, user, friendRefreshTrigger, fetchFriends]);
+    }, [isOpen, user?.id, friendRefreshTrigger, fetchFriends]);
 
     // Real-time listener for friend request acceptances
     useEffect(() => {
-        if (!isOpen || !user) return;
+        if (!isOpen || !user?.id) return;
 
         const notifChannel = supabase
             .channel('multi-friend-updates')
@@ -615,7 +683,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
         return () => {
             supabase.removeChannel(notifChannel);
         };
-    }, [isOpen, user]);
+    }, [isOpen, user?.id]);
 
 
     // --- MATCHMAKING LOGIC (REAL) ---
@@ -790,13 +858,16 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
         if (matchState === 'ready_check') {
             setPlayers(prev => prev.map(p => p.id === user.id ? { ...p, isReady: true } : p));
             
-            // Broadcast our ready status to the group
+            // Broadcast our ready status to the group with redundancy
             if (channelRef.current) {
-                channelRef.current.send({
+                const readyPayload = {
                     type: 'broadcast',
                     event: 'ready_status',
                     payload: { userId: user.id, isReady: true }
-                });
+                };
+                channelRef.current.send(readyPayload);
+                setTimeout(() => channelRef.current?.send(readyPayload).catch?.(() => {}), 600);
+                setTimeout(() => channelRef.current?.send(readyPayload).catch?.(() => {}), 1500);
             }
         }
     };
@@ -814,13 +885,9 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             setPlayers(prev => prev.filter(p => p.isReady));
             startGameCountdown();
         } else {
-            // Not enough players ready.
-            // "search again"
+            // Not enough players ready — search again
             setMatchState('searching');
-            setTimer(60);
-            // Keep only ready players? User said "search again for players only if its only the opponent is one remaining"
-            // Let's reset to just the user (and maybe friends who were ready) to keep it clean, or keep the group.
-            // Simplified: Resetting to search with current ready group.
+            setTimer(20); // 20s search window (consistent with handleFindMatch)
             setPlayers(prev => prev.filter(p => p.isReady));
         }
     };
@@ -836,6 +903,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
         isHostRef.current = true;
         setInvitedFriendIds(prev => new Set([...prev, friend.id]));
         setInviteError(null);
+        console.log('[Invite] Sending invite to:', friend.name, friend.id?.substring(0,8));
 
         const timeoutId = setTimeout(() => {
             setInvitedFriendIds(prev => {
@@ -845,21 +913,24 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             });
             setInviteError('Invite timed out. Try again.');
             setTimeout(() => setInviteError(null), 3000);
-        }, 10000);
+        }, 30000); // 30s timeout — give friend time to see and accept
 
         try {
             await userAPI.sendDuelInvite(friend.id, user.name || 'Someone', null, 'multiplayer');
+            console.log('[Invite] ✅ Invite sent successfully');
             setSuccessInviteIds(prev => new Set([...prev, friend.id]));
             playSuccess();
+            // Keep the successInviteIds for 60 seconds so the presence fallback
+            // has enough time to detect the friend joining the queue
             setTimeout(() => {
                 setSuccessInviteIds(prev => {
                     const next = new Set(prev);
                     next.delete(friend.id);
                     return next;
                 });
-            }, 10000);
+            }, 60000);
         } catch (err) {
-            console.error('Failed to send multi invite:', err);
+            console.error('[Invite] ❌ Failed to send invite:', err);
             setInviteError('Failed to send invitation');
             setTimeout(() => setInviteError(null), 3000);
         } finally {
@@ -1107,16 +1178,16 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                     ) : (
                                         <button
                                             onClick={handleFindMatch}
-                                            disabled={matchState === 'searching' || !!initialInviter || !hasLevels || isCheckingLevels}
+                                            disabled={!!initialInviter || !hasLevels || isCheckingLevels}
                                             className={`w-full h-11 rounded-xl border-2 flex items-center justify-center gap-2 transition-all text-xs font-black uppercase tracking-widest ${
                                                 !!initialInviter || !hasLevels || isCheckingLevels
                                                 ? 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed opacity-50'
                                                 : matchState === 'searching'
-                                                ? 'bg-slate-700 border-slate-500 text-slate-300'
+                                                ? 'bg-gradient-to-b from-rose-500 to-red-600 border-rose-400 text-white hover:scale-105 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
                                                 : 'bg-gradient-to-b from-yellow-300 to-amber-500 border-yellow-200/50 shadow-[0_0_20px_rgba(245,158,11,0.4)] text-black hover:scale-105'
                                                 }`}
                                         >
-                                            {!!initialInviter ? 'Waiting for Host...' : !hasLevels ? 'LEVELS MISSING' : isCheckingLevels ? 'CHECKING...' : matchState === 'searching' ? 'Searching...' : 'Find Match'}
+                                            {!!initialInviter ? 'Waiting for Host...' : !hasLevels ? 'LEVELS MISSING' : isCheckingLevels ? 'CHECKING...' : matchState === 'searching' ? '✕ Cancel Search' : 'Find Match'}
                                         </button>
                                     )}
                                 </div>
