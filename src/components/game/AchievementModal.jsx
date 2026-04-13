@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trophy, Lock, CheckCircle, Zap, Target, Shield, Sword, Code, Flame, Bug, Gem, Star, Award, Layers, Hash, Terminal, Database, Globe } from 'lucide-react';
 import achievementIcon from '../../assets/achievement.png';
@@ -6,6 +6,7 @@ import expIcon from '../../assets/exp.png';
 import useSound from '../../hooks/useSound';
 import { useTheme } from '../../contexts/ThemeContext'; // Import Theme Context
 import { useUser } from '../../contexts/UserContext';
+import { achievementsAPI } from '../../services/api';
 import gemIcon from '../../assets/gem.png';
 
 // Import Python Badges
@@ -112,6 +113,49 @@ const AchievementModal = ({ isOpen, onClose }) => {
 
         return { ...ach, progress, total, status };
     });
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const syncAchievements = async () => {
+            try {
+                // Fetch user's achievements from db
+                const { achievements: dbAchievements } = await achievementsAPI.getAll();
+                let needsSync = false;
+
+                // Check if achievements table is empty, if so generate default tables
+                if (!dbAchievements || dbAchievements.length === 0) {
+                    await achievementsAPI.init();
+                    setTimeout(syncAchievements, 1000);
+                    return;
+                }
+
+                // If they exist, compare with backend to patch changes and award gems
+                for (const uiAch of achievements) {
+                    const dbAch = dbAchievements.find(a => a.achievement_id === String(uiAch.id));
+                    
+                    if (!dbAch) {
+                        needsSync = true;
+                        continue;
+                    }
+
+                    if (uiAch.progress > dbAch.progress) {
+                        await achievementsAPI.updateProgress(String(uiAch.id), uiAch.progress);
+                    }
+                }
+                
+                // If some schemas were missing (legacy accounts), we just reinitialize the missing rows safely via upsert.
+                if (needsSync && dbAchievements.length < achievements.length) {
+                    await achievementsAPI.init();
+                    setTimeout(syncAchievements, 1000);
+                }
+            } catch (error) {
+                console.error("Failed to sync achievements to DB:", error);
+            }
+        };
+
+        syncAchievements();
+    }, [isOpen, achievements]);
 
     const filteredAchievements = achievements.filter(a => {
         const matchesCategory = selectedCategory === 'ALL' || a.category === selectedCategory;

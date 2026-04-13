@@ -34,13 +34,30 @@ router.post('/init', authenticateUser, async (req, res) => {
     try {
         // Default achievements
         const defaultAchievements = [
-            { achievement_id: 'python_pathfinder', progress: 0, total: 1, status: 'locked', gem_reward: 2 },
-            { achievement_id: 'python_enchanter', progress: 0, total: 10, status: 'locked', gem_reward: 3 },
-            { achievement_id: 'grand_sorceres', progress: 0, total: 5, status: 'locked', gem_reward: 5 },
-            { achievement_id: 'csharp_initiate', progress: 0, total: 1, status: 'locked', gem_reward: 2 },
-            { achievement_id: 'csharp_spell_engineer', progress: 0, total: 5, status: 'locked', gem_reward: 4 },
-            { achievement_id: 'csharp_system_architect', progress: 0, total: 10, status: 'locked', gem_reward: 5 },
-            // Add more as needed
+            // Python Set
+            { achievement_id: '1', progress: 0, total: 10, status: 'locked', gem_reward: 2 },
+            { achievement_id: '2', progress: 0, total: 10, status: 'locked', gem_reward: 3 },
+            { achievement_id: '3', progress: 0, total: 10, status: 'locked', gem_reward: 5 },
+            // C# Set
+            { achievement_id: '4', progress: 0, total: 10, status: 'locked', gem_reward: 2 },
+            { achievement_id: '5', progress: 0, total: 10, status: 'locked', gem_reward: 4 },
+            { achievement_id: '6', progress: 0, total: 10, status: 'locked', gem_reward: 5 },
+            // C++ Set
+            { achievement_id: '7', progress: 0, total: 10, status: 'locked', gem_reward: 3 },
+            { achievement_id: '8', progress: 0, total: 10, status: 'locked', gem_reward: 4 },
+            { achievement_id: '9', progress: 0, total: 10, status: 'locked', gem_reward: 5 },
+            // JS Set
+            { achievement_id: '10', progress: 0, total: 10, status: 'locked', gem_reward: 2 },
+            { achievement_id: '11', progress: 0, total: 10, status: 'locked', gem_reward: 3 },
+            { achievement_id: '12', progress: 0, total: 10, status: 'locked', gem_reward: 5 },
+            // PHP Set
+            { achievement_id: '13', progress: 0, total: 10, status: 'locked', gem_reward: 2 },
+            { achievement_id: '14', progress: 0, total: 10, status: 'locked', gem_reward: 3 },
+            { achievement_id: '15', progress: 0, total: 10, status: 'locked', gem_reward: 5 },
+            // MySQL Set
+            { achievement_id: '16', progress: 0, total: 10, status: 'locked', gem_reward: 2 },
+            { achievement_id: '17', progress: 0, total: 10, status: 'locked', gem_reward: 3 },
+            { achievement_id: '18', progress: 0, total: 10, status: 'locked', gem_reward: 5 }
         ];
 
         const achievementsToInsert = defaultAchievements.map(a => ({
