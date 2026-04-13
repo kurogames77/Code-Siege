@@ -312,7 +312,9 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
 
     // --- REAL-TIME PRESENCE (MATCHMAKING QUEUE) ---
     useEffect(() => {
-        if (!isOpen || !user) return;
+        if (!isOpen || !user?.id) return;
+
+        console.log('[Matchmaking Channel] Setting up matchmaking_queue channel for', user.id?.substring(0,8));
 
         // Create a unique channel for the matchmaking lobby
         const channel = supabase.channel('matchmaking_queue', {
@@ -336,6 +338,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                     activePlayers[id] = state[id][0];
                 }
                 
+                console.log('[Matchmaking Channel] Presence sync — players in queue:', Object.keys(activePlayers).length);
                 setMatchmakingQueue(activePlayers);
             })
             .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
@@ -438,16 +441,22 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                 }
             })
             .subscribe(async (status) => {
+                console.log('[Matchmaking Channel] Subscribe status:', status);
                 if (status === 'SUBSCRIBED') {
                     // Initially track us as 'idle' in the lobby
-                    await channel.track({
-                        id: user.id,
-                        status: 'idle',
-                        language: selectedLanguage,
-                        mode: selectedMode,
-                        wager: selectedWager,
-                        playerData: currentUser // Send our visual data so others can see us
-                    });
+                    try {
+                        await channel.track({
+                            id: user.id,
+                            status: 'idle',
+                            language: selectedLanguage,
+                            mode: selectedMode,
+                            wager: selectedWager,
+                            playerData: currentUser // Send our visual data so others can see us
+                        });
+                        console.log('[Matchmaking Channel] ✅ Tracked successfully');
+                    } catch (trackErr) {
+                        console.error('[Matchmaking Channel] ❌ Track failed:', trackErr);
+                    }
 
                     if (initialInviter && initialInviter.id) {
                         const acceptPayload = {
@@ -473,6 +482,7 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             });
 
         return () => {
+            console.log('[Matchmaking Channel] Cleaning up channel');
             // Clear all pending leave debounce timers
             Object.values(leaveTimersRef.current).forEach(clearTimeout);
             leaveTimersRef.current = {};
@@ -484,20 +494,34 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                 clearInterval(matchmakingIntervalRef.current);
             }
         };
-    }, [isOpen, user]);
+    // CRITICAL: Use user?.id (stable string) instead of user (object reference) 
+    // to prevent the channel from being torn down on every context update
+    }, [isOpen, user?.id]);
 
     // Update our presence state when our settings or matchState changes
     useEffect(() => {
-        if (channelRef.current && channelRef.current.state === 'joined') {
-            channelRef.current.track({
-                id: user.id,
-                status: matchState,
-                language: selectedLanguage,
-                mode: selectedMode,
-                wager: selectedWager,
-                playerData: currentUser
-            });
-        }
+        if (!channelRef.current) return;
+        
+        // Re-track our presence with updated status/settings
+        // Use a small delay to avoid racing with initial channel setup
+        const trackTimeout = setTimeout(() => {
+            if (channelRef.current) {
+                channelRef.current.track({
+                    id: user?.id,
+                    status: matchState,
+                    language: selectedLanguage,
+                    mode: selectedMode,
+                    wager: selectedWager,
+                    playerData: currentUser
+                }).then(() => {
+                    console.log('[Matchmaking Channel] Re-tracked with status:', matchState);
+                }).catch(err => {
+                    console.warn('[Matchmaking Channel] Re-track failed:', err);
+                });
+            }
+        }, 100);
+        
+        return () => clearTimeout(trackTimeout);
     }, [matchState, selectedLanguage, selectedMode, selectedWager]);
 
     // Lobby music control
