@@ -512,33 +512,6 @@ const LandingPage = () => {
                             </div>
                         ) : (
                             <>
-                                <div className="landing-modal__roles" role="radiogroup" aria-label="Select role">
-                                    <button
-                                        type="button"
-                                        className={`landing-modal__role ${modal.role === 'student' ? 'is-active' : ''}`}
-                                        onClick={() => updateRole('student')}
-                                    >
-                                        <GraduationCap />
-                                        Student
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={`landing-modal__role ${modal.role === 'instructor' ? 'is-active' : ''}`}
-                                        onClick={() => updateRole('instructor')}
-                                    >
-                                        <User />
-                                        Instructor
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={`landing-modal__role ${modal.role === 'guest' ? 'is-active' : ''}`}
-                                        onClick={() => updateRole('guest')}
-                                    >
-                                        <Shield />
-                                        Guest
-                                    </button>
-                                </div>
-
                                 {error && (
                                     <div className="landing-modal__error">
                                         <AlertCircle size={16} />

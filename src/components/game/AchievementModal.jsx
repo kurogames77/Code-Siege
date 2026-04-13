@@ -5,9 +5,8 @@ import achievementIcon from '../../assets/achievement.png';
 import expIcon from '../../assets/exp.png';
 import useSound from '../../hooks/useSound';
 import { useTheme } from '../../contexts/ThemeContext'; // Import Theme Context
+import { useUser } from '../../contexts/UserContext';
 import gemIcon from '../../assets/gem.png';
-
-
 
 // Import Python Badges
 import pythonPathfinder from '../../assets/badgesachievements/badgePYTHON/pythoneasy.png';
@@ -55,32 +54,64 @@ const AchievementModal = ({ isOpen, onClose }) => {
         { id: 'MYSQL', label: 'MySQL', icon: <Database className="w-5 h-5" /> },
     ];
 
-    const achievements = [
+    const { user } = useUser();
+    const towerProgress = user?.towerProgress || {};
+
+    const baseAchievements = [
         // Python Set
-        { id: 1, title: 'Python Pathfinder', description: 'Complete all beginner Python challenges', progress: 0, total: 1, reward: '100 EXP', rewardIcon: expIcon, status: 'locked', image: pythonPathfinder, category: 'PYTHON', gemReward: 2 },
-        { id: 2, title: 'Python Enchanter', description: 'Master intermediate Python concepts', progress: 0, total: 10, reward: '500 EXP', rewardIcon: expIcon, status: 'locked', image: pythonEnchanter, category: 'PYTHON', gemReward: 3 },
-        { id: 3, title: 'Python Grand Sorceres', description: 'Reach advanced Python mastery', progress: 0, total: 5, reward: '1000 EXP', rewardIcon: expIcon, status: 'locked', image: grandSorceres, category: 'PYTHON', gemReward: 5 },
+        { id: 1, title: 'Python Pathfinder', description: 'Complete all beginner Python challenges', reward: '100 EXP', rewardIcon: expIcon, image: pythonPathfinder, category: 'PYTHON', gemReward: 2, towerId: '1', tier: 1 },
+        { id: 2, title: 'Python Enchanter', description: 'Master intermediate Python concepts', reward: '500 EXP', rewardIcon: expIcon, image: pythonEnchanter, category: 'PYTHON', gemReward: 3, towerId: '1', tier: 2 },
+        { id: 3, title: 'Python Grand Sorceres', description: 'Reach advanced Python mastery', reward: '1000 EXP', rewardIcon: expIcon, image: grandSorceres, category: 'PYTHON', gemReward: 5, towerId: '1', tier: 3 },
         // C# Set
-        { id: 4, title: 'C# Initiate', description: 'Complete all beginner C# challenges', progress: 0, total: 1, reward: '150 EXP', rewardIcon: expIcon, status: 'locked', image: cshInitiate, category: 'CSHARP', gemReward: 2 },
-        { id: 5, title: 'C# Spell Engineer', description: 'Master intermediate C# concepts', progress: 0, total: 5, reward: '600 EXP', rewardIcon: expIcon, status: 'locked', image: cshSpellEngineer, category: 'CSHARP', gemReward: 4 },
-        { id: 6, title: 'C# System Architect', description: 'Reach advanced C# mastery', progress: 0, total: 10, reward: '1200 EXP', rewardIcon: expIcon, status: 'locked', image: cshSystemArchitect, category: 'CSHARP', gemReward: 5 },
+        { id: 4, title: 'C# Initiate', description: 'Complete all beginner C# challenges', reward: '150 EXP', rewardIcon: expIcon, image: cshInitiate, category: 'CSHARP', gemReward: 2, towerId: '2', tier: 1 },
+        { id: 5, title: 'C# Spell Engineer', description: 'Master intermediate C# concepts', reward: '600 EXP', rewardIcon: expIcon, image: cshSpellEngineer, category: 'CSHARP', gemReward: 4, towerId: '2', tier: 2 },
+        { id: 6, title: 'C# System Architect', description: 'Reach advanced C# mastery', reward: '1200 EXP', rewardIcon: expIcon, image: cshSystemArchitect, category: 'CSHARP', gemReward: 5, towerId: '2', tier: 3 },
         // C++ Set
-        { id: 7, title: 'C++ Forge Adept', description: 'Complete all beginner C++ challenges', progress: 0, total: 1, reward: '200 EXP', rewardIcon: expIcon, status: 'locked', image: cppForgeAddect, category: 'CPP', gemReward: 3 },
-        { id: 8, title: 'C++ System Knight', description: 'Master intermediate C++ concepts', progress: 0, total: 5, reward: '700 EXP', rewardIcon: expIcon, status: 'locked', image: cppSystemKnight, category: 'CPP', gemReward: 4 },
-        { id: 9, title: 'C++ Obsidian Mage', description: 'Reach advanced C++ mastery', progress: 0, total: 10, reward: '1500 EXP', rewardIcon: <Trophy className="w-3 h-3 text-purple-400" />, status: 'locked', image: cppObsidianMage, category: 'CPP', gemReward: 5 },
+        { id: 7, title: 'C++ Forge Adept', description: 'Complete all beginner C++ challenges', reward: '200 EXP', rewardIcon: expIcon, image: cppForgeAddect, category: 'CPP', gemReward: 3, towerId: '3', tier: 1 },
+        { id: 8, title: 'C++ System Knight', description: 'Master intermediate C++ concepts', reward: '700 EXP', rewardIcon: expIcon, image: cppSystemKnight, category: 'CPP', gemReward: 4, towerId: '3', tier: 2 },
+        { id: 9, title: 'C++ Obsidian Mage', description: 'Reach advanced C++ mastery', reward: '1500 EXP', rewardIcon: <Trophy className="w-3 h-3 text-purple-400" />, image: cppObsidianMage, category: 'CPP', gemReward: 5, towerId: '3', tier: 3 },
         // JavaScript Set
-        { id: 10, title: 'JavaScript Spark', description: 'Complete all beginner JavaScript challenges', progress: 0, total: 1, reward: '100 EXP', rewardIcon: expIcon, status: 'locked', image: jsSpark, category: 'JAVASCRIPT', gemReward: 2 },
-        { id: 11, title: 'JavaScript Conductor', description: 'Master intermediate JavaScript concepts', progress: 0, total: 5, reward: '500 EXP', rewardIcon: expIcon, status: 'locked', image: jsConductor, category: 'JAVASCRIPT', gemReward: 3 },
-        { id: 12, title: 'JavaScript Storm Architect', description: 'Reach advanced JavaScript mastery', progress: 0, total: 10, reward: '1000 EXP', rewardIcon: expIcon, status: 'locked', image: jsStormArchitect, category: 'JAVASCRIPT', gemReward: 5 },
-        // PHP Set
-        { id: 13, title: 'PHP Scribe', description: 'Complete all beginner PHP challenges', progress: 0, total: 1, reward: '100 EXP', rewardIcon: expIcon, status: 'locked', image: phpScribe, category: 'PHP', gemReward: 2 },
-        { id: 14, title: 'PHP Alchemist', description: 'Master intermediate PHP concepts', progress: 0, total: 5, reward: '500 EXP', rewardIcon: expIcon, status: 'locked', image: phpAlchemist, category: 'PHP', gemReward: 3 },
-        { id: 15, title: 'PHP Grand Weaver', description: 'Reach advanced PHP mastery', progress: 0, total: 10, reward: '1000 EXP', rewardIcon: expIcon, status: 'locked', image: phpGransWeaver, category: 'PHP', gemReward: 5 },
-        // MySQL Set
-        { id: 16, title: 'MySQL Data Scribe', description: 'Complete all beginner MySQL challenges', progress: 0, total: 1, reward: '120 EXP', rewardIcon: expIcon, status: 'locked', image: mysqlDataScribe, category: 'MYSQL', gemReward: 2 },
-        { id: 17, title: 'MySQL Query Master', description: 'Master intermediate MySQL concepts', progress: 0, total: 5, reward: '600 EXP', rewardIcon: expIcon, status: 'locked', image: mysqlQueryMaster, category: 'MYSQL', gemReward: 3 },
-        { id: 18, title: 'MySQL Schema Architect', description: 'Reach advanced MySQL mastery', progress: 0, total: 10, reward: '1200 EXP', rewardIcon: expIcon, status: 'locked', image: mysqlSchemaArchitect, category: 'MYSQL', gemReward: 5 }
+        { id: 10, title: 'JavaScript Spark', description: 'Complete all beginner JavaScript challenges', reward: '100 EXP', rewardIcon: expIcon, image: jsSpark, category: 'JAVASCRIPT', gemReward: 2, towerId: '4', tier: 1 },
+        { id: 11, title: 'JavaScript Conductor', description: 'Master intermediate JavaScript concepts', reward: '500 EXP', rewardIcon: expIcon, image: jsConductor, category: 'JAVASCRIPT', gemReward: 3, towerId: '4', tier: 2 },
+        { id: 12, title: 'JavaScript Storm Architect', description: 'Reach advanced JavaScript mastery', reward: '1000 EXP', rewardIcon: expIcon, image: jsStormArchitect, category: 'JAVASCRIPT', gemReward: 5, towerId: '4', tier: 3 },
+        // MySQL Set (Tower ID 5)
+        { id: 16, title: 'MySQL Data Scribe', description: 'Complete all beginner MySQL challenges', reward: '120 EXP', rewardIcon: expIcon, image: mysqlDataScribe, category: 'MYSQL', gemReward: 2, towerId: '5', tier: 1 },
+        { id: 17, title: 'MySQL Query Master', description: 'Master intermediate MySQL concepts', reward: '600 EXP', rewardIcon: expIcon, image: mysqlQueryMaster, category: 'MYSQL', gemReward: 3, towerId: '5', tier: 2 },
+        { id: 18, title: 'MySQL Schema Architect', description: 'Reach advanced MySQL mastery', reward: '1200 EXP', rewardIcon: expIcon, image: mysqlSchemaArchitect, category: 'MYSQL', gemReward: 5, towerId: '5', tier: 3 },
+        // PHP Set (Tower ID 6)
+        { id: 13, title: 'PHP Scribe', description: 'Complete all beginner PHP challenges', reward: '100 EXP', rewardIcon: expIcon, image: phpScribe, category: 'PHP', gemReward: 2, towerId: '6', tier: 1 },
+        { id: 14, title: 'PHP Alchemist', description: 'Master intermediate PHP concepts', reward: '500 EXP', rewardIcon: expIcon, image: phpAlchemist, category: 'PHP', gemReward: 3, towerId: '6', tier: 2 },
+        { id: 15, title: 'PHP Grand Weaver', description: 'Reach advanced PHP mastery', reward: '1000 EXP', rewardIcon: expIcon, image: phpGransWeaver, category: 'PHP', gemReward: 5, towerId: '6', tier: 3 }
     ];
+
+    const achievements = baseAchievements.map(ach => {
+        const floor = towerProgress[ach.towerId] || 0;
+        let progress = 0;
+        const total = 10;
+        let status = 'locked';
+
+        if (ach.tier === 1) {
+            progress = Math.min(10, floor);
+        } else if (ach.tier === 2) {
+            progress = Math.min(10, Math.max(0, floor - 10));
+        } else if (ach.tier === 3) {
+            progress = Math.min(10, Math.max(0, floor - 20));
+        }
+
+        if (ach.tier === 2 && floor < 10) {
+            status = 'locked';
+        } else if (ach.tier === 3 && floor < 20) {
+            status = 'locked';
+        } else if (progress >= total) {
+            status = 'completed';
+        } else if (progress > 0) {
+            status = 'in_progress';
+        } else {
+            status = 'locked';
+        }
+
+        return { ...ach, progress, total, status };
+    });
 
     const filteredAchievements = achievements.filter(a => {
         const matchesCategory = selectedCategory === 'ALL' || a.category === selectedCategory;
