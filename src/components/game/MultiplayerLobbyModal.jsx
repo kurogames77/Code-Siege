@@ -603,21 +603,28 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
             matchmakingIntervalRef.current = setInterval(async () => {
                 if (!user || !user.id) return;
 
-                // Only the "Host" of a potential match group should trigger the backend to avoid duplicate requests.
-                // We determine the host simply by sorting the available IDs.
-                
+                // --- DIAGNOSTIC LOGGING ---
+                const allQueueEntries = Object.values(matchmakingQueue);
+                console.log('[Matchmaking] Queue size:', allQueueEntries.length,
+                    '| My settings:', selectedLanguage, selectedMode, selectedWager);
+                allQueueEntries.forEach(p => {
+                    console.log(`  [Queue] ${p.id?.substring(0,8)}... status=${p.status} lang=${p.language} mode=${p.mode} wager=${p.wager}`);
+                });
+
                 // Find online players looking for the same settings.
                 // IMPORTANT: We filter OTHER players from the queue, then always
                 // include ourselves. This avoids the bug where our own presence
                 // state hasn't propagated yet (still shows 'idle'), causing us
                 // to be excluded from the candidate list entirely.
-                const otherSearching = Object.values(matchmakingQueue).filter(p => 
+                const otherSearching = allQueueEntries.filter(p => 
                     String(p.id) !== String(user.id) &&
                     p.status === 'searching' && 
                     p.language === selectedLanguage && 
                     p.mode === selectedMode &&
                     String(p.wager) === String(selectedWager)
                 );
+
+                console.log('[Matchmaking] Matching candidates found:', otherSearching.length);
 
                 // We need at least 1 OTHER player searching with same settings
                 if (otherSearching.length >= 1) {
@@ -632,57 +639,89 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                     if (candidateIds[0] === user.id) {
                         console.log('[Matchmaking] I am host. Candidates:', otherCandidateIds.length);
 
+                        let matchedPlayerIds = null;
+
+                        // --- ATTEMPT 1: Backend K-Means API ---
                         try {
-                            // Call K-Means Backend
-                            // Force k=1 for small groups (≤5 candidates) so ALL same-settings
-                            // players land in one cluster regardless of rank differences
                             const kValue = otherCandidateIds.length <= 4 ? 1 : 2;
                             const result = await algorithmAPI.matchmaking(user.id, kValue, otherCandidateIds);
                             
-                            if (result.status === 'success' && result.suggested_opponents.length > 0) {
-                                console.log('[Matchmaking] Match found!', result.suggested_opponents.length, 'opponents');
-
-                                // Build the final player list from the cluster
-                                const clusterPlayerIds = [user.id, ...result.suggested_opponents.map(o => o.player_id || o.id)];
-                                
-                                const finalPlayers = clusterPlayerIds.map(id => {
-                                    // For ourselves, use currentUser data directly
-                                    if (id === user.id) {
-                                        return { ...currentUser, isReady: false };
-                                    }
-                                    const queueData = matchmakingQueue[id]?.playerData;
-                                    if (queueData) {
-                                        return { ...queueData, isReady: false };
-                                    }
-                                    return null;
-                                }).filter(Boolean);
-
-                                // Broadcast to other clustered players to join the match
-                                // Send with redundancy to prevent dropped WebSocket messages
-                                const matchPayload = {
-                                    type: 'broadcast',
-                                    event: 'match_found',
-                                    payload: {
-                                        playerIds: clusterPlayerIds,
-                                        players: finalPlayers
-                                    }
-                                };
-                                if (channelRef.current) {
-                                    channelRef.current.send(matchPayload);
-                                    // Redundancy broadcasts with staggered delays
-                                    setTimeout(() => channelRef.current?.send(matchPayload).catch(() => {}), 500);
-                                    setTimeout(() => channelRef.current?.send(matchPayload).catch(() => {}), 1200);
-                                }
-
-                                // Update my own UI
-                                setPlayers(finalPlayers);
-                                startReadyPhase();
+                            if (result.status === 'success' && result.suggested_opponents?.length > 0) {
+                                console.log('[Matchmaking] Backend matched!', result.suggested_opponents.length, 'opponents');
+                                matchedPlayerIds = [user.id, ...result.suggested_opponents.map(o => o.player_id || o.id)];
+                            } else {
+                                console.warn('[Matchmaking] Backend returned no opponents, falling back to direct match');
                             }
                         } catch (err) {
-                            console.error('[Matchmaking] Backend Error:', err);
+                            console.warn('[Matchmaking] Backend API failed, falling back to direct match:', err.message);
+                        }
+
+                        // --- FALLBACK: Direct presence-based matching ---
+                        // If the backend failed or returned no opponents, match directly
+                        // using the presence queue data. All these players already have 
+                        // the same settings (filtered above), so they are valid matches.
+                        if (!matchedPlayerIds) {
+                            console.log('[Matchmaking] Using direct match fallback with', otherSearching.length, 'players');
+                            matchedPlayerIds = [user.id, ...otherSearching.map(p => p.id)];
+                        }
+
+                        // Build the final player list for the match
+                        const finalPlayers = matchedPlayerIds.map(id => {
+                            // For ourselves, use currentUser data directly
+                            if (id === user.id) {
+                                return { ...currentUser, isReady: false };
+                            }
+                            const queueData = matchmakingQueue[id]?.playerData;
+                            if (queueData) {
+                                return { ...queueData, isReady: false };
+                            }
+                            // Last resort: build minimal player data from the queue entry
+                            const queueEntry = matchmakingQueue[id];
+                            if (queueEntry) {
+                                return {
+                                    id: queueEntry.id,
+                                    name: queueEntry.playerData?.name || 'Player',
+                                    level: 1,
+                                    status: 'ready',
+                                    avatar: null,
+                                    heroImage: hero2Static,
+                                    rankName: '',
+                                    rankIcon: '',
+                                    rankId: null,
+                                    achievements: 0,
+                                    ms: '—',
+                                    logo: ccsLogo,
+                                    isReady: false
+                                };
+                            }
+                            return null;
+                        }).filter(Boolean);
+
+                        if (finalPlayers.length >= 2) {
+                            console.log('[Matchmaking] ✅ Match formed with', finalPlayers.length, 'players');
+
+                            // Broadcast to other matched players to join the match
+                            const matchPayload = {
+                                type: 'broadcast',
+                                event: 'match_found',
+                                payload: {
+                                    playerIds: matchedPlayerIds,
+                                    players: finalPlayers
+                                }
+                            };
+                            if (channelRef.current) {
+                                channelRef.current.send(matchPayload);
+                                // Redundancy broadcasts with staggered delays
+                                setTimeout(() => channelRef.current?.send(matchPayload).catch(() => {}), 500);
+                                setTimeout(() => channelRef.current?.send(matchPayload).catch(() => {}), 1200);
+                            }
+
+                            // Update my own UI
+                            setPlayers(finalPlayers);
+                            startReadyPhase();
                         }
                     } else {
-                        console.log('[Matchmaking] Not host, waiting for', candidateIds[0], 'to trigger match');
+                        console.log('[Matchmaking] Not host, waiting for', candidateIds[0]?.substring(0,8), 'to trigger match');
                     }
                 }
             }, 1500);
