@@ -507,7 +507,13 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 // If we are the sender (host) and the recipient (guest) accepted
 
                 if (String(payload.targetId) === String(currentUser.id)) {
-                    // GUARD: If we already have an opponent, reject the late acceptor
+                    // GUARD: If we already have an opponent with the SAME ID, this is a
+                    // redundant broadcast — skip entirely to avoid resetting ready states
+                    if (opponentRef.current && String(opponentRef.current.id) === String(payload.senderId)) {
+                        console.log('[DuelLobby] Ignoring duplicate duel-accept from existing opponent:', payload.senderId);
+                        return;
+                    }
+                    // GUARD: If we already have a DIFFERENT opponent, reject the late acceptor
                     if (opponentRef.current && String(opponentRef.current.id) !== String(payload.senderId)) {
                         console.log('[DuelLobby] Already have opponent, rejecting late acceptor:', payload.senderId);
                         channel.send({
