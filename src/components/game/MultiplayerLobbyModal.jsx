@@ -627,9 +627,10 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
 
                         try {
                             // Call K-Means Backend
-                            // We ask for k=1 initially if low pop, but the algorithm auto-handles k limits
-                            // We pass only the candidate IDs actually searching right now
-                            const result = await algorithmAPI.matchmaking(user.id, 2, otherCandidateIds);
+                            // Force k=1 for small groups (≤5 candidates) so ALL same-settings
+                            // players land in one cluster regardless of rank differences
+                            const kValue = otherCandidateIds.length <= 4 ? 1 : 2;
+                            const result = await algorithmAPI.matchmaking(user.id, kValue, otherCandidateIds);
                             
                             if (result.status === 'success' && result.suggested_opponents.length > 0) {
 
@@ -645,15 +646,20 @@ const MultiplayerLobbyModal = ({ isOpen, onClose, onBack, initialInviter }) => {
                                 }).filter(Boolean);
 
                                 // Broadcast to other clustered players to join the match
+                                // Send with redundancy to prevent dropped WebSocket messages
+                                const matchPayload = {
+                                    type: 'broadcast',
+                                    event: 'match_found',
+                                    payload: {
+                                        playerIds: clusterPlayerIds,
+                                        players: finalPlayers
+                                    }
+                                };
                                 if (channelRef.current) {
-                                    channelRef.current.send({
-                                        type: 'broadcast',
-                                        event: 'match_found',
-                                        payload: {
-                                            playerIds: clusterPlayerIds,
-                                            players: finalPlayers
-                                        }
-                                    });
+                                    channelRef.current.send(matchPayload);
+                                    // Redundancy broadcasts with staggered delays
+                                    setTimeout(() => channelRef.current?.send(matchPayload).catch(() => {}), 800);
+                                    setTimeout(() => channelRef.current?.send(matchPayload).catch(() => {}), 2000);
                                 }
 
                                 // Update my own UI

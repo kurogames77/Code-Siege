@@ -106,6 +106,10 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
     React.useEffect(() => { selectedDifficultyRef.current = selectedDifficulty; }, [selectedDifficulty]);
     React.useEffect(() => { selectedModeRef.current = selectedMode; }, [selectedMode]);
     React.useEffect(() => { selectedWagerRef.current = selectedWager; }, [selectedWager]);
+    const isUserReadyRef = React.useRef(false);
+    const isOpponentReadyRef = React.useRef(false);
+    React.useEffect(() => { isUserReadyRef.current = isUserReady; }, [isUserReady]);
+    React.useEffect(() => { isOpponentReadyRef.current = isOpponentReady; }, [isOpponentReady]);
     const userRef = React.useRef(user);
     React.useEffect(() => { userRef.current = user; }, [user]);
 
@@ -133,6 +137,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         if (hostCheckRetryRef.current) { clearTimeout(hostCheckRetryRef.current); hostCheckRetryRef.current = null; }
         opponentRef.current = null;
         matchStateRef.current = 'idle';
+        isUserReadyRef.current = false;
+        isOpponentReadyRef.current = false;
         consumedInviteIdsRef.current = new Set();
     }, []);
 
@@ -359,7 +365,8 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
                 // HOST FALLBACK: If we are the host and don't have an opponent yet,
                 // detect any other player in the presence state and capture them.
                 // This is critical when the 'join' event gets missed due to REST fallback.
-                if (!initialOpponent && !opponentRef.current && users.length > 0) {
+                // GUARD: Skip if we already have an opponent or if a player is already readied up
+                if (!initialOpponent && !opponentRef.current && users.length > 0 && !isUserReadyRef.current && !isOpponentReadyRef.current) {
                     const guest = users[0];
                     playSuccess();
                     setOpponent({
@@ -393,7 +400,7 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
             .on('presence', { event: 'join' }, ({ key, newPresences }) => {
                 const guest = newPresences.find(u => String(u.id) !== String(currentUser.id));
                 // If we are the host, robustly capture the opponent immediately when they join the Presence channel 
-                if (!initialOpponent && !opponentRef.current) {
+                if (!initialOpponent && !opponentRef.current && !isUserReadyRef.current) {
                     if (guest) {
                         playSuccess();
                         setOpponent({
@@ -875,16 +882,20 @@ const DuelLobbyModal = ({ isOpen, onClose, onBack, initialOpponent }) => {
         playSuccess();
         setIsUserReady(true);
 
-        // Broadcast ready state
+        // Broadcast ready state with redundancy to prevent dropped WebSocket messages
+        const readyPayload = {
+            type: 'broadcast',
+            event: 'player-ready',
+            payload: {
+                playerId: user.id,
+                isReady: true
+            }
+        };
         if (lobbyChannelRef.current) {
-            lobbyChannelRef.current.send({
-                type: 'broadcast',
-                event: 'player-ready',
-                payload: {
-                    playerId: user.id,
-                    isReady: true
-                }
-            });
+            lobbyChannelRef.current.send(readyPayload);
+            // Redundancy broadcasts to ensure delivery
+            setTimeout(() => lobbyChannelRef.current?.send(readyPayload).catch(() => {}), 500);
+            setTimeout(() => lobbyChannelRef.current?.send(readyPayload).catch(() => {}), 1500);
         }
     };
 
