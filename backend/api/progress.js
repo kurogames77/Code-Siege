@@ -34,7 +34,7 @@ router.get('/', authenticateUser, async (req, res) => {
  */
 router.post('/complete', authenticateUser, async (req, res) => {
     try {
-        const { tower_id, floor } = req.body;
+        const { tower_id, floor, score = 0 } = req.body;
 
         if (!tower_id || floor === undefined) {
             return res.status(400).json({ error: 'Tower ID and floor are required' });
@@ -56,6 +56,7 @@ router.post('/complete', authenticateUser, async (req, res) => {
                 .from('user_progress')
                 .update({ 
                     completed: true, 
+                    score: score > -1 ? score : 0,
                     completed_at: new Date().toISOString() 
                 })
                 .eq('user_id', req.user.id)
@@ -72,6 +73,7 @@ router.post('/complete', authenticateUser, async (req, res) => {
                     tower_id,
                     floor,
                     completed: true,
+                    score: score > -1 ? score : 0,
                     completed_at: new Date().toISOString()
                 })
                 .select()

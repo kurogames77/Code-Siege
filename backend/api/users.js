@@ -819,6 +819,7 @@ router.patch('/global/tower-progress', authenticateUser, async (req, res) => {
             .from('user_progress')
             .delete()
             .eq('tower_id', towerKey)
+            .eq('score', -1)
             .gt('floor', targetFloors);
 
         if (deleteError) {
@@ -855,6 +856,7 @@ router.patch('/global/tower-progress', authenticateUser, async (req, res) => {
                     tower_id: towerKey,
                     floor: targetFloors,
                     completed: true,
+                    score: -1,
                     completed_at: new Date().toISOString()
                 });
             } else {
