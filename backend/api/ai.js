@@ -185,12 +185,12 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
         - ALL code in 'solution' MUST follow the ${language} syntax rules listed above exactly.
         `;
 
-        // Use confirmed available models from test_output.txt
+        // Use officially supported solid models
         const modelsToTry = [
-            "gemini-flash-latest",
+            "gemini-2.5-flash",
             "gemini-2.0-flash",
             "gemini-1.5-flash",
-            "gemini-1.5-flash-8b"
+            "gemini-1.5-pro"
         ];
 
         let lastError = null;
@@ -203,13 +203,17 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
                 result = await model.generateContent(prompt);
                 break; // If successful, exit loop
             } catch (e) {
-                console.warn(`Model ${modelName} failed (quota/error):`, e.message);
+                console.warn(`Model ${modelName} failed (quota/error):`, e.message.substring(0, 150) + '...');
                 lastError = e;
                 continue;
             }
         }
 
         if (!result) {
+            const isQuota = lastError && lastError.message && (lastError.message.includes('Quota exceeded') || lastError.message.includes('429'));
+            if (isQuota) {
+                throw new Error("API Quota Reached. Please wait a minute or two before generating again.");
+            }
             throw lastError || new Error('All AI models failed or exhausted their quota.');
         }
         const response = await result.response;
@@ -275,7 +279,7 @@ router.post('/debug-code', authenticateUser, async (req, res) => {
         Keep the response short and concise (max 2-3 sentences).
         `;
 
-        const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"];
+        const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
         let result = null;
         let lastError = null;
 
@@ -285,7 +289,7 @@ router.post('/debug-code', authenticateUser, async (req, res) => {
                 result = await model.generateContent(prompt);
                 break; // If successful, exit loop
             } catch (e) {
-                console.warn(`Model ${modelName} failed:`, e.message);
+                console.warn(`Model ${modelName} failed:`, e.message.substring(0, 150) + '...');
                 lastError = e;
             }
         }
@@ -315,7 +319,7 @@ router.post('/verify-code', authenticateUser, async (req, res) => {
         if (!code) return res.status(400).json({ error: 'Code is required' });
 
         const genAI = getGenAI();
-        const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"];
+        const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
         let result = null;
         let lastError = null;
 
