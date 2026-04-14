@@ -167,10 +167,10 @@ const TopUpModal = ({ isOpen, onClose }) => {
     const gemPackages = [
         {
             id: 0,
-            gems: 5,
+            gems: 50,
             bonus: 0,
-            price: 'Php 1',
-            numericPrice: 1,
+            price: 'Php 20',
+            numericPrice: 20,
             isBonus: false,
             isRecommended: false,
             tag: 'STARTER',
