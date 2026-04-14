@@ -187,10 +187,8 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
 
         // Use officially supported solid models
         const modelsToTry = [
-            "gemini-2.5-flash",
-            "gemini-2.0-flash",
-            "gemini-1.5-flash",
-            "gemini-1.5-pro"
+            "gemini-flash-latest",
+            "gemini-pro-latest"
         ];
 
         let lastError = null;
@@ -279,7 +277,7 @@ router.post('/debug-code', authenticateUser, async (req, res) => {
         Keep the response short and concise (max 2-3 sentences).
         `;
 
-        const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
+        const modelsToTry = ["gemini-flash-latest", "gemini-pro-latest"];
         let result = null;
         let lastError = null;
 
@@ -319,7 +317,7 @@ router.post('/verify-code', authenticateUser, async (req, res) => {
         if (!code) return res.status(400).json({ error: 'Code is required' });
 
         const genAI = getGenAI();
-        const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
+        const modelsToTry = ["gemini-flash-latest", "gemini-pro-latest"];
         let result = null;
         let lastError = null;
 
