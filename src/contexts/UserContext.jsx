@@ -225,7 +225,7 @@ export const UserProvider = ({ children }) => {
                 .channel(`user-profile-${user.id}`)
                 .on(
                     'postgres_changes',
-                    { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${user.id}` },
+                    { event: '*', schema: 'public', table: 'users', filter: `id=eq.${user.id}` },
                     async () => {
                         try {
                             const { profile } = await authAPI.getMe();
@@ -237,7 +237,7 @@ export const UserProvider = ({ children }) => {
                 )
                 .on(
                     'postgres_changes',
-                    { event: 'UPDATE', schema: 'public', table: 'user_progress', filter: `user_id=eq.${user.id}` },
+                    { event: '*', schema: 'public', table: 'user_progress', filter: `user_id=eq.${user.id}` },
                     async () => {
                         try {
                             const { profile } = await authAPI.getMe();
