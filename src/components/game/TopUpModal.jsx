@@ -131,7 +131,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
             const totalGems = selectedPackage.gems + (selectedPackage.bonus || 0) + (selectedPackage.prevBonus || 0);
 
             // In a real app, verify 'details.id' on backend. Here we trust the client sandbox callback.
-            await userAPI.updateGems(user.id, totalGems, 'paypal', 'testpaid');
+            await userAPI.updateGems(user.id, totalGems, 'paypal', 'paid');
 
             if (refreshUser) await refreshUser();
 
@@ -165,6 +165,18 @@ const TopUpModal = ({ isOpen, onClose }) => {
     ];
 
     const gemPackages = [
+        {
+            id: 0,
+            gems: 5,
+            bonus: 0,
+            price: 'Php 1',
+            numericPrice: 1,
+            isBonus: false,
+            isRecommended: false,
+            tag: 'STARTER',
+            color: 'from-emerald-500/20 to-teal-600/20',
+            borderColor: 'border-emerald-500/50'
+        },
         {
             id: 1,
             gems: 275,
@@ -466,8 +478,8 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                             {selectedMethod === 'paypal' ? (
                                                 <div className="w-full space-y-4">
                                                     <div className="bg-white/5 p-4 rounded-xl border border-white/10 mb-4">
-                                                        <p className="text-xs text-slate-400 mb-2 font-bold uppercase tracking-widest">Sandbox Mode Active</p>
-                                                        <p className="text-[10px] text-slate-500">You will be redirected to PayPal Sandbox to complete this test transaction.</p>
+                                                        <p className="text-xs text-slate-400 mb-2 font-bold uppercase tracking-widest">Secure Payment</p>
+                                                        <p className="text-[10px] text-slate-500">You will be redirected to PayPal to complete your purchase securely.</p>
                                                     </div>
 
                                                     {!PAYPAL_CLIENT_ID ? (

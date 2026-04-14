@@ -4,37 +4,101 @@ import { authenticateUser } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Helper to get initialized Gemini instance
-const getGenAI = () => {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        console.error('CRITICAL: GEMINI_API_KEY is missing from process.env');
-        throw new Error('GEMINI_API_KEY is not set in environment variables');
+// ============================================================
+// MULTI-KEY, MULTI-MODEL FAILOVER SYSTEM
+// ============================================================
+
+/**
+ * Collects all available Gemini API keys from environment variables.
+ * Supports: GEMINI_API_KEY, GEMINI_API_KEY_2, GEMINI_API_KEY_3, etc.
+ */
+const getApiKeys = () => {
+    const keys = [];
+    // Primary key
+    if (process.env.GEMINI_API_KEY) keys.push(process.env.GEMINI_API_KEY);
+    // Additional keys (2-10)
+    for (let i = 2; i <= 10; i++) {
+        const key = process.env[`GEMINI_API_KEY_${i}`];
+        if (key) keys.push(key);
     }
-    console.log(`Gemini initialized with key: ${apiKey.substring(0, 6)}...${apiKey.substring(apiKey.length - 4)}`);
-    return new GoogleGenerativeAI(apiKey);
+    return keys;
 };
 
 /**
- * POST /api/ai/generate-levels
- * Generate puzzle levels based on course parameters
+ * Models to attempt for each key, in priority order.
+ * More reliable/faster models first, heavier models as fallback.
  */
-router.post('/generate-levels', authenticateUser, async (req, res) => {
-    try {
-        const { language, difficulty, mode } = req.body;
+const MODELS_TO_TRY = [
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+    "gemini-1.5-pro",
+    "gemini-pro",
+    "gemini-flash-latest",
+    "gemini-pro-latest",
+];
 
-        if (!language || !difficulty || !mode) {
-            return res.status(400).json({ error: 'Missing required parameters' });
+/**
+ * Unified AI content generation with multi-key, multi-model failover.
+ * For each API key, tries all models before moving to the next key.
+ * Returns the generated result or throws an error if all fail.
+ */
+const tryGenerateContent = async (prompt) => {
+    const apiKeys = getApiKeys();
+
+    if (apiKeys.length === 0) {
+        console.error('CRITICAL: No GEMINI_API_KEY found in environment variables');
+        throw new Error('No Gemini API keys configured. Set GEMINI_API_KEY in environment variables.');
+    }
+
+    let lastError = null;
+    let attemptCount = 0;
+
+    for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex++) {
+        const apiKey = apiKeys[keyIndex];
+        const keyLabel = `Key#${keyIndex + 1} (${apiKey.substring(0, 6)}...${apiKey.substring(apiKey.length - 4)})`;
+
+        const genAI = new GoogleGenerativeAI(apiKey);
+
+        for (const modelName of MODELS_TO_TRY) {
+            attemptCount++;
+            try {
+                console.log(`[AI Failover] Attempt ${attemptCount}: ${keyLabel} → ${modelName}`);
+                const model = genAI.getGenerativeModel({ model: modelName });
+                const result = await model.generateContent(prompt);
+                console.log(`[AI Failover] ✓ SUCCESS on ${keyLabel} → ${modelName}`);
+                return result;
+            } catch (e) {
+                const shortMsg = e.message ? e.message.substring(0, 200) : 'Unknown error';
+                const isQuota = shortMsg.includes('429') || shortMsg.includes('Quota') || shortMsg.includes('quota') || shortMsg.includes('Resource has been exhausted');
+                const isModelNotFound = shortMsg.includes('not found') || shortMsg.includes('404') || shortMsg.includes('is not supported');
+
+                if (isModelNotFound) {
+                    console.warn(`[AI Failover] ✗ ${keyLabel} → ${modelName}: Model not available, skipping.`);
+                } else if (isQuota) {
+                    console.warn(`[AI Failover] ✗ ${keyLabel} → ${modelName}: Quota exhausted, trying next...`);
+                } else {
+                    console.warn(`[AI Failover] ✗ ${keyLabel} → ${modelName}: ${shortMsg}`);
+                }
+                lastError = e;
+                continue;
+            }
         }
+    }
 
-        const genAI = getGenAI();
-        let model;
+    // All keys and models exhausted
+    const isQuota = lastError && lastError.message && (lastError.message.includes('Quota') || lastError.message.includes('429'));
+    if (isQuota) {
+        throw new Error(`All AI model quotas exhausted across ${apiKeys.length} API key(s). Please wait a few minutes and try again, or add more API keys (GEMINI_API_KEY_2, GEMINI_API_KEY_3, etc.).`);
+    }
+    throw lastError || new Error(`All AI models failed across ${apiKeys.length} key(s) after ${attemptCount} attempts.`);
+};
 
-        const isAdvance = mode.toLowerCase().includes('advance');
+// ============================================================
+// LANGUAGE SYNTAX RULES
+// ============================================================
 
-        // Language-specific syntax rules for smarter generation
-        const LANGUAGE_SYNTAX_RULES = {
-            'Python': `
+const LANGUAGE_SYNTAX_RULES = {
+    'Python': `
     - Use PEP 8 style: spaces around = in assignments (x = 5, NOT x=5)
     - Each statement must be on its own line (x = 5\\ny = 2, NOT x=5,y=2)
     - Use snake_case for variable names
@@ -42,7 +106,7 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
     - Function calls use parentheses: print("hello") NOT print "hello"
     - For loops: for i in range(n): with proper colon and 4-space indentation
     - Use proper Python built-ins: print(), input(), len(), range(), int(), str()`,
-            'C#': `
+    'C#': `
     - Use PascalCase for methods and classes, camelCase for local variables
     - All statements end with semicolons (;)
     - Use curly braces for code blocks: if (x > 0) { ... }
@@ -50,7 +114,7 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
     - Console output: Console.WriteLine("text"); or Console.Write("text");
     - Type declarations required: int x = 5; string name = "test"; bool flag = true;
     - Use 'using System;' for namespace imports`,
-            'C++': `
+    'C++': `
     - Include directives: #include <iostream> for I/O, #include <string> for strings
     - Use 'using namespace std;' or prefix with std::
     - All statements end with semicolons (;)
@@ -58,7 +122,7 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
     - Variable declarations: int x = 5; string s = "test"; double d = 3.14;
     - Use curly braces for code blocks
     - Main function: int main() { ... return 0; }`,
-            'JavaScript': `
+    'JavaScript': `
     - Use camelCase for variables and functions
     - Use const for constants, let for variables (NEVER var)
     - Template literals for string interpolation: \\\`Hello \\\${name}\\\`
@@ -66,7 +130,7 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
     - Arrow functions: const fn = (x) => x * 2;
     - All statements end with semicolons (;)
     - Array methods: .map(), .filter(), .forEach(), .reduce()`,
-            'PHP': `
+    'PHP': `
     - All variables start with $: $x = 5; $name = "test";
     - All statements end with semicolons (;)
     - String concatenation uses dot operator: $x . " text"
@@ -74,7 +138,7 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
     - Output: echo "text"; or print("text");
     - Arrays: $arr = [1, 2, 3]; or $arr = array(1, 2, 3);
     - Opening tag: <?php (include in solution if standalone script)`,
-            'MySQL': `
+    'MySQL': `
     - SQL keywords in UPPERCASE: SELECT, FROM, WHERE, INSERT INTO, UPDATE, DELETE
     - Table and column names in lowercase or snake_case
     - String values in single quotes: 'value'
@@ -83,12 +147,37 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
     - Use aliases: SELECT t.column FROM table_name AS t
     - Aggregates: COUNT(), SUM(), AVG(), MAX(), MIN() in UPPERCASE
     - Clauses order: SELECT ... FROM ... WHERE ... GROUP BY ... ORDER BY ... LIMIT`
-        };
+};
 
+// ============================================================
+// POST /api/ai/generate-levels
+// ============================================================
+
+router.post('/generate-levels', authenticateUser, async (req, res) => {
+    try {
+        const { language, difficulty, mode } = req.body;
+
+        if (!language || !difficulty || !mode) {
+            return res.status(400).json({ error: 'Missing required parameters' });
+        }
+
+        const isAdvance = mode.toLowerCase().includes('advance');
+        const isBeginner = mode.toLowerCase().includes('beginner');
+        const isIntermediate = mode.toLowerCase().includes('intermediate');
         const syntaxRules = LANGUAGE_SYNTAX_RULES[language] || `- Use proper syntax conventions for ${language}. Follow the language's official style guide.`;
 
+        // Block count ranges scaled by mode
+        const blockCountRange = isBeginner
+            ? 'between 7 and 10'
+            : isIntermediate
+                ? 'between 8 and 12'
+                : 'between 6 and 10';
+
+        // Number of distractor/dummy blocks
+        const dummyBlockCount = isBeginner ? 3 : isIntermediate ? 2 : 2;
+
         const prompt = `
-        You are an expert coding instructor designed to generate educational coding puzzles.
+        You are an expert university-level coding instructor and puzzle designer.
         Generate 10 progressive coding puzzle levels for a course with the following settings:
         - Language: ${language}
         - Difficulty: ${difficulty}
@@ -103,16 +192,26 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
         1. Maintain difficulty WITHIN the scope of the '${mode}' mode.
         2. A 'Hard' level in '${mode}' should still be conceptually simpler than an 'Easy' level in the next higher mode.
         3. Do NOT exceed the conceptual boundaries of the mode.
-           - Beginner: Basic syntax, variables, loop concepts (Visual/Block focus)
-           - Intermediate: Conditionals, functions, basic algorithms
-           - Advance: Complex logic, optimization, data structures (Pure Code focus)
-        4. If ${difficulty} is 'Hard', make it challenging relative to OTHER ${mode} levels, but not impossible for a ${mode} student.
+        4. DIFFICULTY CALIBRATION FOR EACH MODE:
+           - Beginner: These are for 4th-year university Computer Science students who know basic syntax. DO NOT make trivial "Hello World" puzzles. Instead focus on:
+             * Multi-variable arithmetic expressions (e.g., compute area, swap variables, format currency)
+             * String manipulation (concatenation, slicing, f-strings/template literals)
+             * Type conversion and formatted output (e.g., "Result: 3.14" with proper formatting)
+             * Simple conditional checks (if/else with comparisons and logical operators)
+             * Basic loop patterns (counting, summing, range-based iteration)
+             * List/Array creation and basic access patterns
+             * Combining print statements with computed values
+             Each level MUST require the student to think — not just drag one function call.
+           - Intermediate: Functions, nested loops, error handling, string algorithms, sorting, search
+           - Advance: Complex algorithms, data structures, optimization, OOP patterns (Pure Code focus)
+        5. If ${difficulty} is 'Hard', make it challenging relative to OTHER ${mode} levels, but not impossible for a ${mode} student.
 
         PROGRESSIVE TEACHING ORDER (Levels 1-10 must follow this sequence):
-        - Levels 1-3: Foundational syntax (output, variables, basic operations)
-        - Levels 4-6: Control flow (conditionals, simple loops)
-        - Levels 7-8: Functions/methods or data structures basics
-        - Levels 9-10: Combining concepts from earlier levels
+        - Levels 1-2: Multi-step output with variables and expressions (NOT just print "hello")
+        - Levels 3-4: String manipulation and formatted output with computations
+        - Levels 5-6: Conditional logic with comparisons, logical operators
+        - Levels 7-8: Loop patterns (counting, accumulation, iteration)
+        - Levels 9-10: Combining multiple concepts (loops + conditionals, functions + formatting)
 
         Return the response strictly as a JSON array of objects. Do not wrap in markdown code blocks.
         The JSON structure for each level object should be:
@@ -137,10 +236,10 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
                     "content": "keyword/code", 
                     "type": "function|value|control", 
                     "color": "bg-red-500|bg-purple-500|bg-cyan-500",
-                    "connectors": { "top": 0, "right": 1, "bottom": 0, "left": 0 } 
+                    "connectors": { "top": 1, "right": 1, "bottom": 2, "left": 2 } 
                 }
             ]`},
-            "correctSequence": ${isAdvance ? "[]" : `["b1", "b2"]`}
+            "correctSequence": ${isAdvance ? "[]" : `["b1", "b2", "b3"]`}
         }
         
         ${isAdvance ? `
@@ -149,7 +248,8 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
         - DO NOT generate 'correctSequence'. Return an empty array [].
         - Focus on 'initialCode', 'solution', and 'expectedOutput'.
         ` : `
-        Note: For 'initialBlocks', provide ${mode.toLowerCase().includes('beginner') ? 'between 4 and 6' : mode.toLowerCase().includes('intermediate') ? 'between 6 and 8' : 'between 4 and 6'} blocks.
+        BLOCK COUNT: Provide ${blockCountRange} CORRECT blocks (in 'correctSequence') PLUS ${dummyBlockCount} DUMMY/distractor blocks.
+        Total blocks in 'initialBlocks' = correct blocks + ${dummyBlockCount} dummy blocks.
 
         CRITICAL BLOCK CONTENT RULES:
         - Each block's 'content' must be a syntactically valid FRAGMENT of ${language} code.
@@ -159,24 +259,35 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
         - Split at LOGICAL code boundaries:
           * Function name + opening paren: "print(" | arguments: '"Hello")'
           * Assignment left side: "x = " | right side: "5"
-          * For multi-line solutions, each line should be its own block
-        - Example for Python print("Hello"): Block 1 content: 'print(' | Block 2 content: '"Hello")'
-        - Example for JS console.log(42): Block 1 content: 'console.log(' | Block 2 content: '42)'
-        - Example for C++ cout << "Hi": Block 1 content: 'cout << ' | Block 2 content: '"Hi" << endl;'
+          * For multi-line solutions, each LINE should be its own block
+          * Operators and their operands can be separate blocks: "x + " | "y"
+        - Example for a 7-block Python solution:
+          Block b1: 'x = 10'  |  Block b2: '\\ny = 20'  |  Block b3: '\\nresult = x + y'  |  Block b4: '\\nprint('  |  Block b5: '"Sum: " + '  |  Block b6: 'str(result)'  |  Block b7: ')'
+        - Each block should be meaningful. Avoid blocks that are just a single character.
 
-        CRITICAL: Visual Interlocking Rules (connectors: 0=None, 1=Out/Tab, 2=In/Slot):
-        - You MUST define 'connectors' for every block so they snap together logically in the 'correctSequence'.
-        - If Block A is followed by Block B: Block A 'right' must be 1 (Tab), and Block B 'left' must be 2 (Slot).
-        
-        - **ALL SIDES MUST HAVE CONNECTORS**:
-          - NEVER use 0 (None/Flat). Every single side (top, right, bottom, left) MUST be 1 or 2.
-          - Even the first block's Left side and last block's Right side must have 1 or 2 (to look like infinite puzzle pieces).
-          - Top/Bottom: Randomly assign 1 or 2.
-        
-        - **DUMMY BLOCK**: You MUST include 1 extra block in 'initialBlocks' that is NOT in 'correctSequence'.
-          - This block is a distractor (e.g. wrong function name or syntax).
-          - Give it an ID like "dummy1".
-          - It should have connectors that *could* fit but are wrong logic.
+        CRITICAL: CONNECTOR INTERLOCKING RULES (connectors: 1=Tab/Out, 2=Slot/In):
+        These connectors determine how puzzle pieces physically interlock. You MUST design them so that:
+
+        **RULE 1 — Sequential blocks must have COMPLEMENTARY connectors:**
+        - If Block A is followed by Block B in correctSequence:
+          Block A 'right' MUST be 1 (Tab) AND Block B 'left' MUST be 2 (Slot).
+        - This creates a physical lock: Tab fits into Slot.
+
+        **RULE 2 — ALL sides must have connectors (never 0):**
+        - Every side (top, right, bottom, left) must be either 1 or 2.
+        - For the FIRST block in sequence: left = 1 (decorative tab edge).
+        - For the LAST block in sequence: right = 2 (decorative slot edge).
+        - Top and Bottom: Follow a PATTERN. For correct blocks, alternate: odd-indexed blocks get top=1,bottom=2 and even-indexed blocks get top=2,bottom=1.
+
+        **RULE 3 — Dummy blocks must have WRONG connectors:**
+        - Dummy blocks must NOT have matching left=2 where a correct block expects right=1 on the adjacent position.
+        - Give dummy blocks connectors that look plausible but DON'T interlock with the correct sequence.
+        - Example: If correct block B3 has right=1, then next correct block B4 has left=2. A dummy block pretending to fit after B3 should have left=1 (Tab, not Slot — so it physically won't connect).
+
+        **RULE 4 — Dummy blocks must be believable distractors:**
+        - Each dummy block should contain plausible but WRONG code (e.g., wrong function name, wrong syntax, similar but incorrect variable).
+        - Give each dummy a unique ID like "dummy1", "dummy2", "dummy3".
+        - Dummies must NOT appear in 'correctSequence'.
         `}
 
         - Ensure the 'id' is just the number (1 to 10).
@@ -185,35 +296,7 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
         - ALL code in 'solution' MUST follow the ${language} syntax rules listed above exactly.
         `;
 
-        // Use officially supported solid models
-        const modelsToTry = [
-            "gemini-flash-latest",
-            "gemini-pro-latest"
-        ];
-
-        let lastError = null;
-        let result = null;
-
-        for (const modelName of modelsToTry) {
-            try {
-                console.log(`Attempting to use model: ${modelName}...`);
-                model = genAI.getGenerativeModel({ model: modelName });
-                result = await model.generateContent(prompt);
-                break; // If successful, exit loop
-            } catch (e) {
-                console.warn(`Model ${modelName} failed (quota/error):`, e.message.substring(0, 150) + '...');
-                lastError = e;
-                continue;
-            }
-        }
-
-        if (!result) {
-            const isQuota = lastError && lastError.message && (lastError.message.includes('Quota exceeded') || lastError.message.includes('429'));
-            if (isQuota) {
-                throw new Error("API Quota Reached. Please wait a minute or two before generating again.");
-            }
-            throw lastError || new Error('All AI models failed or exhausted their quota.');
-        }
+        const result = await tryGenerateContent(prompt);
         const response = await result.response;
         let text = response.text();
 
@@ -242,7 +325,6 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
     } catch (error) {
         console.error('AI Generation Error Detail:', error);
 
-
         res.status(500).json({
             error: 'Failed to generate levels',
             details: error.message,
@@ -251,10 +333,10 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
     }
 });
 
-/**
- * POST /api/ai/debug-code
- * Analyze code and provide debugging hints
- */
+// ============================================================
+// POST /api/ai/debug-code
+// ============================================================
+
 router.post('/debug-code', authenticateUser, async (req, res) => {
     try {
         const { code, language, problemDescription } = req.body;
@@ -262,8 +344,6 @@ router.post('/debug-code', authenticateUser, async (req, res) => {
         if (!code) {
             return res.status(400).json({ error: 'Code is required' });
         }
-
-        const genAI = getGenAI();
 
         const prompt = `
         You are a helpful AI coding tutor.
@@ -277,25 +357,7 @@ router.post('/debug-code', authenticateUser, async (req, res) => {
         Keep the response short and concise (max 2-3 sentences).
         `;
 
-        const modelsToTry = ["gemini-flash-latest", "gemini-pro-latest"];
-        let result = null;
-        let lastError = null;
-
-        for (const modelName of modelsToTry) {
-            try {
-                const model = genAI.getGenerativeModel({ model: modelName });
-                result = await model.generateContent(prompt);
-                break; // If successful, exit loop
-            } catch (e) {
-                console.warn(`Model ${modelName} failed:`, e.message.substring(0, 150) + '...');
-                lastError = e;
-            }
-        }
-
-        if (!result) {
-            throw lastError || new Error('All AI models failed');
-        }
-
+        const result = await tryGenerateContent(prompt);
         const response = await result.response;
         const feedback = response.text();
 
@@ -306,20 +368,15 @@ router.post('/debug-code', authenticateUser, async (req, res) => {
     }
 });
 
-/**
- * POST /api/ai/verify-code
- * Verify if code is a valid solution despite strict mismatch
- */
+// ============================================================
+// POST /api/ai/verify-code
+// ============================================================
+
 router.post('/verify-code', authenticateUser, async (req, res) => {
     try {
         const { code, language, problemDescription, expectedOutput } = req.body;
 
         if (!code) return res.status(400).json({ error: 'Code is required' });
-
-        const genAI = getGenAI();
-        const modelsToTry = ["gemini-flash-latest", "gemini-pro-latest"];
-        let result = null;
-        let lastError = null;
 
         const prompt = `
         You are an expert coding judge.
@@ -339,21 +396,7 @@ router.post('/verify-code', authenticateUser, async (req, res) => {
         }
         `;
 
-        for (const modelName of modelsToTry) {
-            try {
-                const model = genAI.getGenerativeModel({ model: modelName });
-                result = await model.generateContent(prompt);
-                break;
-            } catch (e) {
-                console.warn(`Model ${modelName} failed (verify):`, e.message);
-                lastError = e;
-            }
-        }
-
-        if (!result) {
-            throw lastError || new Error('All AI models failed');
-        }
-
+        const result = await tryGenerateContent(prompt);
         const response = await result.response;
         let text = response.text().replace(/```json/g, '').replace(/```/g, '').trim();
 
