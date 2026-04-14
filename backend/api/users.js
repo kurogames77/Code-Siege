@@ -798,7 +798,7 @@ router.patch('/global/tower-progress', authenticateUser, async (req, res) => {
         // Fetch ALL players (students, users, guests, instructors, etc.)
         const { data: students, error: fetchError } = await db
             .from('users')
-            .select('id, tower_progress');
+            .select('id');
 
         if (fetchError) {
             return res.status(500).json({ error: 'Failed to fetch students for bulk update.' });
@@ -811,29 +811,50 @@ router.patch('/global/tower-progress', authenticateUser, async (req, res) => {
         const towerKey = towerId.toString();
         const targetFloors = parseInt(floorsCompleted);
 
-        // Use individual update calls (not upsert) to avoid overwriting other user columns
+        // Fetch existing user_progress rows to prevent duplicate inserts
+        // which would later crash progress.js when calling .single()
+        const { data: existingProgress, error: existingError } = await db
+            .from('user_progress')
+            .select('user_id')
+            .eq('tower_id', towerKey)
+            .eq('floor', targetFloors);
+
+        if (existingError) {
+            return res.status(500).json({ error: 'Failed to check existing tower progress.' });
+        }
+
+        const usersWithProgress = new Set((existingProgress || []).map(p => p.user_id));
+
+        const insertQueue = [];
         let successCount = 0;
-        let failCount = 0;
 
         for (const student of students) {
-            const currentProgress = student.tower_progress || {};
-            currentProgress[towerKey] = targetFloors;
-
-            const { error: updateError } = await db
-                .from('users')
-                .update({ tower_progress: currentProgress })
-                .eq('id', student.id);
-
-            if (updateError) {
-                console.error(`Failed to update tower progress for user ${student.id}:`, updateError.message);
-                failCount++;
+            if (!usersWithProgress.has(student.id)) {
+                insertQueue.push({
+                    user_id: student.id,
+                    tower_id: towerKey,
+                    floor: targetFloors,
+                    completed: true,
+                    completed_at: new Date().toISOString()
+                });
             } else {
+                // Already had the floor unlocked
                 successCount++;
             }
         }
 
-        if (failCount > 0) {
-            console.warn(`[Global Unlock] ${failCount}/${students.length} updates failed.`);
+        // Bulk insert new progress records
+        if (insertQueue.length > 0) {
+            // Chunk inserts if too large, but Supabase standard payload handles 1000s easily
+            const { error: insertError } = await db
+                .from('user_progress')
+                .insert(insertQueue);
+
+            if (insertError) {
+                console.error(`[Global Unlock] Insert failed:`, insertError.message);
+                return res.status(400).json({ error: 'Database error while globally inserting progress.' });
+            }
+            successCount += insertQueue.length;
         }
 
         res.json({ message: `Successfully unlocked ${floorsCompleted} floors for ${successCount} students globally.` });
