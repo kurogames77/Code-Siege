@@ -811,6 +811,26 @@ router.patch('/global/tower-progress', authenticateUser, async (req, res) => {
         const towerKey = towerId.toString();
         const targetFloors = parseInt(floorsCompleted);
 
+        // FIRST: Enforce Regression (Undo / Custom Lock)
+        // If the instructor is setting progress to `targetFloors`, we must explicitly delete
+        // any existing progress rows ABOVE this target for ALL students across the board.
+        // Otherwise, Math.max() calculation during login will still see the older, higher progression!
+        const { error: deleteError } = await db
+            .from('user_progress')
+            .delete()
+            .eq('tower_id', towerKey)
+            .gt('floor', targetFloors);
+
+        if (deleteError) {
+            console.error(`[Global Unlock] Progress regression delete failed:`, deleteError.message);
+            return res.status(500).json({ error: 'Database error while removing previous progress limits.' });
+        }
+
+        // If target was purely Undo/Lock (0 floors), we are done. (Since we just wiped >0)
+        if (targetFloors === 0) {
+            return res.json({ message: `Successfully reset and locked progress globally.` });
+        }
+
         // Fetch existing user_progress rows to prevent duplicate inserts
         // which would later crash progress.js when calling .single()
         const { data: existingProgress, error: existingError } = await db
