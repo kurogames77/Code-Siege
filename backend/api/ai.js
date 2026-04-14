@@ -171,7 +171,7 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
         - DO NOT generate 'correctSequence'. Return an empty array [].
         - Focus on 'initialCode', 'solution', and 'expectedOutput'.
         ` : `
-        Note: For 'initialBlocks', provide 3-4 blocks.
+        Note: For 'initialBlocks', provide ${mode.toLowerCase().includes('beginner') ? 'between 4 and 6' : mode.toLowerCase().includes('intermediate') ? 'between 6 and 8' : 'between 4 and 6'} blocks.
 
         CRITICAL BLOCK CONTENT RULES:
         - Each block's 'content' must be a syntactically valid FRAGMENT of ${language} code.
