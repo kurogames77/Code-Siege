@@ -795,11 +795,11 @@ router.patch('/global/tower-progress', authenticateUser, async (req, res) => {
             return res.status(400).json({ error: 'Missing required fields: towerId and floorsCompleted.' });
         }
 
-        // Fetch ALL student current progress
+        // Fetch ALL players (students, users, guests) — not just 'student' role
         const { data: students, error: fetchError } = await db
             .from('users')
             .select('id, tower_progress')
-            .eq('role', 'student');
+            .in('role', ['student', 'user', 'guest']);
 
         if (fetchError) {
             return res.status(500).json({ error: 'Failed to fetch students for bulk update.' });
@@ -809,26 +809,35 @@ router.patch('/global/tower-progress', authenticateUser, async (req, res) => {
             return res.status(404).json({ error: 'No students found to update.' });
         }
 
-        const updates = students.map(student => {
+        const towerKey = towerId.toString();
+        const targetFloors = parseInt(floorsCompleted);
+
+        // Use individual update calls (not upsert) to avoid overwriting other user columns
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const student of students) {
             const currentProgress = student.tower_progress || {};
-            currentProgress[towerId.toString()] = parseInt(floorsCompleted);
-            
-            return {
-                id: student.id,
-                tower_progress: currentProgress
-            };
-        });
+            currentProgress[towerKey] = targetFloors;
 
-        // Bulk update the students using upsert
-        const { error: updateError } = await db
-            .from('users')
-            .upsert(updates, { onConflict: 'id' });
+            const { error: updateError } = await db
+                .from('users')
+                .update({ tower_progress: currentProgress })
+                .eq('id', student.id);
 
-        if (updateError) {
-            return res.status(400).json({ error: updateError.message });
+            if (updateError) {
+                console.error(`Failed to update tower progress for user ${student.id}:`, updateError.message);
+                failCount++;
+            } else {
+                successCount++;
+            }
         }
 
-        res.json({ message: `Successfully unlocked ${floorsCompleted} floors for ${students.length} students globally.` });
+        if (failCount > 0) {
+            console.warn(`[Global Unlock] ${failCount}/${students.length} updates failed.`);
+        }
+
+        res.json({ message: `Successfully unlocked ${floorsCompleted} floors for ${successCount} students globally.` });
     } catch (error) {
         console.error('Instructor global tower unlock error:', error);
         res.status(500).json({ error: 'Failed to globally update tower progress.' });
