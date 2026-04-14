@@ -30,28 +30,6 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
         const genAI = getGenAI();
         let model;
 
-        // Use confirmed available models from test_output.txt
-        const modelsToTry = [
-            "gemini-flash-latest",
-            "gemini-2.0-flash",
-            "gemini-pro-latest",
-            "gemini-1.5-flash-8b"
-        ];
-
-        let lastError = null;
-        for (const modelName of modelsToTry) {
-            try {
-                console.log(`Attempting to use model: ${modelName}...`);
-                model = genAI.getGenerativeModel({ model: modelName });
-                // We need to do a dummy call or just hope it works. 
-                // Actually, getGenerativeModel doesn't verify existence until generateContent.
-                break;
-            } catch (e) {
-                lastError = e;
-                continue;
-            }
-        }
-
         const isAdvance = mode.toLowerCase().includes('advance');
 
         // Language-specific syntax rules for smarter generation
@@ -207,7 +185,33 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
         - ALL code in 'solution' MUST follow the ${language} syntax rules listed above exactly.
         `;
 
-        const result = await model.generateContent(prompt);
+        // Use confirmed available models from test_output.txt
+        const modelsToTry = [
+            "gemini-flash-latest",
+            "gemini-2.0-flash",
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-8b"
+        ];
+
+        let lastError = null;
+        let result = null;
+
+        for (const modelName of modelsToTry) {
+            try {
+                console.log(`Attempting to use model: ${modelName}...`);
+                model = genAI.getGenerativeModel({ model: modelName });
+                result = await model.generateContent(prompt);
+                break; // If successful, exit loop
+            } catch (e) {
+                console.warn(`Model ${modelName} failed (quota/error):`, e.message);
+                lastError = e;
+                continue;
+            }
+        }
+
+        if (!result) {
+            throw lastError || new Error('All AI models failed or exhausted their quota.');
+        }
         const response = await result.response;
         let text = response.text();
 
