@@ -795,11 +795,10 @@ router.patch('/global/tower-progress', authenticateUser, async (req, res) => {
             return res.status(400).json({ error: 'Missing required fields: towerId and floorsCompleted.' });
         }
 
-        // Fetch ALL players (students, users, guests) — not just 'student' role
+        // Fetch ALL players (students, users, guests, instructors, etc.)
         const { data: students, error: fetchError } = await db
             .from('users')
-            .select('id, tower_progress')
-            .in('role', ['student', 'user', 'guest']);
+            .select('id, tower_progress');
 
         if (fetchError) {
             return res.status(500).json({ error: 'Failed to fetch students for bulk update.' });
