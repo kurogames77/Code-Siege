@@ -68,7 +68,8 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
         const idx = Math.abs(hash) % COLOR_PALETTE.length;
         return COLOR_PALETTE[idx];
     }, [id]);
-    const width = 140;
+    // Dynamic width based on content to prevent cutting off code
+    const width = Math.max(140, Math.min(350, content.length * 8.5 + 40));
     const height = 48;
     const tabRadius = 10;
     const tabDepth = 12;
@@ -181,11 +182,11 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
                     clipPath={`url(#clip-${id})`}
                     className="font-mono font-bold pointer-events-none"
                     style={{
-                        fontSize: content.length > 25 ? '8px' : content.length > 18 ? '10px' : '12px',
+                        fontSize: content.length > 40 ? '10px' : '13px',
                         filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))'
                     }}
                 >
-                    {content.length > 30 ? content.substring(0, 28) + '…' : content}
+                    {content.length > 50 ? content.substring(0, 48) + '…' : content}
                 </text>
             </svg>
         </div>
