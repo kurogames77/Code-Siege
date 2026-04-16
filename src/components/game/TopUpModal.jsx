@@ -437,16 +437,18 @@ const TopUpModal = ({ isOpen, onClose }) => {
 
                                         {/* Payment Interface Right */}
                                         <div className="flex-1 max-w-sm max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
-                                            <button
-                                                onClick={() => { playCancel(); setStep('select'); setSelectedPackage(null); }}
-                                                className="flex items-center gap-2 text-slate-400 hover:text-white text-[10px] font-bold uppercase tracking-widest transition-colors mb-4 group"
-                                            >
-                                                <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to Packages
-                                            </button>
+                                            <div className="flex items-center justify-between mb-6">
+                                                <button
+                                                    onClick={() => { playCancel(); setStep('select'); setSelectedPackage(null); }}
+                                                    className="flex items-center gap-2 text-slate-400 hover:text-white text-[10px] font-bold uppercase tracking-widest transition-colors group"
+                                                >
+                                                    <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to Packages
+                                                </button>
 
-                                            <h3 className="text-lg font-black text-white italic uppercase tracking-tighter mb-6 flex items-center gap-3 sticky top-0 bg-[#0a0f1a] z-10 py-2">
-                                                {selectedMethod === 'paypal' ? 'Pay with PayPal' : `Login to ${paymentMethods.find(p => p.id === selectedMethod)?.label}`}
-                                            </h3>
+                                                <h3 className="text-lg font-black text-white italic uppercase tracking-tighter flex items-center gap-3">
+                                                    {selectedMethod === 'paypal' ? 'Pay with PayPal' : `Login to ${paymentMethods.find(p => p.id === selectedMethod)?.label}`}
+                                                </h3>
+                                            </div>
 
                                             {/* REAL PAYPAL BUTTONS */}
                                             {selectedMethod === 'paypal' ? (
