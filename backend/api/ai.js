@@ -166,8 +166,6 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
         const isIntermediate = mode.toLowerCase().includes('intermediate');
         const syntaxRules = LANGUAGE_SYNTAX_RULES[language] || `- Use proper syntax conventions for ${language}. Follow the language's official style guide.`;
 
-        const isAdvance = mode.toLowerCase().includes('advance');
-
         const prompt = `
         You are an expert university-level coding instructor and puzzle designer.
         Generate 10 progressive coding puzzle levels for a course with the following settings:
