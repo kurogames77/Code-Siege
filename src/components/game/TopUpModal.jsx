@@ -437,7 +437,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
 
                                         {/* Payment Interface Right */}
                                         <div className="flex-1 max-w-sm max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
-                                            <div className="flex items-center justify-between mb-6">
+                                            <div className="flex items-center justify-between mb-6 sticky top-0 bg-[#0a0f1a] z-10 py-2">
                                                 <button
                                                     onClick={() => { playCancel(); setStep('select'); setSelectedPackage(null); }}
                                                     className="flex items-center gap-2 text-slate-400 hover:text-white text-[10px] font-bold uppercase tracking-widest transition-colors group"
