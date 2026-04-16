@@ -97,7 +97,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
             if (typeof playError === 'function') playError();
             if (toastError) toastError('Payment submission failed');
         }
-    };};
+    };
 
     // PayPal Success Handler
     const handlePayPalSuccess = async (details) => {
