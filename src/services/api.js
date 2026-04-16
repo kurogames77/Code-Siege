@@ -731,43 +731,24 @@ export const coursesAPI = {
 };
 
 // ============================================
-// PAYMONGO API
+// PAYMENTS API (Manual Top-ups)
 // ============================================
 
-export const paymongoAPI = {
-    // Unified Direct Flow (Payment Intent + Attachment)
-    // Works for both 'gcash' and 'paymaya'
-    createPaymentIntent: (amount, description, paymentMethod, redirect) => apiRequest('/paymongo/create-payment-intent', {
+export const paymentsAPI = {
+    // Submit manual top-up receipt
+    submitManualPayment: (userId, amount, gems, method, referenceNumber) => apiRequest('/payments/manual', {
         method: 'POST',
-        body: JSON.stringify({
-            amount,
-            description,
-            paymentMethod, // 'gcash' or 'maya'
-            redirectUrls: {
-                success: redirect.success,
-                failed: redirect.failed
-            }
-        })
+        body: JSON.stringify({ userId, amount, gems, method, referenceNumber })
     }),
 
-    getPaymentIntent: (id) => apiRequest(`/paymongo/payment-intent/${id}`),
+    // Admin: get manual payments
+    getManualPayments: (status) => apiRequest(`/payments/manual${status ? `?status=${status}` : ''}`),
 
-    // Checkout Session (Reliable fallback for GCash)
-    createCheckoutSession: (amount, description, redirect, userData, method) => apiRequest('/paymongo/create-checkout-session', {
-        method: 'POST',
-        body: JSON.stringify({
-            amount,
-            description,
-            successUrl: redirect.success,
-            cancelUrl: redirect.failed,
-            name: userData?.name,
-            email: userData?.email,
-            phone: userData?.phone,
-            method // 'gcash'
-        })
+    // Admin: update payment status (approved/rejected)
+    updatePaymentStatus: (id, status, adminId) => apiRequest(`/payments/manual/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, adminId })
     }),
-
-    getCheckoutSession: (id) => apiRequest(`/paymongo/checkout-session/${id}`),
 };
 
 export default {
@@ -783,5 +764,5 @@ export default {
     ai: aiAPI,
     courses: coursesAPI,
     algorithm: algorithmAPI,
-    paymongo: paymongoAPI,
+    payments: paymentsAPI,
 };

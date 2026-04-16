@@ -5,9 +5,9 @@ import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import gemIcon from '../../assets/gem.png';
 import paypalIcon from '../../assets/PaypalIcon.png';
 import gcashIcon from '../../assets/GcashIcon.png';
-import mayaIcon from '../../assets/MayaIcon.png';
+import gcashQr from '../../assets/gcash-qr.png';
 import useSound from '../../hooks/useSound';
-import { userAPI, paymongoAPI } from '../../services/api';
+import { userAPI, paymentsAPI } from '../../services/api';
 import { useUser } from '../../contexts/UserContext';
 import { useToast } from '../../contexts/ToastContext';
 // PayPal Client ID from env
@@ -37,7 +37,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
     const resetState = () => {
         setStep('select');
         setSelectedPackage(null);
-        setFormData({ accountNumber: '', password: '', mpin: '' });
+        setFormData({ accountNumber: '', password: '', mpin: '', referenceNumber: '' });
         setError('');
     };
 
@@ -59,70 +59,45 @@ const TopUpModal = ({ isOpen, onClose }) => {
             setFormData(prev => ({ ...prev, accountNumber: '09' }));
         }
     };
-
-    // Standard handler for Non-PayPal (GCash/Maya)
-    const handlePayMongoPayment = async () => {
+    // Manual payment handler for GCash
+    const handleManualPayment = async () => {
         playClick();
+        if (selectedMethod !== 'gcash') return;
+        
+        if (!formData.referenceNumber || !/^\d{13}$/.test(formData.referenceNumber)) {
+            setError('Please enter a valid 13-digit GCash Reference Number.');
+            if (toastError) toastError('Invalid Reference Number');
+            return;
+        }
+
         setStep('processing');
         setError('');
 
         try {
-            const amountInCentavos = selectedPackage.numericPrice * 100;
-            const description = `${selectedPackage.gems} Gems Application Purchase`;
-            const redirectUrls = {
-                success: `${window.location.origin}/payment-callback`,
-                failed: `${window.location.origin}/payment-callback`
-            };
+            const totalGems = selectedPackage.gems + (selectedPackage.bonus || 0) + (selectedPackage.prevBonus || 0);
 
-            let checkoutUrl = '';
-            let paymentMethodData = {
-                amount: amountInCentavos,
-                description: description,
-                gems: selectedPackage.gems,
-                bonus: selectedPackage.bonus,
-                prevBonus: selectedPackage.prevBonus,
-                method: selectedMethod
-            };
-
-            // Unified Checkout Flow for all methods (GCash, Maya, etc.)
-            // This ensures we use the robust PayMongo Checkout page which we confirmed works.
-
-            // Map 'maya' to 'paymaya' for API consistency if needed, though backend handles it
-            const apiMethod = selectedMethod === 'maya' ? 'paymaya' : selectedMethod;
-
-            const response = await paymongoAPI.createCheckoutSession(
-                amountInCentavos,
-                description,
-                redirectUrls,
-                { name: user?.name, email: user?.email },
-                apiMethod
+            await paymentsAPI.submitManualPayment(
+                user.id,
+                selectedPackage.numericPrice,
+                totalGems,
+                'gcash',
+                formData.referenceNumber
             );
 
-            if (response.data && response.data.attributes && response.data.attributes.checkout_url) {
-                checkoutUrl = response.data.attributes.checkout_url;
-                paymentMethodData.sessionId = response.data.id;
-                paymentMethodData.flow = 'checkout';
-            } else {
-                throw new Error(`Invalid ${selectedMethod} Checkout response`);
+            if (success) {
+                success('Payment Submitted! Waiting for verification.');
             }
 
-            // Store pending payment details
-            localStorage.setItem('pending_payment', JSON.stringify(paymentMethodData));
-
-            // Show toast & redirect
-            if (info) info(`Redirecting to ${selectedMethod === 'gcash' ? 'GCash' : 'Maya'} payment...`);
-            setTimeout(() => {
-                window.location.href = checkoutUrl;
-            }, 1000);
-
+            setStep('success_manual');
+            setTimeout(() => handleClose(), 5000);
         } catch (err) {
-            console.error("PayMongo Payment failed:", err);
-            setError('Failed to initialize payment. Please try again.');
+            console.error("Manual payment failed:", err);
+            setError(err.response?.data?.error || 'Failed to submit payment. Are you sure you haven\'t submitted this reference number already?');
             setStep('input');
             if (typeof playError === 'function') playError();
-            if (toastError) toastError('Payment initialization failed');
+            if (toastError) toastError('Payment submission failed');
         }
-    };
+    };};
 
     // PayPal Success Handler
     const handlePayPalSuccess = async (details) => {
@@ -160,8 +135,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
 
     const paymentMethods = [
         { id: 'gcash', label: 'GCash', color: 'blue', icon: <img src={gcashIcon} alt="GCash" className="w-10 h-10 object-contain" /> },
-        { id: 'paypal', label: 'PayPal', color: 'indigo', icon: <img src={paypalIcon} alt="PayPal" className="w-10 h-10 object-contain" /> },
-        { id: 'maya', label: 'Maya', color: 'green', icon: <img src={mayaIcon} alt="Maya" className="w-10 h-10 object-contain" /> },
+        { id: 'paypal', label: 'PayPal', color: 'indigo', icon: <img src={paypalIcon} alt="PayPal" className="w-10 h-10 object-contain" /> }
     ];
 
     const gemPackages = [
@@ -525,22 +499,46 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                                     )}
                                                 </div>
                                             ) : (
-                                                <div className="space-y-6">
-                                                    <div className="bg-white/5 p-4 rounded-xl border border-white/10 mb-4">
-                                                        <p className="text-xs text-slate-400 mb-2 font-bold uppercase tracking-widest">Secure Payment</p>
-                                                        <p className="text-[10px] text-slate-500">
-                                                            You will be redirected to a secure <strong>PayMongo Checkout Page</strong>.
-                                                            <br />Complete your payment there to receive your gems.
+                                                <div className="space-y-4">
+                                                    <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                                                        <p className="text-xs text-slate-400 mb-2 font-bold uppercase tracking-widest text-center">Scan to Pay</p>
+                                                        <div className="flex justify-center mb-4">
+                                                            <div className="p-2 bg-white rounded-xl">
+                                                                <img src={gcashQr} alt="GCash QR Code" className="w-48 h-48 object-contain rounded-lg" />
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-[10px] text-slate-500 text-center mb-4">
+                                                            Scan the QR code above with your GCash app and pay exactly <strong>{selectedPackage.price}</strong>.<br />
+                                                            After paying, enter the <strong>13-digit Reference Number</strong> from your receipt below.
                                                         </p>
+                                                        
+                                                        {error && (
+                                                            <div className="bg-rose-500/10 border border-rose-500/50 rounded-lg p-3 mb-4">
+                                                                <p className="text-xs text-rose-400 font-bold text-center">{error}</p>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="relative">
+                                                            <input
+                                                                type="text"
+                                                                value={formData.referenceNumber || ''}
+                                                                onChange={(e) => setFormData({ ...formData, referenceNumber: e.target.value.replace(/\D/g, '').slice(0, 13) })}
+                                                                placeholder="e.g. 0001234567890"
+                                                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-center font-bold tracking-widest focus:outline-none focus:border-blue-500 transition-colors"
+                                                            />
+                                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">
+                                                                {(formData.referenceNumber || '').length}/13
+                                                            </div>
+                                                        </div>
                                                     </div>
 
                                                     <button
                                                         onClick={() => {
-                                                            handlePayMongoPayment();
+                                                            handleManualPayment();
                                                         }}
                                                         className={`w-full py-4 rounded-xl bg-${themeColor}-600 hover:bg-${themeColor}-500 text-white font-black uppercase tracking-widest shadow-lg shadow-${themeColor}-600/20 active:scale-95 transition-all flex items-center justify-center gap-2`}
                                                     >
-                                                        Proceed to {selectedMethod === 'gcash' ? 'GCash' : 'Maya'} <span className="opacity-50">|</span> {selectedPackage.price}
+                                                        Submit Reference Number
                                                     </button>
                                                 </div>
                                             )}
@@ -578,6 +576,35 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                     </h3>
                                     <div className="bg-white/5 border border-white/10 rounded-2xl px-8 py-4 flex flex-col items-center">
                                         <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Total Credited</span>
+                                        <div className="flex items-center gap-2">
+                                            <img src={gemIcon} alt="Gems" className="w-6 h-6" />
+                                            <span className="text-2xl font-black text-white tracking-widest">
+                                                {selectedPackage.gems + (selectedPackage.bonus || 0)} GEMS
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* VIEW: SUCCESS MANUAL */}
+                            {step === 'success_manual' && (
+                                <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
+                                    <motion.div
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        className={`w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center shadow-2xl shadow-blue-500/50 mb-8`}
+                                    >
+                                        <ShieldCheck className="w-10 h-10 text-white" />
+                                    </motion.div>
+                                    <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter mb-4">
+                                        Payment Submitted!
+                                    </h3>
+                                    <p className="text-sm text-slate-400 mb-6 max-w-sm">
+                                        Your reference number has been received. Our team will verify your transaction shortly. 
+                                        Once approved, your gems will be automatically added to your account!
+                                    </p>
+                                    <div className="bg-white/5 border border-white/10 rounded-2xl px-8 py-4 flex flex-col items-center">
+                                        <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Expected Gems</span>
                                         <div className="flex items-center gap-2">
                                             <img src={gemIcon} alt="Gems" className="w-6 h-6" />
                                             <span className="text-2xl font-black text-white tracking-widest">

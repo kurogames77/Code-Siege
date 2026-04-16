@@ -12,6 +12,7 @@ import SystemLogs from '../components/admin/SystemLogs';
 import StudentCodesManager from '../components/admin/StudentCodesManager';
 import StudentManagement from '../components/admin/StudentManagement';
 import GuestManagement from '../components/admin/GuestManagement';
+import ManualPayments from '../components/admin/ManualPayments';
 
 const AdminPage = () => {
     const { user, isAuthenticated, loading } = useUser();
@@ -57,6 +58,8 @@ const AdminPage = () => {
                 return <StudentCodesManager theme={theme} />;
             case 'guests':
                 return <GuestManagement theme={theme} />;
+            case 'payments':
+                return <ManualPayments theme={theme} />;
             case 'logs':
                 return <SystemLogs theme={theme} />;
             case 'security':

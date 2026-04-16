@@ -14,7 +14,7 @@ import certificatesRoutes from './api/certificates.js';
 import aiRoutes from './api/ai.js';
 import coursesRoutes from './api/courses.js';
 import algorithmRoutes from './api/algorithm.js';
-import paymongoRoutes from './api/paymongo.js';
+import paymentsRoutes from './api/payments.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -37,7 +37,7 @@ app.use('/api/certificates', certificatesRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/courses', coursesRoutes);
 app.use('/api/algorithm', algorithmRoutes);
-app.use('/api/paymongo', paymongoRoutes);
+app.use('/api/payments', paymentsRoutes);
 
 // Health check
 app.get('/', (req, res) => {
