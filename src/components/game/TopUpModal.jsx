@@ -505,11 +505,12 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                                     <div className="bg-white/5 p-4 rounded-xl border border-white/10">
                                                         <p className="text-xs text-slate-400 mb-2 font-bold uppercase tracking-widest text-center">Scan to Pay</p>
                                                         <div className="flex justify-center mb-4">
-                                                            <div className="w-52 h-52 bg-white rounded-xl overflow-hidden flex items-center justify-center shadow-lg border-2 border-white/20 p-2">
+                                                            <div className="w-52 h-52 bg-white rounded-xl overflow-hidden shadow-lg border-2 border-white/20">
                                                                 <img 
                                                                     src={gcashQr} 
                                                                     alt="GCash QR Code" 
-                                                                    className="w-full h-full object-contain" 
+                                                                    className="w-full h-full object-cover"
+                                                                    style={{ objectPosition: '50% 38%' }}
                                                                 />
                                                             </div>
                                                         </div>
