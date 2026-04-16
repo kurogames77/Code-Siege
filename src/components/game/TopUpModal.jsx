@@ -507,7 +507,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                                                 <img 
                                                                     src={gcashQr} 
                                                                     alt="GCash QR Code" 
-                                                                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[46%] w-[260%] max-w-none" 
+                                                                    className="absolute top-1/2 left-1/2 -translate-x-[50%] -translate-y-[47%] w-[200%] max-w-none" 
                                                                 />
                                                             </div>
                                                         </div>
