@@ -166,15 +166,7 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
         const isIntermediate = mode.toLowerCase().includes('intermediate');
         const syntaxRules = LANGUAGE_SYNTAX_RULES[language] || `- Use proper syntax conventions for ${language}. Follow the language's official style guide.`;
 
-        // Block count ranges scaled by mode
-        const blockCountRange = isBeginner
-            ? 'between 7 and 10'
-            : isIntermediate
-                ? 'between 8 and 12'
-                : 'between 6 and 10';
-
-        // Number of distractor/dummy blocks
-        const dummyBlockCount = isBeginner ? 3 : isIntermediate ? 2 : 2;
+        const isAdvance = mode.toLowerCase().includes('advance');
 
         const prompt = `
         You are an expert university-level coding instructor and puzzle designer.
@@ -225,73 +217,10 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
             "hints": [
                 { "text": "Hint 1", "cost": 10 },
                 { "text": "Hint 2", "cost": 20 }
-            ],
-            "rewards": {
-                "exp": 100,
-                "coins": 0
-            },
-            "initialBlocks": ${isAdvance ? "[]" : `[
-                { 
-                    "id": "b1", 
-                    "content": "keyword/code", 
-                    "type": "function|value|control", 
-                    "color": "bg-red-500|bg-purple-500|bg-cyan-500",
-                    "connectors": { "top": 1, "right": 1, "bottom": 2, "left": 2 } 
-                }
-            ]`},
-            "correctSequence": ${isAdvance ? "[]" : `["b1", "b2", "b3"]`}
+            ]
         }
         
-        ${isAdvance ? `
-        IMPORTANT: For 'Advance' mode, this is a PURE CODE challenge. 
-        - DO NOT generate 'initialBlocks'. Return an empty array [].
-        - DO NOT generate 'correctSequence'. Return an empty array [].
-        - Focus on 'initialCode', 'solution', and 'expectedOutput'.
-        ` : `
-        BLOCK COUNT: Provide ${blockCountRange} CORRECT blocks (in 'correctSequence') PLUS ${dummyBlockCount} DUMMY/distractor blocks.
-        Total blocks in 'initialBlocks' = correct blocks + ${dummyBlockCount} dummy blocks.
-
-        CRITICAL BLOCK CONTENT RULES:
-        - Each block's 'content' must be a syntactically valid FRAGMENT of ${language} code.
-        - When blocks are concatenated in 'correctSequence' order, they MUST form a complete, runnable program that produces the 'expectedOutput'.
-        - Do NOT split mid-keyword (e.g., "pri" + "nt" is WRONG).
-        - Do NOT split mid-string-literal (e.g., '"Hel' + 'lo"' is WRONG).
-        - Split at LOGICAL code boundaries:
-          * Function name + opening paren: "print(" | arguments: '"Hello")'
-          * Assignment left side: "x = " | right side: "5"
-          * For multi-line solutions, each LINE should be its own block
-          * Operators and their operands can be separate blocks: "x + " | "y"
-        - Example for a 7-block Python solution:
-          Block b1: 'x = 10'  |  Block b2: '\\ny = 20'  |  Block b3: '\\nresult = x + y'  |  Block b4: '\\nprint('  |  Block b5: '"Sum: " + '  |  Block b6: 'str(result)'  |  Block b7: ')'
-        - Each block should be meaningful. Avoid blocks that are just a single character.
-
-        CRITICAL: CONNECTOR INTERLOCKING RULES (connectors: 1=Tab/Out, 2=Slot/In):
-        These connectors determine how puzzle pieces physically interlock. You MUST design them so that:
-
-        **RULE 1 — Sequential blocks must have COMPLEMENTARY connectors:**
-        - If Block A is followed by Block B in correctSequence:
-          Block A 'right' MUST be 1 (Tab) AND Block B 'left' MUST be 2 (Slot).
-        - This creates a physical lock: Tab fits into Slot.
-
-        **RULE 2 — ALL sides must have connectors (never 0):**
-        - Every side (top, right, bottom, left) must be either 1 or 2.
-        - For the FIRST block in sequence: left = 1 (decorative tab edge).
-        - For the LAST block in sequence: right = 2 (decorative slot edge).
-        - Top and Bottom: Follow a PATTERN. For correct blocks, alternate: odd-indexed blocks get top=1,bottom=2 and even-indexed blocks get top=2,bottom=1.
-
-        **RULE 3 — Dummy blocks must have WRONG connectors:**
-        - Dummy blocks must NOT have matching left=2 where a correct block expects right=1 on the adjacent position.
-        - Give dummy blocks connectors that look plausible but DON'T interlock with the correct sequence.
-        - Example: If correct block B3 has right=1, then next correct block B4 has left=2. A dummy block pretending to fit after B3 should have left=1 (Tab, not Slot — so it physically won't connect).
-
-        **RULE 4 — Dummy blocks must be believable distractors:**
-        - Each dummy block should contain plausible but WRONG code (e.g., wrong function name, wrong syntax, similar but incorrect variable).
-        - Give each dummy a unique ID like "dummy1", "dummy2", "dummy3".
-        - Dummies must NOT appear in 'correctSequence'.
-        `}
-
         - Ensure the 'id' is just the number (1 to 10).
-        - REWARDS MUST BE STRICTLY: { "exp": 100, "coins": 0 }. Do not scale rewards.
         - Ensure difficulty scales slightly with each level.
         - ALL code in 'solution' MUST follow the ${language} syntax rules listed above exactly.
         `;
@@ -315,7 +244,42 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
         const cleanText = text.substring(startIdx, endIdx + 1);
 
         try {
-            const levels = JSON.parse(cleanText);
+            let levels = JSON.parse(cleanText);
+
+            // Post-process the blocks on the server to prevent AI hallucination and drastically improve speeds
+            if (!isAdvance) {
+                const { generateBlocksFromSolution } = await import('../utils/blockGenerator.js');
+                levels = levels.map(level => {
+                    if (level.solution) {
+                        try {
+                            const blockData = generateBlocksFromSolution(level.solution, mode);
+                            if (blockData) {
+                                level.initialBlocks = blockData.initialBlocks || [];
+                                level.correctSequence = blockData.correctSequence || [];
+                            } else {
+                                level.initialBlocks = [];
+                                level.correctSequence = [];
+                            }
+                        } catch (e) {
+                            console.error(`Block generation failed for level ${level.id}:`, e);
+                            level.initialBlocks = [];
+                            level.correctSequence = [];
+                        }
+                    }
+                    
+                    // Attach default rewards since AI no longer does it
+                    level.rewards = { exp: 100, coins: 0 };
+                    return level;
+                });
+            } else {
+                levels = levels.map(level => {
+                    level.initialBlocks = [];
+                    level.correctSequence = [];
+                    level.rewards = { exp: 100, coins: 0 };
+                    return level;
+                });
+            }
+
             res.json({ levels, mode, difficulty });
         } catch (parseError) {
             console.error('JSON Parse Error:', parseError);

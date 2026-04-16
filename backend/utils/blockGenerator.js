@@ -237,9 +237,16 @@ export function generateBlocksFromSolution(solution, courseMode) {
     // Correct sequence is the order of real blocks
     const correctSequence = blocks.map(b => b.id);
 
-    // Add a dummy distractor block
-    const dummy = generateDistractorBlock(allFragments, 1);
-    blocks.push(dummy);
+    // Determine dummy block count based on mode
+    const isBeginner = courseMode?.toLowerCase().includes('beginner');
+    const isIntermediate = courseMode?.toLowerCase().includes('intermediate');
+    const dummyCount = isBeginner ? 3 : isIntermediate ? 2 : 2;
+
+    // Add dummy distractor blocks
+    for (let i = 0; i < dummyCount; i++) {
+        const dummy = generateDistractorBlock(allFragments, blockIdCounter++);
+        blocks.push(dummy);
+    }
 
     // Assign connectors to all blocks
     assignConnectors(blocks, correctSequence);
