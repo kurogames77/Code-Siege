@@ -68,11 +68,29 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
         const idx = Math.abs(hash) % COLOR_PALETTE.length;
         return COLOR_PALETTE[idx];
     }, [id]);
-    // Dynamic width based on content to prevent cutting off code
-    const width = Math.max(140, Math.min(350, content.length * 8.5 + 40));
+    // Fixed width to match snapping/chain detection constants (BLOCK_WIDTH=140)
+    const width = 140;
     const height = 48;
     const tabRadius = 10;
     const tabDepth = 12;
+
+    // Smart font size: scale down progressively for longer content
+    const getFontSize = (text) => {
+        const len = text.length;
+        if (len <= 10) return 13;
+        if (len <= 16) return 11;
+        if (len <= 22) return 9.5;
+        if (len <= 30) return 8;
+        return 7;
+    };
+
+    // Truncate display text to fit within the block
+    const getDisplayText = (text) => {
+        const len = text.length;
+        if (len <= 22) return text;
+        if (len <= 30) return text;
+        return text.substring(0, 28) + '…';
+    };
 
     // Generate SVG Path with "Cooler" Angular Grooves or Simple Rect
     const generatePath = () => {
@@ -140,12 +158,13 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
             {...listeners}
             {...attributes}
             className="puzzle-block absolute cursor-grab active:cursor-grabbing select-none group"
+            title={content}
         >
             <svg
                 width={width + tabDepth * 2}
                 height={height + tabDepth * 2}
                 viewBox={`-${tabDepth} -${tabDepth} ${width + tabDepth * 2} ${height + tabDepth * 2}`}
-            className="drop-shadow-lg group-hover:drop-shadow-2xl transition-all duration-300"
+                className="drop-shadow-lg group-hover:drop-shadow-2xl transition-all duration-300"
                 style={isGlowing ? { filter: 'drop-shadow(0 0 12px rgba(34,211,238,0.8)) drop-shadow(0 0 24px rgba(34,211,238,0.4))' } : {}}
             >
                 <defs>
@@ -182,11 +201,11 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
                     clipPath={`url(#clip-${id})`}
                     className="font-mono font-bold pointer-events-none"
                     style={{
-                        fontSize: content.length > 40 ? '10px' : '13px',
+                        fontSize: `${getFontSize(content)}px`,
                         filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))'
                     }}
                 >
-                    {content.length > 50 ? content.substring(0, 48) + '…' : content}
+                    {getDisplayText(content)}
                 </text>
             </svg>
         </div>

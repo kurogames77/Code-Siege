@@ -96,11 +96,14 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
 
             // Handle Blocks
             if (puzzle.initialBlocks && puzzle.initialBlocks.length > 0) {
+                const COLS = 3;
+                const COL_SPACING = 200;
+                const ROW_SPACING = 90;
                 const initialized = puzzle.initialBlocks.map((b, i) => ({
                     ...b,
                     position: {
-                        x: 50 + (i % 2) * 200,
-                        y: 100 + Math.floor(i / 2) * 100
+                        x: 40 + (i % COLS) * COL_SPACING + (Math.random() * 30 - 15),
+                        y: 80 + Math.floor(i / COLS) * ROW_SPACING + (Math.random() * 20 - 10)
                     }
                 }));
                 setBlocks(initialized);
