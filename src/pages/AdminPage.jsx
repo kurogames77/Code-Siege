@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, CreditCard, Bell } from 'lucide-react';
 
 import AdminDashboard from '../components/admin/AdminDashboard';
 import InstructorManagement from '../components/admin/InstructorManagement';
@@ -89,8 +89,36 @@ const AdminPage = () => {
 
             {/* Main Content */}
             <main className="flex-1 flex flex-col relative z-10 overflow-hidden">
-                {/* Header with Theme Toggle */}
-                <header className={`h-20 flex items-center justify-end px-12 z-20 transition-colors duration-500 ${theme === 'dark' ? 'bg-transparent' : 'bg-white/50 backdrop-blur-md border-b border-slate-200'}`}>
+                {/* Header with Tool Icons and Theme Toggle */}
+                <header className={`h-20 flex items-center justify-end px-12 gap-4 z-20 transition-colors duration-500 ${theme === 'dark' ? 'bg-transparent' : 'bg-white/50 backdrop-blur-md border-b border-slate-200'}`}>
+                    
+                    {/* Payment Verification Icon */}
+                    <button
+                        onClick={() => setActiveTab('payments')}
+                        className={`relative p-2.5 rounded-xl border transition-all duration-300 flex items-center justify-center group/payment ${
+                            activeTab === 'payments'
+                                ? (theme === 'dark' ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.2)]' : 'bg-emerald-50 border-emerald-500 text-emerald-600')
+                                : (theme === 'dark' ? 'bg-slate-900 border-white/5 text-slate-400 hover:text-emerald-400 hover:border-emerald-400/50 hover:shadow-[0_0_15px_rgba(52,211,153,0.2)]' : 'bg-white border-slate-200 text-slate-500 hover:text-emerald-600 hover:border-emerald-500 shadow-sm')
+                        }`}
+                        title="Payment Verification"
+                    >
+                        <CreditCard className={`w-5 h-5 transition-transform duration-500 ${activeTab === 'payments' ? '' : 'group-hover/payment:scale-110'}`} />
+                    </button>
+
+                    {/* Actions Notification Icon */}
+                    <button
+                        className={`relative p-2.5 rounded-xl border transition-all duration-300 flex items-center justify-center group/notif ${theme === 'dark'
+                            ? 'bg-slate-900 border-white/5 text-slate-400 hover:text-cyan-400 hover:border-cyan-400/50 hover:shadow-[0_0_15px_rgba(6,182,212,0.2)]'
+                            : 'bg-white border-slate-200 text-slate-500 hover:border-cyan-500 hover:text-cyan-500 shadow-sm'
+                            }`}
+                        title="Notifications"
+                    >
+                        <Bell className="w-5 h-5 group-hover/notif:scale-110 transition-transform duration-500" />
+                        <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-slate-900 animate-ping" />
+                        <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-slate-900" />
+                    </button>
+
+                    {/* Theme Toggle Button */}
                     <button
                         onClick={toggleTheme}
                         className={`p-2.5 rounded-xl border transition-all duration-300 flex items-center justify-center group/theme ${theme === 'dark'

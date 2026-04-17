@@ -405,7 +405,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                 >
 
 
-                                    <div className="flex-1 flex items-center gap-12 mt-8">
+                                    <div className="flex-1 flex items-stretch gap-12 mt-8">
                                         {/* Order Summary Left */}
                                         <div className="flex-1 bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col items-center text-center relative overflow-hidden">
                                             <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-${themeColor}-500 to-transparent`} />
