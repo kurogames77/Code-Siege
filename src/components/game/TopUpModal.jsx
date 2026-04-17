@@ -172,7 +172,6 @@ const TopUpModal = ({ isOpen, onClose }) => {
             isBonus: true,
             isRecommended: false,
             tag: 'BEST VALUE',
-            isFullWidth: true,
             color: 'from-yellow-500/20 to-amber-700/20',
             borderColor: 'border-yellow-500/50'
         }
@@ -211,7 +210,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
         <PayPalWrapper>
             <AnimatePresence>
                 {isOpen && (
-                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md font-galsb">
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/90 font-galsb">
                         <motion.div
                             variants={containerVariants}
                             initial="hidden"
@@ -274,14 +273,13 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                             initial="hidden"
                                             animate="visible"
                                             variants={containerVariants}
-                                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                                            className="grid grid-cols-3 gap-6"
                                         >
                                             {gemPackages.map((pkg) => (
                                                 <motion.div
                                                     key={pkg.id}
                                                     variants={itemVariants}
-                                                    className={`relative group bg-gradient-to-br ${pkg.color} border ${pkg.borderColor} rounded-3xl p-6 flex flex-col items-center text-center transition-all hover:scale-[1.02] hover:shadow-xl ${pkg.isFullWidth ? 'lg:col-span-3 lg:flex-row lg:justify-between lg:px-12' : ''
-                                                        }`}
+                                                    className={`relative group bg-gradient-to-br ${pkg.color} border ${pkg.borderColor} rounded-3xl p-6 flex flex-col items-center text-center transition-colors hover:shadow-xl`}
                                                 >
                                                     {pkg.tag && (
                                                         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-yellow-400 text-black text-[10px] font-black px-4 py-1 rounded-full uppercase tracking-widest shadow-lg z-20">
@@ -289,23 +287,21 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                                         </div>
                                                     )}
 
-                                                    <div className={`relative mb-4 ${pkg.isFullWidth ? 'lg:mb-0 lg:order-1' : ''}`}>
-                                                        <div className="absolute inset-0 bg-white/20 blur-2xl rounded-full scale-0 group-hover:scale-100 transition-transform duration-500" />
+                                                    <div className="relative mb-4">
                                                         <img
                                                             src={gemIcon}
                                                             alt="Gems"
-                                                            className={`object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transition-transform group-hover:scale-110 group-hover:-rotate-3 ${pkg.isFullWidth ? 'w-16 h-16' : 'w-16 h-16'
-                                                                }`}
+                                                            className="w-16 h-16 object-contain transition-transform group-hover:scale-110 group-hover:-rotate-3"
                                                         />
                                                     </div>
 
-                                                    <div className={`${pkg.isFullWidth ? 'lg:text-left lg:order-2 lg:flex-1 lg:pl-8' : ''}`}>
+                                                    <div>
                                                         <h3 className="text-xl font-black text-white italic tracking-tighter mb-1">
                                                             {pkg.gems} <span className="text-sm not-italic font-bold text-slate-300">GEM</span>
                                                         </h3>
 
                                                         {(pkg.bonus > 0 || pkg.prevBonus > 0) && (
-                                                            <div className="flex flex-col items-center gap-0.5 mb-4 lg:items-start transition-all">
+                                                            <div className="flex flex-col items-center gap-0.5 mb-4">
                                                                 {pkg.prevBonus && (
                                                                     <span className="text-[10px] text-slate-500 line-through font-bold">
                                                                         + BONUS {pkg.prevBonus}
@@ -318,13 +314,10 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                                         )}
                                                     </div>
 
-                                                    <div className={`${pkg.isFullWidth ? 'lg:order-3' : 'w-full mt-auto'}`}>
+                                                    <div className="w-full mt-auto">
                                                         <button
                                                             onClick={() => handlePackageSelect(pkg)}
-                                                            className={`w-full py-3 rounded-xl border border-white/20 font-black text-white uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-lg ${pkg.isFullWidth
-                                                                ? 'bg-yellow-500 border-yellow-400 hover:bg-yellow-400 text-black px-12'
-                                                                : 'bg-white/10 hover:bg-white/20'
-                                                                }`}
+                                                            className="w-full py-3 rounded-xl border border-white/20 font-black text-white uppercase tracking-widest transition-colors hover:bg-white/20 active:scale-95 shadow-lg bg-white/10"
                                                         >
                                                             Buy {pkg.price}
                                                         </button>
@@ -350,7 +343,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                         {/* Order Summary Left */}
                                         <div className="flex-1 bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col items-center text-center relative overflow-hidden">
                                             <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-${themeColor}-500 to-transparent`} />
-                                            <img src={gemIcon} alt="Gems" className="w-20 h-20 object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)] mb-6 animate-pulse" />
+                                            <img src={gemIcon} alt="Gems" className="w-20 h-20 object-contain mb-6" />
 
                                             <h3 className="text-2xl font-black text-white italic tracking-tighter mb-2">
                                                 {selectedPackage.gems + (selectedPackage.bonus || 0)} <span className="text-lg not-italic text-slate-400">GEMS</span>
