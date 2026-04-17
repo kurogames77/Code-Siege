@@ -6,6 +6,7 @@ import gemIcon from '../../assets/gem.png';
 import paypalIcon from '../../assets/PaypalIcon.png';
 import gcashIcon from '../../assets/GcashIcon.png';
 import gcashQr from '../../assets/gcash-qr.png';
+import gcashQr1 from '../../assets/gcash-qr-1.png';
 import useSound from '../../hooks/useSound';
 import { userAPI, paymentsAPI } from '../../services/api';
 import { useUser } from '../../contexts/UserContext';
@@ -337,9 +338,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                     animate={{ opacity: 1, x: 0 }}
                                     className="flex-1 flex flex-col px-12 pb-12 relative"
                                 >
-
-
-                                    <div className="flex-1 flex items-center gap-12 mt-8">
+                                    <div className="flex-1 flex items-start gap-12 mt-8">
                                         {/* Order Summary Left */}
                                         <div className="flex-1 bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col items-center text-center relative overflow-hidden">
                                             <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-${themeColor}-500 to-transparent`} />
@@ -439,13 +438,21 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                                     <div className="bg-white/5 p-4 rounded-xl border border-white/10">
                                                         <p className="text-xs text-slate-400 mb-2 font-bold uppercase tracking-widest text-center">Scan to Pay</p>
                                                         <div className="flex justify-center mb-4">
-                                                            <div className="w-52 h-52 bg-white rounded-xl overflow-hidden shadow-lg border-2 border-white/20">
-                                                                <img 
-                                                                    src={gcashQr} 
-                                                                    alt="GCash QR Code" 
-                                                                    className="w-full h-full object-cover"
-                                                                    style={{ objectPosition: '50% 22%' }}
-                                                                />
+                                                            <div className={`w-52 h-52 bg-white rounded-xl overflow-hidden shadow-lg border-2 border-white/20 ${selectedPackage.id === 0 ? 'flex items-center justify-center p-2' : ''}`}>
+                                                                {selectedPackage.id === 0 ? (
+                                                                    <img 
+                                                                        src={gcashQr1} 
+                                                                        alt="GCash QR Code Php 1" 
+                                                                        className="w-full h-full object-contain rounded-lg"
+                                                                    />
+                                                                ) : (
+                                                                    <img 
+                                                                        src={gcashQr} 
+                                                                        alt="GCash QR Code" 
+                                                                        className="w-full h-full object-cover"
+                                                                        style={{ objectPosition: '50% 22%' }}
+                                                                    />
+                                                                )}
                                                             </div>
                                                         </div>
                                                         <p className="text-[10px] text-slate-500 text-center mb-4">
