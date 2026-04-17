@@ -25,6 +25,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, theme = 'dark' }) => {
         { id: 'codes', label: 'Student Codes', icon: Key },
         { id: 'guests', label: 'Guest Management', icon: UserSquare },
         { id: 'logs', label: 'System Logs', icon: Database },
+        { id: 'payments', label: 'Payments', icon: CreditCard },
         { id: 'security', label: 'Security Protocol', icon: ShieldAlert },
     ];
 
