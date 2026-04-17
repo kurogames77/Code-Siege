@@ -238,12 +238,29 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                     </div>
                                 </div>
 
-                                <button
-                                    onClick={handleClose}
-                                    className="w-12 h-12 flex items-center justify-center bg-white/5 hover:bg-rose-500 hover:border-rose-500 border border-white/5 rounded-full transition-all duration-300 hover:rotate-180 group"
-                                >
-                                    <X className="w-6 h-6 text-slate-400 group-hover:text-white" />
-                                </button>
+                                <div className="flex items-center gap-8">
+                                    {step === 'input' && (
+                                        <div className="flex items-center gap-6">
+                                            <button
+                                                onClick={() => { playCancel(); setStep('select'); setSelectedPackage(null); }}
+                                                className="flex items-center gap-2 text-slate-400 hover:text-white text-[10px] font-bold uppercase tracking-widest transition-colors group"
+                                            >
+                                                <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to Packages
+                                            </button>
+
+                                            <h3 className="text-lg font-black text-white italic uppercase tracking-tighter">
+                                                {selectedMethod === 'paypal' ? 'Pay with PayPal' : `Login to ${paymentMethods.find(p => p.id === selectedMethod)?.label}`}
+                                            </h3>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        onClick={handleClose}
+                                        className="w-12 h-12 flex items-center justify-center bg-white/5 hover:bg-rose-500 hover:border-rose-500 border border-white/5 rounded-full transition-all duration-300 hover:rotate-180 group shrink-0"
+                                    >
+                                        <X className="w-6 h-6 text-slate-400 group-hover:text-white" />
+                                    </button>
+                                </div>
                             </div>
 
                             {/* VIEW: SELECT PACKAGE */}
@@ -370,19 +387,6 @@ const TopUpModal = ({ isOpen, onClose }) => {
 
                                         {/* Payment Interface Right */}
                                         <div className="flex-1 max-w-sm max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
-                                            <div className="flex items-center justify-between mb-6 sticky top-0 bg-[#0a0f1a] z-10 py-2">
-                                                <button
-                                                    onClick={() => { playCancel(); setStep('select'); setSelectedPackage(null); }}
-                                                    className="flex items-center gap-2 text-slate-400 hover:text-white text-[10px] font-bold uppercase tracking-widest transition-colors group"
-                                                >
-                                                    <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to Packages
-                                                </button>
-
-                                                <h3 className="text-lg font-black text-white italic uppercase tracking-tighter flex items-center gap-3">
-                                                    {selectedMethod === 'paypal' ? 'Pay with PayPal' : `Login to ${paymentMethods.find(p => p.id === selectedMethod)?.label}`}
-                                                </h3>
-                                            </div>
-
                                             {/* REAL PAYPAL BUTTONS */}
                                             {selectedMethod === 'paypal' ? (
                                                 <div className="w-full space-y-4">
