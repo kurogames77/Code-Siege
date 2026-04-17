@@ -8,6 +8,7 @@ import gcashIcon from '../../assets/GcashIcon.png';
 import gcashQr from '../../assets/gcash-qr.png';
 import gcashQr1 from '../../assets/gcash-qr-1.png';
 import gcashQr5 from '../../assets/gcash-qr-5.png';
+import gcashQr10 from '../../assets/gcash-qr-10.png';
 import useSound from '../../hooks/useSound';
 import { userAPI, paymentsAPI } from '../../services/api';
 import { useUser } from '../../contexts/UserContext';
@@ -443,7 +444,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                                     <div className="bg-white/5 p-4 rounded-xl border border-white/10">
                                                         <p className="text-xs text-slate-400 mb-2 font-bold uppercase tracking-widest text-center">Scan to Pay</p>
                                                         <div className="flex justify-center mb-4">
-                                                            <div className={`w-52 h-52 bg-white rounded-xl overflow-hidden shadow-lg border-2 border-white/20 ${selectedPackage.id === 0 || selectedPackage.id === 1 ? 'flex items-center justify-center p-2' : ''}`}>
+                                                            <div className={`w-52 h-52 bg-white rounded-xl overflow-hidden shadow-lg border-2 border-white/20 ${[0, 1, 2].includes(selectedPackage.id) ? 'flex items-center justify-center p-2' : ''}`}>
                                                                 {selectedPackage.id === 0 ? (
                                                                     <img 
                                                                         src={gcashQr1} 
@@ -454,6 +455,12 @@ const TopUpModal = ({ isOpen, onClose }) => {
                                                                     <img 
                                                                         src={gcashQr5} 
                                                                         alt="GCash QR Code Php 5" 
+                                                                        className="w-full h-full object-contain rounded-lg"
+                                                                    />
+                                                                ) : selectedPackage.id === 2 ? (
+                                                                    <img
+                                                                        src={gcashQr10}
+                                                                        alt="GCash QR Code Php 10"
                                                                         className="w-full h-full object-contain rounded-lg"
                                                                     />
                                                                 ) : (
