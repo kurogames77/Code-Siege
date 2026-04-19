@@ -19,7 +19,7 @@ const ManualPayments = () => {
         try {
             const statusFilter = filter === 'all' ? '' : filter;
             const res = await paymentsAPI.getManualPayments(statusFilter);
-            setPayments(res.data || []);
+            setPayments(Array.isArray(res) ? res : (res.data || []));
         } catch (err) {
             console.error("Failed to fetch payments:", err);
             toastError("Failed to load manual payments");

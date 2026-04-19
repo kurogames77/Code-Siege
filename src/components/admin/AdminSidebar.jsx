@@ -1,14 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ShieldAlert, Users, Database, LogOut, Activity, AlertTriangle, X, ClipboardList, Key, GraduationCap, UserSquare, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
+import { paymentsAPI } from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AdminSidebar = ({ activeTab, setActiveTab, theme = 'dark' }) => {
     const navigate = useNavigate();
     const { logout } = useUser();
     const [showExitConfirm, setShowExitConfirm] = useState(false);
+    const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
+
+    const fetchCounts = async () => {
+        try {
+            const res = await paymentsAPI.getManualPayments('pending');
+            const data = Array.isArray(res) ? res : (res?.data || []);
+            setPendingPaymentsCount(data.length);
+        } catch (err) {
+            console.error("Failed to fetch pending payments count:", err);
+        }
+    };
+
+    useEffect(() => {
+        fetchCounts();
+        const intervalId = setInterval(fetchCounts, 15000); // 15 sec polling
+        return () => clearInterval(intervalId);
+    }, []);
 
     const handleExit = async () => {
         // Await logout to ensure backend clears last_active_at
@@ -25,7 +43,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, theme = 'dark' }) => {
         { id: 'codes', label: 'Student Codes', icon: Key },
         { id: 'guests', label: 'Guest Management', icon: UserSquare },
         { id: 'logs', label: 'System Logs', icon: Database },
-        { id: 'payments', label: 'Payments', icon: CreditCard },
+        { id: 'payments', label: 'Payments', icon: CreditCard, badgeCount: pendingPaymentsCount },
         { id: 'security', label: 'Security Protocol', icon: ShieldAlert },
     ];
 
@@ -61,6 +79,11 @@ const AdminSidebar = ({ activeTab, setActiveTab, theme = 'dark' }) => {
                             >
                                 <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400'}`} />
                                 <span className="font-bold text-sm tracking-wide uppercase whitespace-nowrap">{item.label}</span>
+                                {item.badgeCount > 0 && (
+                                    <span className={`ml-auto px-2 py-0.5 rounded-full text-[10px] font-black ${theme === 'dark' ? 'bg-rose-500 text-white' : 'bg-rose-500 text-white shadow-sm shadow-rose-500/20'}`}>
+                                        {item.badgeCount}
+                                    </span>
+                                )}
                             </button>
                         )
                     })}
