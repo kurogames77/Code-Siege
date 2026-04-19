@@ -232,8 +232,13 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
     // Helper: Construct readable code from blocks for AI context
     const constructCodeFromBlocks = (currentBlocks) => {
         if (!currentBlocks || currentBlocks.length === 0) return "";
+        
+        // Filter out dummy distractor blocks (they shouldn't be sent to AI verification)
+        const validBlocks = currentBlocks.filter(b => !b.isDummy && !b.id.startsWith('dummy'));
+        if (validBlocks.length === 0) return "";
+
         // Sort blocks by position (Y, then X) to approximate reading order
-        const sorted = [...currentBlocks].sort((a, b) => {
+        const sorted = [...validBlocks].sort((a, b) => {
             if (Math.abs(a.position.y - b.position.y) > 40) return a.position.y - b.position.y;
             return a.position.x - b.position.x;
         });
@@ -341,59 +346,49 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             chains.push(chain);
         }
 
-        // 3. Validate Chains
+        // 3. Simple String-Based Content Matching (Works Across Multiple Rows)
         let success = false;
+        
+        // Filter out dummy blocks for content matching
+        const realBlocks = blocks.filter(b => !b.isDummy && !b.id.startsWith('dummy'));
+        
+        // Sort non-dummy blocks by position (Y, then X) to approximate reading order
+        realBlocks.sort((a, b) => {
+            if (Math.abs(a.position.y - b.position.y) > 40) return a.position.y - b.position.y;
+            return a.position.x - b.position.x;
+        });
 
-        for (const chain of chains) {
-            // Sort chain by X position to determine order
-            chain.sort((a, b) => a.position.x - b.position.x);
+        // Normalize both strings for comparison (remove all whitespace so multi-line works)
+        const userContentArranged = realBlocks.map(b => b.content).join('').replace(/\s+/g, '').trim();
+        const normalizedExpected = expectedContent.join('').replace(/\s+/g, '').trim();
 
-            const chainContent = chain.map(b => b.content);
-
-            // Check if this chain matches expected content
-            if (chainContent.length === expectedContent.length) {
-                const isMatch = chainContent.every((content, index) => content === expectedContent[index]);
-                if (isMatch) {
-                    success = true;
-                    break;
-                }
-            }
+        // If the non-dummy blocks arranged on screen match the expected text, accept it!
+        if (userContentArranged === normalizedExpected) {
+            success = true;
         }
 
         // --- VALIDATION FOR CODE MODE ---
         if (mode === 'code') {
-            // Simple string match or output check?
-            // Assuming we check if the code *contains* specific keywords or matches exact solution.
-            // Ideally we'd run it, but for now we'll check against expected string or keywords.
-            // If puzzle.solution exists, check against that.
-            // Else, check if it matches expected content concatenated?
-
-            // Simplest approach: Check if user typed the contents of the correct sequence in order.
-            const expectedCode = expectedContent.join('\n'); // Assuming blocks are lines
             const normalizedInput = codeValue.replace(/\s+/g, '').trim();
-            const normalizedExpected = expectedContent.join('').replace(/\s+/g, '').trim();
-
-            // Check if input roughly matches the concatenated content of correct blocks
-            // OR check if it matches puzzle.solution if provided.
             if (normalizedInput === normalizedExpected) {
                 success = true;
             }
-            // Be more lenient or specific? 
-            // Let's assume the user just needs to type the "content" of the blocks in order.
         } else {
-            // --- EXISTING BLOCK CHAIN VALIDATION ---
-            for (const chain of chains) {
-                // Sort chain by X position to determine order
-                chain.sort((a, b) => a.position.x - b.position.x);
+            // --- EXISTING STRICT BLOCK CHAIN VALIDATION (Fallback for partial matches or strict mode) ---
+            if (!success) {
+                for (const chain of chains) {
+                    // Sort chain by X position to determine order
+                    chain.sort((a, b) => a.position.x - b.position.x);
 
-                const chainContent = chain.map(b => b.content);
+                    const chainContent = chain.map(b => b.content);
 
-                // Check if this chain matches expected content
-                if (chainContent.length === expectedContent.length) {
-                    const isMatch = chainContent.every((content, index) => content === expectedContent[index]);
-                    if (isMatch) {
-                        success = true;
-                        break;
+                    // Check if this single chain matches expected content
+                    if (chainContent.length === expectedContent.length) {
+                        const isMatch = chainContent.every((content, index) => content === expectedContent[index]);
+                        if (isMatch) {
+                            success = true;
+                            break;
+                        }
                     }
                 }
             }

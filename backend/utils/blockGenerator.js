@@ -127,6 +127,7 @@ function generateDistractorBlock(fragments, blockIdCounter) {
 
     return {
         id: `dummy${blockIdCounter}`,
+        isDummy: true,
         content: chosen.content,
         type: chosen.type,
         color: BLOCK_COLORS[chosen.type] || 'bg-slate-500',
