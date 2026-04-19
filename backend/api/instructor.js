@@ -1035,27 +1035,18 @@ router.post('/courses/:id/levels', async (req, res) => {
             };
         });
 
-        // 3. Insert new levels
-        // 3. Insert new levels strictly sequentially to ensure 'created_at' order
-        const insertedLevels = [];
-        for (const lvl of levelsToInsert) {
-            const { data, error } = await supabaseService
-                .from('course_levels')
-                .insert(lvl)
-                .select();
+        // 3. Bulk insert all levels at once (level_order handles ordering)
+        const { data: insertedLevels, error: insertError } = await supabaseService
+            .from('course_levels')
+            .insert(levelsToInsert)
+            .select();
 
-            if (error) {
-                console.error('Insert error:', error);
-                throw error;
-            }
-            if (data && data[0]) {
-                insertedLevels.push(data[0]);
-            }
+        if (insertError) {
+            console.error('Bulk insert error:', insertError);
+            throw insertError;
         }
 
-        // 3b. (Skipped bulk insert)
-
-        res.json({ message: 'Levels saved successfully', levels: insertedLevels });
+        res.json({ message: 'Levels saved successfully', levels: insertedLevels || [] });
     } catch (error) {
         console.error('Save course levels error:', error);
         res.status(500).json({ error: 'Failed to save course levels', details: error.message });

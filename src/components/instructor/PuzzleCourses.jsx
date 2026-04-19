@@ -326,12 +326,33 @@ const PuzzleCourses = ({ theme }) => {
             }]);
         };
 
+        // Smooth progress simulation interval
+        let progressInterval = null;
+        const startProgressSimulation = (from, to, durationMs) => {
+            const steps = Math.floor(durationMs / 300);
+            const increment = (to - from) / steps;
+            let current = from;
+            if (progressInterval) clearInterval(progressInterval);
+            progressInterval = setInterval(() => {
+                current = Math.min(current + increment, to);
+                setGenerationProgress(Math.round(current));
+            }, 300);
+        };
+
         try {
-            setGenerationProgress(10);
+            setGenerationProgress(5);
             addLog(`Initializing AI Neural Engine for ${selectedCourse.name}...`, 'info');
 
-            setGenerationProgress(20);
+            await new Promise(r => setTimeout(r, 400));
+            setGenerationProgress(10);
             addLog(`Analyzing Curriculum Parameters: ${formData.mode} | ${formData.difficulty}`, 'info');
+
+            await new Promise(r => setTimeout(r, 300));
+            setGenerationProgress(15);
+            addLog('Compiling generation prompt...', 'info');
+
+            // Start smooth simulation during the AI call (15% → 50% over ~30s)
+            startProgressSimulation(15, 50, 30000);
 
             // Call Gemini API
             const response = await aiAPI.generateLevels(
@@ -340,13 +361,15 @@ const PuzzleCourses = ({ theme }) => {
                 formData.mode
             );
 
-            setGenerationProgress(50);
+            // Stop simulation and jump to 55%
+            if (progressInterval) { clearInterval(progressInterval); progressInterval = null; }
+            setGenerationProgress(55);
+            addLog('AI response received. Processing levels...', 'success');
 
             // Check if response has levels
             if (response.levels && response.levels.length > 0) {
 
                 // FORCE SORT by ID to ensure strict 1-10 order
-                // The AI might return them as 1, 10, 2... or random. We fix it here.
                 response.levels.sort((a, b) => {
                     const idA = parseInt(String(a.id).replace(/\D/g, '')) || 0;
                     const idB = parseInt(String(b.id).replace(/\D/g, '')) || 0;
@@ -355,11 +378,10 @@ const PuzzleCourses = ({ theme }) => {
 
                 const totalLevels = response.levels.length;
 
-                // Add logs for each generated level simulation
+                // Add logs for each generated level
                 for (let i = 0; i < totalLevels; i++) {
                     addLog(`Generated Level ${i + 1}: ${response.levels[i].name}`, 'success');
-                    // Calculate progress from 50% to 90% based on levels
-                    const progress = 50 + Math.floor(((i + 1) / totalLevels) * 40);
+                    const progress = 55 + Math.floor(((i + 1) / totalLevels) * 25);
                     setGenerationProgress(progress);
                 }
 
@@ -370,7 +392,8 @@ const PuzzleCourses = ({ theme }) => {
                 }));
 
                 // PERSIST LEVELS TO DB
-                addLog(`Persisting neural patterns for ${formData.mode} | ${formData.difficulty}...`, 'info');
+                setGenerationProgress(82);
+                addLog(`Persisting ${totalLevels} levels to database...`, 'info');
                 await instructorAPI.saveLevels(
                     selectedCourse.id,
                     response.levels,
@@ -378,16 +401,16 @@ const PuzzleCourses = ({ theme }) => {
                     formData.difficulty
                 );
 
-                setGenerationProgress(100);
+                setGenerationProgress(95);
                 addLog('Levels successfully synchronized.', 'success');
 
-                addLog(`Course generation completed successfully. ${response.levels.length} Levels deployed.`, 'success');
+                await new Promise(r => setTimeout(r, 300));
+                setGenerationProgress(100);
+                addLog(`Course generation completed. ${totalLevels} levels deployed.`, 'success');
             } else {
                 addLog('AI returned no levels. Please try again.', 'warning');
             }
 
-            // Update course in DB
-            // Ensure all required fields for 'upsert' are present (id, name)
             saveMutation.mutate({
                 id: selectedCourse.id,
                 name: selectedCourse.name
@@ -399,6 +422,7 @@ const PuzzleCourses = ({ theme }) => {
             addLog(`Error: ${error.message} ${error.details ? `(${error.details})` : ''}`, 'error');
             toast.error('Failed to generate levels. Please try again.');
         } finally {
+            if (progressInterval) { clearInterval(progressInterval); progressInterval = null; }
             setIsGenerating(false);
             if (generationTimerRef.current) {
                 clearInterval(generationTimerRef.current);
@@ -684,7 +708,7 @@ const PuzzleCourses = ({ theme }) => {
                                 <div className="space-y-4 pt-4">
                                     {/* Progress Bar */}
                                     <AnimatePresence>
-                                        {isGenerating && (
+                                        {(isGenerating || generationProgress > 0) && (
                                             <motion.div
                                                 initial={{ opacity: 0, height: 0 }}
                                                 animate={{ opacity: 1, height: 'auto' }}
@@ -692,15 +716,21 @@ const PuzzleCourses = ({ theme }) => {
                                                 className="space-y-1"
                                             >
                                                 <div className="flex justify-between items-end px-1">
-                                                    <span className="text-[10px] font-black text-cyan-500 uppercase tracking-widest">Generating Course Content... ({generationTime}s)</span>
+                                                    <span className="text-[10px] font-black text-cyan-500 uppercase tracking-widest">
+                                                        {generationProgress >= 100 ? `Completed in ${generationTime}s` : `Generating Course Content... (${generationTime}s)`}
+                                                    </span>
                                                     <span className="text-[10px] font-bold text-cyan-500">{generationProgress}%</span>
                                                 </div>
                                                 <div className="h-2 w-full bg-slate-200/20 rounded-full overflow-hidden">
                                                     <motion.div
-                                                        className="h-full bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.5)]"
+                                                        className={`h-full rounded-full shadow-[0_0_10px_rgba(6,182,212,0.5)] ${
+                                                            generationProgress >= 100 
+                                                                ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' 
+                                                                : 'bg-gradient-to-r from-cyan-500 to-emerald-500'
+                                                        }`}
                                                         initial={{ width: 0 }}
                                                         animate={{ width: `${generationProgress}%` }}
-                                                        transition={{ duration: 0.5 }}
+                                                        transition={{ duration: 0.4, ease: 'easeOut' }}
                                                     />
                                                 </div>
                                             </motion.div>

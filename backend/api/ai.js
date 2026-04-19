@@ -63,7 +63,13 @@ const tryGenerateContent = async (prompt) => {
             attemptCount++;
             try {
                 console.log(`[AI Failover] Attempt ${attemptCount}: ${keyLabel} → ${modelName}`);
-                const model = genAI.getGenerativeModel({ model: modelName });
+                const model = genAI.getGenerativeModel({ 
+                    model: modelName,
+                    generationConfig: {
+                        temperature: 0.7,
+                        maxOutputTokens: 8192,
+                    }
+                });
                 const result = await model.generateContent(prompt);
                 console.log(`[AI Failover] ✓ SUCCESS on ${keyLabel} → ${modelName}`);
                 return result;

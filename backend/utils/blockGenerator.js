@@ -208,9 +208,9 @@ export function generateBlocksFromSolution(solution, courseMode) {
         allFragments = lines.length > 0 ? lines : [solution.trim()];
     }
 
-    // Cap at reasonable block count (3-6 real blocks)
+    // Cap at reasonable block count (max 10 real blocks)
     // If there are too many fragments, merge some
-    if (allFragments.length > 6) {
+    while (allFragments.length > 10) {
         const merged = [];
         for (let i = 0; i < allFragments.length; i += 2) {
             if (i + 1 < allFragments.length) {
@@ -240,7 +240,14 @@ export function generateBlocksFromSolution(solution, courseMode) {
     // Determine dummy block count based on mode
     const isBeginner = courseMode?.toLowerCase().includes('beginner');
     const isIntermediate = courseMode?.toLowerCase().includes('intermediate');
-    const dummyCount = isBeginner ? 3 : isIntermediate ? 2 : 2;
+    const baseDummyCount = isBeginner ? 3 : isIntermediate ? 2 : 2;
+
+    // Ensure minimum of 7 total blocks
+    const MIN_TOTAL_BLOCKS = 7;
+    const currentTotal = blocks.length + baseDummyCount;
+    const dummyCount = currentTotal < MIN_TOTAL_BLOCKS
+        ? baseDummyCount + (MIN_TOTAL_BLOCKS - currentTotal)
+        : baseDummyCount;
 
     // Add dummy distractor blocks
     for (let i = 0; i < dummyCount; i++) {
@@ -251,8 +258,15 @@ export function generateBlocksFromSolution(solution, courseMode) {
     // Assign connectors to all blocks
     assignConnectors(blocks, correctSequence);
 
+    // Shuffle initial blocks using Fisher-Yates so they are NOT in correct order
+    const shuffled = [...blocks];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
     return {
-        initialBlocks: blocks,
+        initialBlocks: shuffled,
         correctSequence: correctSequence,
     };
 }
