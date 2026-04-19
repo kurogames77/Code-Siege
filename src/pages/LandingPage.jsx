@@ -203,8 +203,8 @@ const LandingPage = () => {
             toast.success('Logged out successfully');
             // Force scroll to top
             window.scrollTo(0, 0);
-            // Clear state to prevent showing again on refresh
-            window.history.replaceState({}, document.title);
+            // Clear state using React Router so location.state is properly updated
+            navigate('/', { replace: true, state: {} });
             return; // STOP here. Do not process isAuthenticated redirects.
         }
 

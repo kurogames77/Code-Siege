@@ -40,7 +40,7 @@ const InstructorSidebar = ({ activeTab, setActiveTab, isCollapsed, setIsCollapse
     const handleConfirmLogout = async () => {
         // Await logout to ensure backend clears last_active_at
         // (UI state clears instantly inside logout(), so no visual delay)
-        toast.success('Logged out successfully');
+        // NOTE: Toast is shown by LandingPage via location.state.loggedOut
         await logout();
         navigate('/', { replace: true, state: { loggedOut: true } });
     };
