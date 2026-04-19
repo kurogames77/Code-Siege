@@ -185,28 +185,20 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             for (const other of newBlocks) {
                 if (other.id === active.id) continue;
 
-                // Calculate the true width of the OTHER block based on its text
-                const otherContentLength = other.content ? other.content.length : 10;
-                const OTHER_BLOCK_WIDTH = Math.max(140, 60 + (otherContentLength * 11));
-                
-                // Calculate the true width of the ACTIVE block based on its text
-                const activeContentLength = updatedBlock.content ? updatedBlock.content.length : 10;
-                const ACTIVE_BLOCK_WIDTH = Math.max(140, 60 + (activeContentLength * 11));
-
                 const dx = updatedBlock.position.x - other.position.x;
                 const dy = updatedBlock.position.y - other.position.y;
 
                 // Horizontal Snap (Current Right to Other Left)
-                if (Math.abs(dx - OTHER_BLOCK_WIDTH) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
-                    updatedBlock.position = { x: Math.round(other.position.x + OTHER_BLOCK_WIDTH), y: Math.round(other.position.y) };
+                if (Math.abs(dx - 140) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
+                    updatedBlock.position = { x: Math.round(other.position.x + 140), y: Math.round(other.position.y) };
                     playConnect();
                     snappedWithId = other.id;
                     break;
                 }
 
                 // Horizontal Snap (Current Left to Other Right)
-                if (Math.abs(dx + ACTIVE_BLOCK_WIDTH) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
-                    updatedBlock.position = { x: Math.round(other.position.x - ACTIVE_BLOCK_WIDTH), y: Math.round(other.position.y) };
+                if (Math.abs(dx + 140) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
+                    updatedBlock.position = { x: Math.round(other.position.x - 140), y: Math.round(other.position.y) };
                     playConnect();
                     snappedWithId = other.id;
                     break;
