@@ -636,8 +636,8 @@ export const instructorAPI = {
     },
 
     deleteLevels: async (levelIds) => {
-        return apiRequest('/instructor/courses/levels', {
-            method: 'DELETE',
+        return apiRequest('/instructor/courses/levels/bulk-delete', {
+            method: 'POST',
             body: JSON.stringify({ levelIds }),
         });
     },

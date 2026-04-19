@@ -1054,10 +1054,11 @@ router.post('/courses/:id/levels', async (req, res) => {
 });
 
 /**
- * DELETE /api/instructor/courses/levels
+ * POST /api/instructor/courses/levels/bulk-delete
  * Bulk delete specific levels by their IDs
+ * Using POST instead of DELETE because Vercel strips body from DELETE requests
  */
-router.delete('/courses/levels', async (req, res) => {
+router.post('/courses/levels/bulk-delete', async (req, res) => {
     try {
         const { levelIds } = req.body;
 
