@@ -68,28 +68,27 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
         const idx = Math.abs(hash) % COLOR_PALETTE.length;
         return COLOR_PALETTE[idx];
     }, [id]);
-    // Fixed width to match snapping/chain detection constants (BLOCK_WIDTH=140)
-    const width = 140;
+    // Dynamic width calculation matching ChallengeModal's spacing logic
+    const contentLength = content ? content.length : 10;
+    const width = Math.max(140, 60 + (contentLength * 11));
     const height = 48;
     const tabRadius = 10;
     const tabDepth = 12;
 
-    // Smart font size: scale down progressively for longer content
+    // Smart font size: scale down progressively for very long content
     const getFontSize = (text) => {
         const len = text.length;
-        if (len <= 10) return 13;
-        if (len <= 16) return 11;
-        if (len <= 22) return 9.5;
-        if (len <= 30) return 8;
-        return 7;
+        if (len <= 15) return 13;
+        if (len <= 25) return 11;
+        if (len <= 40) return 10;
+        return 9;
     };
 
     // Truncate display text to fit within the block
     const getDisplayText = (text) => {
         const len = text.length;
-        if (len <= 22) return text;
-        if (len <= 30) return text;
-        return text.substring(0, 28) + '…';
+        if (len <= 45) return text;
+        return text.substring(0, 42) + '…';
     };
 
     // Generate SVG Path with "Cooler" Angular Grooves or Simple Rect

@@ -99,8 +99,33 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                 const COLS = 3;
                 const COL_SPACING = 200;
                 const ROW_SPACING = 90;
+                // Helper function to dynamically assign matching tabs/slots
+                const assignDynamicConnectors = (blockId) => {
+                    const seqIdx = puzzle.correctSequence ? puzzle.correctSequence.indexOf(blockId) : -1;
+                    const topConn = Math.random() > 0.5 ? 1 : 2;
+                    const bottomConn = Math.random() > 0.5 ? 1 : 2;
+
+                    if (seqIdx !== -1) {
+                        const hasNext = seqIdx < puzzle.correctSequence.length - 1;
+                        const hasPrev = seqIdx > 0;
+                        return {
+                            top: topConn,
+                            bottom: bottomConn,
+                            right: hasNext ? 1 : (Math.random() > 0.5 ? 1 : 2),
+                            left: hasPrev ? 2 : (Math.random() > 0.5 ? 1 : 2),
+                        };
+                    }
+                    return {
+                        top: topConn,
+                        bottom: bottomConn,
+                        right: Math.random() > 0.5 ? 1 : 2,
+                        left: Math.random() > 0.5 ? 1 : 2,
+                    };
+                };
+
                 const initialized = puzzle.initialBlocks.map((b, i) => ({
                     ...b,
+                    connectors: assignDynamicConnectors(b.id),
                     position: {
                         x: 40 + (i % COLS) * COL_SPACING + (Math.random() * 30 - 15),
                         y: 80 + Math.floor(i / COLS) * ROW_SPACING + (Math.random() * 20 - 10)
@@ -153,7 +178,6 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             // GENERALIZED SNAPPING LOGIC
             // Fixed canvas-space threshold for consistent snapping
             const SNAP_THRESHOLD = 50;
-            const BLOCK_WIDTH = 140;
             const BLOCK_HEIGHT = 48;
 
             let snappedWithId = null;
@@ -161,20 +185,28 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             for (const other of newBlocks) {
                 if (other.id === active.id) continue;
 
+                // Calculate the true width of the OTHER block based on its text
+                const otherContentLength = other.content ? other.content.length : 10;
+                const OTHER_BLOCK_WIDTH = Math.max(140, 60 + (otherContentLength * 11));
+                
+                // Calculate the true width of the ACTIVE block based on its text
+                const activeContentLength = updatedBlock.content ? updatedBlock.content.length : 10;
+                const ACTIVE_BLOCK_WIDTH = Math.max(140, 60 + (activeContentLength * 11));
+
                 const dx = updatedBlock.position.x - other.position.x;
                 const dy = updatedBlock.position.y - other.position.y;
 
                 // Horizontal Snap (Current Right to Other Left)
-                if (Math.abs(dx - BLOCK_WIDTH) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
-                    updatedBlock.position = { x: Math.round(other.position.x + BLOCK_WIDTH), y: Math.round(other.position.y) };
+                if (Math.abs(dx - OTHER_BLOCK_WIDTH) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
+                    updatedBlock.position = { x: Math.round(other.position.x + OTHER_BLOCK_WIDTH), y: Math.round(other.position.y) };
                     playConnect();
                     snappedWithId = other.id;
                     break;
                 }
 
                 // Horizontal Snap (Current Left to Other Right)
-                if (Math.abs(dx + BLOCK_WIDTH) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
-                    updatedBlock.position = { x: Math.round(other.position.x - BLOCK_WIDTH), y: Math.round(other.position.y) };
+                if (Math.abs(dx + ACTIVE_BLOCK_WIDTH) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
+                    updatedBlock.position = { x: Math.round(other.position.x - ACTIVE_BLOCK_WIDTH), y: Math.round(other.position.y) };
                     playConnect();
                     snappedWithId = other.id;
                     break;
