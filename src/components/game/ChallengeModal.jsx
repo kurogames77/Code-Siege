@@ -206,6 +206,29 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                 }
             }
 
+            // ANTI-OVERLAP LOGIC: Nudge block down if it was dropped directly onto another block
+            if (!snappedWithId) {
+                let overlap = true;
+                let attempts = 0;
+                while (overlap && attempts < 5) {
+                    overlap = false;
+                    for (const other of newBlocks) {
+                        if (other.id === active.id) continue;
+                        const dx = Math.abs(updatedBlock.position.x - other.position.x);
+                        const dy = Math.abs(updatedBlock.position.y - other.position.y);
+                        
+                        // If center points are too close together, it's an overlap
+                        if (dx < 100 && dy < 40) {
+                            updatedBlock.position.y += 55; // Push below
+                            updatedBlock.position.x += 15; // Slight diagonal offset to make it visible
+                            overlap = true;
+                            break; // Re-check collision against all blocks with new position
+                        }
+                    }
+                    attempts++;
+                }
+            }
+
             newBlocks[index] = updatedBlock;
             return newBlocks;
         });
@@ -511,17 +534,37 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             } else if (hintLevel === 2) {
                 // Tier 3: Auto-connect — snap puzzle blocks into the correct order
                 const correctIds = puzzle.correctSequence || [];
-                const BLOCK_WIDTH = 140;
                 const startX = 100;
                 const startY = 200;
+                
                 setBlocks(prev => {
+                    // Pre-calculate positions to handle variable text widths
+                    let currentX = startX;
+                    const positions = {};
+                    correctIds.forEach(id => {
+                        positions[id] = currentX;
+                        // Estimate block width based on content length (base width 140, + ~11px per character over 10)
+                        const block = prev.find(b => b.id === id);
+                        const contentLength = block ? (block.content || '').length : 10;
+                        const estimatedWidth = Math.max(140, 60 + (contentLength * 11)); 
+                        currentX += estimatedWidth;
+                    });
+
                     return prev.map(block => {
                         const idx = correctIds.indexOf(block.id);
                         if (idx !== -1) {
                             return {
                                 ...block,
-                                position: { x: startX + idx * BLOCK_WIDTH, y: startY }
+                                position: { x: positions[block.id], y: startY }
                             };
+                        } else {
+                            // If it's a dummy block and it happens to be near the startY, push it down so it's not run over
+                            if (Math.abs(block.position.y - startY) < 60) {
+                                return {
+                                    ...block,
+                                    position: { x: block.position.x, y: startY + 120 }
+                                };
+                            }
                         }
                         return block;
                     });
