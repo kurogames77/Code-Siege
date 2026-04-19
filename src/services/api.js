@@ -635,6 +635,13 @@ export const instructorAPI = {
         });
     },
 
+    deleteLevels: async (levelIds) => {
+        return apiRequest('/instructor/courses/levels', {
+            method: 'DELETE',
+            body: JSON.stringify({ levelIds }),
+        });
+    },
+
     // Get system logs
     getLogs: async (page = 1, limit = 50, filter = 'ALL') => {
         let query = supabase

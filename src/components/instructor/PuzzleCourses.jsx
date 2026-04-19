@@ -293,16 +293,28 @@ const PuzzleCourses = ({ theme }) => {
     };
 
 
-    const handleOverrideSubmit = (e) => {
+    const handleOverrideSubmit = async (e) => {
         e.preventDefault();
-        if (selectedLevels.length > 0) {
-            setCourseLevels(prev => ({
-                ...prev,
-                [selectedCourse.id]: prev[selectedCourse.id].filter(l => !selectedLevels.includes(l.id))
-            }));
+        if (selectedLevels.length === 0) {
+            toast.error('No levels selected for deletion.');
+            return;
         }
 
-        handleCloseModal();
+        try {
+            await instructorAPI.deleteLevels(selectedLevels);
+
+            // Update local state after successful DB deletion
+            setCourseLevels(prev => ({
+                ...prev,
+                [selectedCourse.id]: (prev[selectedCourse.id] || []).filter(l => !selectedLevels.includes(l.id))
+            }));
+
+            toast.success(`${selectedLevels.length} level(s) deleted successfully.`);
+            handleCloseModal();
+        } catch (error) {
+            console.error('Delete levels failed:', error);
+            toast.error(`Failed to delete levels: ${error.message}`);
+        }
     };
 
     const handleCreateSubmit = async (e) => {

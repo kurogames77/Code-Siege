@@ -1054,6 +1054,35 @@ router.post('/courses/:id/levels', async (req, res) => {
 });
 
 /**
+ * DELETE /api/instructor/courses/levels
+ * Bulk delete specific levels by their IDs
+ */
+router.delete('/courses/levels', async (req, res) => {
+    try {
+        const { levelIds } = req.body;
+
+        if (!Array.isArray(levelIds) || levelIds.length === 0) {
+            return res.status(400).json({ error: 'levelIds must be a non-empty array' });
+        }
+
+        const { error } = await supabaseService
+            .from('course_levels')
+            .delete()
+            .in('id', levelIds);
+
+        if (error) {
+            console.error('Bulk delete levels error:', error);
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json({ message: `${levelIds.length} level(s) deleted successfully` });
+    } catch (error) {
+        console.error('Delete levels error:', error);
+        res.status(500).json({ error: 'Failed to delete levels' });
+    }
+});
+
+/**
  * PATCH /api/instructor/courses/levels/:id
  * Update a single level
  * Auto-regenerates initial_blocks & correct_sequence when solution changes
