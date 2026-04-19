@@ -25,12 +25,12 @@ import mysqlIcon from '../../assets/free-mysql-9294870-7578013-Photoroom.png';
 import phpIcon from '../../assets/php_emblem-Photoroom.png';
 
 const GAME_TOWERS = [
-    { id: 1, name: 'Tower of Eldoria', language: 'Python', floors: 30, towerImg: tower11, langIcon: pythonIcon, status: 'Active' },
-    { id: 2, name: 'Tower of Tydorin', language: 'C#', floors: 30, towerImg: tower22, langIcon: csharpIcon, status: 'Active' },
-    { id: 3, name: 'Shadow Keep', language: 'C++', floors: 39, towerImg: tower33, langIcon: cppIcon, status: 'Active' },
-    { id: 4, name: 'Tower of Prytody', language: 'JavaScript', floors: 30, towerImg: tower44, langIcon: javascriptIcon, status: 'Active' },
-    { id: 5, name: 'Tower of Abyss', language: 'MySQL', floors: 30, towerImg: tower55, langIcon: mysqlIcon, status: 'Active' },
-    { id: 6, name: 'Tower of Aeterd', language: 'PHP', floors: 30, towerImg: tower66, langIcon: phpIcon, status: 'Active' },
+    { id: 1, name: 'Tower of Eldoria', language: 'Python', towerImg: tower11, langIcon: pythonIcon, status: 'Active' },
+    { id: 2, name: 'Tower of Tydorin', language: 'C#', towerImg: tower22, langIcon: csharpIcon, status: 'Active' },
+    { id: 3, name: 'Shadow Keep', language: 'C++', towerImg: tower33, langIcon: cppIcon, status: 'Active' },
+    { id: 4, name: 'Tower of Prytody', language: 'JavaScript', towerImg: tower44, langIcon: javascriptIcon, status: 'Active' },
+    { id: 5, name: 'Tower of Abyss', language: 'MySQL', towerImg: tower55, langIcon: mysqlIcon, status: 'Active' },
+    { id: 6, name: 'Tower of Aeterd', language: 'PHP', towerImg: tower66, langIcon: phpIcon, status: 'Active' },
 ];
 
 const Towers = ({ theme }) => {
@@ -85,7 +85,15 @@ const Towers = ({ theme }) => {
         queryFn: () => instructorAPI.getCourses(),
     });
 
-    // Filter Towers based on the instructor's assigned courses
+    // Build a map of language name -> total_levels from the courses data
+    const courseLevelCounts = {};
+    instructorCourses.forEach(c => {
+        if (c.name) {
+            courseLevelCounts[c.name.toLowerCase().trim()] = c.total_levels || 0;
+        }
+    });
+
+    // Filter Towers based on the instructor's assigned courses and merge real floor counts
     const filteredTowers = GAME_TOWERS.filter(tower => {
         // Admin bypass — admins see all towers
         if (user?.role === 'admin') return true;
@@ -100,6 +108,11 @@ const Towers = ({ theme }) => {
         const assignedLanguages = instructorCourses.map(c => c.name?.toLowerCase().trim()).filter(Boolean);
         const towerLang = tower.language.toLowerCase().trim();
         return assignedLanguages.some(lang => towerLang === lang || towerLang.includes(lang) || lang.includes(towerLang));
+    }).map(tower => {
+        // Merge real floor count from the courses data
+        const towerLang = tower.language.toLowerCase().trim();
+        const floors = courseLevelCounts[towerLang] || 0;
+        return { ...tower, floors };
     });
 
     const openModal = (tower, mode) => {

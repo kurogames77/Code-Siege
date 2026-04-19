@@ -798,7 +798,20 @@ router.get('/courses', async (req, res) => {
             return res.status(400).json({ error: error.message });
         }
 
-        res.json(courses || []);
+        // Fetch level counts for each course
+        const coursesWithCounts = await Promise.all((courses || []).map(async (course) => {
+            const { count } = await supabase
+                .from('course_levels')
+                .select('*', { count: 'exact', head: true })
+                .eq('course_id', course.id);
+
+            return {
+                ...course,
+                total_levels: count || 0
+            };
+        }));
+
+        res.json(coursesWithCounts);
     } catch (error) {
         console.error('Get courses error:', error);
         res.status(500).json({ error: 'Failed to get courses' });
