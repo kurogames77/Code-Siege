@@ -560,26 +560,15 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                 const correctIds = puzzle.correctSequence || [];
                 const startX = 100;
                 const startY = 200;
+                const BLOCK_WIDTH = 140;
                 
                 setBlocks(prev => {
-                    // Pre-calculate positions to handle variable text widths
-                    let currentX = startX;
-                    const positions = {};
-                    correctIds.forEach(id => {
-                        positions[id] = currentX;
-                        // Estimate block width based on content length (base width 140, + ~11px per character over 10)
-                        const block = prev.find(b => b.id === id);
-                        const contentLength = block ? (block.content || '').length : 10;
-                        const estimatedWidth = Math.max(140, 60 + (contentLength * 11)); 
-                        currentX += estimatedWidth;
-                    });
-
                     return prev.map(block => {
                         const idx = correctIds.indexOf(block.id);
                         if (idx !== -1) {
                             return {
                                 ...block,
-                                position: { x: positions[block.id], y: startY }
+                                position: { x: startX + idx * BLOCK_WIDTH, y: startY }
                             };
                         } else {
                             // If it's a dummy block and it happens to be near the startY, push it down so it's not run over
