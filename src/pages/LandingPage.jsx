@@ -1363,72 +1363,64 @@ const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderbo
                     </motion.p>
                 </motion.div>
 
-                {/* Feature Cards Grid */}
-                <div className="features-grid">
-                    {featureData.map((feature, i) => (
-                        <motion.div
-                            key={feature.title}
-                            className="feature-card"
-                            custom={i}
-                            variants={cardVariants}
-                            initial="hidden"
-                            animate={isInView ? 'visible' : 'hidden'}
-                            whileHover={{
-                                y: -8,
-                                scale: 1.03,
-                                boxShadow: `0 20px 60px ${feature.glowColor}, 0 0 0 1px rgba(138, 95, 240, 0.3)`,
-                                transition: { duration: 0.3, ease: 'easeOut' }
-                            }}
-                            style={{ cursor: 'default' }}
-                        >
-                            {/* Animated gradient shine on hover */}
-                            <motion.div
-                                style={{
-                                    position: 'absolute', inset: 0, borderRadius: 'inherit',
-                                    background: `linear-gradient(135deg, transparent 30%, ${feature.glowColor} 50%, transparent 70%)`,
-                                    opacity: 0, pointerEvents: 'none'
-                                }}
-                                whileHover={{ opacity: 0.15 }}
-                                transition={{ duration: 0.4 }}
-                            />
-
-                            {/* Icon with floating animation */}
-                            <motion.div
-                                className="feature-icon-wrapper"
-                                animate={isInView ? {
-                                    y: [0, -6, 0],
-                                } : {}}
-                                transition={{
-                                    duration: 3 + i * 0.5,
-                                    repeat: Infinity,
-                                    ease: 'easeInOut',
-                                    delay: i * 0.3
-                                }}
+                {/* Feature Cards Carousel */}
+                <div className="features-carousel-wrapper">
+                    <div className="features-carousel-track">
+                        {[...featureData, ...featureData].map((feature, i) => (
+                            <div
+                                key={`${feature.title}-${i}`}
+                                className="feature-card carousel-card"
+                                style={{ cursor: 'default', '--glow-color': feature.glowColor }}
                             >
-                                <img
-                                    src={iconMap[feature.iconKey]}
-                                    alt={feature.title}
-                                    className="feature-icon-img"
-                                    style={{ transform: feature.title === 'Immersive Campaign' ? 'scale(1.3)' : 'none' }}
+                                {/* Animated gradient shine on hover */}
+                                <motion.div
+                                    style={{
+                                        position: 'absolute', inset: 0, borderRadius: 'inherit',
+                                        background: `linear-gradient(135deg, transparent 30%, ${feature.glowColor} 50%, transparent 70%)`,
+                                        opacity: 0, pointerEvents: 'none'
+                                    }}
+                                    whileHover={{ opacity: 0.15 }}
+                                    transition={{ duration: 0.4 }}
                                 />
-                            </motion.div>
 
-                            <h3>{feature.title}</h3>
-                            <p>{feature.description}</p>
+                                {/* Icon with floating animation */}
+                                <motion.div
+                                    className="feature-icon-wrapper"
+                                    animate={isInView ? {
+                                        y: [0, -6, 0],
+                                    } : {}}
+                                    transition={{
+                                        duration: 3 + (i % 4) * 0.5,
+                                        repeat: Infinity,
+                                        ease: 'easeInOut',
+                                        delay: (i % 4) * 0.3
+                                    }}
+                                >
+                                    <img
+                                        src={iconMap[feature.iconKey]}
+                                        alt={feature.title}
+                                        className="feature-icon-img"
+                                        style={{ transform: feature.title === 'Immersive Campaign' ? 'scale(1.3)' : 'none' }}
+                                    />
+                                </motion.div>
 
-                            {/* Bottom accent line */}
-                            <motion.div
-                                style={{
-                                    position: 'absolute', bottom: 0, left: '50%', height: '2px',
-                                    background: `linear-gradient(90deg, transparent, ${feature.glowColor}, transparent)`,
-                                    borderRadius: '1px', transform: 'translateX(-50%)',
-                                }}
-                                initial={{ width: 0, opacity: 0 }}
-                                animate={isInView ? { width: '60%', opacity: 1 } : {}}
-                                transition={{ duration: 0.8, delay: 0.5 + i * 0.15 }}
-                            />
-                        </motion.div>
-                    ))}
+                                <h3>{feature.title}</h3>
+                                <p>{feature.description}</p>
+
+                                {/* Bottom accent line */}
+                                <motion.div
+                                    style={{
+                                        position: 'absolute', bottom: 0, left: '50%', height: '2px',
+                                        background: `linear-gradient(90deg, transparent, ${feature.glowColor}, transparent)`,
+                                        borderRadius: '1px', transform: 'translateX(-50%)',
+                                    }}
+                                    initial={{ width: 0, opacity: 0 }}
+                                    animate={isInView ? { width: '60%', opacity: 1 } : {}}
+                                    transition={{ duration: 0.8, delay: 0.5 + (i % 4) * 0.15 }}
+                                />
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </section>

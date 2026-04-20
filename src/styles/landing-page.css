@@ -776,13 +776,36 @@ body {
   line-height: 1.6;
 }
 
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 30px;
+.features-carousel-wrapper {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  /* Add subtle fade masks to the edges */
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  padding: 20px 0;
 }
 
-.feature-card {
+.features-carousel-track {
+  display: flex;
+  gap: 30px;
+  width: max-content;
+  animation: carousel-scroll 30s linear infinite;
+  padding-left: 30px;
+}
+
+.features-carousel-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes carousel-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(calc(-50% - 15px)); }
+}
+
+.carousel-card {
+  width: 300px;
+  flex-shrink: 0;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 24px;
@@ -797,11 +820,11 @@ body {
   text-align: center;
 }
 
-.feature-card:hover {
+.carousel-card:hover {
   transform: translateY(-5px);
   background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(138, 95, 240, 0.3);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  border-color: var(--glow-color, rgba(138, 95, 240, 0.3));
+  box-shadow: 0 20px 60px var(--glow-color, rgba(138, 95, 240, 0.4)), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .feature-card::after {
