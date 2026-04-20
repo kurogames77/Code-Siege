@@ -1375,18 +1375,32 @@ const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderbo
                     </motion.p>
                 </motion.div>
 
-                {/* 3D Wheel Scene */}
+                {/* Coverflow Carousel Scene */}
                 <div 
                     className="wheel-scene" 
                     onMouseEnter={() => setIsHovered(true)}
                     onMouseLeave={() => setIsHovered(false)}
                 >
-                    <div 
-                        className="wheel-container"
-                        style={{ transform: `translateZ(-450px) rotateY(${rotationCount * -90}deg)` }}
-                    >
+                    <div className="wheel-container">
                         {featureData.map((feature, i) => {
-                            const isActive = i === (rotationCount % featureData.length);
+                            const total = featureData.length;
+                            // Calculate shortest circular offset from active index
+                            let offset = i - (rotationCount % total);
+                            if (offset < -Math.floor(total / 2)) offset += total;
+                            if (offset > Math.floor(total / 2)) offset -= total;
+
+                            // offset === 0 is the center card
+                            // offset === 1 is right
+                            // offset === -1 is left
+                            const isCenter = offset === 0;
+                            const zIndex = 10 - Math.abs(offset);
+                            const opacity = Math.abs(offset) > 1 ? 0 : (isCenter ? 1 : 0.4);
+                            
+                            // Visual transforms
+                            const translateX = offset * 280; // Distance between cards
+                            const translateZ = -Math.abs(offset) * 150; // Push neighbors back
+                            const rotateY = offset * -20; // Slight rotation to face center
+
                             return (
                                 <div
                                     key={feature.title}
@@ -1394,9 +1408,10 @@ const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderbo
                                     style={{
                                         cursor: 'default', 
                                         '--glow-color': feature.glowColor,
-                                        transform: `rotateY(${i * 90}deg) translateZ(450px)`,
-                                        opacity: isActive ? 1 : 0.3,
-                                        pointerEvents: isActive ? 'auto' : 'none'
+                                        transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg)`,
+                                        opacity: opacity,
+                                        zIndex: zIndex,
+                                        pointerEvents: isCenter ? 'auto' : 'none'
                                     }}
                                 >
                                     {/* Animated gradient shine on hover */}
