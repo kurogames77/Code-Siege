@@ -97,17 +97,23 @@ router.patch('/manual/:id', async (req, res) => {
             return res.status(400).json({ error: 'Payment is already processed' });
         }
 
-        // 2. Update the status
-        const { error: updateError } = await supabaseService
+        // 2. Update the status atomically
+        const { data: updateData, error: updateError } = await supabaseService
             .from('manual_payments')
             .update({ 
                 status, 
                 admin_id: adminId, 
                 updated_at: new Date() 
             })
-            .eq('id', id);
+            .eq('id', id)
+            .eq('status', 'pending')
+            .select();
 
         if (updateError) throw updateError;
+        
+        if (!updateData || updateData.length === 0) {
+            return res.status(400).json({ error: 'Payment has already been processed' });
+        }
 
         // 3. If approved, add gems using the RPC function
         if (status === 'approved') {
