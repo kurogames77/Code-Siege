@@ -1397,9 +1397,10 @@ const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderbo
                             const opacity = Math.abs(offset) > 1 ? 0 : (isCenter ? 1 : 0.4);
                             
                             // Visual transforms
-                            const translateX = offset * 280; // Distance between cards
-                            const translateZ = -Math.abs(offset) * 150; // Push neighbors back
-                            const rotateY = offset * -20; // Slight rotation to face center
+                            // Increase translateX to 360px so they don't overlap (card width is 320px)
+                            const translateX = offset * 360; 
+                            const translateZ = -Math.abs(offset) * 180; // Push neighbors back deeper
+                            const rotateY = offset * -35; // Increase the tilt angle
 
                             return (
                                 <div

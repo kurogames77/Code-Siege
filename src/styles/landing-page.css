@@ -779,7 +779,7 @@ body {
 .wheel-scene {
   perspective: 1500px;
   width: 100%;
-  height: 450px;
+  height: 360px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -792,7 +792,7 @@ body {
 
 .wheel-container {
   width: 320px;
-  height: 380px;
+  height: 280px;
   position: relative;
   /* Cards will be absolutely centered here */
 }
@@ -806,7 +806,7 @@ body {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 24px;
-  padding: 32px 24px;
+  padding: 24px;
   /* Smooth transition for when offset changes */
   transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.6s ease, box-shadow 0.3s ease, border-color 0.3s ease;
   backdrop-filter: blur(10px);
