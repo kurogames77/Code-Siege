@@ -776,52 +776,48 @@ body {
   line-height: 1.6;
 }
 
-.features-carousel-wrapper {
+.wheel-scene {
+  perspective: 1500px;
   width: 100%;
-  overflow: hidden;
-  position: relative;
-  /* Add subtle fade masks to the edges */
-  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-  padding: 20px 0;
-}
-
-.features-carousel-track {
+  height: 420px;
   display: flex;
-  gap: 30px;
-  width: max-content;
-  animation: carousel-scroll 30s linear infinite;
-  padding-left: 30px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 40px;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
 }
 
-.features-carousel-track:hover {
-  animation-play-state: paused;
+.wheel-container {
+  width: 340px;
+  height: 380px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@keyframes carousel-scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(calc(-50% - 15px)); }
-}
-
-.carousel-card {
-  width: 300px;
-  flex-shrink: 0;
+.wheel-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 24px;
-  padding: 24px;
-  transition: all 0.3s ease;
+  padding: 32px 24px;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease, opacity 0.8s ease;
   backdrop-filter: blur(10px);
-  position: relative;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  /* Prevent backface from being clicked/seen easily if desired, though showing back is cool */
+  backface-visibility: hidden;
 }
 
-.carousel-card:hover {
-  transform: translateY(-5px);
+.wheel-card:hover {
   background: rgba(255, 255, 255, 0.06);
   border-color: var(--glow-color, rgba(138, 95, 240, 0.3));
   box-shadow: 0 20px 60px var(--glow-color, rgba(138, 95, 240, 0.4)), 0 0 0 1px rgba(255, 255, 255, 0.05);

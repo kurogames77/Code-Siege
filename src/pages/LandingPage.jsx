@@ -1331,6 +1331,18 @@ const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderbo
     const sectionRef = useRef(null);
     const isInView = useInView(sectionRef, { once: true, amount: 0.2 });
     const iconMap = { towerIcon, heroesIcon, battleIcon, rankingIcon, leaderboardIcon };
+    
+    // Auto-rotation state
+    const [rotationCount, setRotationCount] = useState(0);
+    const [isHovered, setIsHovered] = useState(false);
+
+    useEffect(() => {
+        if (isHovered) return;
+        const timer = setInterval(() => {
+            setRotationCount((prev) => prev + 1);
+        }, 4000); // Turns every 4 seconds
+        return () => clearInterval(timer);
+    }, [isHovered]);
 
     return (
         <section id="about" className="landing-features" ref={sectionRef}>
@@ -1363,63 +1375,79 @@ const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderbo
                     </motion.p>
                 </motion.div>
 
-                {/* Feature Cards Carousel */}
-                <div className="features-carousel-wrapper">
-                    <div className="features-carousel-track">
-                        {[...featureData, ...featureData].map((feature, i) => (
-                            <div
-                                key={`${feature.title}-${i}`}
-                                className="feature-card carousel-card"
-                                style={{ cursor: 'default', '--glow-color': feature.glowColor }}
-                            >
-                                {/* Animated gradient shine on hover */}
-                                <motion.div
+                {/* 3D Wheel Scene */}
+                <div 
+                    className="wheel-scene" 
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                >
+                    <div 
+                        className="wheel-container"
+                        style={{ transform: `translateZ(-450px) rotateY(${rotationCount * -90}deg)` }}
+                    >
+                        {featureData.map((feature, i) => {
+                            const isActive = i === (rotationCount % featureData.length);
+                            return (
+                                <div
+                                    key={feature.title}
+                                    className="wheel-card"
                                     style={{
-                                        position: 'absolute', inset: 0, borderRadius: 'inherit',
-                                        background: `linear-gradient(135deg, transparent 30%, ${feature.glowColor} 50%, transparent 70%)`,
-                                        opacity: 0, pointerEvents: 'none'
-                                    }}
-                                    whileHover={{ opacity: 0.15 }}
-                                    transition={{ duration: 0.4 }}
-                                />
-
-                                {/* Icon with floating animation */}
-                                <motion.div
-                                    className="feature-icon-wrapper"
-                                    animate={isInView ? {
-                                        y: [0, -6, 0],
-                                    } : {}}
-                                    transition={{
-                                        duration: 3 + (i % 4) * 0.5,
-                                        repeat: Infinity,
-                                        ease: 'easeInOut',
-                                        delay: (i % 4) * 0.3
+                                        cursor: 'default', 
+                                        '--glow-color': feature.glowColor,
+                                        transform: `rotateY(${i * 90}deg) translateZ(450px)`,
+                                        opacity: isActive ? 1 : 0.3,
+                                        pointerEvents: isActive ? 'auto' : 'none'
                                     }}
                                 >
-                                    <img
-                                        src={iconMap[feature.iconKey]}
-                                        alt={feature.title}
-                                        className="feature-icon-img"
-                                        style={{ transform: feature.title === 'Immersive Campaign' ? 'scale(1.3)' : 'none' }}
+                                    {/* Animated gradient shine on hover */}
+                                    <motion.div
+                                        style={{
+                                            position: 'absolute', inset: 0, borderRadius: 'inherit',
+                                            background: `linear-gradient(135deg, transparent 30%, ${feature.glowColor} 50%, transparent 70%)`,
+                                            opacity: 0, pointerEvents: 'none'
+                                        }}
+                                        whileHover={{ opacity: 0.15 }}
+                                        transition={{ duration: 0.4 }}
                                     />
-                                </motion.div>
 
-                                <h3>{feature.title}</h3>
-                                <p>{feature.description}</p>
+                                    {/* Icon with floating animation */}
+                                    <motion.div
+                                        className="feature-icon-wrapper"
+                                        animate={isInView ? {
+                                            y: [0, -6, 0],
+                                        } : {}}
+                                        transition={{
+                                            duration: 3 + i * 0.5,
+                                            repeat: Infinity,
+                                            ease: 'easeInOut',
+                                            delay: i * 0.3
+                                        }}
+                                    >
+                                        <img
+                                            src={iconMap[feature.iconKey]}
+                                            alt={feature.title}
+                                            className="feature-icon-img"
+                                            style={{ transform: feature.title === 'Immersive Campaign' ? 'scale(1.3)' : 'none' }}
+                                        />
+                                    </motion.div>
 
-                                {/* Bottom accent line */}
-                                <motion.div
-                                    style={{
-                                        position: 'absolute', bottom: 0, left: '50%', height: '2px',
-                                        background: `linear-gradient(90deg, transparent, ${feature.glowColor}, transparent)`,
-                                        borderRadius: '1px', transform: 'translateX(-50%)',
-                                    }}
-                                    initial={{ width: 0, opacity: 0 }}
-                                    animate={isInView ? { width: '60%', opacity: 1 } : {}}
-                                    transition={{ duration: 0.8, delay: 0.5 + (i % 4) * 0.15 }}
-                                />
-                            </div>
-                        ))}
+                                    <h3>{feature.title}</h3>
+                                    <p>{feature.description}</p>
+
+                                    {/* Bottom accent line */}
+                                    <motion.div
+                                        style={{
+                                            position: 'absolute', bottom: 0, left: '50%', height: '2px',
+                                            background: `linear-gradient(90deg, transparent, ${feature.glowColor}, transparent)`,
+                                            borderRadius: '1px', transform: 'translateX(-50%)',
+                                        }}
+                                        initial={{ width: 0, opacity: 0 }}
+                                        animate={isInView ? { width: '60%', opacity: 1 } : {}}
+                                        transition={{ duration: 0.8, delay: 0.5 + i * 0.15 }}
+                                    />
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
