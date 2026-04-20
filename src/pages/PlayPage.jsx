@@ -51,10 +51,10 @@ const PlayPage = () => {
         const fetchLevelCounts = async () => {
             try {
                 const courses = await coursesAPI.getCourses();
-                // Create a map of course ID -> level count
+                // Create a map of course ID -> readiness
                 const stats = {};
                 courses.forEach(c => {
-                    stats[c.id] = c.total_levels || 0;
+                    stats[c.id] = c.is_fully_generated || false;
                 });
                 setCourseStats(stats);
             } catch (error) {
@@ -78,11 +78,11 @@ const PlayPage = () => {
     const towers = useMemo(() => {
         const isTowerAvailable = (id) => {
             const courseId = towerCourseMap[id];
-            // If stats loaded, check count
+            // If stats loaded, check readiness
             if (Object.keys(courseStats).length > 0) {
-                return (courseStats[courseId] || 0) > 0;
+                return courseStats[courseId] === true;
             }
-            return true; // Optimistic default
+            return false; // Safest default is locked until loaded
         };
 
         return [

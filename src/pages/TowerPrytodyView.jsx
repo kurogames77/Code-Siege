@@ -29,7 +29,7 @@ const TowerPrytodyView = () => {
             try {
                 const courses = await coursesAPI.getCourses();
                 const course = courses.find(c => c.id === 'js');
-                if (course && (course.total_levels || 0) > 0) {
+                if (course && course.is_fully_generated) {
                     setTowerClosed(false);
                 }
             } catch (e) {

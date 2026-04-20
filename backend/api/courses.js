@@ -19,16 +19,43 @@ router.get('/', authenticateUser, async (req, res) => {
             return res.status(400).json({ error: error.message });
         }
 
-        // Fetch level counts for each course
+        // Fetch level counts and completeness for each course
         const coursesWithCounts = await Promise.all(courses.map(async (course) => {
-            const { count } = await supabase
+            const { data } = await supabase
                 .from('course_levels')
-                .select('*', { count: 'exact', head: true })
+                .select('course_mode, difficulty_level')
                 .eq('course_id', course.id);
+
+            const combinations = new Set();
+            if (data) {
+                data.forEach(level => {
+                    const mode = (level.course_mode || '').toLowerCase();
+                    const diff = (level.difficulty_level || '').toLowerCase();
+                    combinations.add(`${mode}-${diff}`);
+                });
+            }
+
+            const requiredModes = ['beginner', 'intermediate', 'advance'];
+            const requiredDiffs = ['easy', 'medium', 'hard'];
+            let isReady = true;
+
+            for (const mode of requiredModes) {
+                for (const diff of requiredDiffs) {
+                    // Note: 'advance' might have been stored as 'advanced' in some cases, so checking both might be safer, but the DB default is 'Advance'
+                    // The schema has mode checking, let's allow 'advance' or 'advanced' just in case.
+                    const hasCombination = combinations.has(`${mode}-${diff}`) || (mode === 'advance' && combinations.has(`advanced-${diff}`));
+                    if (!hasCombination) {
+                        isReady = false;
+                        break;
+                    }
+                }
+                if (!isReady) break;
+            }
 
             return {
                 ...course,
-                total_levels: count || 0
+                total_levels: data ? data.length : 0,
+                is_fully_generated: isReady
             };
         }));
 

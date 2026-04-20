@@ -49,7 +49,7 @@ const TowerView = () => {
                 const courses = await coursesAPI.getCourses();
                 const pythonCourse = courses.find(c => c.name.toLowerCase().includes('python'));
 
-                if (!pythonCourse || (pythonCourse.total_levels || 0) === 0) {
+                if (!pythonCourse || !pythonCourse.is_fully_generated) {
                     setTowerClosed(true);
                     setLoadingLevels(false);
                     return;
