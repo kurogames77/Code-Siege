@@ -290,7 +290,8 @@ router.post('/login', async (req, res) => {
         const { data: configLog } = await supabaseService
             .from('system_logs')
             .select('metadata')
-            .eq('level', 'CONFIG')
+            .eq('level', 'INFO')
+            .eq('source', 'SYSTEM_CONFIG')
             .eq('message', 'recaptcha_enabled')
             .order('created_at', { ascending: false })
             .limit(1)
@@ -310,8 +311,8 @@ router.post('/login', async (req, res) => {
                 );
 
                 supabaseService.from('system_logs').insert([{
-                    level: 'SECURITY',
-                    source: 'RECAPTCHA',
+                    level: 'INFO',
+                    source: 'SECURITY',
                     message: 'verification_attempt',
                     metadata: { role: roleForLog, success: recaptchaResponse.data.success }
                 }]).then(({error}) => { if (error) console.error("[Auth] Recaptcha log error:", error); });

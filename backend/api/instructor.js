@@ -1382,7 +1382,8 @@ router.get('/security/recaptcha/settings', requireAdmin, async (req, res) => {
         const { data: configLog, error } = await supabaseService
             .from('system_logs')
             .select('metadata')
-            .eq('level', 'CONFIG')
+            .eq('level', 'INFO')
+            .eq('source', 'SYSTEM_CONFIG')
             .eq('message', 'recaptcha_enabled')
             .order('created_at', { ascending: false })
             .limit(1)
@@ -1411,8 +1412,8 @@ router.post('/security/recaptcha/settings', requireAdmin, async (req, res) => {
         const { error } = await supabaseService
             .from('system_logs')
             .insert([{
-                level: 'CONFIG',
-                source: 'SYSTEM',
+                level: 'INFO',
+                source: 'SYSTEM_CONFIG',
                 message: 'recaptcha_enabled',
                 metadata: { enabled }
             }]);
@@ -1437,8 +1438,8 @@ router.get('/security/recaptcha/stats', requireAdmin, async (req, res) => {
         const { data: logs, error } = await supabaseService
             .from('system_logs')
             .select('metadata')
-            .eq('level', 'SECURITY')
-            .eq('source', 'RECAPTCHA')
+            .eq('level', 'INFO')
+            .eq('source', 'SECURITY')
             .eq('message', 'verification_attempt');
 
         if (error) {
