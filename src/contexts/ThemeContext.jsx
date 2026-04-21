@@ -32,6 +32,20 @@ export const themes = {
         },
         overlay: 'snow'
     },
+    christmas: {
+        id: 'christmas',
+        name: "Santa's Workshop",
+        colors: {
+            primary: 'red',
+            secondary: 'green',
+            accent: 'amber',
+            background: 'from-red-950 to-slate-900',
+            panel: 'bg-[#1a0808]',
+            text: 'text-red-400',
+            border: 'border-red-500/30'
+        },
+        overlay: 'christmas'
+    },
     spooky: {
         id: 'spooky',
         name: 'Spooky Hollow',
