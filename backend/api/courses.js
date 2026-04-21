@@ -23,15 +23,18 @@ router.get('/', authenticateUser, async (req, res) => {
         const coursesWithCounts = await Promise.all(courses.map(async (course) => {
             const { data } = await supabase
                 .from('course_levels')
-                .select('course_mode, difficulty_level')
+                .select('course_mode, difficulty_level, level_order')
                 .eq('course_id', course.id);
 
             const combinations = new Set();
+            // Count distinct floors: each unique (course_mode, level_order) pair = 1 floor
+            const uniqueFloors = new Set();
             if (data) {
                 data.forEach(level => {
                     const mode = (level.course_mode || '').toLowerCase();
                     const diff = (level.difficulty_level || '').toLowerCase();
                     combinations.add(`${mode}-${diff}`);
+                    uniqueFloors.add(`${level.course_mode}-${level.level_order}`);
                 });
             }
 
@@ -54,7 +57,7 @@ router.get('/', authenticateUser, async (req, res) => {
 
             return {
                 ...course,
-                total_levels: data ? data.length : 0,
+                total_levels: uniqueFloors.size,
                 is_fully_generated: isReady
             };
         }));

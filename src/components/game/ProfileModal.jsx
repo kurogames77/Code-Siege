@@ -7,7 +7,7 @@ import useSound from '../../hooks/useSound';
 import { useUser } from '../../contexts/UserContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { userAPI, battlesAPI } from '../../services/api';
+import { userAPI, battlesAPI, leaderboardAPI } from '../../services/api';
 import { RANKS, getRankFromExp } from '../../utils/rankSystem';
 import supabase from '../../lib/supabase';
 import heroAsset from '../../assets/hero1.png';
@@ -34,6 +34,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
     const [friendsLoading, setFriendsLoading] = useState(false);
     const [changingPassword, setChangingPassword] = useState(false);
     const [stats, setStats] = useState({ winnings: 0, losses: 0, winRate: '0%' });
+    const [leaderboardRank, setLeaderboardRank] = useState(null);
     
     const [selectedFriend, setSelectedFriend] = useState(null);
     const [isFriendViewerOpen, setIsFriendViewerOpen] = useState(false);
@@ -56,7 +57,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
         }
     };
 
-    // Fetch battle stats on mount
+    // Fetch battle stats and leaderboard rank on mount
     useEffect(() => {
         if (!isOpen) return;
         battlesAPI.getHistory().then(data => {
@@ -66,6 +67,17 @@ const ProfileModal = ({ isOpen, onClose }) => {
             const total = wins + losses;
             const winRate = total > 0 ? `${Math.round((wins / total) * 100)}%` : '0%';
             setStats({ winnings: wins, losses: total - wins, winRate });
+        }).catch(() => { });
+
+        // Fetch leaderboard rank for the current user
+        leaderboardAPI.getAll(200).then(data => {
+            if (data?.userRank) {
+                setLeaderboardRank(data.userRank);
+            } else if (data?.leaderboard && user?.id) {
+                // Fallback: find the user in the leaderboard array
+                const entry = data.leaderboard.find(u => u.id === user.id);
+                setLeaderboardRank(entry?.rank || null);
+            }
         }).catch(() => { });
     }, [isOpen, user?.id]);
     const fileInputRef = useRef(null);
@@ -304,7 +316,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
                             <Target className="w-16 h-16 text-purple-400 drop-shadow-[0_0_15px_rgba(168,85,247,0.6)]" />
                         </div>
                         <div className="text-xl font-black text-white italic uppercase tracking-tighter drop-shadow-lg">
-                            #{user.stats.leaderboardRank}
+                            #{leaderboardRank || '—'}
                         </div>
                     </div>
                 </div>

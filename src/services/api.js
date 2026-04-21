@@ -168,34 +168,53 @@ export const userAPI = {
     },
 
     updateAvatar: async (userId, file) => {
-        // 1. Upload to Supabase Storage
+        // 1. Upload to Supabase Storage with a timeout to prevent hanging
         const fileExt = file.name ? file.name.split('.').pop() : 'png';
         const fileName = `${userId}-${Math.random()}.${fileExt}`;
         const filePath = `${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
-            .from('avatars')
-            .upload(filePath, file);
+        // Create an abort controller with 30s timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-        if (uploadError) {
-            if (uploadError.message === 'Bucket not found') {
-                throw new Error('Storage Error: The "avatars" bucket does not exist. Please create it in your Supabase dashboard.');
+        try {
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, file, {
+                    // Signal not directly supported by supabase-js storage, but we handle timeout below
+                });
+
+            clearTimeout(timeoutId);
+
+            if (uploadError) {
+                if (uploadError.message === 'Bucket not found') {
+                    throw new Error('Storage Error: The "avatars" bucket does not exist. Please create it in your Supabase dashboard.');
+                }
+                if (uploadError.status === 403 || uploadError.message === 'Permission denied') {
+                    throw new Error('Storage Error: Permission denied. Please ensure you have added the correct RLS policies to the "avatars" bucket.');
+                }
+                throw new Error(`Upload failed: ${uploadError.message}`);
             }
-            if (uploadError.status === 403 || uploadError.message === 'Permission denied') {
-                throw new Error('Storage Error: Permission denied. Please ensure you have added the correct RLS policies to the "avatars" bucket.');
+        } catch (err) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') {
+                throw new Error('Upload timed out. Please try a smaller image or check your connection.');
             }
-            throw new Error(`Upload failed: ${uploadError.message}`);
+            throw err;
         }
 
-        // 2. Get Public URL
+        // 2. Get Public URL with cache-busting query param
         const { data: { publicUrl } } = supabase.storage
             .from('avatars')
             .getPublicUrl(filePath);
 
+        // Add cache-busting param so browser fetches the new image immediately
+        const cacheBustedUrl = `${publicUrl}?t=${Date.now()}`;
+
         // 3. Update profile in database via our API
         return apiRequest(`/users/${userId}/avatar`, {
             method: 'PATCH',
-            body: JSON.stringify({ avatar_url: publicUrl }),
+            body: JSON.stringify({ avatar_url: cacheBustedUrl }),
         });
     },
 

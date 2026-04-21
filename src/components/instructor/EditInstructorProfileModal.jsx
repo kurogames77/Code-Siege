@@ -32,9 +32,58 @@ const EditInstructorProfileModal = ({ isOpen, onClose, currentProfile }) => {
         }
     }, [isOpen, currentProfile, user]);
 
+    // Compress image to WebP before uploading (prevents timeout on large images)
+    const compressImage = (file, maxWidth = 400, quality = 0.8) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > maxWidth) {
+                            height = Math.round((height *= maxWidth / width));
+                            width = maxWidth;
+                        }
+                    } else {
+                        if (height > maxWidth) {
+                            width = Math.round((width *= maxWidth / height));
+                            height = maxWidth;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob((blob) => {
+                        const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", {
+                            type: 'image/webp',
+                            lastModified: Date.now(),
+                        });
+                        resolve(compressedFile);
+                    }, 'image/webp', quality);
+                };
+                img.onerror = (err) => reject(err);
+            };
+            reader.onerror = (err) => reject(err);
+        });
+    };
+
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Check file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                setError('Image too large. Max 5MB.');
+                return;
+            }
             setImage(file); // Store the File object
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -56,7 +105,9 @@ const EditInstructorProfileModal = ({ isOpen, onClose, currentProfile }) => {
             }
 
             if (image) {
-                await updateAvatar(image); // image is now a File object
+                // Compress the image before uploading to prevent timeout
+                const compressedFile = await compressImage(image, 400, 0.8);
+                await updateAvatar(compressedFile);
             }
 
             onClose();

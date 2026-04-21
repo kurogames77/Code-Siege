@@ -798,16 +798,24 @@ router.get('/courses', async (req, res) => {
             return res.status(400).json({ error: error.message });
         }
 
-        // Fetch level counts for each course
+        // Fetch level counts for each course — count distinct floors (unique course_mode + level_order pairs)
         const coursesWithCounts = await Promise.all((courses || []).map(async (course) => {
-            const { count } = await supabase
+            const { data: levelRows } = await supabase
                 .from('course_levels')
-                .select('*', { count: 'exact', head: true })
+                .select('course_mode, level_order')
                 .eq('course_id', course.id);
+
+            // Count distinct floors: each unique (course_mode, level_order) pair = 1 floor
+            const uniqueFloors = new Set();
+            if (levelRows) {
+                levelRows.forEach(row => {
+                    uniqueFloors.add(`${row.course_mode}-${row.level_order}`);
+                });
+            }
 
             return {
                 ...course,
-                total_levels: count || 0
+                total_levels: uniqueFloors.size
             };
         }));
 
