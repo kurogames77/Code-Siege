@@ -245,10 +245,56 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
             throw new Error('AI output did not contain a valid JSON array');
         }
 
-        const cleanText = text.substring(startIdx, endIdx + 1);
+        let cleanText = text.substring(startIdx, endIdx + 1);
 
+        /**
+         * Sanitize common JSON issues from AI output:
+         * 1. Trailing commas before ] or }
+         * 2. Unescaped control characters inside strings
+         * 3. Single-line comments
+         * 4. Unescaped backslashes in code strings
+         */
+        const sanitizeJSON = (str) => {
+            // Remove single-line comments (// ...) outside of strings — rough but effective
+            str = str.replace(/\/\/[^\n"]*$/gm, '');
+            // Remove trailing commas before } or ]
+            str = str.replace(/,\s*([\]}])/g, '$1');
+            // Fix unescaped newlines inside JSON string values
+            // Replace actual newline chars inside strings with \\n
+            str = str.replace(/"(?:[^"\\]|\\.)*"/g, (match) => {
+                return match
+                    .replace(/\r\n/g, '\\n')
+                    .replace(/\r/g, '\\n')
+                    .replace(/\n/g, '\\n')
+                    .replace(/\t/g, '\\t');
+            });
+            return str;
+        };
+
+        cleanText = sanitizeJSON(cleanText);
+
+        let levels;
         try {
-            let levels = JSON.parse(cleanText);
+            levels = JSON.parse(cleanText);
+        } catch (parseError) {
+            console.warn('[AI] First parse failed, attempting deeper sanitization...', parseError.message);
+            
+            // Second attempt: more aggressive cleaning
+            try {
+                // Try to fix unescaped quotes inside string values
+                let deepClean = cleanText;
+                // Remove any BOM or zero-width chars
+                deepClean = deepClean.replace(/[\u200B-\u200D\uFEFF]/g, '');
+                // Replace problematic unicode quotes with standard quotes
+                deepClean = deepClean.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'");
+                
+                levels = JSON.parse(deepClean);
+            } catch (secondError) {
+                console.error('JSON Parse Error (both attempts failed):', secondError);
+                console.error('Raw text that failed to parse:', cleanText.substring(0, 500));
+                throw new Error(`Failed to parse AI response: ${secondError.message}`);
+            }
+        }
 
             // Post-process the blocks on the server to prevent AI hallucination and drastically improve speeds
             if (!isAdvance) {
@@ -285,11 +331,6 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
             }
 
             res.json({ levels, mode, difficulty });
-        } catch (parseError) {
-            console.error('JSON Parse Error:', parseError);
-            console.error('Raw text that failed to parse:', cleanText);
-            throw new Error(`Failed to parse AI response: ${parseError.message}`);
-        }
     } catch (error) {
         console.error('AI Generation Error Detail:', error);
 
