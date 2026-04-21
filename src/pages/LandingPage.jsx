@@ -29,6 +29,7 @@ const LandingPage = () => {
 
     // ReCAPTCHA state
     const [recaptchaToken, setRecaptchaToken] = useState(null);
+    const [isRecaptchaRequired, setIsRecaptchaRequired] = useState(true);
     const recaptchaRef = useRef(null);
 
     // Form state
@@ -95,6 +96,10 @@ const LandingPage = () => {
         document.querySelectorAll('.reveal').forEach(el => {
             observer.observe(el);
         });
+
+        authAPI.getRecaptchaSettingsPublic()
+            .then(res => setIsRecaptchaRequired(res.enabled))
+            .catch(err => console.error('Failed to fetch recaptcha setting:', err));
 
         return () => observer.disconnect();
     }, []);
@@ -341,7 +346,7 @@ const LandingPage = () => {
                 if (!password.trim()) {
                     throw new Error('Please enter your password');
                 }
-                if (!recaptchaToken) {
+                if (isRecaptchaRequired && !recaptchaToken) {
                     throw new Error('Please complete the reCAPTCHA verification');
                 }
 
@@ -902,18 +907,20 @@ const LandingPage = () => {
                                     </button>
                                 </div>
 
-                                <div className="flex justify-center mb-4 mt-2">
-                                    {import.meta.env.VITE_RECAPTCHA_SITE_KEY ? (
-                                        <ReCAPTCHA
-                                            ref={recaptchaRef}
-                                            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-                                            onChange={(token) => setRecaptchaToken(token)}
-                                            theme="dark"
-                                        />
-                                    ) : (
-                                        <div className="text-red-500 text-sm">Error: reCAPTCHA site key is missing in environment variables.</div>
-                                    )}
-                                </div>
+                                {isRecaptchaRequired && (
+                                    <div className="flex justify-center mb-4 mt-2">
+                                        {import.meta.env.VITE_RECAPTCHA_SITE_KEY ? (
+                                            <ReCAPTCHA
+                                                ref={recaptchaRef}
+                                                sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                                                onChange={(token) => setRecaptchaToken(token)}
+                                                theme="dark"
+                                            />
+                                        ) : (
+                                            <div className="text-red-500 text-sm">Error: reCAPTCHA site key is missing in environment variables.</div>
+                                        )}
+                                    </div>
+                                )}
 
                                 <button className="landing-modal__submit" type="submit" disabled={loading}>
                                     {loading ? (

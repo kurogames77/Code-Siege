@@ -278,6 +278,34 @@ router.post('/register', async (req, res) => {
 
 
 /**
+ * GET /api/auth/security/recaptcha/settings
+ * Public endpoint to get the current reCAPTCHA enforcement setting for the login screens
+ */
+router.get('/security/recaptcha/settings', async (req, res) => {
+    try {
+        const { data: configLog, error } = await supabaseService
+            .from('system_logs')
+            .select('metadata')
+            .eq('level', 'INFO')
+            .eq('source', 'SYSTEM_CONFIG')
+            .eq('message', 'recaptcha_enabled')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+        if (error && error.code !== 'PGRST116') {
+            return res.status(400).json({ error: error.message });
+        }
+
+        const isEnabled = configLog ? configLog.metadata.enabled : true;
+        res.json({ enabled: isEnabled });
+    } catch (error) {
+        console.error('Get public recaptcha settings error:', error);
+        res.status(500).json({ error: 'Failed to get recaptcha settings' });
+    }
+});
+
+/**
  * POST /api/auth/login
  * Login user (supports email or student_id)
  */

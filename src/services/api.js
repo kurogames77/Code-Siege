@@ -147,6 +147,10 @@ export const authAPI = {
             body: JSON.stringify({ student_id, email }),
         });
     },
+
+    getRecaptchaSettingsPublic: async () => {
+        return apiRequest('/auth/security/recaptcha/settings');
+    }
 };
 
 import supabase from '../lib/supabase';
