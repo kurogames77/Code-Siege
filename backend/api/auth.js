@@ -287,8 +287,16 @@ router.post('/login', async (req, res) => {
     try {
         let { email, password, student_id, expected_role, recaptchaToken } = req.body;
 
-        const { data: settings } = await supabaseService.from('system_settings').select('*').eq('key', 'recaptcha_enabled').single();
-        const isRecaptchaEnabled = settings?.value === 'true' || settings?.value === true || settings?.value === '"true"';
+        const { data: configLog } = await supabaseService
+            .from('system_logs')
+            .select('metadata')
+            .eq('level', 'CONFIG')
+            .eq('message', 'recaptcha_enabled')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+            
+        const isRecaptchaEnabled = configLog ? configLog.metadata.enabled : true;
         const roleForLog = expected_role || 'student';
 
         if (isRecaptchaEnabled) {
@@ -301,9 +309,11 @@ router.post('/login', async (req, res) => {
                     `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`
                 );
 
-                supabaseService.from('recaptcha_logs').insert([{
-                    role: roleForLog,
-                    success: recaptchaResponse.data.success
+                supabaseService.from('system_logs').insert([{
+                    level: 'SECURITY',
+                    source: 'RECAPTCHA',
+                    message: 'verification_attempt',
+                    metadata: { role: roleForLog, success: recaptchaResponse.data.success }
                 }]).then(({error}) => { if (error) console.error("[Auth] Recaptcha log error:", error); });
 
                 if (!recaptchaResponse.data.success) {

@@ -1379,17 +1379,20 @@ router.patch('/ban-requests/:id/respond', requireAdmin, async (req, res) => {
  */
 router.get('/security/recaptcha/settings', requireAdmin, async (req, res) => {
     try {
-        const { data: settings, error } = await supabaseService
-            .from('system_settings')
-            .select('*')
-            .eq('key', 'recaptcha_enabled')
+        const { data: configLog, error } = await supabaseService
+            .from('system_logs')
+            .select('metadata')
+            .eq('level', 'CONFIG')
+            .eq('message', 'recaptcha_enabled')
+            .order('created_at', { ascending: false })
+            .limit(1)
             .single();
 
         if (error && error.code !== 'PGRST116') {
             return res.status(400).json({ error: error.message });
         }
 
-        const isEnabled = settings?.value === 'true' || settings?.value === true || settings?.value === '"true"';
+        const isEnabled = configLog ? configLog.metadata.enabled : true;
         res.json({ enabled: isEnabled });
     } catch (error) {
         console.error('Get recaptcha settings error:', error);
@@ -1406,8 +1409,13 @@ router.post('/security/recaptcha/settings', requireAdmin, async (req, res) => {
         const { enabled } = req.body;
         
         const { error } = await supabaseService
-            .from('system_settings')
-            .upsert({ key: 'recaptcha_enabled', value: String(enabled) });
+            .from('system_logs')
+            .insert([{
+                level: 'CONFIG',
+                source: 'SYSTEM',
+                message: 'recaptcha_enabled',
+                metadata: { enabled }
+            }]);
 
         if (error) {
             return res.status(400).json({ error: error.message });
@@ -1427,8 +1435,11 @@ router.post('/security/recaptcha/settings', requireAdmin, async (req, res) => {
 router.get('/security/recaptcha/stats', requireAdmin, async (req, res) => {
     try {
         const { data: logs, error } = await supabaseService
-            .from('recaptcha_logs')
-            .select('role, success');
+            .from('system_logs')
+            .select('metadata')
+            .eq('level', 'SECURITY')
+            .eq('source', 'RECAPTCHA')
+            .eq('message', 'verification_attempt');
 
         if (error) {
             return res.status(400).json({ error: error.message });
@@ -1442,9 +1453,9 @@ router.get('/security/recaptcha/stats', requireAdmin, async (req, res) => {
         };
 
         (logs || []).forEach(log => {
-            const role = log.role || 'guest';
+            const role = log.metadata?.role || 'guest';
             if (stats[role]) {
-                if (log.success) {
+                if (log.metadata?.success) {
                     stats[role].success++;
                 } else {
                     stats[role].failed++;
