@@ -57,7 +57,7 @@ const tryGenerateContent = async (prompt, opts = {}) => {
 
     const generationConfig = {
         temperature: 0.7,
-        maxOutputTokens: 8192,
+        maxOutputTokens: 32768,
     };
 
     // Force Gemini to output valid JSON natively
