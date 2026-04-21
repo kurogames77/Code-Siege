@@ -903,12 +903,16 @@ const LandingPage = () => {
                                 </div>
 
                                 <div className="flex justify-center mb-4 mt-2">
-                                    <ReCAPTCHA
-                                        ref={recaptchaRef}
-                                        sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-                                        onChange={(token) => setRecaptchaToken(token)}
-                                        theme="dark"
-                                    />
+                                    {import.meta.env.VITE_RECAPTCHA_SITE_KEY ? (
+                                        <ReCAPTCHA
+                                            ref={recaptchaRef}
+                                            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                                            onChange={(token) => setRecaptchaToken(token)}
+                                            theme="dark"
+                                        />
+                                    ) : (
+                                        <div className="text-red-500 text-sm">Error: reCAPTCHA site key is missing in environment variables.</div>
+                                    )}
                                 </div>
 
                                 <button className="landing-modal__submit" type="submit" disabled={loading}>
