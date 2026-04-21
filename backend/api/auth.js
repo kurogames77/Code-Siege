@@ -287,20 +287,32 @@ router.post('/login', async (req, res) => {
     try {
         let { email, password, student_id, expected_role, recaptchaToken } = req.body;
 
-        if (!recaptchaToken) {
-            return res.status(400).json({ error: 'reCAPTCHA verification is required' });
-        }
+        const { data: settings } = await supabaseService.from('system_settings').select('*').eq('key', 'recaptcha_enabled').single();
+        const isRecaptchaEnabled = settings?.value === 'true' || settings?.value === true || settings?.value === '"true"';
+        const roleForLog = expected_role || 'student';
 
-        try {
-            const recaptchaResponse = await axios.post(
-                `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`
-            );
-            if (!recaptchaResponse.data.success) {
-                return res.status(400).json({ error: 'reCAPTCHA verification failed. Please try again.' });
+        if (isRecaptchaEnabled) {
+            if (!recaptchaToken) {
+                return res.status(400).json({ error: 'reCAPTCHA verification is required' });
             }
-        } catch (error) {
-            console.error('[Auth] reCAPTCHA verification error:', error);
-            return res.status(500).json({ error: 'Failed to verify reCAPTCHA' });
+
+            try {
+                const recaptchaResponse = await axios.post(
+                    `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`
+                );
+
+                supabaseService.from('recaptcha_logs').insert([{
+                    role: roleForLog,
+                    success: recaptchaResponse.data.success
+                }]).then(({error}) => { if (error) console.error("[Auth] Recaptcha log error:", error); });
+
+                if (!recaptchaResponse.data.success) {
+                    return res.status(400).json({ error: 'reCAPTCHA verification failed. Please try again.' });
+                }
+            } catch (error) {
+                console.error('[Auth] reCAPTCHA verification error:', error);
+                return res.status(500).json({ error: 'Failed to verify reCAPTCHA' });
+            }
         }
 
         // Trim inputs

@@ -1369,5 +1369,101 @@ router.patch('/ban-requests/:id/respond', requireAdmin, async (req, res) => {
     }
 });
 
+// ============================================
+// SECURITY SETTINGS & STATS
+// ============================================
+
+/**
+ * GET /api/instructor/security/recaptcha/settings
+ * Get the current reCAPTCHA enforcement setting
+ */
+router.get('/security/recaptcha/settings', requireAdmin, async (req, res) => {
+    try {
+        const { data: settings, error } = await supabaseService
+            .from('system_settings')
+            .select('*')
+            .eq('key', 'recaptcha_enabled')
+            .single();
+
+        if (error && error.code !== 'PGRST116') {
+            return res.status(400).json({ error: error.message });
+        }
+
+        const isEnabled = settings?.value === 'true' || settings?.value === true || settings?.value === '"true"';
+        res.json({ enabled: isEnabled });
+    } catch (error) {
+        console.error('Get recaptcha settings error:', error);
+        res.status(500).json({ error: 'Failed to get recaptcha settings' });
+    }
+});
+
+/**
+ * POST /api/instructor/security/recaptcha/settings
+ * Toggle the reCAPTCHA enforcement setting
+ */
+router.post('/security/recaptcha/settings', requireAdmin, async (req, res) => {
+    try {
+        const { enabled } = req.body;
+        
+        const { error } = await supabaseService
+            .from('system_settings')
+            .upsert({ key: 'recaptcha_enabled', value: String(enabled) });
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json({ message: 'Settings updated successfully', enabled });
+    } catch (error) {
+        console.error('Update recaptcha settings error:', error);
+        res.status(500).json({ error: 'Failed to update recaptcha settings' });
+    }
+});
+
+/**
+ * GET /api/instructor/security/recaptcha/stats
+ * Get the statistical data for reCAPTCHA uses (Success vs Failed by Role)
+ */
+router.get('/security/recaptcha/stats', requireAdmin, async (req, res) => {
+    try {
+        const { data: logs, error } = await supabaseService
+            .from('recaptcha_logs')
+            .select('role, success');
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        const stats = {
+            student: { success: 0, failed: 0 },
+            instructor: { success: 0, failed: 0 },
+            guest: { success: 0, failed: 0 },
+            admin: { success: 0, failed: 0 },
+        };
+
+        (logs || []).forEach(log => {
+            const role = log.role || 'guest';
+            if (stats[role]) {
+                if (log.success) {
+                    stats[role].success++;
+                } else {
+                    stats[role].failed++;
+                }
+            }
+        });
+
+        const formattedData = Object.keys(stats).map(role => ({
+            name: role.charAt(0).toUpperCase() + role.slice(1),
+            success: stats[role].success,
+            failed: stats[role].failed
+        }));
+
+        res.json({ data: formattedData });
+    } catch (error) {
+        console.error('Get recaptcha stats error:', error);
+        res.status(500).json({ error: 'Failed to get recaptcha stats' });
+    }
+});
+
 export default router;
 
