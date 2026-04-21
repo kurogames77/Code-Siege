@@ -411,29 +411,39 @@ export const UserProvider = ({ children }) => {
     const updateProfile = async (profileData) => {
         if (!user) return;
         try {
-            // Map old roles to new roles to avoid constraint violations
-            const role = profileData.role === 'teacher' ? 'instructor' :
-                (profileData.role === 'user' ? 'student' : (profileData.role || 'student'));
+            // Build payload with only explicitly provided fields
+            // This prevents sending undefined values that would overwrite existing data
+            const payload = {};
 
-            const response = await userAPI.updateProfile(user.id, {
-                username: profileData.username || profileData.name || user.name,
-                school: profileData.school,
-                college: profileData.college,
-                course: profileData.course,
-                student_id: profileData.student_id,
-                role: role,
-                email: profileData.email,
-                gender: profileData.gender,
-                selected_hero: profileData.selectedHero,
-                selected_theme: profileData.selectedTheme,
-                student_code: profileData.student_code
-            });
+            // Username/name
+            const newName = profileData.username || profileData.name;
+            if (newName) payload.username = newName;
+
+            // Only include role if explicitly provided (prevents accidental demotion)
+            if (profileData.role !== undefined) {
+                // Map old roles to new roles to avoid constraint violations
+                payload.role = profileData.role === 'teacher' ? 'instructor' :
+                    (profileData.role === 'user' ? 'student' : profileData.role);
+            }
+
+            // Only include other fields if they were explicitly passed
+            if (profileData.school !== undefined) payload.school = profileData.school;
+            if (profileData.college !== undefined) payload.college = profileData.college;
+            if (profileData.course !== undefined) payload.course = profileData.course;
+            if (profileData.student_id !== undefined) payload.student_id = profileData.student_id;
+            if (profileData.email !== undefined) payload.email = profileData.email;
+            if (profileData.gender !== undefined) payload.gender = profileData.gender;
+            if (profileData.selectedHero !== undefined) payload.selected_hero = profileData.selectedHero;
+            if (profileData.selectedTheme !== undefined) payload.selected_theme = profileData.selectedTheme;
+            if (profileData.student_code !== undefined) payload.student_code = profileData.student_code;
+
+            const response = await userAPI.updateProfile(user.id, payload);
 
             if (response.profile) {
                 const formatted = formatUser(response.profile, user);
                 setUser(prev => ({ ...prev, ...formatted }));
             } else {
-                setUser(prev => ({ ...prev, ...profileData, name: profileData.name }));
+                setUser(prev => ({ ...prev, ...profileData, name: profileData.name || prev.name }));
             }
             return response;
         } catch (error) {
