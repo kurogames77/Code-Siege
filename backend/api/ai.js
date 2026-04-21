@@ -40,9 +40,11 @@ const MODELS_TO_TRY = [
 /**
  * Unified AI content generation with multi-key, multi-model failover.
  * For each API key, tries all models before moving to the next key.
+ * @param {string} prompt - The prompt to send
+ * @param {object} opts - Optional config: { jsonMode: boolean }
  * Returns the generated result or throws an error if all fail.
  */
-const tryGenerateContent = async (prompt) => {
+const tryGenerateContent = async (prompt, opts = {}) => {
     const apiKeys = getApiKeys();
 
     if (apiKeys.length === 0) {
@@ -53,6 +55,16 @@ const tryGenerateContent = async (prompt) => {
     let lastError = null;
     let attemptCount = 0;
 
+    const generationConfig = {
+        temperature: 0.7,
+        maxOutputTokens: 8192,
+    };
+
+    // Force Gemini to output valid JSON natively
+    if (opts.jsonMode) {
+        generationConfig.responseMimeType = 'application/json';
+    }
+
     for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex++) {
         const apiKey = apiKeys[keyIndex];
         const keyLabel = `Key#${keyIndex + 1} (${apiKey.substring(0, 6)}...${apiKey.substring(apiKey.length - 4)})`;
@@ -62,13 +74,10 @@ const tryGenerateContent = async (prompt) => {
         for (const modelName of MODELS_TO_TRY) {
             attemptCount++;
             try {
-                console.log(`[AI Failover] Attempt ${attemptCount}: ${keyLabel} → ${modelName}`);
+                console.log(`[AI Failover] Attempt ${attemptCount}: ${keyLabel} → ${modelName}${opts.jsonMode ? ' [JSON mode]' : ''}`);
                 const model = genAI.getGenerativeModel({ 
                     model: modelName,
-                    generationConfig: {
-                        temperature: 0.7,
-                        maxOutputTokens: 8192,
-                    }
+                    generationConfig
                 });
                 const result = await model.generateContent(prompt);
                 console.log(`[AI Failover] ✓ SUCCESS on ${keyLabel} → ${modelName}`);
@@ -229,7 +238,7 @@ router.post('/generate-levels', authenticateUser, async (req, res) => {
         - ALL code in 'solution' MUST follow the ${language} syntax rules listed above exactly.
         `;
 
-        const result = await tryGenerateContent(prompt);
+        const result = await tryGenerateContent(prompt, { jsonMode: true });
         const response = await result.response;
         let text = response.text();
 
