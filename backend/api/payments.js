@@ -49,11 +49,17 @@ router.get('/manual', async (req, res) => {
     try {
         const { status, role } = req.query; // optional filters
         
+        // Use explicit FK name because manual_payments has two FKs to users (user_id + admin_id)
+        const useInner = !!role; // inner join only when filtering by role
+        const joinHint = useInner
+            ? 'users!manual_payments_user_id_fkey!inner'
+            : 'users!manual_payments_user_id_fkey';
+
         let query = supabaseService
             .from('manual_payments')
             .select(`
                 *,
-                users!inner (username, email, role)
+                ${joinHint} (username, email, role)
             `)
             .order('created_at', { ascending: false });
 
@@ -62,7 +68,11 @@ router.get('/manual', async (req, res) => {
         }
 
         if (role) {
-            query = query.eq('users.role', role);
+            if (role === 'student') {
+                query = query.in('users.role', ['student', 'user']);
+            } else {
+                query = query.eq('users.role', role);
+            }
         }
 
         const { data, error } = await query;
