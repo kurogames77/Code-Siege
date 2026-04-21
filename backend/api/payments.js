@@ -47,18 +47,22 @@ router.post('/manual', async (req, res) => {
 // Admin: Get all pending payments
 router.get('/manual', async (req, res) => {
     try {
-        const { status } = req.query; // optional filter
+        const { status, role } = req.query; // optional filters
         
         let query = supabaseService
             .from('manual_payments')
             .select(`
                 *,
-                users:user_id (username, email)
+                users!inner (username, email, role)
             `)
             .order('created_at', { ascending: false });
 
         if (status) {
             query = query.eq('status', status);
+        }
+
+        if (role) {
+            query = query.eq('users.role', role);
         }
 
         const { data, error } = await query;
