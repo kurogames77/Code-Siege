@@ -129,20 +129,34 @@ router.patch('/manual/:id', async (req, res) => {
             return res.status(400).json({ error: 'Payment has already been processed' });
         }
 
-        // 3. If approved, add gems using the RPC function
+        // 3. If approved, add gems to user_progress (global row)
         if (status === 'approved') {
-            const { error: rpcError } = await supabaseService.rpc('add_gems', {
-                user_id_param: payment.user_id,
-                amount_param: payment.gems
-            });
-            
-            if (rpcError) {
-                console.error('[Payments API] Error adding gems via RPC:', rpcError);
-                // Attempt direct update as fallback
-                const { data: user, error: userError } = await supabaseService.from('users').select('gems').eq('id', payment.user_id).single();
-                if(!userError && user){
-                    await supabaseService.from('users').update({ gems: user.gems + payment.gems }).eq('id', payment.user_id);
+            try {
+                // Gems are stored in user_progress where tower_id = 'global'
+                const { data: progress, error: progressError } = await supabaseService
+                    .from('user_progress')
+                    .select('id, gems')
+                    .eq('user_id', payment.user_id)
+                    .eq('tower_id', 'global')
+                    .single();
+
+                if (progressError || !progress) {
+                    console.error('[Payments API] Could not find user_progress global row:', progressError);
+                } else {
+                    const newGems = (progress.gems || 0) + payment.gems;
+                    const { error: updateGemsError } = await supabaseService
+                        .from('user_progress')
+                        .update({ gems: newGems })
+                        .eq('id', progress.id);
+
+                    if (updateGemsError) {
+                        console.error('[Payments API] Error updating gems:', updateGemsError);
+                    } else {
+                        console.log(`[Payments API] Added ${payment.gems} gems to user ${payment.user_id}. New total: ${newGems}`);
+                    }
                 }
+            } catch (gemErr) {
+                console.error('[Payments API] Gem credit failed:', gemErr);
             }
         }
 
