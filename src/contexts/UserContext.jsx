@@ -317,10 +317,10 @@ export const UserProvider = ({ children }) => {
         return response;
     };
 
-    const login = async (identifier, password, useStudentId = false, expectedRole = null) => {
+    const login = async (identifier, password, useStudentId = false, expectedRole = null, recaptchaToken = null) => {
         loginInProgress.current = true;
         try {
-            const response = await authAPI.login(identifier, password, useStudentId, expectedRole);
+            const response = await authAPI.login(identifier, password, useStudentId, expectedRole, recaptchaToken);
             if (response.profile) {
                 setUser(formatUser(response.profile));
                 setIsAuthenticated(true);

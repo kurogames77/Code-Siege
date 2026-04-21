@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { Shield, GraduationCap, User, Mail, Lock, BookOpen, ChevronLeft, Loader2, AlertCircle, Eye, EyeOff, Trophy, Swords, Users, Castle, X, CheckCircle, CheckCircle2, KeyRound } from 'lucide-react';
 import { motion, useInView } from 'framer-motion';
 import '../styles/landing-page.css';
@@ -25,6 +26,10 @@ const LandingPage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [signupSuccess, setSignupSuccess] = useState(false);
+
+    // ReCAPTCHA state
+    const [recaptchaToken, setRecaptchaToken] = useState(null);
+    const recaptchaRef = useRef(null);
 
     // Form state
     const [email, setEmail] = useState('');
@@ -135,6 +140,8 @@ const LandingPage = () => {
         setForgotLoading(false);
         setForgotSuccess(false);
         setForgotError('');
+        setRecaptchaToken(null);
+        if (recaptchaRef.current) recaptchaRef.current.reset();
     };
 
     // Interceptor for Google Login to save intended role
@@ -334,11 +341,14 @@ const LandingPage = () => {
                 if (!password.trim()) {
                     throw new Error('Please enter your password');
                 }
+                if (!recaptchaToken) {
+                    throw new Error('Please complete the reCAPTCHA verification');
+                }
 
                 // Call login with the provided ID and the expected role (the current tab)
                 const expectedRole = modal?.role || 'student';
                 const useStudentIdFlag = !isGuestLogin; // Guests login with email, not student_id
-                const response = await login(idToSubmit, password, useStudentIdFlag, expectedRole);
+                const response = await login(idToSubmit, password, useStudentIdFlag, expectedRole, recaptchaToken);
                 toast.success('Welcome back!');
                 closeModal();
 
@@ -356,6 +366,10 @@ const LandingPage = () => {
         } catch (err) {
             console.error('Auth error:', err);
             setError(err.message || 'Authentication failed. Please try again.');
+            if (isLogin && recaptchaRef.current) {
+                recaptchaRef.current.reset();
+                setRecaptchaToken(null);
+            }
         } finally {
             setLoading(false);
         }
@@ -886,6 +900,15 @@ const LandingPage = () => {
                                     >
                                         Forgot Password?
                                     </button>
+                                </div>
+
+                                <div className="flex justify-center mb-4 mt-2">
+                                    <ReCAPTCHA
+                                        ref={recaptchaRef}
+                                        sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                                        onChange={(token) => setRecaptchaToken(token)}
+                                        theme="dark"
+                                    />
                                 </div>
 
                                 <button className="landing-modal__submit" type="submit" disabled={loading}>

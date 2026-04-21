@@ -97,10 +97,10 @@ export const authAPI = {
         return data;
     },
 
-    login: async (identifier, password, useStudentId = false, expectedRole = null) => {
+    login: async (identifier, password, useStudentId = false, expectedRole = null, recaptchaToken = null) => {
         const body = useStudentId
-            ? { student_id: identifier, password, expected_role: expectedRole }
-            : { email: identifier, password, expected_role: expectedRole };
+            ? { student_id: identifier, password, expected_role: expectedRole, recaptchaToken }
+            : { email: identifier, password, expected_role: expectedRole, recaptchaToken };
 
         const data = await apiRequest('/auth/login', {
             method: 'POST',

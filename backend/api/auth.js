@@ -1,4 +1,5 @@
 import express from 'express';
+import axios from 'axios';
 import crypto from 'crypto';
 import supabase, { supabaseService } from '../lib/supabase.js';
 import logger from '../utils/logger.js';
@@ -284,7 +285,23 @@ router.post('/login', async (req, res) => {
     console.log('[Auth] POST /login request received');
     res.setHeader('X-Backend-Version', '2.2');
     try {
-        let { email, password, student_id, expected_role } = req.body;
+        let { email, password, student_id, expected_role, recaptchaToken } = req.body;
+
+        if (!recaptchaToken) {
+            return res.status(400).json({ error: 'reCAPTCHA verification is required' });
+        }
+
+        try {
+            const recaptchaResponse = await axios.post(
+                `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`
+            );
+            if (!recaptchaResponse.data.success) {
+                return res.status(400).json({ error: 'reCAPTCHA verification failed. Please try again.' });
+            }
+        } catch (error) {
+            console.error('[Auth] reCAPTCHA verification error:', error);
+            return res.status(500).json({ error: 'Failed to verify reCAPTCHA' });
+        }
 
         // Trim inputs
         if (email) email = email.trim();
