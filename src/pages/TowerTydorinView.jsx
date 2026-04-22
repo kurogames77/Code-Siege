@@ -247,16 +247,14 @@ const TowerTydorinView = () => {
                                     ref={isCurrent ? currentLevelRef : null}
                                 >
                                     <motion.div
-                                        whileHover={isVisibleDefault ? { scale: 1.2, filter: "brightness(1.3)" } : {}}
+                                        whileHover={{ scale: 1.2, filter: "brightness(1.3)" }}
                                         onClick={() => {
-                                            if (isCurrent) {
+                                            if (isVisibleDefault) {
                                                 playClick();
                                                 navigate(`/gamecode-tydorin/${labelNum}/${id}`);
-                                            } else if (!isCleared) {
-                                                playCancel();
                                             }
                                         }}
-                                        className={`relative flex items-center justify-center ${isCurrent ? 'cursor-pointer' : isCleared ? 'cursor-default' : 'cursor-not-allowed grayscale opacity-50'}`}
+                                        className={`relative flex items-center justify-center cursor-pointer ${!isVisibleDefault ? 'opacity-50 grayscale pointer-events-none' : ''}`}
                                     >
                                         <img
                                             src={buttonDot}
