@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ShoppingBag, Star, Shield, Zap, Gem, CreditCard, Tag, Package, Search, Filter, ShoppingCart, ArrowRight, Palette, Cpu, Flame, Swords, LayoutGrid, Sparkles } from 'lucide-react';
+import { X, ShoppingBag, Star, Shield, Zap, Gem, CreditCard, Tag, Package, Search, Filter, ShoppingCart, ArrowRight, Palette, Cpu, Flame, Swords, LayoutGrid, Sparkles, Check } from 'lucide-react';
+import { shopAPI } from '../../services/api';
 import shopIcon from '../../assets/shop.png';
 import gemIcon from '../../assets/gem.png';
 import heroAsset from '../../assets/hero1.png'; // Placeholder for hero images
@@ -15,21 +16,57 @@ import { useTheme } from '../../contexts/ThemeContext'; // Import Theme Context
 const ShopModal = ({ isOpen, onClose }) => {
     const [activeTab, setActiveTab] = useState('skins');
     const [searchQuery, setSearchQuery] = useState('');
+    const [purchasedThemes, setPurchasedThemes] = useState([]);
+    const [purchasing, setPurchasing] = useState(false);
 
     const [isTopUpOpen, setIsTopUpOpen] = useState(false);
     const { playClick, playCancel, playSelect, playSuccess } = useSound();
-    const { user } = useUser();
-    const { currentTheme, setTheme } = useTheme(); // Use Theme Context
+    const { user, refreshUser } = useUser();
+    const { currentTheme, setTheme } = useTheme();
+
+    // Fetch purchased themes on open
+    useEffect(() => {
+        if (isOpen) {
+            shopAPI.getPurchasedThemes().then(res => {
+                setPurchasedThemes(res.purchasedThemes || []);
+            }).catch(() => {});
+        }
+    }, [isOpen]);
+
+    const handlePurchaseTheme = async (item) => {
+        if (purchasing) return;
+        setPurchasing(true);
+        try {
+            const res = await shopAPI.purchaseTheme(item.themeId, item.price);
+            if (res.success) {
+                playSuccess();
+                setPurchasedThemes(prev => [...prev, item.themeId]);
+                setTheme(item.themeId);
+                if (refreshUser) refreshUser();
+            }
+        } catch (err) {
+            alert(err?.error || 'Purchase failed. Check your gem balance.');
+        } finally {
+            setPurchasing(false);
+        }
+    };
+
+    const handleEquipTheme = async (item) => {
+        try {
+            await shopAPI.equipTheme(item.themeId);
+            setTheme(item.themeId);
+            playSelect();
+        } catch (err) {
+            console.error('Equip failed:', err);
+        }
+    };
 
     const items = {
-
-        skins: [
-            // No skins available yet for new accounts
-        ],
+        skins: [],
         themes: [
-            { id: 13, type: 'theme', name: 'Winter Frost', price: 1500, currency: 'gem', image: winterBundle, rarity: 'epic', description: 'Transform your interface with icy blue hues and frost effects.' },
-            { id: 14, type: 'theme', name: 'Santa\'s Workshop', price: 1800, currency: 'gem', image: christmasBundle, rarity: 'legendary', description: 'Festive holiday theme with gifts, ribbons, and cheer.' },
-            { id: 15, type: 'theme', name: 'Spooky Hollow', price: 1500, currency: 'gem', image: halloweenBundle, rarity: 'epic', description: 'Dark and eerie theme with pumpkins and spectral glows.' },
+            { id: 13, type: 'theme', themeId: 'winter', name: 'Winter Frost', price: 1500, currency: 'gem', image: winterBundle, rarity: 'epic', description: 'Transform your interface with icy blue hues and frost effects.' },
+            { id: 14, type: 'theme', themeId: 'christmas', name: 'Santa\'s Workshop', price: 1800, currency: 'gem', image: christmasBundle, rarity: 'legendary', description: 'Festive holiday theme with gifts, ribbons, and cheer.' },
+            { id: 15, type: 'theme', themeId: 'spooky', name: 'Spooky Hollow', price: 1500, currency: 'gem', image: halloweenBundle, rarity: 'epic', description: 'Dark and eerie theme with pumpkins and spectral glows.' },
         ],
     };
 
@@ -314,14 +351,37 @@ const ShopModal = ({ isOpen, onClose }) => {
                                                                         <span className="text-lg font-black text-white tabular-nums tracking-tighter">{item.price.toLocaleString()}</span>
                                                                     </div>
                                                                 </div>
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); playSuccess(); }}
-                                                                    className={`h-16 w-16 rounded-2xl transition-all flex items-center justify-center flex-shrink-0 group/cart shadow-xl active:scale-90 ${item.rarity === 'legendary' ? `bg-${currentTheme.colors.secondary}-500 hover:bg-${currentTheme.colors.secondary}-400 text-black shadow-${currentTheme.colors.secondary}-500/20` :
-                                                                        `bg-${currentTheme.colors.primary}-600 hover:bg-${currentTheme.colors.primary}-500 text-white shadow-${currentTheme.colors.primary}-600/20`
-                                                                        }`}
-                                                                >
-                                                                    <ShoppingBag className="w-6 h-6 group-hover/cart:scale-110 transition-transform" />
-                                                                </button>
+                                                                {item.type === 'theme' && item.themeId ? (() => {
+                                                                    const owned = purchasedThemes.includes(item.themeId);
+                                                                    const equipped = owned && currentTheme.id === item.themeId;
+                                                                    return equipped ? (
+                                                                        <div className="h-16 w-16 rounded-2xl flex items-center justify-center bg-emerald-500/20 border border-emerald-500/40 text-emerald-400">
+                                                                            <Check className="w-6 h-6" />
+                                                                        </div>
+                                                                    ) : owned ? (
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); handleEquipTheme(item); }}
+                                                                            className="h-16 w-16 rounded-2xl transition-all flex items-center justify-center bg-amber-500 hover:bg-amber-400 text-black shadow-xl active:scale-90 font-black text-[10px] uppercase tracking-widest"
+                                                                        >USE</button>
+                                                                    ) : (
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); handlePurchaseTheme(item); }}
+                                                                            disabled={purchasing}
+                                                                            className={`h-16 w-16 rounded-2xl transition-all flex items-center justify-center flex-shrink-0 group/cart shadow-xl active:scale-90 disabled:opacity-50 ${item.rarity === 'legendary' ? `bg-${currentTheme.colors.secondary}-500 hover:bg-${currentTheme.colors.secondary}-400 text-black shadow-${currentTheme.colors.secondary}-500/20` :
+                                                                                `bg-${currentTheme.colors.primary}-600 hover:bg-${currentTheme.colors.primary}-500 text-white shadow-${currentTheme.colors.primary}-600/20`}`}
+                                                                        >
+                                                                            <ShoppingBag className="w-6 h-6 group-hover/cart:scale-110 transition-transform" />
+                                                                        </button>
+                                                                    );
+                                                                })() : (
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); playSuccess(); }}
+                                                                        className={`h-16 w-16 rounded-2xl transition-all flex items-center justify-center flex-shrink-0 group/cart shadow-xl active:scale-90 ${item.rarity === 'legendary' ? `bg-${currentTheme.colors.secondary}-500 hover:bg-${currentTheme.colors.secondary}-400 text-black shadow-${currentTheme.colors.secondary}-500/20` :
+                                                                            `bg-${currentTheme.colors.primary}-600 hover:bg-${currentTheme.colors.primary}-500 text-white shadow-${currentTheme.colors.primary}-600/20`}`}
+                                                                    >
+                                                                        <ShoppingBag className="w-6 h-6 group-hover/cart:scale-110 transition-transform" />
+                                                                    </button>
+                                                                )}
                                                             </div>
                                                         </div>
 

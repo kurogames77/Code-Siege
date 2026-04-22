@@ -121,8 +121,13 @@ export const UserProvider = ({ children }) => {
                 ]);
                 const { user: authUser, profile } = await getMeWithTimeout;
                 if (authUser) {
-                    setUser(formatUser(profile, authUser));
+                    const formattedUser = formatUser(profile, authUser);
+                    setUser(formattedUser);
                     setIsAuthenticated(true);
+                    // Sync DB-stored theme to localStorage for ThemeContext
+                    if (formattedUser.selectedTheme && formattedUser.selectedTheme !== 'default') {
+                        localStorage.setItem('app_theme', formattedUser.selectedTheme);
+                    }
                     return;
                 }
             }

@@ -387,6 +387,24 @@ export const shopAPI = {
             body: JSON.stringify({ item_id: itemId }),
         });
     },
+
+    purchaseTheme: async (themeId, price) => {
+        return apiRequest('/shop/purchase-theme', {
+            method: 'POST',
+            body: JSON.stringify({ themeId, price }),
+        });
+    },
+
+    equipTheme: async (themeId) => {
+        return apiRequest('/shop/equip-theme', {
+            method: 'PATCH',
+            body: JSON.stringify({ themeId }),
+        });
+    },
+
+    getPurchasedThemes: async () => {
+        return apiRequest('/shop/purchased-themes');
+    },
 };
 
 // ============================================
