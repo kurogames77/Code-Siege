@@ -776,44 +776,51 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                         onDragEnd={handleDragEnd} 
                                         modifiers={[customModifier]}
                                     >
-                                        <div className="relative w-full flex-1 overflow-hidden">
-                                            {/* Zoom Controls */}
-                                            <div className="absolute bottom-4 right-4 z-50 flex items-center gap-2">
-                                                <button 
-                                                    onClick={() => setCanvasScale(s => Math.max(0.6, +(s - 0.1).toFixed(1)))} 
-                                                    disabled={canvasScale <= 0.6}
-                                                    className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
-                                                >
-                                                    <ZoomOut className="w-5 h-5" />
-                                                </button>
-                                                <button 
-                                                    onClick={() => setCanvasScale(getScaleForBlockCount(blocks.length))} 
-                                                    className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg"
-                                                >
-                                                    <Maximize className="w-5 h-5" />
-                                                </button>
-                                                <button 
-                                                    onClick={() => setCanvasScale(s => Math.min(1, +(s + 0.1).toFixed(1)))} 
-                                                    disabled={canvasScale >= 1}
-                                                    className="w-10 h-10 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
-                                                >
-                                                    <ZoomIn className="w-5 h-5" />
-                                                </button>
-                                                {/* Zoom Percentage Indicator */}
-                                                <div className="px-3 py-1.5 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 rounded-lg shadow-lg">
-                                                    <span className="text-cyan-400 font-mono text-xs font-bold tracking-wider">{Math.round(canvasScale * 100)}%</span>
+                                        <div className="relative w-full flex-1 overflow-hidden p-4">
+                                            {/* Puzzle Blocks Container */}
+                                            <div className={`relative w-full h-full rounded-xl border-2 border-dashed overflow-hidden transition-colors duration-500 ${theme === 'dark' ? 'border-cyan-500/25 bg-cyan-950/5' : 'border-cyan-300/40 bg-cyan-50/30'}`}>
+                                                {/* Container Label */}
+                                                <div className={`absolute top-0 left-4 z-20 px-3 py-0.5 text-[9px] uppercase tracking-[0.2em] font-bold rounded-b-md ${theme === 'dark' ? 'bg-cyan-900/60 text-cyan-400 border-x border-b border-cyan-500/20' : 'bg-cyan-100 text-cyan-600 border-x border-b border-cyan-200'}`}>
+                                                    ⧫ Puzzle Workspace
                                                 </div>
-                                            </div>
 
-                                            {/* Scaled blocks container */}
-                                            <div 
-                                                className="w-full h-full origin-top-left"
-                                                style={{ transform: `scale(${canvasScale})`, width: `${100 / canvasScale}%`, height: `${100 / canvasScale}%` }}
-                                            >
-                                                <div className="relative w-full h-full p-8">
-                                                    {blocks.map((block) => (
-                                                        <PuzzleBlock key={block.id} {...block} variant={mode} isGlowing={glowingBlocks.includes(block.id)} />
-                                                    ))}
+                                                {/* Zoom Controls */}
+                                                <div className="absolute bottom-3 right-3 z-50 flex items-center gap-2">
+                                                    <button 
+                                                        onClick={() => setCanvasScale(s => Math.max(0.6, +(s - 0.1).toFixed(1)))} 
+                                                        disabled={canvasScale <= 0.6}
+                                                        className="w-8 h-8 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                                                    >
+                                                        <ZoomOut className="w-4 h-4" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => setCanvasScale(getScaleForBlockCount(blocks.length))} 
+                                                        className="w-8 h-8 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg"
+                                                    >
+                                                        <Maximize className="w-4 h-4" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => setCanvasScale(s => Math.min(1, +(s + 0.1).toFixed(1)))} 
+                                                        disabled={canvasScale >= 1}
+                                                        className="w-8 h-8 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 hover:bg-cyan-900/50 hover:border-cyan-400 flex items-center justify-center rounded-lg text-cyan-400 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                                                    >
+                                                        <ZoomIn className="w-4 h-4" />
+                                                    </button>
+                                                    <div className="px-2 py-1 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 rounded-lg shadow-lg">
+                                                        <span className="text-cyan-400 font-mono text-[10px] font-bold tracking-wider">{Math.round(canvasScale * 100)}%</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Scaled blocks container */}
+                                                <div 
+                                                    className="w-full h-full origin-top-left"
+                                                    style={{ transform: `scale(${canvasScale})`, width: `${100 / canvasScale}%`, height: `${100 / canvasScale}%` }}
+                                                >
+                                                    <div className="relative w-full h-full p-6 pt-8">
+                                                        {blocks.map((block) => (
+                                                            <PuzzleBlock key={block.id} {...block} variant={mode} isGlowing={glowingBlocks.includes(block.id)} />
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -822,13 +829,13 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                             </div>
 
                             {/* RIGHT: Control Console */}
-                            <div className={`flex-1 min-w-[350px] max-w-[400px] border-l flex flex-col relative z-40 transition-colors duration-500 ${theme === 'dark' ? 'bg-[#080b14] border-cyan-500/20' : 'bg-slate-100 border-slate-200'}`} style={theme === 'dark' ? { backgroundImage: "url('https://www.transparenttextures.com/patterns/dark-matter.png')" } : {}}>
+                            <div className={`flex-1 min-w-[260px] max-w-[300px] border-l flex flex-col relative z-40 transition-colors duration-500 ${theme === 'dark' ? 'bg-[#080b14] border-cyan-500/20' : 'bg-slate-100 border-slate-200'}`} style={theme === 'dark' ? { backgroundImage: "url('https://www.transparenttextures.com/patterns/dark-matter.png')" } : {}}>
 
                                 {/* Info Modules */}
-                                <div className="p-6 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
+                                <div className="p-4 space-y-4 flex-1 overflow-y-auto custom-scrollbar">
 
                                     {/* Rewards Module */}
-                                    <div className={`p-4 relative group border transition-colors duration-500 ${theme === 'dark' ? 'bg-cyan-950/10 border-cyan-500/20' : 'bg-white border-slate-200 shadow-sm rounded-lg'}`}>
+                                    <div className={`p-3 relative group border transition-colors duration-500 ${theme === 'dark' ? 'bg-cyan-950/10 border-cyan-500/20' : 'bg-white border-slate-200 shadow-sm rounded-lg'}`}>
                                         <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-cyan-500/50" />
                                         <div className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-cyan-500/50" />
                                         <div className="flex items-center gap-4">
@@ -885,7 +892,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                 </div>
 
                                 {/* Action Bar */}
-                                <div className={`p-6 border-t transition-colors duration-500 ${theme === 'dark' ? 'bg-[#0c1221] border-cyan-500/20' : 'bg-white border-slate-200'}`}>
+                                <div className={`p-4 border-t transition-colors duration-500 ${theme === 'dark' ? 'bg-[#0c1221] border-cyan-500/20' : 'bg-white border-slate-200'}`}>
                                     <Button
                                         onClick={handleSubmit}
                                         disabled={isSuccess || isExecuting}
