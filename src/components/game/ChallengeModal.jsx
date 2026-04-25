@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { DndContext, useSensor, useSensors, PointerSensor, DragOverlay } from '@dnd-kit/core';
 import { restrictToWindowEdges, restrictToParentElement } from '@dnd-kit/modifiers';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Lightbulb, X, Trophy, Bug, ZoomIn, ZoomOut, Maximize, Sun, Moon } from 'lucide-react';
+import { Play, Lightbulb, X, Trophy, Bug, ZoomIn, ZoomOut, Maximize, Sun, Moon, RotateCcw } from 'lucide-react';
 import PuzzleBlock from './PuzzleBlock';
 import CodeTimer from './CodeTimer';
 import Button from '../ui/Button';
@@ -233,23 +233,25 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                 }
             }
 
-            // ANTI-OVERLAP LOGIC: Nudge block down if it was dropped directly onto another block
+            // ANTI-OVERLAP LOGIC: Ensure "solid puzzle" by pushing out of bounds
             if (!snappedWithId) {
                 let overlap = true;
                 let attempts = 0;
-                while (overlap && attempts < 5) {
+                while (overlap && attempts < 20) {
                     overlap = false;
                     for (const other of newBlocks) {
                         if (other.id === active.id) continue;
+                        if (!other.inWorkspace) continue; // Only check workspace blocks
+                        
                         const dx = Math.abs(updatedBlock.position.x - other.position.x);
                         const dy = Math.abs(updatedBlock.position.y - other.position.y);
                         
-                        // If center points are too close together, it's an overlap
-                        if (dx < 100 && dy < 40) {
-                            updatedBlock.position.y += 55; // Push below
-                            updatedBlock.position.x += 15; // Slight diagonal offset to make it visible
+                        // Strict bounding box overlap check (140x48 + 10px margin)
+                        if (dx < 150 && dy < 58) {
+                            updatedBlock.position.y += 60; // Push below
+                            updatedBlock.position.x += 10; // Slight diagonal offset to make it visible
                             overlap = true;
-                            break; // Re-check collision against all blocks with new position
+                            break;
                         }
                     }
                     attempts++;
@@ -810,8 +812,17 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                     ⧫ Puzzle Workspace
                                                 </div>
 
-                                                {/* Zoom Controls */}
+                                                {/* Zoom & Reset Controls */}
                                                 <div className="absolute bottom-3 right-3 z-50 flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            setBlocks(prev => prev.map(b => ({ ...b, inWorkspace: false })));
+                                                            if (playClick) playClick();
+                                                        }}
+                                                        className="px-3 h-8 mr-2 text-[10px] uppercase font-bold tracking-wider bg-slate-900/80 backdrop-blur-md border border-rose-500/30 hover:bg-rose-900/50 hover:border-rose-400 flex items-center justify-center rounded-lg text-rose-400 transition-all shadow-lg"
+                                                    >
+                                                        <RotateCcw className="w-3 h-3 mr-1" /> Reset
+                                                    </button>
                                                     <button 
                                                         onClick={() => setCanvasScale(s => Math.max(0.6, +(s - 0.1).toFixed(1)))} 
                                                         disabled={canvasScale <= 0.6}
