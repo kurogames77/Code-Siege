@@ -5,7 +5,7 @@ import heroAsset from '../../assets/hero1.png';
 import leaderboardIcon from '../../assets/leaderboard.png';
 import useSound from '../../hooks/useSound';
 import { useUser } from '../../contexts/UserContext';
-import { getRankIcon, getRankName } from '../../utils/rankSystem';
+import { getRankIcon, getRankName, getRankFromExp } from '../../utils/rankSystem';
 import RankLegendModal from './RankLegendModal';
 import { useTheme } from '../../contexts/ThemeContext'; // Import ThemeContext
 import { leaderboardAPI, userAPI } from '../../services/api';
@@ -493,7 +493,7 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                                     )}
                                                 </div>
                                                 <div className={`absolute -bottom-3 -right-3 w-10 h-10 bg-slate-900 border border-${currentTheme.colors.primary}-500/30 rounded-xl flex items-center justify-center shadow-lg`}>
-                                                    <span className={`text-${currentTheme.colors.primary}-400 font-black text-sm`}>{selectedPlayer.level || 1}</span>
+                                                    <span className={`text-${currentTheme.colors.primary}-400 font-black text-sm`}>{getRankFromExp(selectedPlayer.xp || selectedPlayer.exp || 0)?.id || 1}</span>
                                                 </div>
                                             </div>
                                             
