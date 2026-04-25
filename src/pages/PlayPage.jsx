@@ -23,7 +23,13 @@ const PlayPage = () => {
     const mapRef = useRef(null);
     const location = useLocation();
 
-    const { user: contextUser, loading } = useUser();
+    const { user: contextUser, loading, refreshUser } = useUser();
+
+    // Refresh user data on mount to ensure towerProgress is up-to-date
+    // (handles instructor undo of "open all levels" by fetching authoritative server state)
+    useEffect(() => {
+        refreshUser();
+    }, []);
 
     // Auth guard — redirect to landing when logged out
     useEffect(() => {

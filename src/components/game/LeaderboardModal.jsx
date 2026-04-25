@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trophy, Crown, Medal, Search, ChevronUp, ChevronDown, Shield, Loader2 } from 'lucide-react';
+import { X, Trophy, Crown, Medal, Search, ChevronUp, ChevronDown, Shield, Loader2, Swords, Award, User } from 'lucide-react';
 import heroAsset from '../../assets/hero1.png';
 import leaderboardIcon from '../../assets/leaderboard.png';
 import useSound from '../../hooks/useSound';
@@ -8,7 +8,7 @@ import { useUser } from '../../contexts/UserContext';
 import { getRankIcon, getRankName } from '../../utils/rankSystem';
 import RankLegendModal from './RankLegendModal';
 import { useTheme } from '../../contexts/ThemeContext'; // Import ThemeContext
-import { leaderboardAPI } from '../../services/api';
+import { leaderboardAPI, userAPI } from '../../services/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -21,6 +21,9 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showRankLegend, setShowRankLegend] = useState(false);
+    const [selectedPlayer, setSelectedPlayer] = useState(null);
+    const [isPlayerViewerOpen, setIsPlayerViewerOpen] = useState(false);
+    const [isPlayerLoading, setIsPlayerLoading] = useState(false);
 
     // Fetch leaderboard data
     useEffect(() => {
@@ -48,6 +51,22 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
 
         fetchLeaderboard();
     }, [isOpen, timeframe]);
+
+    // Handler to view a player's full profile
+    const handleViewPlayerProfile = async (playerId) => {
+        if (!playerId || playerId === user?.id) return; // Don't open for self
+        setIsPlayerLoading(true);
+        setIsPlayerViewerOpen(true);
+        try {
+            const data = await userAPI.getUserProfile(playerId);
+            setSelectedPlayer(data?.user || data?.profile || data);
+        } catch (error) {
+            console.error('Failed to load player profile', error);
+            setIsPlayerViewerOpen(false);
+        } finally {
+            setIsPlayerLoading(false);
+        }
+    };
 
     // Get top 3 players
     const topPlayers = leaderboard.slice(0, 3).map(player => ({
@@ -246,6 +265,7 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                             <motion.div
                                                 variants={podiumVariants}
                                                 className="flex-1 flex flex-col items-center max-w-[140px]"
+                                                onClick={() => handleViewPlayerProfile(topPlayers[1]?.id)}
                                             >
                                                 <div className="relative mb-6 group cursor-pointer">
                                                     <div className="w-24 h-24 rounded-full border-2 border-slate-400 p-1 bg-slate-900 relative z-10 group-hover:scale-110 transition-transform duration-500">
@@ -275,6 +295,7 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                         <motion.div
                                             variants={podiumVariants}
                                             className="flex-1 flex flex-col items-center max-w-[180px] -mt-16"
+                                            onClick={() => handleViewPlayerProfile(topPlayers[0]?.id)}
                                         >
                                             <div className="relative mb-8 group cursor-pointer">
                                                 <div className={`absolute inset-0 bg-${currentTheme.colors.secondary}-500/20 blur-3xl animate-pulse rounded-full`} />
@@ -305,6 +326,7 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                             <motion.div
                                                 variants={podiumVariants}
                                                 className="flex-1 flex flex-col items-center max-w-[140px]"
+                                                onClick={() => handleViewPlayerProfile(topPlayers[2]?.id)}
                                             >
                                                 <div className="relative mb-6 group cursor-pointer">
                                                     <div className="w-24 h-24 rounded-full border-2 border-orange-700 p-1 bg-slate-900 relative z-10 group-hover:scale-110 transition-transform duration-500">
@@ -349,6 +371,7 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                             key={player.rank}
                                             variants={itemVariants}
                                             className={`flex items-center gap-6 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-${currentTheme.colors.primary}-500/20 active:scale-[0.98] transition-all group relative overflow-hidden cursor-pointer`}
+                                            onClick={() => handleViewPlayerProfile(player.id)}
                                         >
                                             <div className={`w-8 text-center text-xl font-black text-slate-700 group-hover:text-${currentTheme.colors.primary}-500 transition-colors italic`}>
                                                 {player.rank}
@@ -429,11 +452,118 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                         </div>
                     </motion.div >
 
-                    {/* Rank Legend Modal - Placed here to avoid transform stacking context issues */}
+                    {/* Rank Legend Modal */}
                     < RankLegendModal
                         isOpen={showRankLegend}
                         onClose={() => setShowRankLegend(false)}
                     />
+
+                    {/* Player Profile Viewer Overlay */}
+                    <AnimatePresence>
+                        {isPlayerViewerOpen && (
+                            <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-8">
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    className={`w-full max-w-lg ${currentTheme.colors.panel} border border-${currentTheme.colors.primary}-500/20 rounded-[2rem] p-8 shadow-2xl relative overflow-hidden`}
+                                >
+                                    <button
+                                        onClick={() => setIsPlayerViewerOpen(false)}
+                                        className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors z-20"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                    
+                                    {isPlayerLoading ? (
+                                        <div className="flex flex-col items-center justify-center py-20 gap-4">
+                                            <div className={`w-12 h-12 border-4 border-${currentTheme.colors.primary}-500 border-t-transparent rounded-full animate-spin`} />
+                                            <p className={`text-${currentTheme.colors.primary}-400/80 font-black uppercase tracking-widest text-xs`}>Loading Profile...</p>
+                                        </div>
+                                    ) : selectedPlayer ? (
+                                        <div className="flex flex-col items-center relative z-10 font-galsb">
+                                            <div className="relative mb-6">
+                                                <div className={`w-32 h-32 rounded-3xl overflow-hidden border-2 border-${currentTheme.colors.primary}-400 shadow-[0_0_30px_rgba(var(--theme-primary-rgb),0.2)]`}>
+                                                    {selectedPlayer.avatar_url || selectedPlayer.avatar ? (
+                                                        <img src={selectedPlayer.avatar_url || selectedPlayer.avatar} className="w-full h-full object-cover" alt="Avatar" />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+                                                            <User className="w-16 h-16 text-slate-500" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className={`absolute -bottom-3 -right-3 w-10 h-10 bg-slate-900 border border-${currentTheme.colors.primary}-500/30 rounded-xl flex items-center justify-center shadow-lg`}>
+                                                    <span className={`text-${currentTheme.colors.primary}-400 font-black text-sm`}>{selectedPlayer.level || 1}</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-1 relative z-10 text-center">
+                                                {selectedPlayer.username || selectedPlayer.name || 'Unknown User'}
+                                            </h3>
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <span className={`px-3 py-1 rounded-md bg-${currentTheme.colors.primary}-500/10 border border-${currentTheme.colors.primary}-500/20 text-${currentTheme.colors.primary}-400 text-[9px] font-black uppercase tracking-widest`}>
+                                                    {selectedPlayer.rank_name || getRankName(selectedPlayer.xp || selectedPlayer.exp || 0)}
+                                                </span>
+                                            </div>
+
+                                            {/* Core Stats */}
+                                            <div className="w-full grid grid-cols-2 gap-3 mb-3">
+                                                <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 text-center">
+                                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Exp</p>
+                                                    <p className="text-xl font-black text-purple-400">{(selectedPlayer.xp || selectedPlayer.exp || 0).toLocaleString()}</p>
+                                                </div>
+                                                <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 text-center">
+                                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Win Rate</p>
+                                                    <p className="text-xl font-black text-emerald-400">
+                                                        {selectedPlayer.win_rate || '0%'}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Achievements & Certificates */}
+                                            <div className="w-full grid grid-cols-2 gap-3 mb-3">
+                                                <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 text-center">
+                                                    <Trophy className="w-4 h-4 text-amber-500 mx-auto mb-1" />
+                                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Achievements</p>
+                                                    <p className="text-lg font-black text-amber-400">{selectedPlayer.achievements || 0}</p>
+                                                </div>
+                                                <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 text-center">
+                                                    <Award className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
+                                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Certificates</p>
+                                                    <p className="text-lg font-black text-emerald-400">{selectedPlayer.certificates || 0}</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Battle Stats */}
+                                            <div className="w-full bg-slate-900/60 border border-white/5 rounded-2xl p-4">
+                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 text-center flex items-center justify-center gap-2">
+                                                    <Swords className="w-3 h-3 text-rose-400" /> Battle Record
+                                                </p>
+                                                <div className="grid grid-cols-3 gap-3 text-center">
+                                                    <div>
+                                                        <p className="text-lg font-black text-emerald-400">{selectedPlayer.battle_wins || 0}</p>
+                                                        <p className="text-[9px] uppercase text-slate-500 font-bold">Wins</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-lg font-black text-rose-400">{selectedPlayer.battle_losses || 0}</p>
+                                                        <p className="text-[9px] uppercase text-slate-500 font-bold">Losses</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-lg font-black text-slate-300">{(selectedPlayer.battle_wins || 0) + (selectedPlayer.battle_losses || 0)}</p>
+                                                        <p className="text-[9px] uppercase text-slate-500 font-bold">Total</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="py-20 text-center text-rose-400 font-bold uppercase tracking-widest text-xs">
+                                            User Not Found
+                                        </div>
+                                    )}
+                                </motion.div>
+                            </div>
+                        )}
+                    </AnimatePresence>
                 </div >
             )}
         </AnimatePresence >

@@ -63,10 +63,12 @@ router.get('/search', authenticateUser, async (req, res) => {
 router.get('/profile/:id', authenticateUser, async (req, res) => {
     try {
         const db = supabaseService || supabase;
+        const userId = req.params.id;
+
         const { data, error } = await db
             .from('users')
             .select('id, username, student_id, avatar_url, course')
-            .eq('id', req.params.id)
+            .eq('id', userId)
             .single();
 
         if (error || !data) {
@@ -75,15 +77,69 @@ router.get('/profile/:id', authenticateUser, async (req, res) => {
         
         let user = data;
         
+        // Get global stats (XP, level)
         const { data: currentProgress } = await db
             .from('user_progress')
             .select('level, xp')
-            .eq('user_id', user.id)
+            .eq('user_id', userId)
             .eq('tower_id', 'global')
             .single();
             
         user.level = currentProgress?.level || 1;
         user.xp = currentProgress?.xp || 0;
+        user.exp = user.xp; // alias for frontend compatibility
+
+        // Compute rank name from XP using tier thresholds
+        const rankTiers = [
+            { minExp: 0, name: 'Siege Novice' },
+            { minExp: 100, name: 'Code Initiate' },
+            { minExp: 500, name: 'Script Warrior' },
+            { minExp: 1000, name: 'Logic Knight' },
+            { minExp: 2500, name: 'Algorithm Mage' },
+            { minExp: 5000, name: 'Data Sorcerer' },
+            { minExp: 10000, name: 'Cyber Overlord' },
+            { minExp: 20000, name: 'Digital Titan' },
+            { minExp: 50000, name: 'Code Siege Legend' },
+        ];
+        let rankName = 'Siege Novice';
+        for (const tier of rankTiers) {
+            if (user.xp >= tier.minExp) rankName = tier.name;
+        }
+        user.rank_name = rankName;
+
+        // Get battle stats
+        const { data: battles } = await db
+            .from('battles')
+            .select('id, winner_id, status')
+            .or(`player1_id.eq.${userId},player2_id.eq.${userId},player3_id.eq.${userId},player4_id.eq.${userId},player5_id.eq.${userId}`)
+            .eq('status', 'completed');
+
+        const completedBattles = battles || [];
+        const battleWins = completedBattles.filter(b => b.winner_id === userId).length;
+        const battleLosses = completedBattles.length - battleWins;
+        const totalBattles = completedBattles.length;
+        const winRate = totalBattles > 0 ? `${Math.round((battleWins / totalBattles) * 100)}%` : '0%';
+
+        user.battle_wins = battleWins;
+        user.battle_losses = battleLosses;
+        user.win_rate = winRate;
+
+        // Get achievements count
+        const { count: achievementCount } = await db
+            .from('user_achievements')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('unlocked', true);
+
+        user.achievements = achievementCount || 0;
+
+        // Get certificates count
+        const { count: certCount } = await db
+            .from('certificates')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId);
+
+        user.certificates = certCount || 0;
 
         res.json({ user });
     } catch (error) {
@@ -91,6 +147,7 @@ router.get('/profile/:id', authenticateUser, async (req, res) => {
         res.status(500).json({ error: 'Failed to get user profile' });
     }
 });
+
 
 /**
  * POST /api/users/friend-request

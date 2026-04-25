@@ -34,6 +34,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
     const [friendsLoading, setFriendsLoading] = useState(false);
     const [changingPassword, setChangingPassword] = useState(false);
     const [stats, setStats] = useState({ winnings: 0, losses: 0, winRate: '0%' });
+    const [matchHistory, setMatchHistory] = useState([]);
     const [leaderboardRank, setLeaderboardRank] = useState(null);
     
     const [selectedFriend, setSelectedFriend] = useState(null);
@@ -62,11 +63,33 @@ const ProfileModal = ({ isOpen, onClose }) => {
         if (!isOpen) return;
         battlesAPI.getHistory().then(data => {
             const history = Array.isArray(data) ? data : (data?.battles || []);
-            const wins = history.filter(b => b.winner_id === user?.id || b.result === 'Win' || b.result === 'win').length;
-            const losses = history.filter(b => b.winner_id && b.winner_id !== user?.id && (b.result !== 'Win' && b.result !== 'win')).length || (history.length - wins);
-            const total = wins + losses;
+            // Only include completed battles
+            const completedBattles = history.filter(b => b.status === 'completed' && b.winner_id);
+            const wins = completedBattles.filter(b => b.winner_id === user?.id).length;
+            const total = completedBattles.length;
+            const losses = total - wins;
             const winRate = total > 0 ? `${Math.round((wins / total) * 100)}%` : '0%';
-            setStats({ winnings: wins, losses: total - wins, winRate });
+            setStats({ winnings: wins, losses, winRate });
+
+            // Build display-ready match history from completed battles
+            const formatted = completedBattles.map(b => {
+                const isWin = b.winner_id === user?.id;
+                // Find opponent name(s)
+                const players = [b.player1, b.player2, b.player3, b.player4, b.player5].filter(Boolean);
+                const opponents = players.filter(p => p?.id !== user?.id).map(p => p?.username || 'Unknown');
+                const opponentStr = opponents.length > 0 ? opponents.join(', ') : 'Unknown';
+                const date = b.completed_at || b.created_at;
+                const timeStr = date ? new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Unknown';
+                return {
+                    id: b.id,
+                    mode: b.mode || '1v1 Duel',
+                    result: isWin ? 'Win' : 'Loss',
+                    time: timeStr,
+                    hero: opponentStr,
+                    outcome: isWin ? 'Victory' : 'Defeat'
+                };
+            });
+            setMatchHistory(formatted);
         }).catch(() => { });
 
         // Fetch leaderboard rank for the current user
@@ -196,7 +219,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
         { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
     ];
 
-    const matchHistory = [];
+    // matchHistory is now a state variable populated by the useEffect above
 
     const collection = [];
 

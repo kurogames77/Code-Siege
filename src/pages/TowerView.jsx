@@ -17,8 +17,13 @@ import arrow from '../assets/arrow.png';
 const TowerView = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { user } = useUser();
+    const { user, refreshUser } = useUser();
     const { playClick, playCancel } = useSound();
+
+    // Refresh user data on mount to get authoritative towerProgress from server
+    useEffect(() => {
+        refreshUser();
+    }, []);
 
 
     const [dynamicLevels, setDynamicLevels] = useState([]);
