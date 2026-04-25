@@ -646,7 +646,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className={`w-full max-w-[90vw] h-[85vh] border rounded-lg flex flex-col relative overflow-hidden group transition-colors duration-500 ${theme === 'dark' ? 'bg-[#0a0f1c] border-cyan-500/30 shadow-[0_0_80px_rgba(8,145,178,0.2)]' : 'bg-white border-slate-200 shadow-2xl'}`}
+                        className={`w-full max-w-[95vw] h-[92vh] border rounded-lg flex flex-col relative overflow-hidden group transition-colors duration-500 ${theme === 'dark' ? 'bg-[#0a0f1c] border-cyan-500/30 shadow-[0_0_80px_rgba(8,145,178,0.2)]' : 'bg-white border-slate-200 shadow-2xl'}`}
                     >
                         {/* CRT Scanline Effect */}
                         {theme === 'dark' && <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[size:100%_2px,3px_100%] pointer-events-none z-50 opacity-20" />}
