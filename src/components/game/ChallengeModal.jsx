@@ -41,6 +41,81 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
     const [glowingBlocks, setGlowingBlocks] = useState([]); // Block IDs that should glow (Hint tier 2)
     const [theme, setTheme] = useState('dark'); // Light/Dark mode toggle
 
+    // Lasso Selection State
+    const [selectedBlockIds, setSelectedBlockIds] = useState([]);
+    const [isSelecting, setIsSelecting] = useState(false);
+    const [selectionStart, setSelectionStart] = useState(null);
+    const [selectionCurrent, setSelectionCurrent] = useState(null);
+
+    // Handle global pointer events for smooth lasso dragging
+    useEffect(() => {
+        if (!isSelecting) return;
+        
+        const onMove = (e) => {
+            if (!workspaceRef.current) return;
+            const rect = workspaceRef.current.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / canvasScale;
+            const y = (e.clientY - rect.top) / canvasScale;
+            setSelectionCurrent({ x, y });
+
+            const left = Math.min(selectionStart.x, x);
+            const right = Math.max(selectionStart.x, x);
+            const top = Math.min(selectionStart.y, y);
+            const bottom = Math.max(selectionStart.y, y);
+
+            const newlySelected = [];
+            blocks.forEach(block => {
+                if (!block.inWorkspace) return;
+                const blockLeft = block.position.x;
+                const blockRight = block.position.x + 140;
+                const blockTop = block.position.y;
+                const blockBottom = block.position.y + 48;
+
+                if (blockRight > left && blockLeft < right && blockBottom > top && blockTop < bottom) {
+                    newlySelected.push(block.id);
+                }
+            });
+            setSelectedBlockIds(newlySelected);
+        };
+
+        const onUp = () => {
+            setIsSelecting(false);
+            setSelectionStart(null);
+            setSelectionCurrent(null);
+        };
+
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+        return () => {
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+        };
+    }, [isSelecting, selectionStart, blocks, canvasScale]);
+
+    const handlePointerDown = (e) => {
+        // Prevent lasso if interacting with a block or UI element
+        if (e.target.closest('.puzzle-block') || e.target.closest('button')) {
+            const blockEl = e.target.closest('.puzzle-block');
+            if (blockEl) {
+                const blockId = blockEl.getAttribute('data-block-id');
+                // If clicked an unselected block, clear selection
+                if (blockId && !selectedBlockIds.includes(blockId)) {
+                    setSelectedBlockIds([]);
+                }
+            }
+            return;
+        }
+        
+        const rect = workspaceRef.current.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / canvasScale;
+        const y = (e.clientY - rect.top) / canvasScale;
+        
+        setIsSelecting(true);
+        setSelectionStart({ x, y });
+        setSelectionCurrent({ x, y });
+        setSelectedBlockIds([]);
+    };
+
     // Use config mode if available, fallback to level-based for legacy
     const getActiveMode = () => {
         // FAILSAFE: If no blocks are provided but we are in a block mode, force code mode
@@ -154,15 +229,39 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
         if (!active) return;
 
         setBlocks((currentBlocks) => {
+            const isMultiDrag = selectedBlockIds.length > 1 && selectedBlockIds.includes(active.id);
+
+            // --- MULTI-DRAG LOGIC ---
+            if (isMultiDrag) {
+                return currentBlocks.map(block => {
+                    if (selectedBlockIds.includes(block.id)) {
+                        let newX = block.position.x + (delta.x / canvasScale);
+                        let newY = block.position.y + (delta.y / canvasScale);
+                        
+                        const padding = 10;
+                        const wsEl = workspaceRef.current || containerRef.current;
+                        const containerW = wsEl ? wsEl.clientWidth / canvasScale : 2000;
+                        const containerH = wsEl ? wsEl.clientHeight / canvasScale : 1500;
+                        const maxWidth = containerW - 170;
+                        const maxHeight = containerH - 70;
+                        
+                        newX = Math.max(padding, Math.min(newX, maxWidth));
+                        newY = Math.max(padding, Math.min(newY, maxHeight));
+
+                        return { ...block, position: { x: newX, y: newY } };
+                    }
+                    return block;
+                });
+            }
+
+            // --- SINGLE DRAG LOGIC ---
             const index = currentBlocks.findIndex(b => b.id === active.id);
             if (index === -1) return currentBlocks;
 
             const newBlocks = [...currentBlocks];
-            // Convert screen-space delta to canvas-space by dividing by scale
             let newX = newBlocks[index].position.x + (delta.x / canvasScale);
             let newY = newBlocks[index].position.y + (delta.y / canvasScale);
 
-            // Clamp positions within the workspace bounds (solid border)
             const padding = 10;
             const wsEl = workspaceRef.current || containerRef.current;
             const containerW = wsEl ? wsEl.clientWidth / canvasScale : 2000;
@@ -179,52 +278,53 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             };
 
             // GENERALIZED SNAPPING LOGIC
-            // Fixed canvas-space threshold for consistent snapping
-            const SNAP_THRESHOLD = 50;
+            const SNAP_X_THRESHOLD = 40;
+            const SNAP_Y_THRESHOLD = 20; // Tighter vertical threshold prevents false overlaps
             const BLOCK_HEIGHT = 48;
 
             let snappedWithId = null;
 
             for (const other of newBlocks) {
                 if (other.id === active.id) continue;
+                if (!other.inWorkspace) continue; // Only snap to workspace blocks
 
                 const dx = updatedBlock.position.x - other.position.x;
                 const dy = updatedBlock.position.y - other.position.y;
 
                 // Horizontal Snap (Current Right to Other Left)
-                if (Math.abs(dx - 140) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
+                if (Math.abs(dx - 140) < SNAP_X_THRESHOLD && Math.abs(dy) < SNAP_Y_THRESHOLD) {
                     updatedBlock.position = { x: Math.round(other.position.x + 140), y: Math.round(other.position.y) };
-                    playConnect();
+                    if (playConnect) playConnect();
                     snappedWithId = other.id;
                     break;
                 }
 
                 // Horizontal Snap (Current Left to Other Right)
-                if (Math.abs(dx + 140) < SNAP_THRESHOLD && Math.abs(dy) < SNAP_THRESHOLD) {
+                if (Math.abs(dx + 140) < SNAP_X_THRESHOLD && Math.abs(dy) < SNAP_Y_THRESHOLD) {
                     updatedBlock.position = { x: Math.round(other.position.x - 140), y: Math.round(other.position.y) };
-                    playConnect();
+                    if (playConnect) playConnect();
                     snappedWithId = other.id;
                     break;
                 }
 
                 // Vertical Snap (Current Bottom to Other Top)
-                if (Math.abs(dy - BLOCK_HEIGHT) < SNAP_THRESHOLD && Math.abs(dx) < SNAP_THRESHOLD) {
+                if (Math.abs(dy - BLOCK_HEIGHT) < SNAP_Y_THRESHOLD && Math.abs(dx) < SNAP_X_THRESHOLD) {
                     updatedBlock.position = { x: Math.round(other.position.x), y: Math.round(other.position.y + BLOCK_HEIGHT) };
-                    playConnect();
+                    if (playConnect) playConnect();
                     snappedWithId = other.id;
                     break;
                 }
 
                 // Vertical Snap (Current Top to Other Bottom)
-                if (Math.abs(dy + BLOCK_HEIGHT) < SNAP_THRESHOLD && Math.abs(dx) < SNAP_THRESHOLD) {
+                if (Math.abs(dy + BLOCK_HEIGHT) < SNAP_Y_THRESHOLD && Math.abs(dx) < SNAP_X_THRESHOLD) {
                     updatedBlock.position = { x: Math.round(other.position.x), y: Math.round(other.position.y - BLOCK_HEIGHT) };
-                    playConnect();
+                    if (playConnect) playConnect();
                     snappedWithId = other.id;
                     break;
                 }
             }
 
-            // Clear hint glow from blocks that were just correctly snapped together
+            // Clear hint glow
             if (snappedWithId && glowingBlocks.length > 0) {
                 const correctIds = puzzle?.correctSequence || [];
                 const draggedId = active.id;
@@ -787,6 +887,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                             {/* Puzzle Blocks Container */}
                                             <div 
                                                 ref={workspaceRef} 
+                                                onPointerDown={handlePointerDown}
                                                 onDragOver={(e) => { e.preventDefault(); }}
                                                 onDrop={(e) => {
                                                     e.preventDefault();
@@ -805,7 +906,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                         position: { x: dropX, y: dropY }
                                                     } : b));
                                                 }}
-                                                className={`relative w-full h-full rounded-xl border-2 overflow-hidden transition-colors duration-500 ${theme === 'dark' ? 'border-cyan-400/40 bg-cyan-950/5 shadow-[inset_0_0_30px_rgba(6,182,212,0.05)]' : 'border-cyan-300/60 bg-cyan-50/30'}`}
+                                                className={`relative w-full h-full rounded-xl border-2 overflow-hidden transition-colors duration-500 touch-none ${theme === 'dark' ? 'border-cyan-400/40 bg-cyan-950/5 shadow-[inset_0_0_30px_rgba(6,182,212,0.05)]' : 'border-cyan-300/60 bg-cyan-50/30'}`}
                                             >
                                                 {/* Container Label */}
                                                 <div className={`absolute top-0 left-4 z-20 px-3 py-0.5 text-[9px] uppercase tracking-[0.2em] font-bold rounded-b-md ${theme === 'dark' ? 'bg-cyan-900/60 text-cyan-400 border-x border-b border-cyan-500/20' : 'bg-cyan-100 text-cyan-600 border-x border-b border-cyan-200'}`}>
@@ -854,8 +955,25 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                     style={{ transform: `scale(${canvasScale})`, width: `${100 / canvasScale}%`, height: `${100 / canvasScale}%` }}
                                                 >
                                                     <div className="relative w-full h-full p-6 pt-8">
+                                                        {isSelecting && selectionStart && selectionCurrent && (
+                                                            <div 
+                                                                className="absolute border-2 border-cyan-400/80 bg-cyan-400/10 z-[200] pointer-events-none rounded-md"
+                                                                style={{
+                                                                    left: Math.min(selectionStart.x, selectionCurrent.x),
+                                                                    top: Math.min(selectionStart.y, selectionCurrent.y),
+                                                                    width: Math.abs(selectionCurrent.x - selectionStart.x),
+                                                                    height: Math.abs(selectionCurrent.y - selectionStart.y)
+                                                                }}
+                                                            />
+                                                        )}
                                                         {blocks.filter(b => b.inWorkspace).map((block) => (
-                                                            <PuzzleBlock key={block.id} {...block} variant={mode} isGlowing={glowingBlocks.includes(block.id)} />
+                                                            <PuzzleBlock 
+                                                                key={block.id} 
+                                                                {...block} 
+                                                                variant={mode} 
+                                                                isGlowing={glowingBlocks.includes(block.id)} 
+                                                                isSelected={selectedBlockIds.includes(block.id)} 
+                                                            />
                                                         ))}
                                                     </div>
                                                 </div>

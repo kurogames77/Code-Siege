@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 
-const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connectors: propConnectors, isGlowing = false }) => {
+const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connectors: propConnectors, isGlowing = false, isSelected = false }) => {
     const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
 
     // Determinstic random configuration for connectors
@@ -160,13 +160,20 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
             {...attributes}
             className="puzzle-block absolute cursor-grab active:cursor-grabbing select-none group"
             title={content}
+            data-block-id={id}
         >
             <svg
                 width={width + tabDepth * 2}
                 height={height + tabDepth * 2}
                 viewBox={`-${tabDepth} -${tabDepth} ${width + tabDepth * 2} ${height + tabDepth * 2}`}
-                className="drop-shadow-lg group-hover:drop-shadow-2xl transition-all duration-300"
-                style={isGlowing ? { filter: 'drop-shadow(0 0 12px rgba(34,211,238,0.8)) drop-shadow(0 0 24px rgba(34,211,238,0.4))' } : {}}
+                className={`transition-all duration-300 ${isSelected ? 'scale-105 z-[150]' : 'drop-shadow-lg group-hover:drop-shadow-2xl'}`}
+                style={
+                    isSelected 
+                        ? { filter: 'drop-shadow(0 0 15px rgba(255,255,255,0.9)) drop-shadow(0 0 5px rgba(34,211,238,0.8))' }
+                        : isGlowing 
+                            ? { filter: 'drop-shadow(0 0 12px rgba(34,211,238,0.8)) drop-shadow(0 0 24px rgba(34,211,238,0.4))' } 
+                            : {}
+                }
             >
                 <defs>
                     <linearGradient id={`grad-${id}`} x1="0%" y1="0%" x2="0%" y2="100%">
@@ -182,8 +189,8 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
                 <path
                     d={path}
                     fill={`url(#grad-${id})`}
-                    stroke="rgba(255,255,255,0.1)"
-                    strokeWidth="1"
+                    stroke={isSelected ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.1)"}
+                    strokeWidth={isSelected ? "2" : "1"}
                     className="transition-colors duration-300"
                 />
 
