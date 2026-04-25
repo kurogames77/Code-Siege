@@ -64,6 +64,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
 
     const sensors = useSensors(useSensor(PointerSensor));
     const containerRef = useRef(null);
+    const workspaceRef = useRef(null);
     const { playConnect, playCountdownVoice, playClick } = useSound();
     const { user, updateExp } = useUser();
 
@@ -160,12 +161,13 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             let newX = newBlocks[index].position.x + (delta.x / canvasScale);
             let newY = newBlocks[index].position.y + (delta.y / canvasScale);
 
-            // Clamp positions within the container bounds
-            const padding = 20;
-            const containerW = containerRef.current ? containerRef.current.clientWidth / canvasScale : 2000;
-            const containerH = containerRef.current ? containerRef.current.clientHeight / canvasScale : 1500;
-            const maxWidth = containerW - 160;
-            const maxHeight = containerH - 80;
+            // Clamp positions within the workspace bounds (solid border)
+            const padding = 10;
+            const wsEl = workspaceRef.current || containerRef.current;
+            const containerW = wsEl ? wsEl.clientWidth / canvasScale : 2000;
+            const containerH = wsEl ? wsEl.clientHeight / canvasScale : 1500;
+            const maxWidth = containerW - 170;
+            const maxHeight = containerH - 70;
             
             newX = Math.max(padding, Math.min(newX, maxWidth));
             newY = Math.max(padding, Math.min(newY, maxHeight));
@@ -778,7 +780,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                     >
                                         <div className="relative w-full flex-1 overflow-hidden p-4">
                                             {/* Puzzle Blocks Container */}
-                                            <div className={`relative w-full h-full rounded-xl border-2 border-dashed overflow-hidden transition-colors duration-500 ${theme === 'dark' ? 'border-cyan-500/25 bg-cyan-950/5' : 'border-cyan-300/40 bg-cyan-50/30'}`}>
+                                            <div ref={workspaceRef} className={`relative w-full h-full rounded-xl border-2 overflow-hidden transition-colors duration-500 ${theme === 'dark' ? 'border-cyan-400/40 bg-cyan-950/5 shadow-[inset_0_0_30px_rgba(6,182,212,0.05)]' : 'border-cyan-300/60 bg-cyan-50/30'}`}>
                                                 {/* Container Label */}
                                                 <div className={`absolute top-0 left-4 z-20 px-3 py-0.5 text-[9px] uppercase tracking-[0.2em] font-bold rounded-b-md ${theme === 'dark' ? 'bg-cyan-900/60 text-cyan-400 border-x border-b border-cyan-500/20' : 'bg-cyan-100 text-cyan-600 border-x border-b border-cyan-200'}`}>
                                                     ⧫ Puzzle Workspace
@@ -889,6 +891,23 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                             )}
                                         </div>
                                     </div>
+
+                                    {/* Block Pieces Inventory */}
+                                    {mode !== 'code' && blocks.length > 0 && (
+                                        <div className="space-y-2">
+                                            <h3 className={`uppercase tracking-widest text-[10px] font-bold flex items-center gap-2 ${theme === 'dark' ? 'text-cyan-600' : 'text-cyan-700'}`}>
+                                                <span className="w-1.5 h-1.5 bg-cyan-500 rounded-full" /> Block Pieces ({blocks.length})
+                                            </h3>
+                                            <div className={`max-h-[120px] overflow-y-auto custom-scrollbar border p-2 space-y-1 rounded-md transition-colors duration-500 ${theme === 'dark' ? 'bg-black/40 border-slate-800' : 'bg-slate-100 border-slate-300 rounded-lg'}`}>
+                                                {blocks.filter(b => !b.isDummy && !b.id?.startsWith('dummy')).map((block, i) => (
+                                                    <div key={block.id} className={`flex items-center gap-2 px-2 py-1 rounded text-[10px] font-mono truncate ${theme === 'dark' ? 'bg-slate-800/60 text-cyan-300 border border-slate-700/50' : 'bg-white text-slate-700 border border-slate-200'}`}>
+                                                        <span className={`w-2 h-2 rounded-sm shrink-0 ${['bg-cyan-500', 'bg-purple-500', 'bg-orange-500', 'bg-emerald-500', 'bg-rose-500', 'bg-yellow-500', 'bg-blue-500', 'bg-pink-500'][i % 8]}`} />
+                                                        <span className="truncate">{block.content}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Action Bar */}
