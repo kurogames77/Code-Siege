@@ -89,17 +89,20 @@ router.get('/profile/:id', authenticateUser, async (req, res) => {
         user.xp = currentProgress?.xp || 0;
         user.exp = user.xp; // alias for frontend compatibility
 
-        // Compute rank name from XP using tier thresholds
+        // Compute rank name from XP using the official 12-tier rank system
         const rankTiers = [
             { minExp: 0, name: 'Siege Novice' },
-            { minExp: 100, name: 'Code Initiate' },
-            { minExp: 500, name: 'Script Warrior' },
-            { minExp: 1000, name: 'Logic Knight' },
-            { minExp: 2500, name: 'Algorithm Mage' },
-            { minExp: 5000, name: 'Data Sorcerer' },
-            { minExp: 10000, name: 'Cyber Overlord' },
-            { minExp: 20000, name: 'Digital Titan' },
-            { minExp: 50000, name: 'Code Siege Legend' },
+            { minExp: 1000, name: 'Code Initiate' },
+            { minExp: 2800, name: 'Binary Apprentice' },
+            { minExp: 8000, name: 'Syntax Soldier' },
+            { minExp: 10000, name: 'Debug Knight' },
+            { minExp: 20000, name: 'Script Master' },
+            { minExp: 40000, name: 'Code Warrior' },
+            { minExp: 78000, name: 'System Sentinel' },
+            { minExp: 150000, name: 'Elite Compiler' },
+            { minExp: 300000, name: 'Grandmaster Hacker' },
+            { minExp: 500000, name: 'Apex Legend' },
+            { minExp: 999000, name: 'Siege Deity' },
         ];
         let rankName = 'Siege Novice';
         for (const tier of rankTiers) {
@@ -869,24 +872,94 @@ router.patch('/global/tower-progress', authenticateUser, async (req, res) => {
         const targetFloors = parseInt(floorsCompleted);
 
         // FIRST: Enforce Regression (Undo / Custom Lock)
-        // If the instructor is setting progress to `targetFloors`, we must explicitly delete
-        // any existing progress rows ABOVE this target for ALL students across the board.
-        // Otherwise, Math.max() calculation during login will still see the older, higher progression!
+        if (targetFloors === 0) {
+            // UNDO MODE: Lock all instructor-opened levels, but preserve player-completed ones.
+            // Strategy: For each student, find their highest floor that was individually completed
+            // (player-completed rows exist as sequential floor entries: 1, 2, 3, etc.)
+            // Then delete any rows with floor values that exceed their actual earned progress.
+
+            // Step 1: Get ALL progress rows for this tower (for all students)
+            const { data: allRows, error: fetchRowsError } = await db
+                .from('user_progress')
+                .select('id, user_id, floor, level')
+                .eq('tower_id', towerKey)
+                .neq('floor', 0);
+
+            if (fetchRowsError) {
+                console.error(`[Global Unlock] Failed to fetch rows for undo:`, fetchRowsError.message);
+                return res.status(500).json({ error: 'Database error during undo.' });
+            }
+
+            if (!allRows || allRows.length === 0) {
+                return res.json({ message: 'No progress rows found to reset.' });
+            }
+
+            // Step 2: Group rows by user and identify which to delete
+            const rowsByUser = {};
+            allRows.forEach(row => {
+                if (!rowsByUser[row.user_id]) rowsByUser[row.user_id] = [];
+                rowsByUser[row.user_id].push(row);
+            });
+
+            const idsToDelete = [];
+
+            for (const [userId, rows] of Object.entries(rowsByUser)) {
+                // Find all floors this user has (sorted ascending)
+                const floors = rows.map(r => r.floor).sort((a, b) => a - b);
+                
+                // Determine highest "earned" floor: consecutive floors starting from 1
+                // e.g., if user has floors [1, 2, 3, 30], earned = 3 (floor 30 was instructor-injected)
+                let earnedFloor = 0;
+                for (let i = 0; i < floors.length; i++) {
+                    if (floors[i] === earnedFloor + 1) {
+                        earnedFloor = floors[i];
+                    }
+                }
+
+                // Also check: if user has level=1 rows at higher floors (they clicked & completed),
+                // keep those too. A player might complete floor 10 without 1-9 if instructor opened them.
+                // So also keep any row where level === 1 (player-completed through gameplay)
+                rows.forEach(row => {
+                    const isPlayerCompleted = row.level === 1;
+                    const isEarned = row.floor <= earnedFloor;
+                    
+                    if (!isPlayerCompleted && !isEarned) {
+                        idsToDelete.push(row.id);
+                    }
+                });
+            }
+
+            // Step 3: Bulk delete instructor-injected rows
+            if (idsToDelete.length > 0) {
+                // Delete in chunks of 100 to avoid query size limits
+                for (let i = 0; i < idsToDelete.length; i += 100) {
+                    const chunk = idsToDelete.slice(i, i + 100);
+                    const { error: deleteError } = await db
+                        .from('user_progress')
+                        .delete()
+                        .in('id', chunk);
+
+                    if (deleteError) {
+                        console.error(`[Global Unlock] Delete chunk failed:`, deleteError.message);
+                    }
+                }
+            }
+
+            console.log(`[Global Unlock] Undo complete. Deleted ${idsToDelete.length} instructor-injected rows.`);
+            return res.json({ message: `Successfully reset and locked progress globally. Removed ${idsToDelete.length} instructor-granted levels. Player-completed levels preserved.` });
+        }
+
+        // For non-zero targets: also clean up any rows above the new target
         const { error: deleteError } = await db
             .from('user_progress')
             .delete()
             .eq('tower_id', towerKey)
-            .eq('level', -1)
-            .gt('floor', targetFloors);
+            .gt('floor', targetFloors)
+            .neq('level', 1);
 
         if (deleteError) {
             console.error(`[Global Unlock] Progress regression delete failed:`, deleteError.message);
-            return res.status(500).json({ error: 'Database error while removing previous progress limits.' });
-        }
-
-        // If target was purely Undo/Lock (0 floors), we are done. (Since we just wiped >0)
-        if (targetFloors === 0) {
-            return res.json({ message: `Successfully reset and locked progress globally.` });
+            // Non-fatal — continue with the unlock
         }
 
         // Fetch existing user_progress rows to prevent duplicate inserts

@@ -309,10 +309,17 @@ export const progressAPI = {
         return apiRequest('/progress');
     },
 
-    completeFloor: async (towerId, floor, score) => {
+    completeFloor: async (towerId, floor, score, algoMetrics = {}) => {
         return apiRequest('/progress/complete', {
             method: 'POST',
-            body: JSON.stringify({ tower_id: towerId, floor, score }),
+            body: JSON.stringify({
+                tower_id: towerId,
+                floor,
+                score,
+                time_consumed: algoMetrics.time_consumed,
+                execution_errors: algoMetrics.execution_errors,
+                hints_used: algoMetrics.hints_used
+            }),
         });
     },
 

@@ -34,11 +34,17 @@ router.get('/', authenticateUser, async (req, res) => {
  */
 router.post('/complete', authenticateUser, async (req, res) => {
     try {
-        const { tower_id, floor } = req.body;
+        const { tower_id, floor, time_consumed, execution_errors, hints_used } = req.body;
 
         if (!tower_id || floor === undefined) {
             return res.status(400).json({ error: 'Tower ID and floor are required' });
         }
+
+        // Algorithm metric fields (optional — used by IRT/DDA)
+        const algoFields = {};
+        if (time_consumed !== undefined) algoFields.time_consumed = parseFloat(time_consumed) || 0;
+        if (execution_errors !== undefined) algoFields.execution_errors = parseInt(execution_errors) || 0;
+        if (hints_used !== undefined) algoFields.hints_used = parseInt(hints_used) || 0;
 
         // Check if already exists
         const { data: existing } = await supabase
@@ -57,7 +63,8 @@ router.post('/complete', authenticateUser, async (req, res) => {
                 .update({ 
                     completed: true, 
                     level: 1,
-                    completed_at: new Date().toISOString() 
+                    completed_at: new Date().toISOString(),
+                    ...algoFields
                 })
                 .eq('user_id', req.user.id)
                 .eq('tower_id', tower_id)
@@ -74,7 +81,8 @@ router.post('/complete', authenticateUser, async (req, res) => {
                     floor,
                     completed: true,
                     level: 1,
-                    completed_at: new Date().toISOString()
+                    completed_at: new Date().toISOString(),
+                    ...algoFields
                 })
                 .select()
                 .single();

@@ -457,10 +457,10 @@ export const UserProvider = ({ children }) => {
         }
     };
 
-    const updateTowerProgress = async (towerId, floor, score = 0) => {
+    const updateTowerProgress = async (towerId, floor, score = 0, algoMetrics = {}) => {
         if (!user) return;
         try {
-            await progressAPI.completeFloor(towerId, floor, score);
+            await progressAPI.completeFloor(towerId, floor, score, algoMetrics);
             setUser(prev => ({
                 ...prev,
                 towerProgress: {
