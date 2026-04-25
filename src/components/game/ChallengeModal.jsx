@@ -126,6 +126,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
 
                 const initialized = puzzle.initialBlocks.map((b, i) => ({
                     ...b,
+                    inWorkspace: false, // Blocks start in the inventory
                     connectors: assignDynamicConnectors(b.id),
                     position: {
                         x: 40 + (i % COLS) * COL_SPACING + (Math.random() * 30 - 15),
@@ -282,8 +283,8 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
     const constructCodeFromBlocks = (currentBlocks) => {
         if (!currentBlocks || currentBlocks.length === 0) return "";
         
-        // Filter out dummy distractor blocks (they shouldn't be sent to AI verification)
-        const validBlocks = currentBlocks.filter(b => !b.isDummy && !b.id.startsWith('dummy'));
+        // Filter out dummy distractor blocks and blocks not in workspace
+        const validBlocks = currentBlocks.filter(b => !b.isDummy && !b.id.startsWith('dummy') && b.inWorkspace);
         if (validBlocks.length === 0) return "";
 
         // Sort blocks by position (Y, then X) to approximate reading order
@@ -370,6 +371,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
 
         // Simple connected components search
         for (const block of blocks) {
+            if (!block.inWorkspace) continue; // Skip blocks not in workspace
             if (visited.has(block.id)) continue;
 
             const chain = [];
@@ -398,8 +400,8 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
         // 3. Simple String-Based Content Matching (Works Across Multiple Rows)
         let success = false;
         
-        // Filter out dummy blocks for content matching
-        const realBlocks = blocks.filter(b => !b.isDummy && !b.id.startsWith('dummy'));
+        // Filter out dummy blocks and blocks not in workspace
+        const realBlocks = blocks.filter(b => !b.isDummy && !b.id.startsWith('dummy') && b.inWorkspace);
         
         // Sort non-dummy blocks by position (Y, then X) to approximate reading order
         realBlocks.sort((a, b) => {
@@ -570,6 +572,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                         if (idx !== -1) {
                             return {
                                 ...block,
+                                inWorkspace: true,
                                 position: { x: startX + idx * BLOCK_WIDTH, y: startY }
                             };
                         } else {
@@ -780,7 +783,28 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                     >
                                         <div className="relative w-full flex-1 overflow-hidden p-4">
                                             {/* Puzzle Blocks Container */}
-                                            <div ref={workspaceRef} className={`relative w-full h-full rounded-xl border-2 overflow-hidden transition-colors duration-500 ${theme === 'dark' ? 'border-cyan-400/40 bg-cyan-950/5 shadow-[inset_0_0_30px_rgba(6,182,212,0.05)]' : 'border-cyan-300/60 bg-cyan-50/30'}`}>
+                                            <div 
+                                                ref={workspaceRef} 
+                                                onDragOver={(e) => { e.preventDefault(); }}
+                                                onDrop={(e) => {
+                                                    e.preventDefault();
+                                                    const blockId = e.dataTransfer.getData('text/plain');
+                                                    if (!blockId) return;
+                                                    
+                                                    const rect = workspaceRef.current.getBoundingClientRect();
+                                                    // Calculate drop position relative to scaled canvas
+                                                    // Offset by ~70x24 so the mouse is in the center of the block
+                                                    const dropX = ((e.clientX - rect.left) / canvasScale) - 70;
+                                                    const dropY = ((e.clientY - rect.top) / canvasScale) - 24;
+                                                    
+                                                    setBlocks(prev => prev.map(b => b.id === blockId ? {
+                                                        ...b,
+                                                        inWorkspace: true,
+                                                        position: { x: dropX, y: dropY }
+                                                    } : b));
+                                                }}
+                                                className={`relative w-full h-full rounded-xl border-2 overflow-hidden transition-colors duration-500 ${theme === 'dark' ? 'border-cyan-400/40 bg-cyan-950/5 shadow-[inset_0_0_30px_rgba(6,182,212,0.05)]' : 'border-cyan-300/60 bg-cyan-50/30'}`}
+                                            >
                                                 {/* Container Label */}
                                                 <div className={`absolute top-0 left-4 z-20 px-3 py-0.5 text-[9px] uppercase tracking-[0.2em] font-bold rounded-b-md ${theme === 'dark' ? 'bg-cyan-900/60 text-cyan-400 border-x border-b border-cyan-500/20' : 'bg-cyan-100 text-cyan-600 border-x border-b border-cyan-200'}`}>
                                                     ⧫ Puzzle Workspace
@@ -819,7 +843,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                     style={{ transform: `scale(${canvasScale})`, width: `${100 / canvasScale}%`, height: `${100 / canvasScale}%` }}
                                                 >
                                                     <div className="relative w-full h-full p-6 pt-8">
-                                                        {blocks.map((block) => (
+                                                        {blocks.filter(b => b.inWorkspace).map((block) => (
                                                             <PuzzleBlock key={block.id} {...block} variant={mode} isGlowing={glowingBlocks.includes(block.id)} />
                                                         ))}
                                                     </div>
@@ -896,15 +920,41 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                     {mode !== 'code' && blocks.length > 0 && (
                                         <div className="space-y-2">
                                             <h3 className={`uppercase tracking-widest text-[10px] font-bold flex items-center gap-2 ${theme === 'dark' ? 'text-cyan-600' : 'text-cyan-700'}`}>
-                                                <span className="w-1.5 h-1.5 bg-cyan-500 rounded-full" /> Block Pieces ({blocks.length})
+                                                <span className="w-1.5 h-1.5 bg-cyan-500 rounded-full" /> Block Pieces ({blocks.filter(b => !b.inWorkspace).length})
                                             </h3>
-                                            <div className={`max-h-[120px] overflow-y-auto custom-scrollbar border p-2 space-y-1 rounded-md transition-colors duration-500 ${theme === 'dark' ? 'bg-black/40 border-slate-800' : 'bg-slate-100 border-slate-300 rounded-lg'}`}>
-                                                {blocks.filter(b => !b.isDummy && !b.id?.startsWith('dummy')).map((block, i) => (
-                                                    <div key={block.id} className={`flex items-center gap-2 px-2 py-1 rounded text-[10px] font-mono truncate ${theme === 'dark' ? 'bg-slate-800/60 text-cyan-300 border border-slate-700/50' : 'bg-white text-slate-700 border border-slate-200'}`}>
+                                            <div className={`max-h-[140px] overflow-y-auto custom-scrollbar border p-2 space-y-1 rounded-md transition-colors duration-500 ${theme === 'dark' ? 'bg-black/40 border-slate-800' : 'bg-slate-100 border-slate-300 rounded-lg'}`}>
+                                                {blocks.filter(b => !b.inWorkspace).map((block, i) => (
+                                                    <div 
+                                                        key={block.id} 
+                                                        draggable
+                                                        onDragStart={(e) => {
+                                                            e.dataTransfer.setData('text/plain', block.id);
+                                                            // Optional subtle visual effect
+                                                            e.currentTarget.style.opacity = '0.5';
+                                                        }}
+                                                        onDragEnd={(e) => {
+                                                            e.currentTarget.style.opacity = '1';
+                                                        }}
+                                                        onClick={() => {
+                                                            // Fallback: Click to add to center-ish of workspace
+                                                            setBlocks(prev => prev.map(b => b.id === block.id ? { 
+                                                                ...b, 
+                                                                inWorkspace: true, 
+                                                                position: { x: 100 + (Math.random() * 50), y: 100 + (Math.random() * 50) } 
+                                                            } : b));
+                                                        }}
+                                                        className={`flex items-center gap-2 px-2 py-1.5 rounded text-[10px] font-mono truncate cursor-grab active:cursor-grabbing hover:scale-[1.02] transition-all shadow-sm ${theme === 'dark' ? 'bg-slate-800/80 text-cyan-300 border border-slate-700 hover:bg-slate-700' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'}`}
+                                                        title="Click or Drag to Workspace"
+                                                    >
                                                         <span className={`w-2 h-2 rounded-sm shrink-0 ${['bg-cyan-500', 'bg-purple-500', 'bg-orange-500', 'bg-emerald-500', 'bg-rose-500', 'bg-yellow-500', 'bg-blue-500', 'bg-pink-500'][i % 8]}`} />
                                                         <span className="truncate">{block.content}</span>
                                                     </div>
                                                 ))}
+                                                {blocks.filter(b => !b.inWorkspace).length === 0 && (
+                                                    <div className="text-center py-4 text-[10px] text-slate-500 font-mono italic">
+                                                        All blocks in workspace
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     )}
