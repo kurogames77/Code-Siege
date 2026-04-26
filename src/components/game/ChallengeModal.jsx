@@ -261,7 +261,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                         // Multi-drag overlap logic
                         let overlap = true;
                         let attempts = 0;
-                        while (overlap && attempts < 10) {
+                        while (overlap && attempts < 30) {
                             overlap = false;
                             for (const other of currentBlocks) {
                                 if (selectedBlockIds.includes(other.id)) continue;
@@ -270,9 +270,13 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                 const dx = Math.abs(updatedBlock.position.x - other.position.x);
                                 const dy = Math.abs(updatedBlock.position.y - other.position.y);
 
+                                // Enforce 10px gap for unsnapped blocks
                                 if (dx < 150 && dy < 58) {
-                                    updatedBlock.position.y += 60;
-                                    updatedBlock.position.x += 10;
+                                    // Nudge away
+                                    const pushX = updatedBlock.position.x >= other.position.x ? 5 : -5;
+                                    const pushY = updatedBlock.position.y >= other.position.y ? 5 : -5;
+                                    updatedBlock.position.x += pushX;
+                                    updatedBlock.position.y += pushY;
                                     overlap = true;
                                     break;
                                 }
@@ -410,8 +414,9 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                         const ox = Math.abs(updatedBlock.position.x - other.position.x);
                         const oy = Math.abs(updatedBlock.position.y - other.position.y);
 
-                        // Only push if genuinely overlapping (not just adjacent/near)
-                        if (ox < 140 && oy < 48) {
+                        // Push further than block dimensions so unsnapped blocks leave a visible gap
+                        // Block is 140x48. Enforce at least 10px gap.
+                        if (ox < 150 && oy < 58) {
                             // Nudge in the direction away from the other block
                             const pushX = updatedBlock.position.x >= other.position.x ? 5 : -5;
                             const pushY = updatedBlock.position.y >= other.position.y ? 5 : -5;
