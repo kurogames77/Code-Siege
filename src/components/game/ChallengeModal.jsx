@@ -259,8 +259,8 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                         const updatedBlock = { ...block, position: { x: newX, y: newY } };
 
                         // Multi-drag SOLID BODY overlap resolution
-                        const SOLID_W = 152; // 140 block + 12px gap
-                        const SOLID_H = 60;  // 48 block + 12px gap
+                        const SOLID_W = 130; // slightly smaller than 140 to allow grid adjacencies
+                        const SOLID_H = 40;  // slightly smaller than 48 to allow grid adjacencies
                         let resolved = false;
                         let attempts = 0;
                         while (!resolved && attempts < 20) {
@@ -271,12 +271,6 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                 
                                 const dx = updatedBlock.position.x - other.position.x;
                                 const dy = updatedBlock.position.y - other.position.y;
-
-                                // Skip blocks that are properly snapped/adjacent
-                                const BLOCK_W = 140, BLOCK_H = 48;
-                                const isAdjacentX = Math.abs(Math.abs(dx) - BLOCK_W) < 2 && Math.abs(dy) < 2;
-                                const isAdjacentY = Math.abs(Math.abs(dy) - BLOCK_H) < 2 && Math.abs(dx) < 2;
-                                if (isAdjacentX || isAdjacentY) continue;
 
                                 const overlapX = SOLID_W - Math.abs(dx);
                                 const overlapY = SOLID_H - Math.abs(dy);
@@ -423,8 +417,8 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             // SOLID BODY ANTI-OVERLAP: exact minimum displacement to fully separate blocks
             // Always enforce — even after snapping (in case snap target pushes into another block)
             {
-                const SOLID_W = 152; // 140 block + 12px gap
-                const SOLID_H = 60;  // 48 block + 12px gap
+                const SOLID_W = 130; // slightly smaller than 140 to allow grid adjacencies
+                const SOLID_H = 40;  // slightly smaller than 48 to allow grid adjacencies
                 let resolved = false;
                 let attempts = 0;
                 while (!resolved && attempts < 20) {
@@ -437,13 +431,6 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
 
                         const dx = updatedBlock.position.x - other.position.x;
                         const dy = updatedBlock.position.y - other.position.y;
-
-                        // Skip blocks that are properly snapped/adjacent
-                        // (positioned at exactly BLOCK_WIDTH or BLOCK_HEIGHT apart)
-                        const BLOCK_W = 140, BLOCK_H = 48;
-                        const isAdjacentX = Math.abs(Math.abs(dx) - BLOCK_W) < 2 && Math.abs(dy) < 2;
-                        const isAdjacentY = Math.abs(Math.abs(dy) - BLOCK_H) < 2 && Math.abs(dx) < 2;
-                        if (isAdjacentX || isAdjacentY) continue;
 
                         const overlapX = SOLID_W - Math.abs(dx);
                         const overlapY = SOLID_H - Math.abs(dy);
