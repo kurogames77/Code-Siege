@@ -988,10 +988,10 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                     setBlocks(prev => {
                                                         let newX = dropX;
                                                         let newY = dropY;
-                                                        // Anti-overlap: push away from existing workspace blocks
+                                                        // Anti-overlap: nudge away from existing workspace blocks
                                                         let overlap = true;
                                                         let attempts = 0;
-                                                        while (overlap && attempts < 20) {
+                                                        while (overlap && attempts < 50) {
                                                             overlap = false;
                                                             for (const other of prev) {
                                                                 if (other.id === blockId) continue;
@@ -999,8 +999,9 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                                 const dx = Math.abs(newX - other.position.x);
                                                                 const dy = Math.abs(newY - other.position.y);
                                                                 if (dx < 150 && dy < 58) {
-                                                                    newY += 60;
-                                                                    newX += 10;
+                                                                    // Push horizontally first, then wrap to next row
+                                                                    newX += 160;
+                                                                    if (newX > 600) { newX = 40; newY += 70; }
                                                                     overlap = true;
                                                                     break;
                                                                 }
@@ -1183,12 +1184,12 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                         onClick={() => {
                                                             // Fallback: Click to add to workspace with anti-overlap
                                                             setBlocks(prev => {
-                                                                let newX = 100 + (Math.random() * 50);
-                                                                let newY = 100 + (Math.random() * 50);
-                                                                // Anti-overlap: push away from existing workspace blocks
+                                                                let newX = 40;
+                                                                let newY = 40;
+                                                                // Anti-overlap: find first open slot in a grid-like layout
                                                                 let overlap = true;
                                                                 let attempts = 0;
-                                                                while (overlap && attempts < 20) {
+                                                                while (overlap && attempts < 50) {
                                                                     overlap = false;
                                                                     for (const other of prev) {
                                                                         if (other.id === block.id) continue;
@@ -1196,8 +1197,9 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                                         const dx = Math.abs(newX - other.position.x);
                                                                         const dy = Math.abs(newY - other.position.y);
                                                                         if (dx < 150 && dy < 58) {
-                                                                            newY += 60;
-                                                                            newX += 10;
+                                                                            // Push horizontally first, then wrap to next row
+                                                                            newX += 160;
+                                                                            if (newX > 600) { newX = 40; newY += 70; }
                                                                             overlap = true;
                                                                             break;
                                                                         }
