@@ -104,12 +104,21 @@ const LandingPage = () => {
         return () => observer.disconnect();
     }, []);
 
-    // Strip stale query params (e.g. ?mode=Beginner&difficulty=Easy) from URL
-    // These can linger after logout from a tower/gamecode page
+    // Strip stale query params and hash from URL on mount
+    // (e.g. ?mode=Beginner&difficulty=Easy or #about)
     useEffect(() => {
-        if (window.location.search) {
+        if (window.location.search || window.location.hash) {
             window.history.replaceState({}, '', window.location.pathname);
         }
+
+        // Clear #about hash when user scrolls back to top
+        const handleScroll = () => {
+            if (window.scrollY < 100 && window.location.hash) {
+                window.history.replaceState({}, '', window.location.pathname);
+            }
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
     const openLogin = (role = 'student') => {
@@ -471,9 +480,16 @@ const LandingPage = () => {
                     <button className="nav-link primary" type="button" onClick={() => openSignup(modal?.role ?? 'student')}>
                         Start Now
                     </button>
-                    <a className="nav-link" href="#about">
+                    <button
+                        className="nav-link"
+                        type="button"
+                        onClick={() => {
+                            const el = document.getElementById('about');
+                            if (el) el.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                    >
                         About
-                    </a>
+                    </button>
                     <button className="nav-link" type="button" onClick={() => openLogin(modal?.role ?? 'student')}>
                         Login
                     </button>
