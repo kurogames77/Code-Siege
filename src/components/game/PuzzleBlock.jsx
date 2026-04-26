@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 
-const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connectors: propConnectors, isGlowing = false, isSelected = false }) => {
+const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connectors: propConnectors, isGlowing = false, isSelected = false, isMultiDragActive = false, activeDragDelta = null }) => {
     const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
 
     // Determinstic random configuration for connectors
@@ -40,7 +40,10 @@ const PuzzleBlock = ({ id, content, type, position, variant = 'jigsaw', connecto
         transform: `translate3d(${transform.x + (position?.x || 0)}px, ${transform.y + (position?.y || 0)}px, 0)`,
         zIndex: 100,
     } : {
-        transform: `translate3d(${position?.x || 0}px, ${position?.y || 0}px, 0)`,
+        transform: isMultiDragActive && activeDragDelta 
+            ? `translate3d(${(position?.x || 0) + activeDragDelta.x}px, ${(position?.y || 0) + activeDragDelta.y}px, 0)`
+            : `translate3d(${position?.x || 0}px, ${position?.y || 0}px, 0)`,
+        zIndex: isMultiDragActive ? 100 : undefined,
     };
 
     // Randomized block colors - each block gets a unique vibrant color

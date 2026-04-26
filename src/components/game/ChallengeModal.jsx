@@ -46,6 +46,8 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
     const [isSelecting, setIsSelecting] = useState(false);
     const [selectionStart, setSelectionStart] = useState(null);
     const [selectionCurrent, setSelectionCurrent] = useState(null);
+    const [activeDragDelta, setActiveDragDelta] = useState(null);
+    const [activeDragId, setActiveDragId] = useState(null);
 
     // Handle global pointer events for smooth lasso dragging
     useEffect(() => {
@@ -248,7 +250,31 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                         newX = Math.max(padding, Math.min(newX, maxWidth));
                         newY = Math.max(padding, Math.min(newY, maxHeight));
 
-                        return { ...block, position: { x: newX, y: newY } };
+                        const updatedBlock = { ...block, position: { x: newX, y: newY } };
+
+                        // Multi-drag overlap logic
+                        let overlap = true;
+                        let attempts = 0;
+                        while (overlap && attempts < 10) {
+                            overlap = false;
+                            for (const other of currentBlocks) {
+                                if (selectedBlockIds.includes(other.id)) continue; // ignore blocks in the group
+                                if (!other.inWorkspace) continue;
+                                
+                                const dx = Math.abs(updatedBlock.position.x - other.position.x);
+                                const dy = Math.abs(updatedBlock.position.y - other.position.y);
+
+                                if (dx < 150 && dy < 58) {
+                                    updatedBlock.position.y += 60;
+                                    updatedBlock.position.x += 10;
+                                    overlap = true;
+                                    break;
+                                }
+                            }
+                            attempts++;
+                        }
+
+                        return updatedBlock;
                     }
                     return block;
                 });
@@ -880,7 +906,13 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                 ) : (
                                     <DndContext 
                                         sensors={sensors} 
-                                        onDragEnd={handleDragEnd} 
+                                        onDragStart={(e) => setActiveDragId(e.active.id)}
+                                        onDragMove={(e) => setActiveDragDelta({ x: e.delta.x / canvasScale, y: e.delta.y / canvasScale })}
+                                        onDragEnd={(e) => {
+                                            setActiveDragId(null);
+                                            setActiveDragDelta(null);
+                                            handleDragEnd(e);
+                                        }} 
                                         modifiers={[customModifier]}
                                     >
                                         <div className="relative w-full flex-1 overflow-hidden p-4">
@@ -966,15 +998,23 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                                 }}
                                                             />
                                                         )}
-                                                        {blocks.filter(b => b.inWorkspace).map((block) => (
-                                                            <PuzzleBlock 
-                                                                key={block.id} 
-                                                                {...block} 
-                                                                variant={mode} 
-                                                                isGlowing={glowingBlocks.includes(block.id)} 
-                                                                isSelected={selectedBlockIds.includes(block.id)} 
-                                                            />
-                                                        ))}
+                                                        {blocks.filter(b => b.inWorkspace).map((block) => {
+                                                            const isMultiDragActive = selectedBlockIds.length > 1 && 
+                                                                                      selectedBlockIds.includes(activeDragId) && 
+                                                                                      activeDragId !== block.id && 
+                                                                                      selectedBlockIds.includes(block.id);
+                                                            return (
+                                                                <PuzzleBlock 
+                                                                    key={block.id} 
+                                                                    {...block} 
+                                                                    variant={mode} 
+                                                                    isGlowing={glowingBlocks.includes(block.id)} 
+                                                                    isSelected={selectedBlockIds.includes(block.id)} 
+                                                                    isMultiDragActive={isMultiDragActive}
+                                                                    activeDragDelta={activeDragDelta}
+                                                                />
+                                                            );
+                                                        })}
                                                     </div>
                                                 </div>
                                             </div>
