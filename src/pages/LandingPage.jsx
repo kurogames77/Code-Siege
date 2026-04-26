@@ -1400,10 +1400,10 @@ const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderbo
     const [showHeroes, setShowHeroes] = useState(false);
 
     const heroShowcaseData = [
-        { name: 'Valerius', role: 'Striker', video: hero1Video, scale: 'scale-[1.1]', desc: 'A master swordsman who calculates every strike with zero-latency precision.' },
-        { name: 'Nyx', role: 'Mage', video: hero2Video, scale: 'scale-[1.4]', desc: 'A shadow in the code. Nyx executes targets before they register the attack.' },
-        { name: 'Ignis', role: 'Assassin', video: hero3Video, scale: 'scale-[1.5]', desc: 'A living firewall of eternal flame. Ignis compiles raw energy into devastating attacks.' },
-        { name: 'Daemon', role: 'Tank', video: hero4Video, scale: 'scale-[1.3]', desc: 'An unkillable background process. Daemon absorbs damage and redirects it.' }
+        { name: 'Valerius', role: 'Striker', video: hero1Video, scale: 'scale-[1.1]', mask: 'radial-gradient(ellipse at 50% 50%, black 25%, transparent 55%)', desc: 'A master swordsman who calculates every strike with zero-latency precision.' },
+        { name: 'Nyx', role: 'Mage', video: hero2Video, scale: 'scale-[1.4]', mask: 'none', desc: 'A shadow in the code. Nyx executes targets before they register the attack.' },
+        { name: 'Ignis', role: 'Assassin', video: hero3Video, scale: 'scale-[1.5]', mask: 'none', desc: 'A living firewall of eternal flame. Ignis compiles raw energy into devastating attacks.' },
+        { name: 'Daemon', role: 'Tank', video: hero4Video, scale: 'scale-[1.3]', mask: 'radial-gradient(ellipse at 50% 50%, black 25%, transparent 60%)', desc: 'An unkillable background process. Daemon absorbs damage and redirects it.' }
     ];
 
     useEffect(() => {
@@ -1551,7 +1551,7 @@ const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderbo
                             transition={{ duration: 0.5, ease: 'easeInOut' }}
                             className="w-full max-w-6xl mx-auto mt-12 overflow-hidden px-4"
                         >
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 py-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-16 py-12 px-6">
                                 {heroShowcaseData.map((hero, idx) => (
                                     <motion.div 
                                         key={hero.name}
@@ -1572,7 +1572,7 @@ const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderbo
                                                         loop 
                                                         muted 
                                                         playsInline 
-                                                        style={{ WebkitMaskImage: 'radial-gradient(circle at 50% 50%, black 45%, transparent 75%)', maskImage: 'radial-gradient(circle at 50% 50%, black 45%, transparent 75%)' }}
+                                                        style={hero.mask !== 'none' ? { WebkitMaskImage: hero.mask, maskImage: hero.mask } : {}}
                                                         className="w-full h-full object-cover object-center mix-blend-screen" 
                                                     />
                                                 </div>
