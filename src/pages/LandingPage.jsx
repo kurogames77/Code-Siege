@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { Shield, GraduationCap, User, Mail, Lock, BookOpen, ChevronLeft, Loader2, AlertCircle, Eye, EyeOff, Trophy, Swords, Users, Castle, X, CheckCircle, CheckCircle2, KeyRound } from 'lucide-react';
-import { motion, useInView } from 'framer-motion';
+import { motion, useInView, AnimatePresence } from 'framer-motion';
 import '../styles/landing-page.css';
 import { authAPI } from '../services/api';
 import supabase from '../lib/supabase';
@@ -13,6 +13,10 @@ import heroesIcon from '../assets/heroes.png';
 import battleIcon from '../assets/doorbattle.png';
 import rankingIcon from '../assets/ranking.png';
 import leaderboardIcon from '../assets/leaderboard.png';
+import hero1Static from '../assets/hero1a.png';
+import hero2Static from '../assets/hero2.png';
+import hero3Static from '../assets/hero3.png';
+import hero4Static from '../assets/hero4.png';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
 
@@ -1393,6 +1397,14 @@ const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderbo
     // Auto-rotation state
     const [rotationCount, setRotationCount] = useState(0);
     const [isHovered, setIsHovered] = useState(false);
+    const [showHeroes, setShowHeroes] = useState(false);
+
+    const heroShowcaseData = [
+        { name: 'Valerius', role: 'Striker', image: hero1Static, desc: 'A master swordsman who calculates every strike with zero-latency precision.' },
+        { name: 'Nyx', role: 'Mage', image: hero2Static, desc: 'A shadow in the code. Nyx executes targets before they register the attack.' },
+        { name: 'Ignis', role: 'Assassin', image: hero3Static, desc: 'A living firewall of eternal flame. Ignis compiles raw energy into devastating attacks.' },
+        { name: 'Daemon', role: 'Tank', image: hero4Static, desc: 'An unkillable background process. Daemon absorbs damage and redirects it.' }
+    ];
 
     useEffect(() => {
         if (isHovered) return;
@@ -1464,8 +1476,13 @@ const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderbo
                                 <div
                                     key={feature.title}
                                     className="wheel-card"
+                                    onClick={() => {
+                                        if (isCenter && feature.title === 'Diverse Heroes') {
+                                            setShowHeroes(prev => !prev);
+                                        }
+                                    }}
                                     style={{
-                                        cursor: 'default', 
+                                        cursor: isCenter && feature.title === 'Diverse Heroes' ? 'pointer' : 'default', 
                                         '--glow-color': feature.glowColor,
                                         transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg)`,
                                         opacity: opacity,
@@ -1524,6 +1541,41 @@ const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderbo
                         })}
                     </div>
                 </div>
+
+                {/* Expanding Hero Showcase */}
+                <AnimatePresence>
+                    {showHeroes && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.5, ease: 'easeInOut' }}
+                            className="w-full max-w-6xl mx-auto mt-12 overflow-hidden px-4"
+                        >
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 py-4">
+                                {heroShowcaseData.map((hero, idx) => (
+                                    <motion.div 
+                                        key={hero.name}
+                                        initial={{ y: 20, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        transition={{ delay: idx * 0.1 + 0.3 }}
+                                        className="bg-[#0a0f1a] border border-white/10 rounded-2xl overflow-hidden group hover:border-cyan-500/50 transition-colors shadow-2xl relative"
+                                    >
+                                        <div className="aspect-[3/4] relative overflow-hidden">
+                                            <img src={hero.image} alt={hero.name} className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500" />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-[#02040a] via-[#02040a]/20 to-transparent" />
+                                            <div className="absolute bottom-0 left-0 right-0 p-5">
+                                                <h4 className="text-2xl font-black text-white uppercase italic tracking-tighter group-hover:text-cyan-400 transition-colors">{hero.name}</h4>
+                                                <div className="text-[10px] text-cyan-400 font-black uppercase tracking-[0.3em] mb-2">{hero.role}</div>
+                                                <p className="text-xs text-slate-400 leading-relaxed font-bold tracking-wide italic border-l-2 border-cyan-500/30 pl-2">{hero.desc}</p>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </section>
     );
