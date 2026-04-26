@@ -561,7 +561,7 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 text-center flex items-center justify-center gap-2">
                                                         <History className="w-3 h-3 text-purple-400" /> Recent Matches
                                                     </p>
-                                                    <div className="space-y-2 max-h-[160px] overflow-y-auto custom-scrollbar pr-1">
+                                                    <div className="flex gap-2 overflow-x-auto overflow-y-hidden custom-scrollbar pb-2 snap-x">
                                                         {selectedPlayer.recent_battles.map((match) => {
                                                             const isWin = match.winner_id === selectedPlayer.id;
                                                             const isMultiplayer = match.mode !== '1v1 duel' && match.mode !== '1v1 Duel' && match.mode !== 'duel';
@@ -575,18 +575,18 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                                             }
 
                                                             return (
-                                                                <div key={match.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-800/50 border border-white/5">
+                                                                <div key={match.id} className="flex flex-col items-center gap-2 p-3 rounded-xl bg-slate-800/50 border border-white/5 min-w-[120px] snap-start shrink-0">
                                                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center border shrink-0 ${isWin ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'}`}>
                                                                         {isWin ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                                                                     </div>
-                                                                    <div className="flex-1 min-w-0">
-                                                                        <p className="text-xs font-black text-white truncate text-left">vs {opponentName}</p>
-                                                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1 mt-0.5">
-                                                                            {isMultiplayer ? <Users className="w-2.5 h-2.5 text-purple-400" /> : <Swords className="w-2.5 h-2.5 text-cyan-400" />}
+                                                                    <div className="w-full text-center">
+                                                                        <p className="text-[10px] font-black text-white truncate max-w-full">vs {opponentName}</p>
+                                                                        <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest flex items-center justify-center gap-1 mt-0.5">
+                                                                            {isMultiplayer ? <Users className="w-2 h-2 text-purple-400" /> : <Swords className="w-2 h-2 text-cyan-400" />}
                                                                             {isMultiplayer ? 'Multiplayer' : '1v1 Duel'}
                                                                         </p>
                                                                     </div>
-                                                                    <div className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest ${isWin ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                                    <div className={`w-full text-center py-1 rounded bg-black/20 text-[9px] font-black uppercase tracking-widest ${isWin ? 'text-emerald-400' : 'text-rose-400'}`}>
                                                                         {isWin ? 'Victory' : 'Defeat'}
                                                                     </div>
                                                                 </div>

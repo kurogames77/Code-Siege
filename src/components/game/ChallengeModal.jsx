@@ -259,8 +259,8 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                         const updatedBlock = { ...block, position: { x: newX, y: newY } };
 
                         // Multi-drag SOLID BODY overlap resolution
-                        const SOLID_W = 130; // slightly smaller than 140 to allow grid adjacencies
-                        const SOLID_H = 40;  // slightly smaller than 48 to allow grid adjacencies
+                        const SOLID_W = 140; 
+                        const SOLID_H = 48;  
                         let resolved = false;
                         let attempts = 0;
                         while (!resolved && attempts < 20) {
@@ -417,8 +417,8 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             // SOLID BODY ANTI-OVERLAP: exact minimum displacement to fully separate blocks
             // Always enforce — even after snapping (in case snap target pushes into another block)
             {
-                const SOLID_W = 130; // slightly smaller than 140 to allow grid adjacencies
-                const SOLID_H = 40;  // slightly smaller than 48 to allow grid adjacencies
+                const SOLID_W = 140; 
+                const SOLID_H = 48;  
                 let resolved = false;
                 let attempts = 0;
                 while (!resolved && attempts < 20) {
