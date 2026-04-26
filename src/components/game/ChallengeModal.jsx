@@ -230,6 +230,12 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
         const { active, delta } = event;
         if (!active) return;
 
+        // NOTE: customModifier already divides the visual transform by canvasScale,
+        // and dnd-kit reports the delta in the MODIFIED coordinate space.
+        // So we must NOT divide delta by canvasScale again here.
+        const scaledDeltaX = delta.x / canvasScale;
+        const scaledDeltaY = delta.y / canvasScale;
+
         setBlocks((currentBlocks) => {
             const isMultiDrag = selectedBlockIds.length > 1 && selectedBlockIds.includes(active.id);
 
@@ -237,8 +243,8 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             if (isMultiDrag) {
                 return currentBlocks.map(block => {
                     if (selectedBlockIds.includes(block.id)) {
-                        let newX = block.position.x + (delta.x / canvasScale);
-                        let newY = block.position.y + (delta.y / canvasScale);
+                        let newX = block.position.x + scaledDeltaX;
+                        let newY = block.position.y + scaledDeltaY;
                         
                         const padding = 10;
                         const wsEl = workspaceRef.current || containerRef.current;
@@ -258,7 +264,7 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                         while (overlap && attempts < 10) {
                             overlap = false;
                             for (const other of currentBlocks) {
-                                if (selectedBlockIds.includes(other.id)) continue; // ignore blocks in the group
+                                if (selectedBlockIds.includes(other.id)) continue;
                                 if (!other.inWorkspace) continue;
                                 
                                 const dx = Math.abs(updatedBlock.position.x - other.position.x);
@@ -285,8 +291,8 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             if (index === -1) return currentBlocks;
 
             const newBlocks = [...currentBlocks];
-            let newX = newBlocks[index].position.x + (delta.x / canvasScale);
-            let newY = newBlocks[index].position.y + (delta.y / canvasScale);
+            let newX = newBlocks[index].position.x + scaledDeltaX;
+            let newY = newBlocks[index].position.y + scaledDeltaY;
 
             const padding = 10;
             const wsEl = workspaceRef.current || containerRef.current;
@@ -303,50 +309,75 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                 position: { x: newX, y: newY }
             };
 
-            // GENERALIZED SNAPPING LOGIC
-            const SNAP_X_THRESHOLD = 40;
-            const SNAP_Y_THRESHOLD = 20; // Tighter vertical threshold prevents false overlaps
+            // Get this block's connectors
+            const draggedConnectors = updatedBlock.connectors || {};
+
+            // GENERALIZED SNAPPING LOGIC with connector compatibility
+            const SNAP_X_THRESHOLD = 50;
+            const SNAP_Y_THRESHOLD = 30;
+            const BLOCK_WIDTH = 140;
             const BLOCK_HEIGHT = 48;
+
+            // Connector compatibility: tab (1) must meet slot (2) or vice versa
+            const connectorsMatch = (sideA, sideB) => {
+                // 1=tab, 2=slot. Tab fits into slot.
+                return (sideA === 1 && sideB === 2) || (sideA === 2 && sideB === 1);
+            };
 
             let snappedWithId = null;
 
             for (const other of newBlocks) {
                 if (other.id === active.id) continue;
-                if (!other.inWorkspace) continue; // Only snap to workspace blocks
+                if (!other.inWorkspace) continue;
 
+                const otherConnectors = other.connectors || {};
                 const dx = updatedBlock.position.x - other.position.x;
                 const dy = updatedBlock.position.y - other.position.y;
 
-                // Horizontal Snap (Current Right to Other Left)
-                if (Math.abs(dx - 140) < SNAP_X_THRESHOLD && Math.abs(dy) < SNAP_Y_THRESHOLD) {
-                    updatedBlock.position = { x: Math.round(other.position.x + 140), y: Math.round(other.position.y) };
-                    if (playConnect) playConnect();
-                    snappedWithId = other.id;
-                    break;
+                // Horizontal Snap: dragged block's LEFT edge meets other's RIGHT edge
+                // dragged is to the RIGHT of other → dx ≈ +BLOCK_WIDTH
+                if (Math.abs(dx - BLOCK_WIDTH) < SNAP_X_THRESHOLD && Math.abs(dy) < SNAP_Y_THRESHOLD) {
+                    // Check: other's RIGHT connector meets dragged's LEFT connector
+                    if (connectorsMatch(otherConnectors.right, draggedConnectors.left)) {
+                        updatedBlock.position = { x: Math.round(other.position.x + BLOCK_WIDTH), y: Math.round(other.position.y) };
+                        if (playConnect) playConnect();
+                        snappedWithId = other.id;
+                        break;
+                    }
                 }
 
-                // Horizontal Snap (Current Left to Other Right)
-                if (Math.abs(dx + 140) < SNAP_X_THRESHOLD && Math.abs(dy) < SNAP_Y_THRESHOLD) {
-                    updatedBlock.position = { x: Math.round(other.position.x - 140), y: Math.round(other.position.y) };
-                    if (playConnect) playConnect();
-                    snappedWithId = other.id;
-                    break;
+                // Horizontal Snap: dragged block's RIGHT edge meets other's LEFT edge
+                // dragged is to the LEFT of other → dx ≈ -BLOCK_WIDTH
+                if (Math.abs(dx + BLOCK_WIDTH) < SNAP_X_THRESHOLD && Math.abs(dy) < SNAP_Y_THRESHOLD) {
+                    // Check: dragged's RIGHT connector meets other's LEFT connector
+                    if (connectorsMatch(draggedConnectors.right, otherConnectors.left)) {
+                        updatedBlock.position = { x: Math.round(other.position.x - BLOCK_WIDTH), y: Math.round(other.position.y) };
+                        if (playConnect) playConnect();
+                        snappedWithId = other.id;
+                        break;
+                    }
                 }
 
-                // Vertical Snap (Current Bottom to Other Top)
+                // Vertical Snap: dragged block's TOP edge meets other's BOTTOM edge
+                // dragged is BELOW other → dy ≈ +BLOCK_HEIGHT
                 if (Math.abs(dy - BLOCK_HEIGHT) < SNAP_Y_THRESHOLD && Math.abs(dx) < SNAP_X_THRESHOLD) {
-                    updatedBlock.position = { x: Math.round(other.position.x), y: Math.round(other.position.y + BLOCK_HEIGHT) };
-                    if (playConnect) playConnect();
-                    snappedWithId = other.id;
-                    break;
+                    if (connectorsMatch(otherConnectors.bottom, draggedConnectors.top)) {
+                        updatedBlock.position = { x: Math.round(other.position.x), y: Math.round(other.position.y + BLOCK_HEIGHT) };
+                        if (playConnect) playConnect();
+                        snappedWithId = other.id;
+                        break;
+                    }
                 }
 
-                // Vertical Snap (Current Top to Other Bottom)
+                // Vertical Snap: dragged block's BOTTOM edge meets other's TOP edge
+                // dragged is ABOVE other → dy ≈ -BLOCK_HEIGHT
                 if (Math.abs(dy + BLOCK_HEIGHT) < SNAP_Y_THRESHOLD && Math.abs(dx) < SNAP_X_THRESHOLD) {
-                    updatedBlock.position = { x: Math.round(other.position.x), y: Math.round(other.position.y - BLOCK_HEIGHT) };
-                    if (playConnect) playConnect();
-                    snappedWithId = other.id;
-                    break;
+                    if (connectorsMatch(draggedConnectors.bottom, otherConnectors.top)) {
+                        updatedBlock.position = { x: Math.round(other.position.x), y: Math.round(other.position.y - BLOCK_HEIGHT) };
+                        if (playConnect) playConnect();
+                        snappedWithId = other.id;
+                        break;
+                    }
                 }
             }
 
@@ -367,15 +398,15 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                     overlap = false;
                     for (const other of newBlocks) {
                         if (other.id === active.id) continue;
-                        if (!other.inWorkspace) continue; // Only check workspace blocks
+                        if (!other.inWorkspace) continue;
                         
                         const dx = Math.abs(updatedBlock.position.x - other.position.x);
                         const dy = Math.abs(updatedBlock.position.y - other.position.y);
                         
                         // Strict bounding box overlap check (140x48 + 10px margin)
                         if (dx < 150 && dy < 58) {
-                            updatedBlock.position.y += 60; // Push below
-                            updatedBlock.position.x += 10; // Slight diagonal offset to make it visible
+                            updatedBlock.position.y += 60;
+                            updatedBlock.position.x += 10;
                             overlap = true;
                             break;
                         }
