@@ -210,7 +210,14 @@ const GameCode = () => {
     const handleChallengeComplete = async (result) => {
         if (result.success) {
             setCompletedRewards(result.rewards);
-            updateTowerProgress(towerId, currentFloor);
+            
+            // Pass metrics to backend so user_progress tracks time, errors, and hints
+            const algoMetrics = result.metrics ? {
+                time_consumed: result.metrics.time,
+                execution_errors: result.metrics.errors,
+                hints_used: result.metrics.hints
+            } : {};
+            updateTowerProgress(towerId, currentFloor, 0, algoMetrics);
 
             // Award EXP to the player
             const expReward = result.rewards?.exp || 100;

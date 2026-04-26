@@ -147,12 +147,9 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
     const { playConnect, playCountdownVoice, playClick } = useSound();
     const { user, updateExp } = useUser();
 
-    // Calculate initial scale based on block count (clamped to 60%-100%)
+    // Initial scale is fixed at 100%
     const getScaleForBlockCount = (count) => {
-        if (count <= 3) return 1;
-        if (count <= 5) return 0.85;
-        if (count <= 8) return 0.7;
-        return 0.6;
+        return 1;
     };
 
     useEffect(() => {
