@@ -316,20 +316,21 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             // Get this block's connectors
             const draggedConnectors = updatedBlock.connectors || {};
 
-            // GENERALIZED SNAPPING LOGIC with connector compatibility
-            // Scale thresholds inversely with zoom so snapping still works at 60%
-            const SNAP_X_THRESHOLD = Math.max(50, 50 / canvasScale);
-            const SNAP_Y_THRESHOLD = Math.max(30, 30 / canvasScale);
+            // ROBUST SNAPPING: Find the BEST snap candidate (closest valid snap)
+            // Use generous thresholds scaled by zoom — at 60% zoom these become very forgiving
             const BLOCK_WIDTH = 140;
             const BLOCK_HEIGHT = 48;
+            const SNAP_RADIUS_X = 120 / canvasScale; // ~200px at 60% zoom
+            const SNAP_RADIUS_Y = 80 / canvasScale;  // ~133px at 60% zoom
 
             // Connector compatibility: tab (1) must meet slot (2) or vice versa
             const connectorsMatch = (sideA, sideB) => {
-                // 1=tab, 2=slot. Tab fits into slot.
                 return (sideA === 1 && sideB === 2) || (sideA === 2 && sideB === 1);
             };
 
-            let snappedWithId = null;
+            // Find the closest valid snap among ALL workspace blocks
+            let bestSnap = null;
+            let bestDist = Infinity;
 
             for (const other of newBlocks) {
                 if (other.id === active.id) continue;
@@ -339,51 +340,51 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                 const dx = updatedBlock.position.x - other.position.x;
                 const dy = updatedBlock.position.y - other.position.y;
 
-                // Horizontal Snap: dragged block's LEFT edge meets other's RIGHT edge
-                // dragged is to the RIGHT of other → dx ≈ +BLOCK_WIDTH
-                if (Math.abs(dx - BLOCK_WIDTH) < SNAP_X_THRESHOLD && Math.abs(dy) < SNAP_Y_THRESHOLD) {
-                    // Check: other's RIGHT connector meets dragged's LEFT connector
-                    if (connectorsMatch(otherConnectors.right, draggedConnectors.left)) {
-                        updatedBlock.position = { x: Math.round(other.position.x + BLOCK_WIDTH), y: Math.round(other.position.y) };
-                        if (playConnect) playConnect();
-                        snappedWithId = other.id;
-                        break;
+                // Check all 4 snap directions and pick the closest
+                const candidates = [
+                    // Snap to RIGHT of other (dragged is to the right)
+                    {
+                        valid: Math.abs(dx - BLOCK_WIDTH) < SNAP_RADIUS_X && Math.abs(dy) < SNAP_RADIUS_Y
+                            && connectorsMatch(otherConnectors.right, draggedConnectors.left),
+                        pos: { x: Math.round(other.position.x + BLOCK_WIDTH), y: Math.round(other.position.y) },
+                        dist: Math.abs(dx - BLOCK_WIDTH) + Math.abs(dy)
+                    },
+                    // Snap to LEFT of other (dragged is to the left)
+                    {
+                        valid: Math.abs(dx + BLOCK_WIDTH) < SNAP_RADIUS_X && Math.abs(dy) < SNAP_RADIUS_Y
+                            && connectorsMatch(draggedConnectors.right, otherConnectors.left),
+                        pos: { x: Math.round(other.position.x - BLOCK_WIDTH), y: Math.round(other.position.y) },
+                        dist: Math.abs(dx + BLOCK_WIDTH) + Math.abs(dy)
+                    },
+                    // Snap BELOW other
+                    {
+                        valid: Math.abs(dy - BLOCK_HEIGHT) < SNAP_RADIUS_Y && Math.abs(dx) < SNAP_RADIUS_X
+                            && connectorsMatch(otherConnectors.bottom, draggedConnectors.top),
+                        pos: { x: Math.round(other.position.x), y: Math.round(other.position.y + BLOCK_HEIGHT) },
+                        dist: Math.abs(dy - BLOCK_HEIGHT) + Math.abs(dx)
+                    },
+                    // Snap ABOVE other
+                    {
+                        valid: Math.abs(dy + BLOCK_HEIGHT) < SNAP_RADIUS_Y && Math.abs(dx) < SNAP_RADIUS_X
+                            && connectorsMatch(draggedConnectors.bottom, otherConnectors.top),
+                        pos: { x: Math.round(other.position.x), y: Math.round(other.position.y - BLOCK_HEIGHT) },
+                        dist: Math.abs(dy + BLOCK_HEIGHT) + Math.abs(dx)
                     }
-                }
+                ];
 
-                // Horizontal Snap: dragged block's RIGHT edge meets other's LEFT edge
-                // dragged is to the LEFT of other → dx ≈ -BLOCK_WIDTH
-                if (Math.abs(dx + BLOCK_WIDTH) < SNAP_X_THRESHOLD && Math.abs(dy) < SNAP_Y_THRESHOLD) {
-                    // Check: dragged's RIGHT connector meets other's LEFT connector
-                    if (connectorsMatch(draggedConnectors.right, otherConnectors.left)) {
-                        updatedBlock.position = { x: Math.round(other.position.x - BLOCK_WIDTH), y: Math.round(other.position.y) };
-                        if (playConnect) playConnect();
-                        snappedWithId = other.id;
-                        break;
+                for (const c of candidates) {
+                    if (c.valid && c.dist < bestDist) {
+                        bestDist = c.dist;
+                        bestSnap = { pos: c.pos, otherId: other.id };
                     }
                 }
+            }
 
-                // Vertical Snap: dragged block's TOP edge meets other's BOTTOM edge
-                // dragged is BELOW other → dy ≈ +BLOCK_HEIGHT
-                if (Math.abs(dy - BLOCK_HEIGHT) < SNAP_Y_THRESHOLD && Math.abs(dx) < SNAP_X_THRESHOLD) {
-                    if (connectorsMatch(otherConnectors.bottom, draggedConnectors.top)) {
-                        updatedBlock.position = { x: Math.round(other.position.x), y: Math.round(other.position.y + BLOCK_HEIGHT) };
-                        if (playConnect) playConnect();
-                        snappedWithId = other.id;
-                        break;
-                    }
-                }
-
-                // Vertical Snap: dragged block's BOTTOM edge meets other's TOP edge
-                // dragged is ABOVE other → dy ≈ -BLOCK_HEIGHT
-                if (Math.abs(dy + BLOCK_HEIGHT) < SNAP_Y_THRESHOLD && Math.abs(dx) < SNAP_X_THRESHOLD) {
-                    if (connectorsMatch(draggedConnectors.bottom, otherConnectors.top)) {
-                        updatedBlock.position = { x: Math.round(other.position.x), y: Math.round(other.position.y - BLOCK_HEIGHT) };
-                        if (playConnect) playConnect();
-                        snappedWithId = other.id;
-                        break;
-                    }
-                }
+            let snappedWithId = null;
+            if (bestSnap) {
+                updatedBlock.position = bestSnap.pos;
+                snappedWithId = bestSnap.otherId;
+                if (playConnect) playConnect();
             }
 
             // Clear hint glow
@@ -395,23 +396,27 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                 }
             }
 
-            // ANTI-OVERLAP LOGIC: Ensure "solid puzzle" by pushing out of bounds
+            // ANTI-OVERLAP: Gentle nudge instead of aggressive bounce
+            // Skip if the block just snapped — snapped blocks are allowed to be adjacent
             if (!snappedWithId) {
                 let overlap = true;
                 let attempts = 0;
-                while (overlap && attempts < 20) {
+                while (overlap && attempts < 30) {
                     overlap = false;
                     for (const other of newBlocks) {
                         if (other.id === active.id) continue;
                         if (!other.inWorkspace) continue;
-                        
-                        const dx = Math.abs(updatedBlock.position.x - other.position.x);
-                        const dy = Math.abs(updatedBlock.position.y - other.position.y);
-                        
-                        // Strict bounding box overlap check (140x48 + 10px margin)
-                        if (dx < 150 && dy < 58) {
-                            updatedBlock.position.y += 60;
-                            updatedBlock.position.x += 10;
+
+                        const ox = Math.abs(updatedBlock.position.x - other.position.x);
+                        const oy = Math.abs(updatedBlock.position.y - other.position.y);
+
+                        // Only push if genuinely overlapping (not just adjacent/near)
+                        if (ox < 140 && oy < 48) {
+                            // Nudge in the direction away from the other block
+                            const pushX = updatedBlock.position.x >= other.position.x ? 5 : -5;
+                            const pushY = updatedBlock.position.y >= other.position.y ? 5 : -5;
+                            updatedBlock.position.x += pushX;
+                            updatedBlock.position.y += pushY;
                             overlap = true;
                             break;
                         }
