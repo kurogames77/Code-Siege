@@ -13,10 +13,10 @@ import heroesIcon from '../assets/heroes.png';
 import battleIcon from '../assets/doorbattle.png';
 import rankingIcon from '../assets/ranking.png';
 import leaderboardIcon from '../assets/leaderboard.png';
-import hero1Static from '../assets/hero1a.png';
-import hero2Static from '../assets/hero2.png';
-import hero3Static from '../assets/hero3.png';
-import hero4Static from '../assets/hero4.png';
+import hero1Video from '../assets/hero1aview.mp4';
+import hero2Video from '../assets/hero2view.mp4';
+import hero3Video from '../assets/hero3view.mp4';
+import hero4Video from '../assets/hero4view.mp4';
 import { useUser } from '../contexts/UserContext';
 import { useToast } from '../contexts/ToastContext';
 
@@ -1400,10 +1400,10 @@ const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderbo
     const [showHeroes, setShowHeroes] = useState(false);
 
     const heroShowcaseData = [
-        { name: 'Valerius', role: 'Striker', image: hero1Static, desc: 'A master swordsman who calculates every strike with zero-latency precision.' },
-        { name: 'Nyx', role: 'Mage', image: hero2Static, desc: 'A shadow in the code. Nyx executes targets before they register the attack.' },
-        { name: 'Ignis', role: 'Assassin', image: hero3Static, desc: 'A living firewall of eternal flame. Ignis compiles raw energy into devastating attacks.' },
-        { name: 'Daemon', role: 'Tank', image: hero4Static, desc: 'An unkillable background process. Daemon absorbs damage and redirects it.' }
+        { name: 'Valerius', role: 'Striker', video: hero1Video, scale: 'scale-[1.1]', desc: 'A master swordsman who calculates every strike with zero-latency precision.' },
+        { name: 'Nyx', role: 'Mage', video: hero2Video, scale: 'scale-[1.4]', desc: 'A shadow in the code. Nyx executes targets before they register the attack.' },
+        { name: 'Ignis', role: 'Assassin', video: hero3Video, scale: 'scale-[1.5]', desc: 'A living firewall of eternal flame. Ignis compiles raw energy into devastating attacks.' },
+        { name: 'Daemon', role: 'Tank', video: hero4Video, scale: 'scale-[1.3]', desc: 'An unkillable background process. Daemon absorbs damage and redirects it.' }
     ];
 
     useEffect(() => {
@@ -1560,17 +1560,23 @@ const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderbo
                                         transition={{ delay: idx * 0.1 + 0.3 }}
                                         className="group relative flex flex-col items-center text-center cursor-default"
                                     >
-                                        <div className="w-full aspect-[3/4] relative flex justify-center items-center mb-4 group-hover:drop-shadow-[0_0_25px_rgba(6,182,212,0.6)] transition-all duration-500">
+                                        <div className="w-full aspect-[3/4] relative flex justify-center items-center mb-4 transition-all duration-500">
                                             {/* Glowing aura effect behind the character */}
-                                            <div className="absolute inset-10 bg-cyan-500/20 blur-[50px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                            <div className="absolute inset-10 bg-cyan-500/20 blur-[60px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                                             
-                                            <motion.img 
-                                                src={hero.image} 
-                                                alt={hero.name}
-                                                animate={{ y: [0, -12, 0] }}
-                                                transition={{ duration: 4 + idx * 0.5, repeat: Infinity, ease: 'easeInOut' }}
-                                                className="w-full h-full object-contain object-bottom group-hover:scale-110 transition-transform duration-500 relative z-10" 
-                                            />
+                                            <div className={`w-full h-full relative z-10 flex justify-center items-center group-hover:drop-shadow-[0_0_25px_rgba(6,182,212,0.6)] group-hover:scale-110 transition-transform duration-500`}>
+                                                <div className={`w-full h-full flex justify-center items-center ${hero.scale}`}>
+                                                    <video 
+                                                        src={hero.video} 
+                                                        autoPlay 
+                                                        loop 
+                                                        muted 
+                                                        playsInline 
+                                                        style={{ WebkitMaskImage: 'radial-gradient(circle at 50% 50%, black 45%, transparent 75%)', maskImage: 'radial-gradient(circle at 50% 50%, black 45%, transparent 75%)' }}
+                                                        className="w-full h-full object-cover object-center mix-blend-screen" 
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                         <div className="pt-2 px-4 relative z-20">
                                             <h4 className="text-3xl font-black text-white uppercase italic tracking-tighter group-hover:text-cyan-400 transition-colors drop-shadow-md">{hero.name}</h4>
