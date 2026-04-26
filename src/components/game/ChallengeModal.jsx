@@ -963,11 +963,34 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                     const dropX = ((e.clientX - rect.left) / canvasScale) - 70;
                                                     const dropY = ((e.clientY - rect.top) / canvasScale) - 24;
                                                     
-                                                    setBlocks(prev => prev.map(b => b.id === blockId ? {
-                                                        ...b,
-                                                        inWorkspace: true,
-                                                        position: { x: dropX, y: dropY }
-                                                    } : b));
+                                                    setBlocks(prev => {
+                                                        let newX = dropX;
+                                                        let newY = dropY;
+                                                        // Anti-overlap: push away from existing workspace blocks
+                                                        let overlap = true;
+                                                        let attempts = 0;
+                                                        while (overlap && attempts < 20) {
+                                                            overlap = false;
+                                                            for (const other of prev) {
+                                                                if (other.id === blockId) continue;
+                                                                if (!other.inWorkspace) continue;
+                                                                const dx = Math.abs(newX - other.position.x);
+                                                                const dy = Math.abs(newY - other.position.y);
+                                                                if (dx < 150 && dy < 58) {
+                                                                    newY += 60;
+                                                                    newX += 10;
+                                                                    overlap = true;
+                                                                    break;
+                                                                }
+                                                            }
+                                                            attempts++;
+                                                        }
+                                                        return prev.map(b => b.id === blockId ? {
+                                                            ...b,
+                                                            inWorkspace: true,
+                                                            position: { x: newX, y: newY }
+                                                        } : b);
+                                                    });
                                                 }}
                                                 className={`relative w-full h-full rounded-xl border-2 overflow-hidden transition-colors duration-500 touch-none ${theme === 'dark' ? 'border-cyan-400/40 bg-cyan-950/5 shadow-[inset_0_0_30px_rgba(6,182,212,0.05)]' : 'border-cyan-300/60 bg-cyan-50/30'}`}
                                             >
@@ -1136,12 +1159,35 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                             e.currentTarget.style.opacity = '1';
                                                         }}
                                                         onClick={() => {
-                                                            // Fallback: Click to add to center-ish of workspace
-                                                            setBlocks(prev => prev.map(b => b.id === block.id ? { 
-                                                                ...b, 
-                                                                inWorkspace: true, 
-                                                                position: { x: 100 + (Math.random() * 50), y: 100 + (Math.random() * 50) } 
-                                                            } : b));
+                                                            // Fallback: Click to add to workspace with anti-overlap
+                                                            setBlocks(prev => {
+                                                                let newX = 100 + (Math.random() * 50);
+                                                                let newY = 100 + (Math.random() * 50);
+                                                                // Anti-overlap: push away from existing workspace blocks
+                                                                let overlap = true;
+                                                                let attempts = 0;
+                                                                while (overlap && attempts < 20) {
+                                                                    overlap = false;
+                                                                    for (const other of prev) {
+                                                                        if (other.id === block.id) continue;
+                                                                        if (!other.inWorkspace) continue;
+                                                                        const dx = Math.abs(newX - other.position.x);
+                                                                        const dy = Math.abs(newY - other.position.y);
+                                                                        if (dx < 150 && dy < 58) {
+                                                                            newY += 60;
+                                                                            newX += 10;
+                                                                            overlap = true;
+                                                                            break;
+                                                                        }
+                                                                    }
+                                                                    attempts++;
+                                                                }
+                                                                return prev.map(b => b.id === block.id ? { 
+                                                                    ...b, 
+                                                                    inWorkspace: true, 
+                                                                    position: { x: newX, y: newY } 
+                                                                } : b);
+                                                            });
                                                         }}
                                                         className={`flex items-center gap-2 px-2 py-1.5 rounded text-[10px] font-mono truncate cursor-grab active:cursor-grabbing hover:scale-[1.02] transition-all shadow-sm ${theme === 'dark' ? 'bg-slate-800/80 text-cyan-300 border border-slate-700 hover:bg-slate-700' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'}`}
                                                         title="Click or Drag to Workspace"

@@ -86,9 +86,10 @@ const TowerView = () => {
     const tower = {
         id,
         ...baseTower,
-        // Override totalFloors if dynamic levels found
-        totalFloors: dynamicLevels.length > 0 ? dynamicLevels.length : baseTower.totalFloors,
-        currentProgress
+        // Cap at 30 levels (10 Beginner + 10 Intermediate + 10 Advanced)
+        // DB may return more rows if each level has multiple difficulty variants
+        totalFloors: Math.min(dynamicLevels.length > 0 ? dynamicLevels.length : baseTower.totalFloors, 30),
+        currentProgress: Math.min(currentProgress, 30)
     };
 
     const currentLevelRef = useRef(null);
@@ -172,11 +173,11 @@ const TowerView = () => {
 
     return (
         <div
-            className="min-h-screen bg-slate-950 relative"
+            className="min-h-screen bg-slate-950 relative overflow-hidden"
             style={
                 id === '1' ? {
                     backgroundImage: `url(${towerPageBg})`,
-                    backgroundSize: '100% 100%',
+                    backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     backgroundRepeat: 'no-repeat'
                 } : {}

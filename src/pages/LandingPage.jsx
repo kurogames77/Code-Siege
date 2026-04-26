@@ -104,6 +104,14 @@ const LandingPage = () => {
         return () => observer.disconnect();
     }, []);
 
+    // Strip stale query params (e.g. ?mode=Beginner&difficulty=Easy) from URL
+    // These can linger after logout from a tower/gamecode page
+    useEffect(() => {
+        if (!isAuthenticated && location.search) {
+            navigate({ pathname: location.pathname, search: '' }, { replace: true });
+        }
+    }, []);
+
     const openLogin = (role = 'student') => {
         setModal({ type: 'login', role });
         resetForm();
