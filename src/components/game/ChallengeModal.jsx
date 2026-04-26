@@ -280,6 +280,10 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                             attempts++;
                         }
 
+                        // Re-clamp after overlap push
+                        updatedBlock.position.x = Math.max(padding, Math.min(updatedBlock.position.x, maxWidth));
+                        updatedBlock.position.y = Math.max(padding, Math.min(updatedBlock.position.y, maxHeight));
+
                         return updatedBlock;
                     }
                     return block;
@@ -313,8 +317,9 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
             const draggedConnectors = updatedBlock.connectors || {};
 
             // GENERALIZED SNAPPING LOGIC with connector compatibility
-            const SNAP_X_THRESHOLD = 50;
-            const SNAP_Y_THRESHOLD = 30;
+            // Scale thresholds inversely with zoom so snapping still works at 60%
+            const SNAP_X_THRESHOLD = Math.max(50, 50 / canvasScale);
+            const SNAP_Y_THRESHOLD = Math.max(30, 30 / canvasScale);
             const BLOCK_WIDTH = 140;
             const BLOCK_HEIGHT = 48;
 
@@ -414,6 +419,13 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                     attempts++;
                 }
             }
+
+            // Final boundary clamp after snap/anti-overlap
+            const wsEl2 = workspaceRef.current || containerRef.current;
+            const cW = wsEl2 ? wsEl2.clientWidth / canvasScale : 2000;
+            const cH = wsEl2 ? wsEl2.clientHeight / canvasScale : 1500;
+            updatedBlock.position.x = Math.max(10, Math.min(updatedBlock.position.x, cW - 170));
+            updatedBlock.position.y = Math.max(10, Math.min(updatedBlock.position.y, cH - 70));
 
             newBlocks[index] = updatedBlock;
             return newBlocks;

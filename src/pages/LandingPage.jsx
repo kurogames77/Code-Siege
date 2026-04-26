@@ -107,8 +107,8 @@ const LandingPage = () => {
     // Strip stale query params (e.g. ?mode=Beginner&difficulty=Easy) from URL
     // These can linger after logout from a tower/gamecode page
     useEffect(() => {
-        if (!isAuthenticated && location.search) {
-            navigate({ pathname: location.pathname, search: '' }, { replace: true });
+        if (window.location.search) {
+            window.history.replaceState({}, '', window.location.pathname);
         }
     }, []);
 
@@ -1382,7 +1382,7 @@ const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderbo
         if (isHovered) return;
         const timer = setInterval(() => {
             setRotationCount((prev) => prev + 1);
-        }, 4000); // Turns every 4 seconds
+        }, 3000); // Turns every 3 seconds
         return () => clearInterval(timer);
     }, [isHovered]);
 
