@@ -14,7 +14,7 @@ const useInactivityTimeout = () => {
 
     const handleLogout = useCallback(async () => {
         await logout();
-        navigate('/', { replace: true });
+        navigate({ pathname: '/', search: '' }, { replace: true });
         setIsLoggedOutDueToInactivity(true);
     }, [logout, navigate]);
 

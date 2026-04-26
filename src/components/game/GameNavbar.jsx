@@ -576,7 +576,8 @@ const GameNavbar = ({ onLobbyStateChange }) => {
                     // Navigate FIRST because logout() will immediately set user=null
                     // which completely unmounts THIS GameNavbar component
                     // and cancels the pending navigate()
-                    navigate('/', { replace: true, state: { loggedOut: true } });
+                    // Use pathname + search: '' to explicitly strip any query params (e.g. ?mode=Beginner&difficulty=Easy)
+                    navigate({ pathname: '/', search: '' }, { replace: true, state: { loggedOut: true } });
                     await logout();
                 }}
             />

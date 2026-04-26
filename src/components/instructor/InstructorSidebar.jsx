@@ -42,7 +42,7 @@ const InstructorSidebar = ({ activeTab, setActiveTab, isCollapsed, setIsCollapse
         // (UI state clears instantly inside logout(), so no visual delay)
         // NOTE: Toast is shown by LandingPage via location.state.loggedOut
         await logout();
-        navigate('/', { replace: true, state: { loggedOut: true } });
+        navigate({ pathname: '/', search: '' }, { replace: true, state: { loggedOut: true } });
     };
 
     const menuItems = [
