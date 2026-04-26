@@ -1558,18 +1558,17 @@ const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderbo
                                         initial={{ y: 20, opacity: 0 }}
                                         animate={{ y: 0, opacity: 1 }}
                                         transition={{ delay: idx * 0.1 + 0.3 }}
-                                        className="overflow-hidden group transition-colors relative flex flex-col items-center text-center"
+                                        className="group transition-colors relative flex flex-col items-center text-center"
                                     >
-                                        <div className="w-full aspect-[3/4] relative overflow-hidden flex justify-center items-center rounded-[2rem] drop-shadow-[0_0_15px_rgba(6,182,212,0.15)] group-hover:drop-shadow-[0_0_25px_rgba(6,182,212,0.4)] transition-all duration-500">
+                                        <div className="w-full relative flex justify-center items-center group-hover:drop-shadow-[0_0_25px_rgba(6,182,212,0.6)] transition-all duration-500 -mt-8">
                                             <video 
                                                 src={hero.video} 
                                                 autoPlay 
                                                 loop 
                                                 muted 
                                                 playsInline 
-                                                className="w-[120%] h-[120%] object-cover object-center group-hover:scale-105 transition-transform duration-500" 
+                                                className="w-full h-auto object-contain mix-blend-screen group-hover:scale-105 transition-transform duration-500" 
                                             />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-[#02040a] via-transparent to-transparent opacity-80" />
                                         </div>
                                         <div className="pt-5 pb-2">
                                             <h4 className="text-2xl font-black text-white uppercase italic tracking-tighter group-hover:text-cyan-400 transition-colors">{hero.name}</h4>
