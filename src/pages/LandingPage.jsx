@@ -1398,7 +1398,7 @@ const AboutSection = ({ towerIcon, heroesIcon, battleIcon, rankingIcon, leaderbo
         if (isHovered) return;
         const timer = setInterval(() => {
             setRotationCount((prev) => prev + 1);
-        }, 3000); // Turns every 3 seconds
+        }, 2000); // Turns every 2 seconds
         return () => clearInterval(timer);
     }, [isHovered]);
 

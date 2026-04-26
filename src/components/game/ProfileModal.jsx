@@ -352,7 +352,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
                         <Swords className="w-5 h-5 text-rose-400" /> Recent Matches
                     </h3>
                     <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">
-                        Last {Math.min(matchHistory.length, 5)} of {matchHistory.length}
+                        {matchHistory.length} Total
                     </span>
                 </div>
 
@@ -360,7 +360,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
                     <div className="space-y-3">
                         {/* Split into 1v1 Duels and Multiplayer sections */}
                         {(() => {
-                            const recent = matchHistory.slice(0, 5);
+                            const recent = matchHistory;
                             const duels = recent.filter(m => m.mode === '1v1 Duel' || m.mode === 'duel');
                             const multi = recent.filter(m => m.mode !== '1v1 Duel' && m.mode !== 'duel');
                             
@@ -1124,7 +1124,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                     >
                                         <button
                                             onClick={() => setIsFriendViewerOpen(false)}
-                                            className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors z-20"
+                                            className="absolute top-3 right-3 p-2 rounded-full bg-slate-800/80 hover:bg-slate-700 border border-white/10 text-slate-400 hover:text-white transition-colors z-[100]"
                                         >
                                             <X className="w-5 h-5" />
                                         </button>
@@ -1199,19 +1199,25 @@ const ProfileModal = ({ isOpen, onClose }) => {
 
                                                     {/* Achievements & Certificates */}
                                                     <div className="w-full grid grid-cols-2 gap-3">
-                                                        <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 text-center flex items-center justify-center gap-2">
-                                                            <Trophy className="w-4 h-4 text-amber-500" />
-                                                            <p className="text-lg font-black text-amber-400">{selectedFriend.achievements || 0}</p>
+                                                        <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 text-center flex flex-col items-center justify-center">
+                                                            <div className="flex items-center justify-center gap-2 mb-1">
+                                                                <Trophy className="w-4 h-4 text-amber-500" />
+                                                                <p className="text-lg font-black text-amber-400">{selectedFriend.achievements || 0}</p>
+                                                            </div>
+                                                            <p className="text-[9px] uppercase text-slate-500 font-bold">Achievements</p>
                                                         </div>
-                                                        <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 text-center flex items-center justify-center gap-2">
-                                                            <Award className="w-4 h-4 text-emerald-400" />
-                                                            <p className="text-lg font-black text-emerald-400">{selectedFriend.certificates || 0}</p>
+                                                        <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 text-center flex flex-col items-center justify-center">
+                                                            <div className="flex items-center justify-center gap-2 mb-1">
+                                                                <Award className="w-4 h-4 text-emerald-400" />
+                                                                <p className="text-lg font-black text-emerald-400">{selectedFriend.certificates || 0}</p>
+                                                            </div>
+                                                            <p className="text-[9px] uppercase text-slate-500 font-bold">Certificates</p>
                                                         </div>
                                                     </div>
                                                 </div>
 
                                                 {/* RIGHT COLUMN: Recent Matches */}
-                                                <div className="w-full md:w-[320px] shrink-0 flex flex-col h-full bg-slate-900/60 border border-white/5 rounded-2xl p-4">
+                                                <div className="w-full md:w-[320px] shrink-0 flex flex-col h-full bg-slate-900/60 border border-white/5 rounded-2xl p-4 pt-10 md:pt-4">
                                                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 text-center flex items-center justify-center gap-2 shrink-0">
                                                         <History className="w-3 h-3 text-purple-400" /> Recent Matches
                                                     </p>

@@ -127,7 +127,7 @@ router.get('/profile/:id', authenticateUser, async (req, res) => {
         user.battle_losses = battleLosses;
         user.win_rate = winRate;
 
-        // Get recent 5 battles for history
+        // Get recent battles for history
         const { data: recentBattles } = await db
             .from('battles')
             .select(`
@@ -140,8 +140,7 @@ router.get('/profile/:id', authenticateUser, async (req, res) => {
             `)
             .or(`player1_id.eq.${userId},player2_id.eq.${userId},player3_id.eq.${userId},player4_id.eq.${userId},player5_id.eq.${userId}`)
             .eq('status', 'completed')
-            .order('created_at', { ascending: false })
-            .limit(5);
+            .order('created_at', { ascending: false });
             
         user.recent_battles = recentBattles || [];
 
