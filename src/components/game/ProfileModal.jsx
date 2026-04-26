@@ -344,6 +344,87 @@ const ProfileModal = ({ isOpen, onClose }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Recent Matches (Last 5) */}
+            <div className="mt-12">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-black text-white italic uppercase tracking-wider flex items-center gap-3">
+                        <Swords className="w-5 h-5 text-rose-400" /> Recent Matches
+                    </h3>
+                    <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">
+                        Last {Math.min(matchHistory.length, 5)} of {matchHistory.length}
+                    </span>
+                </div>
+
+                {matchHistory.length > 0 ? (
+                    <div className="space-y-3">
+                        {/* Split into 1v1 Duels and Multiplayer sections */}
+                        {(() => {
+                            const recent = matchHistory.slice(0, 5);
+                            const duels = recent.filter(m => m.mode === '1v1 Duel' || m.mode === 'duel');
+                            const multi = recent.filter(m => m.mode !== '1v1 Duel' && m.mode !== 'duel');
+                            
+                            return (
+                                <>
+                                    {duels.length > 0 && (
+                                        <>
+                                            <div className={`text-[10px] font-black text-${currentTheme.colors.primary}-400 uppercase tracking-widest mb-2 px-1 flex items-center gap-2`}>
+                                                <Swords className="w-3 h-3" /> 1v1 Duel
+                                            </div>
+                                            {duels.map((match) => (
+                                                <div key={match.id} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-900/40 border border-white/5 hover:bg-white/5 transition-colors">
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${match.result === 'Win' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'}`}>
+                                                        {match.result === 'Win' ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-black text-white truncate">vs {match.hero}</p>
+                                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 mt-0.5">
+                                                            <Clock className="w-3 h-3" /> {match.time}
+                                                        </p>
+                                                    </div>
+                                                    <div className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest ${match.result === 'Win' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
+                                                        {match.outcome}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {multi.length > 0 && (
+                                        <>
+                                            <div className={`text-[10px] font-black text-purple-400 uppercase tracking-widest ${duels.length > 0 ? 'mt-4' : ''} mb-2 px-1 flex items-center gap-2`}>
+                                                <Users className="w-3 h-3" /> Multiplayer Battle
+                                            </div>
+                                            {multi.map((match) => (
+                                                <div key={match.id} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-900/40 border border-white/5 hover:bg-white/5 transition-colors">
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${match.result === 'Win' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'}`}>
+                                                        {match.result === 'Win' ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-black text-white truncate">vs {match.hero}</p>
+                                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 mt-0.5">
+                                                            <Clock className="w-3 h-3" /> {match.time}
+                                                        </p>
+                                                    </div>
+                                                    <div className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest ${match.result === 'Win' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
+                                                        {match.outcome}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+                                </>
+                            );
+                        })()}
+                    </div>
+                ) : (
+                    <div className="text-center py-8 bg-slate-900/20 border border-white/5 rounded-2xl">
+                        <Swords className="w-10 h-10 text-slate-700 mx-auto mb-3" />
+                        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">No matches played yet</p>
+                        <p className="text-slate-600 text-[10px] mt-1">Play 1v1 Duels or Multiplayer Battles to see results here</p>
+                    </div>
+                )}
+            </div>
         </div >
     );
 

@@ -258,26 +258,30 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
 
                         const updatedBlock = { ...block, position: { x: newX, y: newY } };
 
-                        // Multi-drag overlap logic
-                        let overlap = true;
+                        // Multi-drag SOLID BODY overlap resolution
+                        const SOLID_W = 152; // 140 block + 12px gap
+                        const SOLID_H = 60;  // 48 block + 12px gap
+                        let resolved = false;
                         let attempts = 0;
-                        while (overlap && attempts < 30) {
-                            overlap = false;
+                        while (!resolved && attempts < 20) {
+                            resolved = true;
                             for (const other of currentBlocks) {
                                 if (selectedBlockIds.includes(other.id)) continue;
                                 if (!other.inWorkspace) continue;
                                 
-                                const dx = Math.abs(updatedBlock.position.x - other.position.x);
-                                const dy = Math.abs(updatedBlock.position.y - other.position.y);
+                                const dx = updatedBlock.position.x - other.position.x;
+                                const dy = updatedBlock.position.y - other.position.y;
+                                const overlapX = SOLID_W - Math.abs(dx);
+                                const overlapY = SOLID_H - Math.abs(dy);
 
-                                // Enforce 10px gap for unsnapped blocks
-                                if (dx < 150 && dy < 58) {
-                                    // Nudge away
-                                    const pushX = updatedBlock.position.x >= other.position.x ? 5 : -5;
-                                    const pushY = updatedBlock.position.y >= other.position.y ? 5 : -5;
-                                    updatedBlock.position.x += pushX;
-                                    updatedBlock.position.y += pushY;
-                                    overlap = true;
+                                if (overlapX > 0 && overlapY > 0) {
+                                    // Push along the axis with the smallest overlap (minimum displacement)
+                                    if (overlapX < overlapY) {
+                                        updatedBlock.position.x += dx >= 0 ? overlapX : -overlapX;
+                                    } else {
+                                        updatedBlock.position.y += dy >= 0 ? overlapY : -overlapY;
+                                    }
+                                    resolved = false;
                                     break;
                                 }
                             }
@@ -386,9 +390,18 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
 
             let snappedWithId = null;
             if (bestSnap) {
-                updatedBlock.position = bestSnap.pos;
-                snappedWithId = bestSnap.otherId;
-                if (playConnect) playConnect();
+                // Check that the snap destination is not already occupied by another block
+                const snapOccupied = newBlocks.some(ob => {
+                    if (ob.id === active.id) return false;
+                    if (!ob.inWorkspace) return false;
+                    return Math.abs(ob.position.x - bestSnap.pos.x) < 10 && Math.abs(ob.position.y - bestSnap.pos.y) < 10;
+                });
+
+                if (!snapOccupied) {
+                    updatedBlock.position = bestSnap.pos;
+                    snappedWithId = bestSnap.otherId;
+                    if (playConnect) playConnect();
+                }
             }
 
             // Clear hint glow
@@ -400,29 +413,34 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                 }
             }
 
-            // ANTI-OVERLAP: Gentle nudge instead of aggressive bounce
-            // Skip if the block just snapped — snapped blocks are allowed to be adjacent
-            if (!snappedWithId) {
-                let overlap = true;
+            // SOLID BODY ANTI-OVERLAP: exact minimum displacement to fully separate blocks
+            // Always enforce — even after snapping (in case snap target pushes into another block)
+            {
+                const SOLID_W = 152; // 140 block + 12px gap
+                const SOLID_H = 60;  // 48 block + 12px gap
+                let resolved = false;
                 let attempts = 0;
-                while (overlap && attempts < 30) {
-                    overlap = false;
+                while (!resolved && attempts < 20) {
+                    resolved = true;
                     for (const other of newBlocks) {
                         if (other.id === active.id) continue;
                         if (!other.inWorkspace) continue;
+                        // Allow blocks that just snapped together to be adjacent
+                        if (snappedWithId === other.id) continue;
 
-                        const ox = Math.abs(updatedBlock.position.x - other.position.x);
-                        const oy = Math.abs(updatedBlock.position.y - other.position.y);
+                        const dx = updatedBlock.position.x - other.position.x;
+                        const dy = updatedBlock.position.y - other.position.y;
+                        const overlapX = SOLID_W - Math.abs(dx);
+                        const overlapY = SOLID_H - Math.abs(dy);
 
-                        // Push further than block dimensions so unsnapped blocks leave a visible gap
-                        // Block is 140x48. Enforce at least 10px gap.
-                        if (ox < 150 && oy < 58) {
-                            // Nudge in the direction away from the other block
-                            const pushX = updatedBlock.position.x >= other.position.x ? 5 : -5;
-                            const pushY = updatedBlock.position.y >= other.position.y ? 5 : -5;
-                            updatedBlock.position.x += pushX;
-                            updatedBlock.position.y += pushY;
-                            overlap = true;
+                        if (overlapX > 0 && overlapY > 0) {
+                            // Push along the axis with the smallest overlap
+                            if (overlapX < overlapY) {
+                                updatedBlock.position.x += dx >= 0 ? overlapX : -overlapX;
+                            } else {
+                                updatedBlock.position.y += dy >= 0 ? overlapY : -overlapY;
+                            }
+                            resolved = false;
                             break;
                         }
                     }
@@ -998,10 +1016,10 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                                 if (!other.inWorkspace) continue;
                                                                 const dx = Math.abs(newX - other.position.x);
                                                                 const dy = Math.abs(newY - other.position.y);
-                                                                if (dx < 150 && dy < 58) {
+                                                                if (dx < 152 && dy < 60) {
                                                                     // Push horizontally first, then wrap to next row
-                                                                    newX += 160;
-                                                                    if (newX > 600) { newX = 40; newY += 70; }
+                                                                    newX += 170;
+                                                                    if (newX > 600) { newX = 40; newY += 72; }
                                                                     overlap = true;
                                                                     break;
                                                                 }
@@ -1196,10 +1214,10 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                                                         if (!other.inWorkspace) continue;
                                                                         const dx = Math.abs(newX - other.position.x);
                                                                         const dy = Math.abs(newY - other.position.y);
-                                                                        if (dx < 150 && dy < 58) {
+                                                                        if (dx < 152 && dy < 60) {
                                                                             // Push horizontally first, then wrap to next row
-                                                                            newX += 160;
-                                                                            if (newX > 600) { newX = 40; newY += 70; }
+                                                                            newX += 170;
+                                                                            if (newX > 600) { newX = 40; newY += 72; }
                                                                             overlap = true;
                                                                             break;
                                                                         }
