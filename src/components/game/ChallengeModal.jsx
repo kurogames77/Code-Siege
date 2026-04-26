@@ -48,6 +48,10 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
     const [selectionCurrent, setSelectionCurrent] = useState(null);
     const [activeDragDelta, setActiveDragDelta] = useState(null);
     const [activeDragId, setActiveDragId] = useState(null);
+    const [canvasScale, setCanvasScale] = useState(1);
+
+    const containerRef = useRef(null);
+    const workspaceRef = useRef(null);
 
     // Handle global pointer events for smooth lasso dragging
     useEffect(() => {
@@ -140,8 +144,6 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
     const mode = getActiveMode();
 
     const sensors = useSensors(useSensor(PointerSensor));
-    const containerRef = useRef(null);
-    const workspaceRef = useRef(null);
     const { playConnect, playCountdownVoice, playClick } = useSound();
     const { user, updateExp } = useUser();
 
@@ -152,8 +154,6 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
         if (count <= 8) return 0.7;
         return 0.6;
     };
-
-    const [canvasScale, setCanvasScale] = useState(1);
 
     useEffect(() => {
         if (puzzle) {
