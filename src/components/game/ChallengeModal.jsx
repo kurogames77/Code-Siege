@@ -271,6 +271,13 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
                                 
                                 const dx = updatedBlock.position.x - other.position.x;
                                 const dy = updatedBlock.position.y - other.position.y;
+
+                                // Skip blocks that are properly snapped/adjacent
+                                const BLOCK_W = 140, BLOCK_H = 48;
+                                const isAdjacentX = Math.abs(Math.abs(dx) - BLOCK_W) < 2 && Math.abs(dy) < 2;
+                                const isAdjacentY = Math.abs(Math.abs(dy) - BLOCK_H) < 2 && Math.abs(dx) < 2;
+                                if (isAdjacentX || isAdjacentY) continue;
+
                                 const overlapX = SOLID_W - Math.abs(dx);
                                 const overlapY = SOLID_H - Math.abs(dy);
 
@@ -430,6 +437,14 @@ const ChallengeModal = ({ isOpen, onClose, puzzle, onComplete, config, level = 1
 
                         const dx = updatedBlock.position.x - other.position.x;
                         const dy = updatedBlock.position.y - other.position.y;
+
+                        // Skip blocks that are properly snapped/adjacent
+                        // (positioned at exactly BLOCK_WIDTH or BLOCK_HEIGHT apart)
+                        const BLOCK_W = 140, BLOCK_H = 48;
+                        const isAdjacentX = Math.abs(Math.abs(dx) - BLOCK_W) < 2 && Math.abs(dy) < 2;
+                        const isAdjacentY = Math.abs(Math.abs(dy) - BLOCK_H) < 2 && Math.abs(dx) < 2;
+                        if (isAdjacentX || isAdjacentY) continue;
+
                         const overlapX = SOLID_W - Math.abs(dx);
                         const overlapY = SOLID_H - Math.abs(dy);
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trophy, Crown, Medal, Search, ChevronUp, ChevronDown, Shield, Loader2, Swords, Award, User } from 'lucide-react';
+import { X, Trophy, Crown, Medal, Search, ChevronUp, ChevronDown, Shield, Loader2, Swords, Award, User, History, CheckCircle2, XCircle, Users } from 'lucide-react';
 import heroAsset from '../../assets/hero1.png';
 import leaderboardIcon from '../../assets/leaderboard.png';
 import useSound from '../../hooks/useSound';
@@ -535,7 +535,7 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                             </div>
 
                                             {/* Battle Stats */}
-                                            <div className="w-full bg-slate-900/60 border border-white/5 rounded-2xl p-4">
+                                            <div className="w-full bg-slate-900/60 border border-white/5 rounded-2xl p-4 mb-3">
                                                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 text-center flex items-center justify-center gap-2">
                                                     <Swords className="w-3 h-3 text-rose-400" /> Battle Record
                                                 </p>
@@ -554,6 +554,47 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            {/* Recent Matches */}
+                                            {selectedPlayer.recent_battles && selectedPlayer.recent_battles.length > 0 && (
+                                                <div className="w-full bg-slate-900/60 border border-white/5 rounded-2xl p-4">
+                                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 text-center flex items-center justify-center gap-2">
+                                                        <History className="w-3 h-3 text-purple-400" /> Recent Matches
+                                                    </p>
+                                                    <div className="space-y-2 max-h-[160px] overflow-y-auto custom-scrollbar pr-1">
+                                                        {selectedPlayer.recent_battles.map((match) => {
+                                                            const isWin = match.winner_id === selectedPlayer.id;
+                                                            const isMultiplayer = match.mode !== '1v1 duel' && match.mode !== '1v1 Duel' && match.mode !== 'duel';
+                                                            
+                                                            // Find opponent name
+                                                            let opponentName = 'Unknown';
+                                                            const players = [match.player1, match.player2, match.player3, match.player4, match.player5].filter(Boolean);
+                                                            const opponents = players.filter(p => p.id !== selectedPlayer.id);
+                                                            if (opponents.length > 0) {
+                                                                opponentName = opponents.map(o => o.username).join(', ');
+                                                            }
+
+                                                            return (
+                                                                <div key={match.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-800/50 border border-white/5">
+                                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center border shrink-0 ${isWin ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'}`}>
+                                                                        {isWin ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <p className="text-xs font-black text-white truncate text-left">vs {opponentName}</p>
+                                                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1 mt-0.5">
+                                                                            {isMultiplayer ? <Users className="w-2.5 h-2.5 text-purple-400" /> : <Swords className="w-2.5 h-2.5 text-cyan-400" />}
+                                                                            {isMultiplayer ? 'Multiplayer' : '1v1 Duel'}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest ${isWin ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                                        {isWin ? 'Victory' : 'Defeat'}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     ) : (
                                         <div className="py-20 text-center text-rose-400 font-bold uppercase tracking-widest text-xs">

@@ -110,7 +110,7 @@ router.get('/profile/:id', authenticateUser, async (req, res) => {
         }
         user.rank_name = rankName;
 
-        // Get battle stats
+        // Get battle stats (fast query for counts)
         const { data: battles } = await db
             .from('battles')
             .select('id, winner_id, status')
@@ -126,6 +126,24 @@ router.get('/profile/:id', authenticateUser, async (req, res) => {
         user.battle_wins = battleWins;
         user.battle_losses = battleLosses;
         user.win_rate = winRate;
+
+        // Get recent 5 battles for history
+        const { data: recentBattles } = await db
+            .from('battles')
+            .select(`
+                id, mode, status, created_at, winner_id,
+                player1:player1_id(id, username),
+                player2:player2_id(id, username),
+                player3:player3_id(id, username),
+                player4:player4_id(id, username),
+                player5:player5_id(id, username)
+            `)
+            .or(`player1_id.eq.${userId},player2_id.eq.${userId},player3_id.eq.${userId},player4_id.eq.${userId},player5_id.eq.${userId}`)
+            .eq('status', 'completed')
+            .order('created_at', { ascending: false })
+            .limit(5);
+            
+        user.recent_battles = recentBattles || [];
 
         // Get achievements count
         const { count: achievementCount } = await db
