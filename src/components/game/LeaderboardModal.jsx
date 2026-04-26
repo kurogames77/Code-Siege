@@ -466,11 +466,11 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
                                         initial={{ opacity: 0, scale: 0.95 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         exit={{ opacity: 0, scale: 0.95 }}
-                                        className={`w-full max-w-4xl ${currentTheme.colors.panel} border border-${currentTheme.colors.primary}-500/20 rounded-[2rem] p-8 shadow-2xl relative overflow-hidden flex flex-col md:flex-row gap-8`}
+                                        className={`w-full max-w-4xl ${currentTheme.colors.panel} border border-${currentTheme.colors.primary}-500/20 rounded-[2rem] p-8 shadow-2xl relative flex flex-col md:flex-row gap-8 mt-10 md:mt-0`}
                                     >
                                         <button
                                             onClick={() => setIsPlayerViewerOpen(false)}
-                                            className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors z-20"
+                                            className="absolute -top-12 right-0 md:-top-5 md:-right-5 p-2.5 rounded-full bg-slate-900 hover:bg-rose-500/20 border-2 border-white/10 hover:border-rose-500/50 text-slate-400 hover:text-rose-400 transition-all z-50 shadow-xl"
                                         >
                                             <X className="w-5 h-5" />
                                         </button>
@@ -545,13 +545,19 @@ const LeaderboardModal = ({ isOpen, onClose }) => {
 
                                                     {/* Achievements & Certificates */}
                                                     <div className="w-full grid grid-cols-2 gap-3">
-                                                        <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 text-center flex items-center justify-center gap-2">
-                                                            <Trophy className="w-4 h-4 text-amber-500" />
-                                                            <p className="text-lg font-black text-amber-400">{selectedPlayer.achievements || 0}</p>
+                                                        <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 text-center flex flex-col items-center justify-center">
+                                                            <div className="flex items-center justify-center gap-2 mb-1">
+                                                                <Trophy className="w-4 h-4 text-amber-500" />
+                                                                <p className="text-lg font-black text-amber-400">{selectedPlayer.achievements || 0}</p>
+                                                            </div>
+                                                            <p className="text-[9px] uppercase text-slate-500 font-bold">Achievements</p>
                                                         </div>
-                                                        <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 text-center flex items-center justify-center gap-2">
-                                                            <Award className="w-4 h-4 text-emerald-400" />
-                                                            <p className="text-lg font-black text-emerald-400">{selectedPlayer.certificates || 0}</p>
+                                                        <div className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 text-center flex flex-col items-center justify-center">
+                                                            <div className="flex items-center justify-center gap-2 mb-1">
+                                                                <Award className="w-4 h-4 text-emerald-400" />
+                                                                <p className="text-lg font-black text-emerald-400">{selectedPlayer.certificates || 0}</p>
+                                                            </div>
+                                                            <p className="text-[9px] uppercase text-slate-500 font-bold">Certificates</p>
                                                         </div>
                                                     </div>
                                                 </div>

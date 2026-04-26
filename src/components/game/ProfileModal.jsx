@@ -1120,11 +1120,11 @@ const ProfileModal = ({ isOpen, onClose }) => {
                                         initial={{ opacity: 0, scale: 0.95 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         exit={{ opacity: 0, scale: 0.95 }}
-                                        className="w-full max-w-4xl bg-[#0B0F1A] border border-cyan-500/20 rounded-[2rem] p-8 shadow-2xl relative overflow-hidden flex flex-col md:flex-row gap-8"
+                                        className="w-full max-w-4xl bg-[#0B0F1A] border border-cyan-500/20 rounded-[2rem] p-8 shadow-2xl relative flex flex-col md:flex-row gap-8 mt-10 md:mt-0"
                                     >
                                         <button
                                             onClick={() => setIsFriendViewerOpen(false)}
-                                            className="absolute top-3 right-3 p-2 rounded-full bg-slate-800/80 hover:bg-slate-700 border border-white/10 text-slate-400 hover:text-white transition-colors z-[100]"
+                                            className="absolute -top-12 right-0 md:-top-5 md:-right-5 p-2.5 rounded-full bg-slate-900 hover:bg-rose-500/20 border-2 border-white/10 hover:border-rose-500/50 text-slate-400 hover:text-rose-400 transition-all z-50 shadow-xl"
                                         >
                                             <X className="w-5 h-5" />
                                         </button>
